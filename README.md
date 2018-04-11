@@ -106,13 +106,13 @@ You need to access to two different terminals, one to run the server and one to 
       $ cd $AWS_FPGA_REPO_DIR
       $ source sdaccel_setup.sh
       $ sudo sh
-      # source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this step
-      # ./host mandelbrot.awsxclbin mandelbrot
+      $ source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this step
+      $ ./host mandelbrot.awsxclbin mandelbrot
 
   These will run the host application and create the SOCKET communication
   - On the second terminal run the WebServer:
 
       $ sudo sh
-      # python2.7 server.py
+      $ python2.7 server.py
 
 Now you can access the server through the WebClient in the web_client folder
