@@ -13,26 +13,27 @@ As Cloud FPGA platform we have adopted the AWS F1 instances and the tools (Vivad
 
 The communication of data and commands between the Web Application and the FPGA happens in three different steps:
 
-  - 1) The WebClient performs a WebSocket connection or a Get request to the WebServer. The WebSocket requests have to be in JSON format and contain two different fileds:
+  1) The WebClient performs a WebSocket connection or a Get request to the WebServer. The WebSocket requests have to be in JSON format and contain two different fileds:
     - type: describes the command that has to be performed by the host application and dispatched to the FPGA;
     - data: holds the data to be sent to the FPGA.
-  - 2) The WebServer intercepts all the requests coming from the WebClient and, through a UNIX socket link passes all the requests to the Host Application which will analyses the content of the message and performs the dedicated function.
-  - 3) The Host Application interfaces with the FPGA through OpenCL calls. Once the calls have been performed the host application waits for the results and sends the response back to the Web Application following the same path.
+  2) The WebServer intercepts all the requests coming from the WebClient and, through a UNIX socket link passes all the requests to the Host Application which will analyses the content of the message and performs the dedicated function.
+  3) The Host Application interfaces with the FPGA through OpenCL calls. Once the calls have been performed the host application waits for the results and sends the response back to the Web Application following the same path.
 
 # Prerequisites
 
 In order to test the infrastructure the following prerequisites are needed:
   - AWS account, and accessibility to AWS F1 instances.
   - On the AWS EC2 instance:
-    - python 2.7 or higher;
+    - Python 2.7 or higher;
     - tornado python library
-     ```sh
-      sudo pip install tornado
-     ```
+        ```sh
+        sudo pip install tornado
+        ```
   - The AWS F1 instance has to allow TCP connections on port 8080 (or the one you choose to serve the get or websocket requests):
-    - 1) Go to the EC2 Dashboard;
-    - 2) Click on "Security Group";
-    - 3) Select the one related to your F1 instance;
-    - 4) Go to the "Inbound" tab and click on "Edit";
-    - 5) Select "Custom TCP Rule" as "Type" and insert 8080 as port range.
-    - 6) Save
+    1) Go to the EC2 Dashboard;
+    2) Click on "Security Group";
+    3) Select the one related to your F1 instance;
+    4) Go to the "Inbound" tab and click on "Edit";
+    5) Select "Custom TCP Rule" as "Type" and insert 8080 as port range.
+    6) Save
+
