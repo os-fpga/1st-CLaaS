@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WebSockets Hello World</title>
+    <meta charset="utf-8" />
+    <style type="text/css">
+      body {
+        text-align: center;
+        min-width: 500px;
+      }
+    </style>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script>
+      
+      // height and width of the image
+      const ROWS = 512;
+      const COLS = 512;
+
+      // global variables that keep track of the total number of
+      // 
+      var repetitions = 0;
+      var xcoord = 0;
+      var ycoord = 0;
+      var scalefactor = 0;
+      var sizex = 0;
+      var sizey = 0;
+      var depth = 0;
+      var default_rate_ms = 200;
+      var zoomrate = 0;
+      var t0, t1;
+      // log function
+      log = function(data){
+        $("div#terminal").prepend("</br>" +data);
+        console.log(data);
+      };
+ 
+      $(document).ready(function () {
+        $("div#message_details").hide()
+        $("div#send_data").hide()
+      
+        var ws;
+ 
+        $("#open").click(function(evt) {
+          evt.preventDefault();
+
+          var host = $("#host").val();
+          var port = "8080";
+          var uri = "/ws";
+ 
+          // create websocket instance
+          ws = new WebSocket("ws://" + host + ":" + port + uri);
+          
+
+          // Handle incoming websocket message callback
+          ws.onmessage = function(evt) {
+            // log the event for debug purposes
+            console.log(evt);
+
+            t1 = performance.now();
+
+            console.log("Performance: " + (t1-t0));
+            // Parse the event data in order to extract the response
+            var msg = JSON.parse(evt.data);
+
+            // If the message type of the response is GET_IMAGE or READ_DATA update the image
+            if(msg.type == "GET_IMAGE"){
+              $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data);
+              // when the scalefactor reaches a threshold the process terminates
+              // for now the hardware can generate stable images with a scale factor
+              // not higher than 1000000
+              if(scalefactor < 1000000){
+                t0 = performance.now();
+
+                send_data(ws, true);
+              }
+            } else if(msg.type == "READ_DATA"){
+              $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data);
+              if(scalefactor < 1000000)
+                send_data(ws, false);
+            }
+
+          };
+ 
+          // Close Websocket callback
+          ws.onclose = function(evt) {
+            console.log("***Connection Closed***");
+            $("#host").css("background", "#ff0000"); 
+            $("#port").css("background", "#ff0000"); 
+            $("#uri").css("background",  "#ff0000");
+            $("div#message_details").hide();
+            $("div#send_data").hide();
+ 
+            };
+ 
+          // Open Websocket callback
+          ws.onopen = function(evt) { 
+            $("#host").css("background", "#00ff00"); 
+            $("#port").css("background", "#00ff00"); 
+            $("#uri").css("background", "#00ff00");
+            $("div#message_details").show();
+            $("div#send_data").show();
+            console.log("***Connection Opened***");
+          };
+        });
+ 
+        // Send websocket message commands to initialize the hardware device
+        $("#sendcmd").click(function(evt) {
+            var json_obj = { "type": "INIT_PLATFORM", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+
+            var json_obj = { "type": "INIT_KERNEL", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+        });
+
+        // Send websocket message to clean the hardware device once the computations
+        // have been completed
+        $("#clean").click(function(evt) {
+            var json_obj = { "type": "CLEAN_KERNEL", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+        });
+
+        // This is needed to test the single request for an image
+        // which are WRITE_DATA, START_KERNEL and READ_DATA separetely
+        $("#senddata").click(function(evt) {
+            // x coordinate relative to the center of the requested image
+            xcoord = parseFloat($("#xcoord").val());
+            // y coordinate relative to the center of the requested image
+            ycoord = parseFloat($("#ycoord").val());
+
+            // initial zoom factor (should be >= 1)
+            scalefactor = parseFloat($("#scalefactor").val());
+
+            // rate at which the scalfactor increases
+            zoomrate = parseFloat($("#zoomrate").val());
+
+            // calculation of the size of the pixels given the total width and height
+            // of the image and the scale factor
+            var pix_x = ((4.0/scalefactor) / sizex);
+            var pix_y = ((4.0/scalefactor) / sizex);
+
+            // calculation of the coordinates needed by the hardware starting from the
+            // upper left corner. 
+            var x_min = xcoord - sizex/2 * pix_x;
+            var y_min = ycoord - sizex/2 * pix_y;
+
+            var data = [x_min, y_min, pix_x, pix_y];
+
+            // Series of websocket messages used to request a new image
+            var json_obj = { "type": "WRITE_DATA", "payload": data };
+            ws.send(JSON.stringify(json_obj));
+
+            var json_obj = { "type": "START_KERNEL", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+
+            var json_obj = { "type": "READ_DATA", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+        });
+
+        // This event is needed to test a request of a sequence of images
+        // that have an increased zoom factor from one another
+        $("#sequence").click(function(evt) {
+            xcoord = parseFloat($("#xcoord").val());
+            ycoord = parseFloat($("#ycoord").val());
+            scalefactor = parseFloat($("#scalefactor").val());
+            zoomrate = parseFloat($("#zoomrate").val());
+            sizex = parseFloat($("#sizex").val());
+            sizey = parseFloat($("#sizey").val());
+            depth = parseFloat($("#depth").val());
+            t0 = performance.now();
+            if(sizex % 16 != 0)
+              alert("Size X must be a multiple of 16");
+            else
+              send_data(ws, true);
+        });
+
+
+        $("#get").click(function(evt) {
+          if(!get_inputs())
+            return 0;
+          
+          var host = $("#host").val();
+          var port = "8080";
+
+          var data_array = compute_data_to_send();
+          const http = new XMLHttpRequest();
+          console.log(data_array);
+          var json = JSON.stringify(data_array);
+          http.open("GET", "http://" + host + ":" + port + "/hw?type=GET_IMAGE&url=false&data=" + json);
+          http.send();
+
+          http.onload = function () {
+            var msg = JSON.parse(http.responseText);
+            console.log(msg);
+            $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data)
+          };
+        });
+      });
+
+      // Function that sends the data through websockets and increases the scalefactor
+      // authomatically for the next image request
+      function send_data(ws, isGetImage) {
+          data = compute_data_to_send();
+
+          if (isGetImage) {
+            var json_obj = { "type": "GET_IMAGE", "payload": data };
+            ws.send(JSON.stringify(json_obj));
+          } else {
+            var json_obj = { "type": "WRITE_DATA", "payload": data };
+            ws.send(JSON.stringify(json_obj));
+
+            console.log(data);
+
+            var json_obj = { "type": "START_KERNEL", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+
+            var json_obj = { "type": "READ_DATA", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+          }
+          scalefactor *= 1.05;
+      }
+
+      function get_inputs() {
+          xcoord = parseFloat($("#xcoord").val());
+          ycoord = parseFloat($("#ycoord").val());
+          scalefactor = parseFloat($("#scalefactor").val());
+          zoomrate = parseFloat($("#zoomrate").val());
+          sizex = parseFloat($("#sizex").val());
+          sizey = parseFloat($("#sizey").val());
+          depth = parseFloat($("#depth").val());
+
+          if(sizex % 16 != 0){
+            alert("Size X must be a multiple of 16");
+            return false;
+          }
+
+          return true;
+      }
+
+      function compute_data_to_send() {
+          var pix_x = ((4.0/scalefactor) / sizex);
+          var pix_y = ((4.0/scalefactor) / sizex);
+
+          var x_min = xcoord - sizex/2 * pix_x;
+          var y_min = ycoord - sizex/2 * pix_y;
+
+          return [x_min, y_min, pix_x, pix_y, sizex, sizey, depth];
+      }
+    </script>
+  </head>
+ 
+  <body>
+    <h1>Mandelbrot Example</h1>
+    <div id="connection_details">
+      <label for="host">host:</label>
+      <input type="text" id="host" value="localhost" style="background:#ff0000;"/><br />
+      <input type="submit" id="open" value="open" />
+    </div>
+    <div id="message_details">
+        </br></br>
+        <input type="submit" id="sendcmd" value="Init FPGA" />
+    </div>
+
+    <div id="send_data">
+        </br></br>
+        <label for="xcoord">X coordinates: </label>
+        <input type="text" id="xcoord"/>
+
+        <label for="ycoord">Y coordinates: </label>
+        <input type="text" id="ycoord"/><br />
+
+        <label for="scalefactor">Scale factor</label>
+        <input type="text" id="scalefactor"/><br />
+
+        <label for="sizex">Size X: </label>
+        <input type="text" id="sizex">
+        <br />
+        <label for="sizey">Size Y: </label>
+        <input type="text" id="sizey">
+        <br />
+        <label for="depth">Depth: </label>
+        <input type="text" id="depth">
+        <br />
+        <input type="submit" id="sequence" value="Start" />
+        <br />
+        <!--<input type="submit" id="clean" value="Clean Kernel" />-->
+    </div>
+    <br />
+
+    <div>
+      
+    </div>
+    <div id="terminal">
+      <input type="submit" id="get" value="GET IMAGE" />
+    </div>
+    <img id="mandelbrot" src="">
+  </body>
+</html>
