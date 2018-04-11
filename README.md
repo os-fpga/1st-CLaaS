@@ -26,9 +26,9 @@ In order to test the infrastructure the following prerequisites are needed:
   - On the AWS EC2 instance:
     - Python 2.7 or higher;
     - tornado python library
-
+    ```sh
     $ sudo pip install tornado
-
+    ```
   - The AWS F1 instance has to allow TCP connections on port 8080 (or the one you choose to serve the get or websocket requests):
     1) Go to the EC2 Dashboard;
     2) Click on "Security Group";
