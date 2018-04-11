@@ -1,41 +1,14 @@
+/*
+**
+** This utility library is used to compute different color schemes depending on users needs.
+** It is used to create the colored mandelbrot images.
+**
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "utility.h"
-/*
-int main(int argc, char const *argv[])
-{
-  color_transition_t * color_scheme;
-
-  color_scheme = get_color_scheme();
-
-  int j = 0;
-  unsigned int transition;
-  unsigned int group;
-
-  char fn[80];
-  snprintf(fn, sizeof(fn), "mandelbrot%d.ppm");
-
-  FILE *fp = fopen(fn, "wb");
-  (void) fprintf(fp, "P6\n%d %d\n255\n", 512, 512);
-
-  static unsigned char color[3];
-  for(int i = 0; i < 512 * 512 * 3; i+=3) {
-    transition = extract_bits(i, 5, 0);
-    group = extract_bits(i, 27, 5);
-
-    for(int k = 0; k < 3; k++)
-      color[k] = color_scheme[group%8].color_transition[transition].color[k];
-
-    fwrite(color, 1, 3, fp);
-  }
-
-  (void) fclose(fp);
-
-  return 0;
-}
-*/
-
 /*
 **
 ** This function returns a color transition set:
