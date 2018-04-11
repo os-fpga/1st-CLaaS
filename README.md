@@ -27,7 +27,7 @@ In order to test the infrastructure the following prerequisites are needed:
     - Python 2.7 or higher;
     - tornado python library
 
-        sudo pip install tornado
+    $ sudo pip install tornado
 
   - The AWS F1 instance has to allow TCP connections on port 8080 (or the one you choose to serve the get or websocket requests):
     1) Go to the EC2 Dashboard;
@@ -103,16 +103,18 @@ You need to access to two different terminals, one to run the server and one to 
   - First is best to move both the python files found in the "web_server" folder, the executable and the .awsxclbin image into the same folder.
   - On one terminal run the following commands:
 
+      ```sh
       $ cd $AWS_FPGA_REPO_DIR
       $ source sdaccel_setup.sh
       $ sudo sh
       $ source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this step
       $ ./host mandelbrot.awsxclbin mandelbrot
+      ```
 
   These will run the host application and create the SOCKET communication
   - On the second terminal run the WebServer:
-
+      ```sh
       $ sudo sh
       $ python2.7 server.py
-
+      ```
 Now you can access the server through the WebClient in the web_client folder
