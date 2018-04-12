@@ -118,3 +118,9 @@ You need to access to two different terminals, one to run the server and one to 
       $ python2.7 server.py
       ```
 Now you can access the server through the WebClient in the web_client folder
+
+# Makerchip and TL-Verilog
+
+The Mandelbrot set accelerator has been developed in the Makerchip IDE (https://makerchip.com/) using the TL-Verilog language extension.
+After the kernel has been designed in Makerchip we retrieved the Verilog files by clicking on "E" -> "Open Results" in the Editor tab. From the new browser tab the files that host the Verilog code are called "top.sv" and "top_gen.sv".
+The content of these files has to be copied and pasted inside of the file "mandelbrot_example_adder.sv" found in the "mandelbrot_hw/imports" folder.
