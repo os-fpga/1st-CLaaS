@@ -39,7 +39,8 @@ In order to run this software stack the following prerequisites are needed:
     - Python 2.7 or higher;
     - tornado python library
     
-    `sudo pip install tornado`
+    $ sudo pip install tornado
+  
   - The AWS F1 instance has to allow TCP connections on port 8080 (or the one you choose to serve the get or websocket requests):
     1) Go to the EC2 Dashboard;
     2) Click on "Security Group";
@@ -55,42 +56,37 @@ The hardware model provided can be built on an AWS EC2 instance (c4.2xlarge or c
 
 First, clone the aws-fpga GitHub repository and source the sdaccel_setup.sh script
 
-      ```
       $ git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR  
       $ cd $AWS_FPGA_REPO_DIR                                         
       $ source sdaccel_setup.sh
-      ```
 
 Once the environment is set up copy the "mandelbrot_hw" folder into your workspace.
 Enter the `sdx_imports` folder and run the following make command:
 
-      `$ make build TARGET=hw KERNEL=mandelbrot -j8 > out.txt &`
+      $ make build TARGET=hw KERNEL=mandelbrot -j8 > out.txt &
 
 Once the build process is complete you can generate an Amazon FPGA Image to load onto the FPGA.
 First you have to setup your AWS CLI and the S3 Bucket where to save the generated files:
 
 AWS CLI configuration:
 
-     `aws configure         # to set your credentials (found in your console.aws.amazon.com page), region (us-east-1) and output (json)`
+     aws configure         # to set your credentials (found in your console.aws.amazon.com page), region (us-east-1) and output (json)
 
 S3 Bucket creation:
 
-      ```
       $ aws s3 mb s3://<bucket-name> --region us-east-1  # Create an S3 bucket (choose a unique bucket name)
       $ aws s3 mb s3://<bucket-name>/<dcp-folder-name>   # Create folder for your tarball files
       $ touch FILES_GO_HERE.txt                          # Create a temp file
       $ aws s3 cp FILES_GO_HERE.txt s3://<bucket-name>/<dcp-folder-name>/  # Which creates the folder on S3
-      ```
 
 Once the setup is complete you can generate the .awsxclbin binary file that will configure the FPGA:
 
-      ```sh
       $ mkdir build
       $ cd build
       $ $SDACCEL_DIR/tools/create_sdaccel_afi.sh -xclbin=<input_xilinx_fpga_binary_xclbin_filename> 
                 -o=<output_aws_fpga_binary_awsxclbin_filename_root> \
                 -s3_bucket=<bucket-name> -s3_dcp_key=<dcp-folder-name> -s3_logs_key=<logs-folder-name>
-      ```
+
 
 When the process completes you will have the bitstream configuration file ready to use.
 
@@ -100,7 +96,7 @@ When the process completes you will have the bitstream configuration file ready 
 The host program is needed to interface with the FPGA.
 Copy all files from the "host_app" folder in a new one and run the following command:
 
-      `make host TARGET=hw_emu KERNEL=mandelbrot`
+      $ make host TARGET=hw_emu KERNEL=mandelbrot
 
 This will compile the host application and you can find the executable in the "hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/" folder.
 
