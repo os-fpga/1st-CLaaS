@@ -1,5 +1,7 @@
 # fpga-webserver
 
+[![Join the chat at https://gitter.im/fpga-webserver/Lobby](https://badges.gitter.im/fpga-webserver/Lobby.svg)](https://gitter.im/fpga-webserver/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This project provides a communication layer between web applications and Cloud FPGA accelerators in order to enhance the performance of compute-intensive tasks. Further documentation for this project, including the project vision, can be found in this [Google Drive Folder](https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing). It utilizes Amazon AWS F1 instances and the corresponding Xilinx tools (Vivado, SDAccel).
 
 While the layer is intended to be generic, in its current form, this repo contains both generic functionality and components that are specific to the initial demonstration application -- a Mandelbrot image generator.
