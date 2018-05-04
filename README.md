@@ -60,7 +60,7 @@ If you are new to AWS, you might find it to be quite complicated. Here are some 
       - Wait ~2 business days :(
 
 
-## AWS F1 Build Instance Setup
+## AWS Build Instance Setup
 
 Now let's provision a Build Instance on which you can build your Amazon FPGA Image (AFI).
   - From the dashboard, click "Launch Instance".
@@ -71,18 +71,11 @@ Now let's provision a Build Instance on which you can build your Amazon FPGA Ima
   - Select c4.4xlarge (as recommended by Amazon, or we have found c4.2xlarge to suffice, though slower).
   - Click through default options to launch.
   - (SSH key instructions here)
-  - `chmod 600 ~/.ssh/AWS_my_machine.pem`
+  - `chmod 600 ~/.ssh/AWS_<my_machine>.pem`
   - Click new instance link (never to be able to return?) to find IP address.
-  - `ssh -i ~/.ssh/AWS_my_machine.pem centos@<ip>`
+  - `ssh -i ~/.ssh/<AWS_my_machine>.pem centos@<ip>`
 
 If all went well, you are now logged into your Build Instance.
-
-The webserver is written in Python. You'll need the following prerequisites:
-  - Python 2.7 or higher;
-  - tornado python library
-  ```sh
-  sudo pip install tornado
-  ```
 
 The AWS F1 instance has to allow TCP connections on port 8080 (or the one you choose to serve the get or websocket requests):
   1. Go to the EC2 Dashboard.
@@ -115,7 +108,7 @@ cd
 mkdir work
 cd work
 cp -r ~/fpga-webserver/hw/mandelbrot_hw .
-cd sdx_imports
+cd mandelbrot_hw/sdx_imports
 make build TARGET=hw KERNEL=mandelbrot -j8 > out.txt &
 ```
 
@@ -149,7 +142,7 @@ Once the setup is complete you can generate the .awsxclbin binary file that will
 cd ~/work
 mkdir build
 cd build
-$SDACCEL_DIR/tools/create_sdaccel_afi.sh -xclbin=../mandelbrot_hw/sdx_imports/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.xclbin -o=<output_aws_fpga_binary_awsxclbin_filename_root> \
+$SDACCEL_DIR/tools/create_sdaccel_afi.sh -xclbin=../mandelbrot_hw/sdx_imports/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.xclbin -o=mandelbrot \
     -s3_bucket=<bucket-name> -s3_dcp_key=<dcp-folder-name> -s3_logs_key=<logs-folder-name>
 ```
 
@@ -159,41 +152,110 @@ When the process completes you will have the bitstream configuration file ready 
 ## Host Application compilation
 
 The host program is needed to interface with the FPGA.
-Copy all files from the "host_app" folder in a new one and run the following command:
+Copy all files from the "host_app" folder into a new one and run the following command:
 
 ```sh
+cd ~/work
+cp -r ../fpga-webserver/srcs/host_app .
+cd host_app
 make host TARGET=hw_emu KERNEL=mandelbrot
 ```
 
 This will compile the host application and you can find the executable in the `hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/` folder.
 
+## Bundle Result Files
+
+Now, you have all the files you will need to run the F1 web server on an F1 Instance. First, bundle the files that you will
+need on that server and store them in your S3 bucket, in a new key, called "deploy". The files include: the python files found in the `web_server` folder,
+the executable and the `.awsxclbin` image
+
+```sh
+cd ~/work
+mkdir deploy
+cp ~/fpga-webserver/srcs/web_server/server_* .
+cp ~/work/host_app/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host .
+cp ~/work/build/mandelbrot.awsxclbin .
+aws s3 mb s3://stevehoover-afi-bucket/deploy
+aws s3 cp --recursive ./deploy s3://<bucket>/deploy
+```
+
+## F1 Instance Setup
+
+You will need an F1 machine (w/ an FPGA) on which to run the files you have generated.
+
+Create this machine as you did the Build Instance, but use instance type "f1.2xlarge" (in North Virginia).
+
+
+## File Transfer to F1
+
+Transfer the "deploy" files to your F1 machine.
+
+`ssh` into your F1 machine, as you did your Build Instance.
+
+Initialize as before:
+
+```sh
+cd
+git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR  
+cd $AWS_FPGA_REPO_DIR
+source ./sdaccel_setup.sh
+```
+
+And configure, as before using your access keys, and region: `us-east-1` and output: `json`.
+
+```sh
+aws configure
+```
+
+Copy "deploy" files from your S3 bucket.
+
+```sh
+mkdir ~/deploy
+cd ~/deploy
+aws s3 cp --recursive s3://<bucket>/deploy .
+chmod +x ./host  # Seems to lose execute permission along the way.
+```
 
 ## Web Server usage
 
-Once you have both the executable and the FPGA Image you can run the server.
+Now, you can run the server. You need access to two different terminals, one to run the server and one to run the host application. (Can't we run them in the background??)
 
-You need access to two different terminals, one to run the server and one to run the host application. (Can't we run them in the background??)
-  - First is best to move both the python files found in the `web_server` folder, the executable and the `.awsxclbin` image into the same folder.
-  - On one terminal run the following commands:
-  (This assumes files were copied into the $AWS_FPGA_REPO_DIR folder??)
+Run the host application and the listening socket:
+terminal run the following commands:
 
-    ```sh
-    cd $AWS_FPGA_REPO_DIR
-    source sdaccel_setup.sh
-    sudo sh
-    source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this step
-    ./host mandelbrot.awsxclbin mandelbrot
-    ```
+```sh
+cd /home/centos/work/deploy
+sudo sh
+source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this step
+./host mandelbrot.awsxclbin mandelbrot
+```
+  
+`ssh` in from the second terminal (for the web server). Then,
 
-  These will run the host application and create the SOCKET communication
-  - On the second terminal run the WebServer:
-    ```sh
-    sudo sh
-    python2.7 server_v2.py
-    ```
-Now you can access the server through the WebClient in the web_client folder
+Setup:
 
-(This is in emulation? What about FPGA?)
+```sh
+cd $AWS_FPGA_REPO_DIR
+source ./sdaccel_setup.sh
+```
+
+The webserver is written in Python. You'll need the following prerequisites:
+  - Python 2.7 or higher;
+  - tornado python library
+  ```sh
+  sudo pip install tornado
+  ```
+
+Run the WebServer:
+
+```sh
+cd ~/work/deploy
+sudo python2.7 server_v2.py
+```
+
+Now you can access client.html from any web browser using `http://<IP>:8080/client.html`.
+
+Current usage of client.html requires: host IP, click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start".
 
 
 # Makerchip and TL-Verilog
@@ -201,7 +263,6 @@ Now you can access the server through the WebClient in the web_client folder
 The Mandelbrot set accelerator has been developed in the [Makerchip](https://makerchip.com/) IDE using the TL-Verilog language extension.
 After the kernel has been designed in Makerchip we retrieved the Verilog files by clicking on "E" -> "Open Results" in the Editor tab. From the new browser tab the files that host the Verilog code are called "top.sv" and "top_gen.sv".
 The content of these files has to be copied and pasted inside of the file "mandelbrot_example_adder.sv" found in the "mandelbrot_hw/imports" folder.
-
 # To Do
 
 Make instructions more explicit, as a cookbook recipe, and provide information and pointers about the more general use of the commands. After this provide other helpful general information about working with the design. New users should walk through the cookbook as quickly as possible, then learn more about what they have done.
@@ -210,3 +271,4 @@ Make instructions more explicit, as a cookbook recipe, and provide information a
   - Probably want to use workspace folders inside this with .gitignored contents, so this repo can provide work structure.
   - Structure the repo to support multiple examples, where mandelbrot is one.
   - Automate export from Makerchip by providing a script that uses `curl` to access result files via `http://makerchip.com/compile/<compile-id>/results/<filename>`.
+
