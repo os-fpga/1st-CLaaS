@@ -107,7 +107,7 @@ def main():
   application = tornado.web.Application([
     (r'/ws', WSHandler),
     (r'/hw', GetRequestHandler),
-    (r'/(client\.html)', tornado.web.StaticFileHandler, {'path': r'/home/centos/fpga-webserver/srcs/web_client/'}),
+    (r'/(client\.html)', tornado.web.StaticFileHandler, {'path': r'./'}),
   ])
 
   # Configuring the http server
