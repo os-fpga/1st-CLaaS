@@ -1,0 +1,9 @@
+html, body {
+    background:url('../img/background.jpg') center center no-repeat;
+    height: 100%;
+    background-size:cover;
+}
+.map {
+    height: 400px;
+    width: 100%;
+  }

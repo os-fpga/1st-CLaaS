@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.6.4/css/ol.css" type="text/css">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="https://openlayers.org/en/v4.6.4/build/ol.js"></script>
+    <!-- Style here -->
+    <link rel="stylesheet" href="css/style.css">  
+    <link rel="stylesheet" href="font-awesome/css/fontawesome.css">
+    <script src="https://openlayers.org/en/v4.6.5/build/ol.js" type="text/javascript"></script>    
+    <link href="https://fonts.googleapis.com/css?family=Just+Another+Hand" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Mandelbrot</title>
+  </head>
+  <body>
+    <h1 align="center">Demo</h1>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <h2 align="center">Mandelbrot</h2>
+    <div id="connection_details" align="center" class="form-group">
+      <input type="text" id="host" value="localhost" class="form-control" placeholder="host"/><br />
+      <input type="text" id="port" value="8080" class="form-control" placeholder="port"/><br />
+      <input type="text" id="uri" value="/ws" class="form-control" placeholder="url"/><br />
+      <input type="submit" id="open" class="btn btn-primary" value="open" />
+    </div>
+    <div id="message_details" align="center">
+        </br></br>
+        <input type="submit" id="sendcmd" class="btn btn-primary" align="center" value="Init FPGA" />
+    </div>
+    <div id="send_data" align="center">
+        <input type="text" class="form-control" id="xcoord" placeholder="X coordinate"/>
+        <input type="text" class="form-control" id="ycoord" placeholder="Y cordinate"/><br />
+        <input type="text" id="scalefactor" class="form-control" placeholder="Scale factor"/><br />
+        <input type="submit" id="senddata" value="send data" class="btn btn-primary"/><br />
+        <input type="text" id="zoomrate" class="form-control" placeholder="Zoom Rate">
+        <input type="submit" id="sequence" value="stream" class="btn btn-primary"/>
+        <br />
+        <input type="submit" id="clean" value="clean kernel" class="btn btn-primary"/>
+    </div>
+    <img id="mandelbrot" src="">
+    <div id="myImage" class="img-rounded"></div>
+    <script type="text/javascript">
+      // height and width of the image
+      const ROWS = 512;
+      const COLS = 512;
+      // global variables that keep track of the total number of
+      // 
+      var repetitions = 0;
+      var xcoord = 0;
+      var ycoord = 0;
+      var scalefactor = 0;
+      // log function
+      log = function(data){
+        $("div#terminal").prepend("</br>" +data);
+        console.log(data);
+      };
+ 
+      $(document).ready(function () {
+        $("div#message_details")
+        $("div#send_data")
+        var ws;
+        $("#open").click(function(evt) {
+          evt.preventDefault();
+          var host = $("#host").val();
+          var port = $("#port").val();
+          var uri = $("#uri").val();
+          // create websocket instance
+          ws = new WebSocket("ws://" + host + ":" + port + uri);
+          // Handle incoming websocket message callback
+          ws.onmessage = function(evt) {
+            // log the event for debug purposes
+            console.log(evt);
+            // Parse the event data in order to extract the response
+            var msg = JSON.parse(evt.data);
+            // If the message type of the response is GET_IMAGE or READ_DATA update the image
+            if(msg.type == "GET_IMAGE"){
+              $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data);
+              // when the scalefactor reaches a threshold the process terminates
+              // for now the hardware can generate stable images with a scale factor
+              // not higher than 1000000
+              if(scalefactor < 1000000)
+                send_data();
+            } else if(msg.type == "READ_DATA"){
+              $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data);
+            }
+ 
+
+          };
+ 
+          // Close Websocket callback
+          ws.onclose = function(evt) {
+            console.log("***Connection Closed***");
+            $("#host").css("background", "#ff0000"); 
+            $("#port").css("background", "#ff0000"); 
+            $("#uri").css("background",  "#ff0000");
+            $("div#message_details").hide();
+            $("div#send_data").hide();
+            };
+          // Open Websocket callback
+          ws.onopen = function(evt) { 
+            $("#host").css("background", "#00ff00"); 
+            $("#port").css("background", "#00ff00"); 
+            $("#uri").css("background", "#00ff00");
+            $("div#message_details").show();
+            $("div#send_data").show();
+            console.log("***Connection Opened***");
+          };
+        });
+        // Send websocket message commands to initialize the hardware device
+        $("#sendcmd").click(function(evt) {
+            var json_obj = { "type": "INIT_PLATFORM", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+ 
+            var json_obj = { "type": "INIT_KERNEL", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+        });
+        // Send websocket message to clean the hardware device once the computations
+        // have been completed
+        $("#clean").click(function(evt) {
+            var json_obj = { "type": "CLEAN_KERNEL", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+        });
+        // This is needed to test the single request for an image
+        // which are WRITE_DATA, START_KERNEL and READ_DATA separetely
+        $("#senddata").click(function(evt) {
+            // x coordinate relative to the center of the requested image
+            xcoord = parseFloat($("#xcoord").val());
+            // y coordinate relative to the center of the requested image
+            ycoord = parseFloat($("#ycoord").val());
+            // initial zoom factor (should be >= 1)
+            scalefactor = parseFloat($("#scalefactor").val());
+            // rate at which the scalfactor increases
+            zoomrate = parseFloat($("#zoomrate").val());
+ 
+            // calculation of the size of the pixels given the total width and height
+            // of the image and the scale factor
+            var pix_x = ((4.0/scalefactor) / COLS);
+            var pix_y = ((4.0/scalefactor) / ROWS);
+ 
+            // calculation of the coordinates needed by the hardware starting from the
+            // upper left corner. 
+            var x_min = xcoord - COLS/2 * pix_x;
+            var y_min = ycoord - ROWS/2 * pix_y;
+            var data = [x_min, y_min, pix_x, pix_y];
+            // Series of websocket messages used to request a new image
+            var json_obj = { "type": "WRITE_DATA", "payload": data };
+            ws.send(JSON.stringify(json_obj));
+            console.log(data);
+            var json_obj = { "type": "START_KERNEL", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+            var json_obj = { "type": "READ_DATA", "payload": null };
+            ws.send(JSON.stringify(json_obj));
+        });
+ 
+        // This event is needed to test a request of a sequence of images
+        // that have an increased zoom factor from one another
+        $("#sequence").click(function(evt) {
+            xcoord = parseFloat($("#xcoord").val());
+            ycoord = parseFloat($("#ycoord").val());
+            scalefactor = parseFloat($("#scalefactor").val());
+            zoomrate = parseFloat($("#zoomrate").val());
+            send_data();
+            send_data();
+        });
+ 
+        // Function that sends the data through websockets and increases the scalefactor
+        // authomatically for the next image request
+        function send_data() {
+            var pix_x = ((4.0/scalefactor) / COLS);
+            var pix_y = ((4.0/scalefactor) / ROWS);
+            var x_min = xcoord - COLS/2 * pix_x;
+            var y_min = ycoord - ROWS/2 * pix_y;
+            var data = [x_min, y_min, pix_x, pix_y];
+            var json_obj = { "type": "GET_IMAGE", "payload": data };
+            ws.send(JSON.stringify(json_obj));
+            scalefactor *= zoomrate;
+        }
+      });
+    //for displaying the map
+    //change the url or take url from input 
+    var imageURL = "img/testImage.png";
+    console.log();
+    var extent = [0, 0, 1024, 1024];
+    var projection = new ol.proj.Projection({
+      code: 'xkcd-image',
+      units: 'pixels',
+      extent: extent
+    });
+    var map = new ol.Map({
+      layers: [
+        new ol.layer.Image({
+          source: new ol.source.ImageStatic({
+            attributions: '<a href="">xkcd</a>',
+            url: imageURL,
+            projection: projection,
+            imageExtent: extent
+          })
+        })
+      ],
+      target: 'myImage',
+      view: new ol.View({
+        projection: projection,
+        center: ol.extent.getCenter(extent),
+        zoom: 2,
+        maxZoom: 8
+      })
+    });
+</script>
+    <!--Social Media Buttons-->
+  </body>
+</html>
