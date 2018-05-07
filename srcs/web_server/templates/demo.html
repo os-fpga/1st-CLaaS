@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://openlayers.org/en/v4.6.4/css/ol.css" type="text/css">
+  <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+  <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+  <script src="https://openlayers.org/en/v4.6.4/build/ol.js"></script>
+  <!-- Style here -->
+  <script src="https://openlayers.org/en/v4.6.5/build/ol.js" type="text/javascript"></script>
+  <link href="https://fonts.googleapis.com/css?family=Just+Another+Hand" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
+  <title>Mandelbrot</title>
+</head>
+
+<body>
+    <nav class="w3-bar w3-black">
+        <a href="/home.html" class="w3-button w3-bar-item">Home</a>
+        <a href="/demo.html" class="w3-button w3-bar-item">Demo</a>
+        <a href="/contact.html" class="w3-button w3-bar-item">Contact</a>
+      </nav>
+  <div id="connection_details" class="form-inline text-center" role="form" align="center">
+    <input type="text" id="host" value="localhost" class="form-control" placeholder="host" />
+    <br />
+    <input type="text" id="port" value="8888" class="form-control" placeholder="port" />
+    <br />
+    <input type="text" id="uri" value="/ws" class="form-control" placeholder="url" />
+    <br />
+    <input type="submit" id="open" class="btn btn-primary" value="open" />
+  </div>
+  <div id="myImage" class="img-rounded"></div>
+  <script type="text/javascript">
+    var host;
+    var port;
+    var uri;
+    $("#open").click(function (evt) {
+      host = $("#host").val();
+      port = $("#port").val();
+      uri = $("#uri").val();
+      var urlsource= "http://" + host + ":" + port + "/images";
+      console.log("url:"+urlsource);
+      var map = new ol.Map({
+        target: 'myImage',
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.XYZ({
+              url: urlsource+'/{z}/{x}/{y}'//formate the url based on your requirement.
+              })
+            })
+          ],
+          view: new ol.View({
+            center: [0, 0],//defualt parameters
+            zoom: 2//defualt zooming
+          })
+        });
+      });
+  </script>
+</body>
+
+</html>
