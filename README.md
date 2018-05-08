@@ -66,7 +66,6 @@ Now let's provision a Build Instance on which you can build your Amazon FPGA Ima
   - From the dashboard, click "Launch Instance".
   - Click "AWS Marketplace" on the left.
   - Enter "FPGA" in the search box.
-  - "Select" the "FPGA Developer AMI".
   - "Continue".
   - Select c4.4xlarge (as recommended by Amazon, or we have found c4.2xlarge to suffice, though slower).
   - Click through default options to launch.
@@ -77,7 +76,7 @@ Now let's provision a Build Instance on which you can build your Amazon FPGA Ima
 
 If all went well, you are now logged into your Build Instance.
 
-The AWS F1 instance has to allow TCP connections on port 8080 (or the one you choose to serve the get or websocket requests):
+The AWS F1 instance has to allow TCP connections on ports 8080 and 8888 (or the one you choose to serve the get or websocket requests):
   1. Go to the EC2 Dashboard.
   1. On the left, under "Network & Security", click on "Security Group".
   1. Select the one related to your F1 instance.
@@ -87,7 +86,7 @@ The AWS F1 instance has to allow TCP connections on port 8080 (or the one you ch
   1. Provide "Source" as the IP from which you will launch your client, or leave it as zeros to allow any IP to connect.
   1. You can set "Description" to "webserver".
   1. Save
-
+  1. Repeat for port 8888.
 
 ## FPGA Build Process
 
@@ -253,7 +252,7 @@ cd ~/work/deploy
 sudo python2.7 server_v2.py
 ```
 
-Now you can access client.html from any web browser using `http://<IP>:8080/client.html`.
+Now you can access client.html from any web browser using `http://<IP>:8888/client.html`.
 
 Current usage of client.html requires: host IP, click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start".
 
@@ -272,3 +271,7 @@ Make instructions more explicit, as a cookbook recipe, and provide information a
   - Structure the repo to support multiple examples, where mandelbrot is one.
   - Automate export from Makerchip by providing a script that uses `curl` to access result files via `http://makerchip.com/compile/<compile-id>/results/<filename>`.
 
+
+# X11 Forwarding
+
+It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick.
