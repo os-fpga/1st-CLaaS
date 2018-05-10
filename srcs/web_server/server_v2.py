@@ -147,7 +147,7 @@ class ImagesHandler(tornado.web.RequestHandler):
       payload = [x, y, pix_x, pix_y]
       print(payload)
       result = handle_request(GET_IMAGE, payload)
-      self.write(base64.b64decode(result['data'])
+      self.write(base64.b64decode(result['data']))
       
 
 
