@@ -149,22 +149,22 @@ class ImageHandler(tornado.web.RequestHandler):
     if type == "tile":
       print "Get tile image %s, %s, %s" % (tile_z, tile_x, tile_y)
     
-      # map parameters to those expected by FPGA, producing 'params'.
+      # map parameters to those expected by FPGA, producing 'payload'.
       tile_size = 4.0 / 2.0 ** float(tile_z)  # size of tile x/y in Mandelbrot coords
       x = -2.0 + float(tile_x) * tile_size
       y = -2.0 + float(tile_y) * tile_size
       pix_x = tile_size / 256.0
       pix_y = pix_x
-      params = [x, y, pix_x, pix_y, 256, 256, 1000]
+      payload = [x, y, pix_x, pix_y, 256, 256, 1000]
     elif type == "img":
-      params_str = self.get_query_argument("data", None)
+      payload_str = self.get_query_argument("data", None)
       try:
-        params = json.loads(params_str)
+        payload = json.loads(payload_str)
       except ValueError, e:
-        print "Invalid JSON in '?data=%s' URL parameter." % params_str
+        print "Invalid JSON in '?data=%s' URL parameter." % payload_str
         # TODO: Return a bad image
         return
-      #print(params)
+      #print(payload)
     else:
       print "Unrecognized type arg in ImageHandler.get(..)"
 
@@ -176,7 +176,7 @@ class ImageHandler(tornado.web.RequestHandler):
       print "Creating image in Python"
       # No socket. Generate image here, in Python.
       outputImg = io.BytesIO()
-      img = Mandelbrot.getImage(params[4], params[5], params[0], params[1], params[2], params[3])
+      img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3])
       img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
       img_data = outputImg.getvalue()
     #else if renderer == "c":
