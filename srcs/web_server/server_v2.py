@@ -78,6 +78,7 @@ class HTMLHandler(tornado.web.RequestHandler):
     def get(self, file):
        self.render(file)
        
+
 class Mandelbrot():
 
   @staticmethod
@@ -87,11 +88,18 @@ class Mandelbrot():
     #self.img = Image.new('RGB', (256, 256), (int(x)*18%256, int(y)*126%256, int(pix_x)*150%256))
     image = Image.new('RGB', (img_width, img_height))  # numpy.empty([img_width, img_height])
     pixels = image.load()
+    bail_cnt = 10000000
     for v in range(img_height):
       y_pos = y + float(v) * pix_y
       for h in range(img_width):
         x_pos = x + float(h) * pix_x
         pixels[h, v] = Mandelbrot.depthToPixel(Mandelbrot.getPixelDepth(x_pos, y_pos))
+        bail_cnt -= 1
+        if bail_cnt <= 0:
+          raise ValueError
+      bail_cnt -= 1
+      if bail_cnt <= 0:
+        raise ValueError
     #self.img = Image.fromarray(img_array, 'RGB')
     return image
  
@@ -137,11 +145,11 @@ class ImageHandler(tornado.web.RequestHandler):
 
   # handles image request via get request 
   def get(self, type, tile_z=None, tile_x=None, tile_y=None):
-    # Determine coordinates of image from GET parameters
+    # Determine image parameters from GET parameters
     if type == "tile":
       print "Get tile image %s, %s, %s" % (tile_z, tile_x, tile_y)
     
-      # map parameters to those expected by FPGA.
+      # map parameters to those expected by FPGA, producing 'payload'.
       tile_size = 4.0 / 2.0 ** float(tile_z)  # size of tile x/y in Mandelbrot coords
       x = -2.0 + float(tile_x) * tile_size
       y = -2.0 + float(tile_y) * tile_size
@@ -168,83 +176,23 @@ class ImageHandler(tornado.web.RequestHandler):
       print "Creating image in Python"
       # No socket. Generate image here, in Python.
       outputImg = io.BytesIO()
-      self.img = Mandelbrot.getImage(256, 256, x, y, pix_x, pix_y)
-      self.img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
-      self.write(outputImg.getvalue())  #we get actual data write it to front end
+      img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3])
+      img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
+      img_data = outputImg.getvalue()
     #else if renderer == "c":
     #  print "No support for C rendering, yet."
     else:
       print "Creating image in FPGA"
       # Send image parameters over socket.
-      result = handle_request(GET_IMAGE, payload, False)
-      self.write(result)
-      
+      img_data = handle_request(GET_IMAGE, payload, False)
+    self.write(img_data)
 
-### New Handler for Get requests
-### To replace GetRequestHandler and then hw case of get(..)
-class ObsoleteNewGetRequestHandler(tornado.web.RequestHandler):
-  # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
-  def set_default_headers(self):
-    self.set_header("Access-Control-Allow-Origin", "*")
-    self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-    self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-    self.set_header("Content-Type", "image/png")
-
-  # Get request handler
-  def get(self):
-    print "HERE"
-
-    # Acquiring all the parameters contained in the get request
-    header = self.get_query_argument("type", None)
-    payload = json.loads(self.get_query_argument("data", None))
-    url = self.get_query_argument("url", None)
-    print(header)
-    print(payload)
-
-    # The request is passed to a request handler which will process the information contained
-    # in the message and produces a result
-    #result = handle_request(header, payload, true)
-    #self.write(base64.b64decode(result['data']))
-    result = handle_request(header, payload, False)
-    self.write(result)
-
-
-### Handler for Get requests
-class ObsoleteGetRequestHandler(tornado.web.RequestHandler):
-  # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
-  def set_default_headers(self):
-    self.set_header("Access-Control-Allow-Origin", "*")
-    self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-    self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-  # Get request handler
-  def get(self):
-    print "HERE"
-
-    # Acquiring all the parameters contained in the get request
-    header = self.get_query_argument("type", None)
-    payload = json.loads(self.get_query_argument("data", None))
-    url = self.get_query_argument("url", None)
-    print(header)
-    print(payload)
-
-    # The request is passed to a request handler which will process the information contained
-    # in the message and produces a result
-    result = handle_request(header, payload)
-    
-    # Depending on how the Get request has been performed the response will be different.
-    #   - URL request: the response will be an html page containing the Mandelbrot image
-    #   - Javascript: the response is in JSON format
-    if url == "true":
-      response = "<html><img id='mandelbrot' src='data:image/png;base64,%s'></html>" % result['data']
-    else:
-      response = result
-    self.write(response)
 
 """
 MAIN APPLICATION
 """
 def main():
+
   # Opening socket with host
   global sock
 
