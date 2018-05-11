@@ -214,7 +214,7 @@ Run the host application and the listening socket:
 terminal run the following commands:
 
 ```sh
-cd /home/centos/work/deploy
+cd /home/centos/deploy
 sudo sh
 source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this step
 ./host mandelbrot.awsxclbin mandelbrot
@@ -232,7 +232,7 @@ The webserver is written in Python. You'll need the following prerequisites:
 Run the WebServer:
 
 ```sh
-cd ~/work/deploy
+cd ~/deploy
 sudo python2.7 server_v2.py
 ```
 
