@@ -40,6 +40,9 @@
         $("div#send_data").hide()
       
         var ws;
+
+        // populate host field
+        $("#host").attr("value", location.hostname);
  
         $("#open").click(function(evt) {
           evt.preventDefault();
@@ -183,17 +186,10 @@
           var port = "8888";
 
           var data_array = compute_data_to_send();
-          const http = new XMLHttpRequest();
           console.log(data_array);
           var json = JSON.stringify(data_array);
-          http.open("GET", "http://" + host + ":" + port + "/hw?type=GET_IMAGE&url=false&data=" + json);
-          http.send();
-
-          http.onload = function () {
-            var msg = JSON.parse(http.responseText);
-            console.log(msg);
-            $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data)
-          };
+          var img_url = "http://" + host + ":" + port + "/img?type=GET_IMAGE&url=false&data=" + json;
+          $("#mandelbrot").attr("src", img_url);
         });
       });
 
@@ -264,22 +260,22 @@
     <div id="send_data">
         </br></br>
         <label for="xcoord">X coordinates: </label>
-        <input type="text" id="xcoord"/>
+        <input type="text" id="xcoord" value="0.0" />
 
         <label for="ycoord">Y coordinates: </label>
-        <input type="text" id="ycoord"/><br />
+        <input type="text" id="ycoord" value="0.0" /><br />
 
         <label for="scalefactor">Scale factor</label>
-        <input type="text" id="scalefactor"/><br />
+        <input type="text" id="scalefactor" value="1.0" /><br />
 
         <label for="sizex">Size X: </label>
-        <input type="text" id="sizex">
+        <input type="text" id="sizex" value="256" />
         <br />
         <label for="sizey">Size Y: </label>
-        <input type="text" id="sizey">
+        <input type="text" id="sizey" value="256" />
         <br />
         <label for="depth">Depth: </label>
-        <input type="text" id="depth">
+        <input type="text" id="depth" value="100" />
         <br />
         <input type="submit" id="sequence" value="Start" />
         <br />
