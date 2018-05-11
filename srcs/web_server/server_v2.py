@@ -116,7 +116,17 @@ class Mandelbrot():
 
 
 ### Handler for .png image GET requests
-class ImagesHandler(tornado.web.RequestHandler):
+### Can be:
+###   get(self, "tile", tile_z, tile_x, tile_y), based on openlayers API,
+###     and (TODO) depth (max iterations) is currently hardcoded
+### Or:
+###   get(self, "img")
+###     with GET query argument ?data=[x,y,pix_x,pix_y,img_width,img_height,depth] as a JSON string
+###     where: x/y are float top,left mandelbrot coords
+###            pix_x/y are float pixel sizes in mandelbrot coords
+###            img_width/height are integers (pixels), and
+###            depth is the max iteration level as an integer
+class ImageHandler(tornado.web.RequestHandler):
   # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
   def set_default_headers(self):
     self.set_header("Access-Control-Allow-Origin", "*")
@@ -126,33 +136,81 @@ class ImagesHandler(tornado.web.RequestHandler):
     self.set_header("Content-Type", "image/png")
 
   # handles image request via get request 
-  def get(self, tile_z, tile_x, tile_y):
-    print "Get image %s, %s, %s" % (tile_z, tile_x, tile_y)
+  def get(self, type, tile_z=None, tile_x=None, tile_y=None):
+    # Determine coordinates of image from GET parameters
+    if type == "tile":
+      print "Get tile image %s, %s, %s" % (tile_z, tile_x, tile_y)
     
-    # map parameters to those expected by FPGA.
-    tile_size = 4.0 / 2.0 ** float(tile_z)  # size of tile x/y in Mandelbrot coords
-    x = -2.0 + float(tile_x) * tile_size
-    y = -2.0 + float(tile_y) * tile_size
-    pix_x = tile_size / 256.0
-    pix_y = pix_x
-    
-    if sock == None:
+      # map parameters to those expected by FPGA.
+      tile_size = 4.0 / 2.0 ** float(tile_z)  # size of tile x/y in Mandelbrot coords
+      x = -2.0 + float(tile_x) * tile_size
+      y = -2.0 + float(tile_y) * tile_size
+      pix_x = tile_size / 256.0
+      pix_y = pix_x
+      payload = [x, y, pix_x, pix_y, 256, 256, 1000]
+    elif type == "img":
+      payload_str = self.get_query_argument("data", None)
+      try:
+        payload = json.loads(payload_str)
+      except ValueError, e:
+        print "Invalid JSON in '?data=%s' URL parameter." % payload_str
+        # TODO: Return a bad image
+        return
+      #print(payload)
+    else:
+      print "Unrecognized type arg in ImageHandler.get(..)"
+
+    # Determine who should produce the image.
+    renderer = self.get_query_argument("renderer", None)
+
+    # Create image
+    if sock == None or renderer == "python":
+      print "Creating image in Python"
       # No socket. Generate image here, in Python.
       outputImg = io.BytesIO()
       self.img = Mandelbrot.getImage(256, 256, x, y, pix_x, pix_y)
       self.img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
       self.write(outputImg.getvalue())  #we get actual data write it to front end
+    #else if renderer == "c":
+    #  print "No support for C rendering, yet."
     else:
+      print "Creating image in FPGA"
       # Send image parameters over socket.
-      payload = [x, y, pix_x, pix_y]
-      print(payload)
-      result = handle_request(GET_IMAGE, payload)
-      self.write(base64.b64decode(result['data']))
+      result = handle_request(GET_IMAGE, payload, False)
+      self.write(result)
       
+
+### New Handler for Get requests
+### To replace GetRequestHandler and then hw case of get(..)
+class ObsoleteNewGetRequestHandler(tornado.web.RequestHandler):
+  # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
+  def set_default_headers(self):
+    self.set_header("Access-Control-Allow-Origin", "*")
+    self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+    self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+    self.set_header("Content-Type", "image/png")
+
+  # Get request handler
+  def get(self):
+    print "HERE"
+
+    # Acquiring all the parameters contained in the get request
+    header = self.get_query_argument("type", None)
+    payload = json.loads(self.get_query_argument("data", None))
+    url = self.get_query_argument("url", None)
+    print(header)
+    print(payload)
+
+    # The request is passed to a request handler which will process the information contained
+    # in the message and produces a result
+    #result = handle_request(header, payload, true)
+    #self.write(base64.b64decode(result['data']))
+    result = handle_request(header, payload, False)
+    self.write(result)
 
 
 ### Handler for Get requests
-class GetRequestHandler(tornado.web.RequestHandler):
+class ObsoleteGetRequestHandler(tornado.web.RequestHandler):
   # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
   def set_default_headers(self):
     self.set_header("Access-Control-Allow-Origin", "*")
@@ -196,8 +254,9 @@ def main():
     (r"/", MainHandler),
     (r"/(.*\.html)", HTMLHandler),
     (r'/ws', WSHandler),
-    (r'/hw', GetRequestHandler),
-    (r"/images/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImagesHandler),
+    #(r'/hw', GetRequestHandler),
+    (r'/(img)', ImageHandler),
+    (r"/(?P<type>tile)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
   ],
   template_path = os.path.join(os.path.dirname(__file__), "templates"),
   static_path = os.path.join(os.path.dirname(__file__), "static")
@@ -227,7 +286,7 @@ def get_socket():
     return sock
 
 ### This function dispatches the request based on the header information
-def handle_request(header, payload):
+def handle_request(header, payload, b64=True):
   if sock == None:
     response = INVALID_DATA
   elif header == WRITE_DATA:
@@ -235,13 +294,17 @@ def handle_request(header, payload):
   elif header == READ_DATA:
     response = read_data_handler(sock, False, header)
   elif header == GET_IMAGE:
-    response = get_image(sock, header, payload)
+    print(payload, b64)
+    response = get_image(sock, header, payload, b64)
   elif header:
     response = socket_send_command(sock, header)
   else:
     response = INVALID_DATA
 
-  return {'type' : header, 'data': response}
+  ret = {'type' : header, 'data': response}
+  if not b64:
+    ret = response
+  return ret
 
 if __name__ == "__main__":
   main()

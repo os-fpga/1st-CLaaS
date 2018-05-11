@@ -41,7 +41,8 @@ def socket_send_command(sock, message):
 ###   - sock    - socket channel with host
 ###   - header  - command to be sent to the host
 ###   - payload - data for the image calculation
-def get_image(sock, header, payload):
+###   - b64  - to be eliminated
+def get_image(sock, header, payload, b64=True):
   
   # Handshake with host application
   socket_send_command(sock, header)
@@ -51,7 +52,7 @@ def get_image(sock, header, payload):
   # Synchronization with the host
   sock.send(ACK.encode())
 
-  image = read_data_handler(sock, True)
+  image = read_data_handler(sock, True, None, b64)
   return image
 
 ### This function writes data into the FPGA memory
@@ -100,7 +101,9 @@ def write_data_handler(sock, isGetImage, payload, header=None):
 ###   - isGetImage  - boolean value to understand if the request is 
 ###                 - performed within the GetImage context
 ###   - header      - command to be sent to host (needed if isGetImage is False)
-def read_data_handler(sock, isGetImage, header=None):
+###   - b64         - encode a string in base64 and return base64(utf-8) string
+###                   (else return binary string) (default=True)
+def read_data_handler(sock, isGetImage, header=None, b64=True):
   if not isGetImage:
     ###      Handshake      ###
 
@@ -129,6 +132,14 @@ def read_data_handler(sock, isGetImage, header=None):
         CHUNK_SIZE if to_read > CHUNK_SIZE else to_read)
 
   #byte_array = struct.unpack("<%uB" % size, data)
-  encoded_bytes = base64.b64encode(data)
+  if b64:
+    data = base64.b64encode(data)
 
-  return encoded_bytes.decode("utf-8")
+    # Does the decode("utf-8") below do anything? Let's check.
+    tmp = data
+    if (data != tmp.decode("utf-8")):
+      print "FYI: UTF-8 check mismatched."
+
+    data = data.decode("utf-8")
+
+  return data

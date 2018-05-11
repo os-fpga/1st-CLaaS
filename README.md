@@ -171,7 +171,7 @@ the executable and the `.awsxclbin` image
 ```sh
 cd ~/work
 mkdir deploy
-cp ~/fpga-webserver/srcs/web_server/server_* .
+cp -r ~/fpga-webserver/srcs/web_server/* .
 cp ~/work/host_app/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host .
 cp ~/work/build/mandelbrot.awsxclbin .
 aws s3 mb s3://stevehoover-afi-bucket/deploy
@@ -191,16 +191,7 @@ Transfer the "deploy" files to your F1 machine.
 
 `ssh` into your F1 machine, as you did your Build Instance.
 
-Initialize as before:
-
-```sh
-cd
-git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR  
-cd $AWS_FPGA_REPO_DIR
-source ./sdaccel_setup.sh
-```
-
-And configure, as before using your access keys, and region: `us-east-1` and output: `json`.
+Configure, as before using your access keys, and region: `us-east-1` and output: `json`.
 
 ```sh
 aws configure
@@ -229,14 +220,7 @@ source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.
 ./host mandelbrot.awsxclbin mandelbrot
 ```
   
-`ssh` in from the second terminal (for the web server). Then,
-
-Setup:
-
-```sh
-cd $AWS_FPGA_REPO_DIR
-source ./sdaccel_setup.sh
-```
+`ssh` in from the second terminal (for the web server).
 
 The webserver is written in Python. You'll need the following prerequisites:
   - Python 2.7 or higher;
@@ -252,9 +236,11 @@ cd ~/deploy
 sudo python2.7 server_v2.py
 ```
 
-Now you can access client.html from any web browser using `http://<IP>:8888/client.html`.
+You can access client.html from any web browser using `http://<IP>:8888/client.html`.
 
 Current usage of client.html requires: host IP, click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start".
+
+You can run the Mandelbrot explorer from any web browser using `http://<IP>;8888/index.html`.
 
 
 # Makerchip and TL-Verilog
