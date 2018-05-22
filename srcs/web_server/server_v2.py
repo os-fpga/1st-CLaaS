@@ -107,8 +107,6 @@ class Mandelbrot():
   def getPixelDepth(x, y):
     x0 = x
     y0 = y
-    x = 0.0
-    y = 0.0
     iteration = 0
     max_iteration = 50  # TODO: PARAMETERIZE THIS
     while (x*x + y*y < 2*2 and iteration < max_iteration):

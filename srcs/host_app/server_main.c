@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string.h>
+#include <iostream>
 #include <math.h>
 #include <unistd.h>
 #include <assert.h>
@@ -31,12 +32,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#ifdef OPENCL
 #include <CL/opencl.h>
+#include "kernel.h"
+#endif
 
 #include "lodepng.h"
-#include "kernel.h"
 #include "protocol.h"
-#include "utility.h"
+#include "mandelbrot.h"
 
 #define STR_VALUE(arg) #arg
 #define GET_STRING(name) STR_VALUE(name)
@@ -52,7 +55,7 @@
 #define SOCKET "SOCKET"
 #define ACK_DATA "ACK_DATA"
 #define ACK_SIZE "ACK_SIZE"
-#define PORT 8080
+// #define PORT 8080
 
 #define CHUNK_SIZE 8192
 #define MSG_LENGTH 128
@@ -70,7 +73,7 @@ typedef struct array {
 
 /* 
 ** This function is needed to translate the message coming from 
-** the node js client into a number to be given in input to the
+** the socket into a number to be given in input to the
 ** switch construct to decode the command
 */
 int get_command(char * command);
@@ -84,7 +87,11 @@ void perror(const char * error);
 ** Utility function to handle the command decode coming from the socket
 ** connection with the python webserver
 */
+#ifdef OPENCL
 cl_data_types handle_command(int socket, int command, cl_data_types opencl, const char *xclbin, const char *kernel_name, int memory_size);
+#else
+char *image_buffer;
+#endif
 
 /*
 ** Utility function to handle the data coming from the socket and sent to the FPGA device
@@ -101,28 +108,42 @@ int handle_read_data(int socket, unsigned char data[], int data_size);
 */
 int handle_read_data(int socket, int data[], int data_size);
 
+#ifdef OPENCL
 cl_data_types handle_get_image(int socket, cl_data_types cl, color_transition_t * color_scheme);
+#else
+void handle_get_image(int socket);
+#endif
 
-int main(int argc, char const *argv[])
+#ifdef OPENCL
+void main_with_opencl(int argc, char const *argv[])
 {
-  // Socket relative variables
-  int server_fd, sock;
-  struct sockaddr_un address;
-  int opt = 1;
-  int addrlen = sizeof(address);
-
-  // OpenCL data type definition
-  cl_data_types cl;
-  cl.status = 1;
-
   if (argc != 3) {
     printf("Usage: %s xclbin kernel_name\n", argv[0]);
     return EXIT_FAILURE;
   }
 
+
+  // OpenCL data type definition
+  cl_data_types cl;
+  cl.status = 1;
+
   // Name of the .xclbin binary file and the name of the Kernel passed as arguments
   const char *xclbin = argv[1];
   const char *kernel_name = argv[2];
+}
+#endif
+
+void main_without_opencl(int argc, char const *argv[])
+{
+}
+
+int main(int argc, char const *argv[])
+{
+  // Socket-related variables
+  int server_fd, sock;
+  struct sockaddr_un address;
+  int opt = 1;
+  int addrlen = sizeof(address);
 
   /************************
   **                     **
@@ -153,20 +174,20 @@ int main(int argc, char const *argv[])
 
   int data_array[262144];
 
-  for (int i = 0; i < sizeof(data_array) / sizeof(int); i++)
+  for (unsigned int i = 0; i < sizeof(data_array) / sizeof(int); i++)
     data_array[i] = 0;
 
-  // Dynamic array on which data coming from the client will be saved
-  dynamic_array array_struct;
   char msg[MSG_LENGTH];
-  char response[MSG_LENGTH];
   
   int command;
   int err;
 
-  // color scheme
-  color_transition_t * color_scheme;
-  color_scheme = get_color_scheme();
+#ifdef OPENCL
+  main_with_opencl(argc, argv);
+#else
+  main_without_opencl(argc, argv);
+#endif
+  
 
   while (true) {
     if ((sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
@@ -179,9 +200,17 @@ int main(int argc, char const *argv[])
         printf("Error %d: Client disconnected\n", err);
         break;
       }
+      
+      cout << "Main loop\n";
 
-      // message translation in an integer
+      // Translate message to an integer
       command = get_command(msg);
+      
+      // Dynamic array on which data coming from the client will be saved
+      dynamic_array array_struct;
+      char response[MSG_LENGTH];
+      
+      cout << "Got message (" << command << ")\n";
       
       switch( command ) {
         case WRITE_DATA_N:
@@ -191,9 +220,14 @@ int main(int argc, char const *argv[])
           // Filling the data structure with data coming from the client with the use of the handle_write_data utility function
           array_struct = handle_write_data(sock);
 
+#ifdef OPENCL
           // Call the OpenCL utility function to send data to the FPGA
-          cl = write_kernel_data(cl, array_struct.data, array_struct.data_size * sizeof array_struct.data);
-          
+          cl = write_kernel_data(cl, array_struct.data, array_struct.data_size * sizeof array_struct.data);  // TODO: Should be sizeof double.
+          cerr << "Received WRITE_DATA_N\n";
+#else
+          cerr << "Received unexpected WRITE_DATA_N\n";
+          exit(1);
+#endif
           // Free the resources in the data structure
           free(array_struct.data);
           break;
@@ -201,8 +235,12 @@ int main(int argc, char const *argv[])
           sprintf(response, "INFO: Read Data");
           send(sock, response, strlen(response), MSG_NOSIGNAL);
           
+#ifdef OPENCL
           // Read data coming from the Kernel and save them in data_array
           cl = read_kernel_data(cl, data_array, sizeof(data_array));
+#else
+          // No data to read from FPGA.
+#endif
 
           // Call the utility function to send data over the socket
           handle_read_data(sock, data_array, sizeof(data_array));
@@ -210,10 +248,20 @@ int main(int argc, char const *argv[])
         case GET_IMAGE_N:
           sprintf(response, "INFO: Get Image");
           send(sock, response, strlen(response), MSG_NOSIGNAL);
+#ifdef OPENCL
           cl = handle_get_image(sock, cl, color_scheme);
+#else
+          handle_get_image(sock);
+#endif
           break;
         default:
+#ifdef OPENCL
           cl = handle_command(sock, command, cl, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+#else
+          char response[MSG_LENGTH];
+          sprintf(response, "INFO: Command [%i] is a no-op with no FPGA", command);
+          send(sock, response, strlen(response), MSG_NOSIGNAL);
+#endif
       }
     }
   }
@@ -221,11 +269,13 @@ int main(int argc, char const *argv[])
   return 0;
 }
 
+
 void perror(const char * error) {
   printf("%s\n", error);
   exit(EXIT_FAILURE);
 }
 
+#ifdef OPENCL
 cl_data_types handle_command(int socket, int command, cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
   char response[MSG_LENGTH];
 
@@ -280,6 +330,7 @@ cl_data_types handle_command(int socket, int command, cl_data_types cl, const ch
 
   return cl;
 }
+#endif
 
 /*
 ** Paramters
@@ -343,8 +394,9 @@ int handle_read_data(int socket, unsigned char data[], int data_size) {
 
   if(!recv(socket, ack, sizeof(ack), 0))
     printf("Ack receive error: Client disconnected\n");
-
-  if(result_send = send(socket, data, data_size, MSG_NOSIGNAL) < 0)
+  
+  result_send = send(socket, data, data_size, MSG_NOSIGNAL);
+  if(result_send < 0)
     perror("Send data failed");
 
   return 0;
@@ -367,19 +419,21 @@ int handle_read_data(int socket, int data[], int data_size) {
   if(!recv(socket, ack, sizeof(ack), 0))
     printf("Ack receive error: Client disconnected\n");
 
-  if(result_send = send(socket, data, data_size, MSG_NOSIGNAL) < 0)
+  result_send = send(socket, data, data_size, MSG_NOSIGNAL);
+  if(result_send < 0)
     perror("Send data failed");
 
   return 0;
 }
 
+#ifdef OPENCL
 /*
 ** Parameters
 ** socket: reference to the socket channel with the webserver
 ** cl: OpenCL datatypes
 ** color_scheme: color transition scheme in order to create the PNG image given the computation results
 */
-cl_data_types handle_get_image(int socket, cl_data_types cl, color_transition_t * color_scheme) {
+cl_data_types handle_get_image(int socket, cl_data_types cl) {
   dynamic_array array_struct;
 
   input_struct input;
@@ -398,9 +452,6 @@ cl_data_types handle_get_image(int socket, cl_data_types cl, color_transition_t 
   input.max_depth = (long) array_struct.data[6];
 
   cl = write_kernel_data(cl, &input, sizeof input);
-  
-  // Free the resources in the data structure
-  free(array_struct.data);
 
   // check timing
   struct timespec start, end;
@@ -419,40 +470,50 @@ cl_data_types handle_get_image(int socket, cl_data_types cl, color_transition_t 
   clock_gettime(CLOCK_MONOTONIC_RAW, &end);
   delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
 
-  printf("Execution time GET_IMAGE: %ld [us]\n", delta_us);
+  printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
 
-  unsigned char * image = (unsigned char *) malloc(input.width * input.height * 3);
-  
-  int j = 0;
-  unsigned int transition;
-  unsigned int group;
+  MandelbrotImage mb_img = new MandelbrotImage(array_data.struct, false).setDepthData(data_array).generateImage();
+  size_t png_size;
+  char *png;
+  png = mb_img.generatePNG(&png_size);
 
-  // Building the image pixels data
-  for(int i = 0; i < input.width * input.height * 3; i+=3) {
-    transition = extract_bits(data_array[j], 6, 0);
-    group = extract_bits(data_array[j], 26, 6);
-
-    for(int k = 0; k < 3; k++)
-      if(data_array[j] == input.max_depth)
-        image[i + k] = 0;
-      else
-        image[i + k] = color_scheme[group%8].color_transition[transition].color[k];
-
-    j++;
-  }
-
-  // Generating the png image
-  unsigned error = lodepng_encode24(&png, &pngsize, image, input.width, input.height);
-  if(error) perror("Error in generating png");
+  // Free the resources in the data structure
+  free(array_struct.data);
 
   // Call the utility function to send data over the socket
-  handle_read_data(socket, png, (int)pngsize);
+  handle_read_data(socket, png, (int)png_size);
 
   free(data_array);
-  free(image);
 
   return cl;
 }
+#else
+/*
+** Parameters
+** socket: reference to the socket channel with the webserver
+** color_scheme: color transition scheme in order to create the PNG image given the computation results
+*/
+void handle_get_image(int socket) {
+  cout << "Handling get image.\n";
+  dynamic_array array_struct;
+
+  array_struct = handle_write_data(socket);
+    
+  MandelbrotImage mb_img(array_struct.data, true, true);
+  mb_img.generatePixels();
+
+  size_t png_size;
+  unsigned char *png;
+  png = mb_img.generatePNG(&png_size);
+
+  // Free the resources in the data structure
+  free(array_struct.data);
+
+  // Call the utility function to send data over the socket
+  handle_read_data(socket, png, (int)png_size);
+}
+#endif
+
 
 /*
 ** This function generates a number corresponding to the command that receives in input as a string
