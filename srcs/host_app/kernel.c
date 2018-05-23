@@ -73,7 +73,7 @@ cl_data_types initialize_platform(){
     if (strcmp(cl_platform_vendor, "Xilinx") == 0) {
       printf("INFO: Selected platform %d from %s\n", iplat, cl_platform_vendor);
       cl.platform_id = platforms[iplat];
-      printf("INFO: Platform id = %d\n", cl.platform_id);
+      //printf("INFO: Platform id = %d\n", cl.platform_id);
       platform_found = 1;
     }
   }
@@ -221,7 +221,7 @@ cl_data_types read_kernel_data(cl_data_types cl, int h_a_output[], int data_size
 
   clFinish(cl.commands);
   
-  err |= clEnqueueReadBuffer(cl.commands, cl.d_a, CL_TRUE, 0, data_size, h_a_output, 0, NULL, &readevent);
+  err = clEnqueueReadBuffer(cl.commands, cl.d_a, CL_TRUE, 0, data_size, h_a_output, 0, NULL, &readevent);
 
   if (err != CL_SUCCESS)
     return perror("Error: Failed to read output array h_a_output!\nTest failed\n", cl);

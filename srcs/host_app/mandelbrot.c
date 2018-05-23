@@ -60,7 +60,7 @@ MandelbrotImage *MandelbrotImage::setColorScheme() {
   if (color_scheme != NULL) {
     cerr << "Error (mandelbrot.c): Color scheme set multiple times.\n";
   }
-  color_scheme = MandelbrotImage::default_color_scheme;
+  color_scheme = default_color_scheme;
   color_scheme_size = default_color_scheme_size;
   
   return this;
@@ -224,7 +224,6 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
   if (depth_array == NULL) {
     generateDepthArray();
   }
-  cout << "Entered MandelbrotImage::generatePixels.\n";
   if (pixel_data != NULL) {
     cerr << "Error (mandelbrot.c): Pixels generated multiple times.\n";
   }

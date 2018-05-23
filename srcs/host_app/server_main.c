@@ -109,41 +109,36 @@ int handle_read_data(int socket, unsigned char data[], int data_size);
 int handle_read_data(int socket, int data[], int data_size);
 
 #ifdef OPENCL
-cl_data_types handle_get_image(int socket, cl_data_types cl, color_transition_t * color_scheme);
+cl_data_types handle_get_image(int socket, cl_data_types cl);
 #else
 void handle_get_image(int socket);
 #endif
 
-#ifdef OPENCL
-void main_with_opencl(int argc, char const *argv[])
+
+int main(int argc, char const *argv[])
 {
+#ifdef OPENCL
+
   if (argc != 3) {
     printf("Usage: %s xclbin kernel_name\n", argv[0]);
     return EXIT_FAILURE;
   }
 
+  // Name of the .xclbin binary file and the name of the Kernel passed as arguments
+  const char *xclbin = argv[1];
+  const char *kernel_name = argv[2];
 
   // OpenCL data type definition
   cl_data_types cl;
   cl.status = 1;
-
-  // Name of the .xclbin binary file and the name of the Kernel passed as arguments
-  const char *xclbin = argv[1];
-  const char *kernel_name = argv[2];
-}
 #endif
 
-void main_without_opencl(int argc, char const *argv[])
-{
-}
-
-int main(int argc, char const *argv[])
-{
   // Socket-related variables
   int server_fd, sock;
   struct sockaddr_un address;
   int opt = 1;
   int addrlen = sizeof(address);
+
 
   /************************
   **                     **
@@ -181,13 +176,8 @@ int main(int argc, char const *argv[])
   
   int command;
   int err;
+  int exit_status;
 
-#ifdef OPENCL
-  main_with_opencl(argc, argv);
-#else
-  main_without_opencl(argc, argv);
-#endif
-  
 
   while (true) {
     if ((sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
@@ -249,7 +239,7 @@ int main(int argc, char const *argv[])
           sprintf(response, "INFO: Get Image");
           send(sock, response, strlen(response), MSG_NOSIGNAL);
 #ifdef OPENCL
-          cl = handle_get_image(sock, cl, color_scheme);
+          cl = handle_get_image(sock, cl);
 #else
           handle_get_image(sock);
 #endif
@@ -266,7 +256,7 @@ int main(int argc, char const *argv[])
     }
   }
 
-  return 0;
+  return exit_status;
 }
 
 
@@ -438,9 +428,6 @@ cl_data_types handle_get_image(int socket, cl_data_types cl) {
 
   input_struct input;
 
-  unsigned char * png;
-  size_t pngsize;
-
   array_struct = handle_write_data(socket);
 
   for(int i = 0; i < 4; i++)
@@ -472,10 +459,10 @@ cl_data_types handle_get_image(int socket, cl_data_types cl) {
 
   printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
 
-  MandelbrotImage mb_img = new MandelbrotImage(array_data.struct, false).setDepthData(data_array).generateImage();
   size_t png_size;
-  char *png;
-  png = mb_img.generatePNG(&png_size);
+  unsigned char *png;
+  MandelbrotImage mb_img(array_struct.data, false);
+  png = mb_img.generatePixels(data_array)->generatePNG(&png_size);
 
   // Free the resources in the data structure
   free(array_struct.data);
