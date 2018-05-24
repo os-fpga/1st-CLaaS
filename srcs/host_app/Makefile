@@ -4,14 +4,33 @@
 #                             #
 ###############################
 
+# Usage:
+#   Targets:
+#     host: the host application
+#     xclbin: the FPGA image
+#     build: the host application and FPGA image
+#     emulation: ?
+#     run_system: build and run
+#   Variables:
+#     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
+#     KERNEL: the name for the fpga model
+#   Eg:
+#     make host TARGET=hw_emu KERNEL=mandelbrot
+
 XOCC=xocc
 CC=g++
 
+#Software (no FPGA) flags
+SW_SRC=./server_main.c ./lodepng.c ./mandelbrot.c
+SW_HDRS=./mandelbrot.h
+SW_CFLAGS=-g -Wall -O3 -std=c++11
+SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64
+
 #Host code
-HOST_SRC=./server_main.c ./kernel.c ./lodepng.c ./utility.c
-HOST_HDRS=
-HOST_CFLAGS=-D FPGA_DEVICE -g -Wall -I${XILINX_SDX}/runtime/include/1_2 -O3 -Wall -D C_KERNEL -D SDX_PLATFORM -D KERNEL=${KERNEL_NAME}
-HOST_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64 -lxilinxopencl
+HOST_SRC=$(SW_SRC) ./kernel.c
+HOST_HDRS=$(SW_HDRS)
+HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_SDX}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM -D KERNEL=${KERNEL_NAME}
+HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Name of host executable
 HOST_EXE=host
@@ -59,21 +78,30 @@ $(info system build)
 TARGET=hw
 REPORT=--report system
 else
-$(info no TARGET selected)
+$(info no TARGET specified, SW assumed)
+TARGET=sw
 endif
 
-#Translation of Target Device name with underscores
+#Assign dest_dir as <TARGET>/<TARGET_DEVICE>, or just <TARGET> for sw build (w/ no target device).
+#Translate Target Device name with underscores
 PERIOD:= :
 UNDERSCORE:= _
 dest_dir=$(TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
+ifeq ($(TARGET), sw)
+dest_dir=$(TARGET)
+endif
 
 ifndef XILINX_SDX
+ifneq ($(TARGET), sw)
 $(error XILINX_SDX is not set. Please source the SDx settings64.{csh,sh} first)
+endif
 endif
 
 clean:
 	rm -rf .Xil emconfig.json 
 
+clean_sw: clean
+	rm -rf sw
 clean_sw_emu: clean
 	rm -rf sw_emu
 clean_hw_emu: clean
@@ -81,7 +109,7 @@ clean_hw_emu: clean
 clean_hw: clean
 	rm -rf hw
 
-cleanall: clean_sw_emu clean_hw_emu clean_hw
+cleanall: clean_sw clean_sw_emu clean_hw_emu clean_hw
 	rm -rf _xocc_* xcl_design_wrapper_*
 
 check_TARGET:
@@ -89,9 +117,15 @@ ifeq (${TARGET}, none)
 	$(error Target can not be set to none)
 endif
 
+ifeq ($(TARGET), sw)
+host:  check_TARGET $(SW_SRC) $(SW_HDRS)
+	mkdir -p $(dest_dir)
+	$(CC) $(SW_SRC) $(SW_HDRS) $(SW_CFLAGS) $(SW_LFLAGS) -o $(dest_dir)/$(HOST_EXE)
+else
 host:  check_TARGET $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(dest_dir)
 	$(CC) $(HOST_SRC) $(HOST_HDRS) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(dest_dir)/$(HOST_EXE)
+endif
 
 xo:	check_TARGET
 	mkdir -p $(dest_dir)
@@ -105,7 +139,13 @@ emulation:  host xclbin
 	export XCL_EMULATION_MODE=$(TARGET) && ./$(dest_dir)/$(HOST_EXE) $(dest_dir)/$(KERNEL_EXE).xclbin
 	$(info Remeber to export XCL_EMULATION_MODE=$(TARGET) and run emcondigutil for emulation purposes)
 
+ifeq ($(TARGET), sw)
+build:  host
+run_system:  build
+	./$(dest_dir)/$(HOST_EXE)
+else
 build:  host xclbin
-
 run_system:  build
 	./$(dest_dir)/$(HOST_EXE) $(dest_dir)/$(KERNEL_EXE)
+endif
+

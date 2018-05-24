@@ -72,14 +72,14 @@
               // when the scalefactor reaches a threshold the process terminates
               // for now the hardware can generate stable images with a scale factor
               // not higher than 1000000
-              if(scalefactor < 1000000){
+              if(scalefactor < 100000){
                 t0 = performance.now();
 
                 send_data(ws, true);
               }
             } else if(msg.type == "READ_DATA"){
               $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data);
-              if(scalefactor < 1000000)
+              if(scalefactor < 100000)
                 send_data(ws, false);
             }
 
@@ -213,7 +213,7 @@
             var json_obj = { "type": "READ_DATA", "payload": null };
             ws.send(JSON.stringify(json_obj));
           }
-          scalefactor *= 1.05;
+          scalefactor *= 1.0 / 0.92;
       }
 
       function get_inputs() {
@@ -260,13 +260,13 @@
     <div id="send_data">
         </br></br>
         <label for="xcoord">X coordinates: </label>
-        <input type="text" id="xcoord" value="0.0" />
+        <input type="text" id="xcoord" value="0.2961" />
 
         <label for="ycoord">Y coordinates: </label>
-        <input type="text" id="ycoord" value="0.0" /><br />
+        <input type="text" id="ycoord" value="0.5777" /><br />
 
         <label for="scalefactor">Scale factor</label>
-        <input type="text" id="scalefactor" value="1.0" /><br />
+        <input type="text" id="scalefactor" value="200000.0" /><br />
 
         <label for="sizex">Size X: </label>
         <input type="text" id="sizex" value="256" />
@@ -275,7 +275,7 @@
         <input type="text" id="sizey" value="256" />
         <br />
         <label for="depth">Depth: </label>
-        <input type="text" id="depth" value="100" />
+        <input type="text" id="depth" value="400" />
         <br />
         <input type="submit" id="sequence" value="Start" />
         <br />
