@@ -65,6 +65,7 @@ using namespace lodepng;
 
 /*
 ** Data structure to handle a array of doubles and its size to have a dynamic behaviour
+** TODO: This is messy. At least make it an object with destructor.
 */
 typedef struct array {
   double * data;
@@ -109,9 +110,7 @@ int handle_read_data(int socket, unsigned char data[], int data_size);
 int handle_read_data(int socket, int data[], int data_size);
 
 #ifdef OPENCL
-cl_data_types handle_get_image(int socket, cl_data_types cl);
-#else
-void handle_get_image(int socket);
+cl_data_types handle_get_image(int socket, int ** data_array_p, cl_data_types cl);
 #endif
 
 
@@ -167,7 +166,7 @@ int main(int argc, char const *argv[])
   if (listen(server_fd, 3) < 0)
     perror("Listen failed");
 
-  int data_array[262144];
+  int data_array[262144];  // TODO: YIKES!!!
 
   for (unsigned int i = 0; i < sizeof(data_array) / sizeof(int); i++)
     data_array[i] = 0;
@@ -204,6 +203,7 @@ int main(int argc, char const *argv[])
       
       switch( command ) {
         case WRITE_DATA_N:
+	  cout << "INFO: WRITE DATA (isn't this obsolete?)" << endl;
           sprintf(response, "INFO: Write Data");
           send(sock, response, strlen(response), MSG_NOSIGNAL);
 
@@ -222,27 +222,54 @@ int main(int argc, char const *argv[])
           free(array_struct.data);
           break;
         case READ_DATA_N:
+	  cout << "INFO: READ DATA (isn't this obsolete?)" << endl;
           sprintf(response, "INFO: Read Data");
           send(sock, response, strlen(response), MSG_NOSIGNAL);
           
 #ifdef OPENCL
           // Read data coming from the Kernel and save them in data_array
           cl = read_kernel_data(cl, data_array, sizeof(data_array));
-#else
-          // No data to read from FPGA.
 #endif
 
           // Call the utility function to send data over the socket
           handle_read_data(sock, data_array, sizeof(data_array));
           break;
         case GET_IMAGE_N:
-          sprintf(response, "INFO: Get Image");
-          send(sock, response, strlen(response), MSG_NOSIGNAL);
+	  {  // Provides scope for local variables.
+	    sprintf(response, "INFO: Get Image");
+	    send(sock, response, strlen(response), MSG_NOSIGNAL);
+	  
+	    dynamic_array array_struct;
+
+	    array_struct = handle_write_data(sock);
+	    bool force_c = false;
+	    if (array_struct.data[6] < 0) {
+	      // Depth argument is negative. This is our indication that we must render in C++. TODO: Ick!
+	      array_struct.data[6] = - array_struct.data[6];
+	      force_c = true;
+	    }
+    
+	    MandelbrotImage mb_img(array_struct.data);  // , true, true for 3d darkened in distance.
+	    // Free the resources in the data structure
+	    free(array_struct.data);
+
+	    int * depth_data = NULL;
+	    if (! force_c) {
 #ifdef OPENCL
-          cl = handle_get_image(sock, cl);
-#else
-          handle_get_image(sock);
+	      // Populate depth_data from FPGA.
+	      cl = handle_get_image(sock, &depth_data, cl);
 #endif
+	    }
+  
+	    mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL, or NULL to generate in C++.
+  
+	    size_t png_size;
+	    unsigned char *png;
+	    png = mb_img.generatePNG(&png_size);
+
+	    // Call the utility function to send data over the socket
+	    handle_read_data(sock, png, (int)png_size);
+	  }
           break;
         default:
 #ifdef OPENCL
@@ -423,12 +450,9 @@ int handle_read_data(int socket, int data[], int data_size) {
 ** cl: OpenCL datatypes
 ** color_scheme: color transition scheme in order to create the PNG image given the computation results
 */
-cl_data_types handle_get_image(int socket, cl_data_types cl) {
-  dynamic_array array_struct;
+cl_data_types handle_get_image(int socket, int ** data_array_p, cl_data_types cl) {
 
   input_struct input;
-
-  array_struct = handle_write_data(socket);
 
   for(int i = 0; i < 4; i++)
     input.coordinates[i] = array_struct.data[i];
@@ -449,55 +473,16 @@ cl_data_types handle_get_image(int socket, cl_data_types cl) {
 
   cl = start_kernel(cl);
 
-  int * data_array = (int *) malloc(input.width * input.height * sizeof(int));
+  *data_array_p = (int *) malloc(input.width * input.height * sizeof(int));
 
-  cl = read_kernel_data(cl, data_array, input.width * input.height * sizeof(int));
+  cl = read_kernel_data(cl, *data_array_p, input.width * input.height * sizeof(int));
 
   // getting end time
   clock_gettime(CLOCK_MONOTONIC_RAW, &end);
   delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
 
   printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
-
-  size_t png_size;
-  unsigned char *png;
-  MandelbrotImage mb_img(array_struct.data, false);
-  png = mb_img.generatePixels(data_array)->generatePNG(&png_size);
-
-  // Free the resources in the data structure
-  free(array_struct.data);
-
-  // Call the utility function to send data over the socket
-  handle_read_data(socket, png, (int)png_size);
-
-  free(data_array);
-
   return cl;
-}
-#else
-/*
-** Parameters
-** socket: reference to the socket channel with the webserver
-** color_scheme: color transition scheme in order to create the PNG image given the computation results
-*/
-void handle_get_image(int socket) {
-  cout << "Handling get image.\n";
-  dynamic_array array_struct;
-
-  array_struct = handle_write_data(socket);
-    
-  MandelbrotImage mb_img(array_struct.data, true, true);
-  mb_img.generatePixels();
-
-  size_t png_size;
-  unsigned char *png;
-  png = mb_img.generatePNG(&png_size);
-
-  // Free the resources in the data structure
-  free(array_struct.data);
-
-  // Call the utility function to send data over the socket
-  handle_read_data(socket, png, (int)png_size);
 }
 #endif
 

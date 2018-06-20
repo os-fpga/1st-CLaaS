@@ -208,10 +208,10 @@ chmod +x ./host  # Seems to lose execute permission along the way.
 
 ## Web Server usage
 
-Now, you can run the server. You need access to two different terminals, one to run the server and one to run the host application. (Can't we run them in the background??)
+Now, you can run the server and the host application. We'll do so from two different terminals.
 
-Run the host application and the listening socket:
-terminal run the following commands:
+Run the host application (with a listening socket):
+Run:
 
 ```sh
 cd /home/centos/deploy
@@ -233,7 +233,7 @@ Run the WebServer:
 
 ```sh
 cd ~/deploy
-sudo python2.7 server_v2.py
+sudo python2.7 server.py
 ```
 
 You can access client.html from any web browser using `http://<IP>:8888/client.html`.
@@ -248,9 +248,18 @@ You can run the Mandelbrot explorer from any web browser using `http://<IP>;8888
 The Mandelbrot set accelerator has been developed in the [Makerchip](https://makerchip.com/) IDE using the TL-Verilog language extension.
 After the kernel has been designed in Makerchip we retrieved the Verilog files by clicking on "E" -> "Open Results" in the Editor tab. From the new browser tab the files that host the Verilog code are called "top.sv" and "top_gen.sv".
 The content of these files has to be copied and pasted inside of the file "mandelbrot_example_adder.sv" found in the "mandelbrot_hw/imports" folder.
+
+
+# X11 Forwarding
+
+It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick.
+
+
 # To Do
 
 Make instructions more explicit, as a cookbook recipe, and provide information and pointers about the more general use of the commands. After this provide other helpful general information about working with the design. New users should walk through the cookbook as quickly as possible, then learn more about what they have done.
+  - Incorporate web_server/launch command into instructions.
+  - First launch just web server, then web server + host app, then web server + host app + FPGA.
   - Choose specific file/folder names, and stick with them.
   - Create small scripts to further automate. Scripts should be useful in production use, not just for cookbook, otherwise we're hiding useful information.
   - Probably want to use workspace folders inside this with .gitignored contents, so this repo can provide work structure.
@@ -258,6 +267,15 @@ Make instructions more explicit, as a cookbook recipe, and provide information a
   - Automate export from Makerchip by providing a script that uses `curl` to access result files via `http://makerchip.com/compile/<compile-id>/results/<filename>`.
 
 
-# X11 Forwarding
+# Proposed Changes
 
-It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick.
+## Directory Structure
+
+  - framework: The generic infrastructure for hardware-accelerated web applications.
+  - apps: Hardware-accelerated web applications utilizing the framework.
+    - mandelbrot: Mandelbrot application.
+      - client
+        - templates
+      - server
+        - ...
+    
