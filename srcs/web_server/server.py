@@ -21,6 +21,8 @@ import tornado.ioloop
 import tornado.web
 import socket
 import sys
+import time
+import subprocess
 import json
 import base64
 #import numpy
@@ -36,9 +38,6 @@ PORT          = 8888
 WRITE_DATA    = "WRITE_DATA"
 READ_DATA     = "READ_DATA"
 GET_IMAGE     = "GET_IMAGE"
-
-# Error Messages
-INVALID_DATA  = "The client sent invalid data"
 
 sock = None
 
@@ -131,7 +130,7 @@ class Mandelbrot():
 ###     where: x/y are float top,left mandelbrot coords
 ###            pix_x/y are float pixel sizes in mandelbrot coords
 ###            img_width/height are integers (pixels), and
-###            depth is the max iteration level as an integer
+###            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
 class ImageHandler(tornado.web.RequestHandler):
   # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
   def set_default_headers(self):
@@ -142,10 +141,17 @@ class ImageHandler(tornado.web.RequestHandler):
     self.set_header("Content-Type", "image/png")
 
   # handles image request via get request 
-  def get(self, type, tile_z=None, tile_x=None, tile_y=None):
+  def get(self, type, depth=u'1000', tile_z=None, tile_x=None, tile_y=None):
+
+    # Determine who should produce the image.
+    # For tiles, we use type = "python_type" to force Python, or a negative depth to force C++
+    # (because this is what the C++ code looks for); otherwise the GET query arg "renderer"
+    # can be specified to force the renderer.
+    renderer = "python" if (type == "python_tile") else "c" if (int(depth) < 0) else self.get_query_argument("renderer", None)
+    print "Renderer: %s" % renderer
     # Determine image parameters from GET parameters
-    if type == "tile":
-      print "Get tile image %s, %s, %s" % (tile_z, tile_x, tile_y)
+    if type == "tile" or type == "python_tile":
+      print "Get tile image z:%s, y:%s, x:%s, depth:%s" % (tile_z, tile_x, tile_y, depth)
     
       # map parameters to those expected by FPGA, producing 'payload'.
       tile_size = 4.0 / 2.0 ** float(tile_z)  # size of tile x/y in Mandelbrot coords
@@ -153,7 +159,8 @@ class ImageHandler(tornado.web.RequestHandler):
       y = -2.0 + float(tile_y) * tile_size
       pix_x = tile_size / 256.0
       pix_y = pix_x
-      payload = [x, y, pix_x, pix_y, 256, 256, 1000]
+      payload = [x, y, pix_x, pix_y, 256, 256, int(depth)]
+      print "Payload from web server: %s" % payload
     elif type == "img":
       payload_str = self.get_query_argument("data", None)
       try:
@@ -166,43 +173,55 @@ class ImageHandler(tornado.web.RequestHandler):
     else:
       print "Unrecognized type arg in ImageHandler.get(..)"
 
-    # Determine who should produce the image.
-    renderer = self.get_query_argument("renderer", None)
+    img_data = get_img(payload, renderer)
 
-    # Create image
-    if sock == None or renderer == "python":
-      print "Creating image in Python"
-      # No socket. Generate image here, in Python.
-      outputImg = io.BytesIO()
-      img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3])
-      img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
-      img_data = outputImg.getvalue()
-    #else if renderer == "c":
-    #  print "No support for C rendering, yet."
-    else:
-      print "Creating image in FPGA"
-      # Send image parameters over socket.
-      img_data = handle_request(GET_IMAGE, payload, False)
     self.write(img_data)
+
+
+"""
+Get an image from the appropriate renderer (as requested/available).
+"""
+def get_img(payload, renderer):
+  # Create image
+  if sock == None or renderer == "python":
+    # No socket. Generate image here, in Python.
+    outputImg = io.BytesIO()
+    img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3])
+    img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
+    img_data = outputImg.getvalue()
+  else:
+    # Send image parameters over socket.
+    img_data = handle_request(GET_IMAGE, payload, False)
+  return img_data
 
 
 """
 MAIN APPLICATION
 """
 def main():
+  initSocket()
+  startWebServer()  
 
+
+def initSocket():
   # Opening socket with host
   global sock
 
   sock = get_socket()
 
+  # Setting IP
+  myIP = socket.gethostbyname(socket.gethostname())
+  print('*** Websocket Server Started at %s***' % myIP)
+
+
+def startWebServer():
   application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/(.*\.html)", HTMLHandler),
     (r'/ws', WSHandler),
     #(r'/hw', GetRequestHandler),
     (r'/(img)', ImageHandler),
-    (r"/(?P<type>tile)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
+    (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
   ],
   template_path = os.path.join(os.path.dirname(__file__), "templates"),
   static_path = os.path.join(os.path.dirname(__file__), "static")
@@ -212,12 +231,9 @@ def main():
   http_server = tornado.httpserver.HTTPServer(application)
   http_server.listen(PORT)
 
-  # Setting IP
-  myIP = socket.gethostbyname(socket.gethostname())
-  print('*** Websocket Server Started at %s***' % myIP)
-  
   # Starting webserver
   tornado.ioloop.IOLoop.instance().start()
+
 
 ### Function that creates a socket communication with the Host application
 def get_socket():
@@ -232,20 +248,24 @@ def get_socket():
     return sock
 
 ### This function dispatches the request based on the header information
+# TODO: Cleanup the API. These commands and handshakes aren't necessary. Just send parameters and return image.
 def handle_request(header, payload, b64=True):
   if sock == None:
-    response = INVALID_DATA
+    response = "No socket"
   elif header == WRITE_DATA:
+    print "handle_request(WRITE_DATA)"
     response = write_data_handler(sock, False, header, payload)
   elif header == READ_DATA:
+    print "handle_request(WRITE_DATA)"
     response = read_data_handler(sock, False, header)
   elif header == GET_IMAGE:
     print(payload, b64)
     response = get_image(sock, header, payload, b64)
   elif header:
+    print "handle_request(%s)" % header
     response = socket_send_command(sock, header)
   else:
-    response = INVALID_DATA
+    response = "The client sent invalid command (%s)" % header
 
   ret = {'type' : header, 'data': response}
   if not b64:

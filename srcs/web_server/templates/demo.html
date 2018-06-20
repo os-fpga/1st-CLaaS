@@ -38,24 +38,55 @@
     <input type="text" id="uri" value="/ws" class="form-control" placeholder="url" />
     <br />
     <input type="submit" id="open" class="btn btn-primary" value="open" />
+    <fieldset>
+      <legend>Renderer</legend>
+
+      <div>
+        <input type="radio" id="python" name="renderer" checked />
+        <label for="python">Python</label>
+      </div>
+
+      <div>
+        <input type="radio" id="cpp" name="renderer" />
+        <label for="cpp">C++</label>
+      </div>
+
+      <div>
+        <input type="radio" id="fpga" name="renderer" />
+        <label for="fpga">FPGA</label>
+      </div>
+
+    </fieldset>
   </div>
   <div id="myImage" class="img-rounded"></div>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      // populate host field
+      $("#host").attr("value", location.hostname);
+    })
+  </script>
   <script type="text/javascript">
     var host;
     var port;
     var uri;
     $("#open").click(function (evt) {
+      // Empty the target div to remove any prior Map.
+      $("#myImage").html("");
       host = $("#host").val();
       port = $("#port").val();
       uri = $("#uri").val();
-      var urlsource= "http://" + host + ":" + port + "/tile";
+      var depth = 1000;
+      var tile = $("#cpp").prop("checked")    ? "/tile/-" :
+                 $("#python").prop("checked") ? "/python_tile/" :
+                                                "/tile/";
+      var urlsource= "http://" + host + ":" + port + tile + depth;
       console.log("url:"+urlsource);
       var map = new ol.Map({
         target: 'myImage',
         layers: [
           new ol.layer.Tile({
             source: new ol.source.XYZ({
-              url: urlsource+'/{z}/{x}/{y}'//formate the url based on your requirement.
+              url: urlsource+'/{z}/{x}/{y}'
               })
             })
           ],

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# This script starts the host application build for sw or hw.
+
+# Usage:
+#   launch hw
+#   launch sw
+
+if [[ "$1" = "" ]];
+then
+    echo "Usage: launch [sw/hw]"
+    exit 1
+fi
+
+
+# Launch host app.
+if [[ "$1" = "hw" ]];
+then
+    sudo "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; ../host_app/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host ../../mandelbrot/mandelbrot.awsxclbin mandelbrot" &
+else
+    ../host_app/$1/host &
+fi
+HOST_PID=$!
+
+python server.py &
+SERVER_PID=$!
+
+function finish {
+    # Kill child processes
+    kill $HOST_PID
+    kill $SERVER_PID
+    echo "Killed host app and web server"
+}
+
+trap finish EXIT
+
+wait
+

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# This script starts the host application build for sw or hw.
+
+# Usage:
+#   flythrough hw
+#   flythrough sw
+
+if [[ "$1" = "" ]];
+then
+    echo "Usage: flythrough [sw/hw]"
+    exit 1
+fi
+
+
+../host_app/$1/host &
+HOST_PID=$!
+python flythrough.py &
+SERVER_PID=$!
+
+function finish {
+    # Kill child processes
+    kill $HOST_PID
+    kill $SERVER_PID
+    echo "Killed host app and flythrough app"
+}
+
+trap finish EXIT
+
+wait
+

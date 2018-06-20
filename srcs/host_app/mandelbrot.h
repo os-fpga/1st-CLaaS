@@ -103,7 +103,15 @@ private:
   } color_transition_t;
   */
 
-  static const int RESOLUTION_FACTOR_3D = 2;  // Multiply h/w by this factor (non-integer would require care).
+  // 3-D parameters
+  static const int RESOLUTION_FACTOR_3D;  // Multiply hight/width by this factor for 3D to pad edges (non-integer would require care).
+  static const coord_t SCALE_PER_DEPTH;  // The scale of the 3D object, grows by 1/SCALE_PER_DEPTH with each depth of zoom. Empirical.
+                                         // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
+                                         // increments, so the controlling software should be in sync with this factor.
+  static const coord_t NATURAL_DEPTH;  // Depth from eye at which the 3D scaling factor == the 2D scaling factor.
+  static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when 2D-scaled to fit (height).
+  //
+
   static bool static_init_done;
   static int default_color_scheme_size;  // Size of default_color_scheme.
   static color_t *default_color_scheme;  // The default color scheme.
@@ -113,7 +121,7 @@ private:
   timespec timer_start_time;
 
 
-  color_t * color_scheme;  // The color scheme.
+  color_t * color_scheme;  // The color scheme (not freed)
   int color_scheme_size;   // The number of colors in color_scheme.
   int width, height;  // Image size in pixels.
   coord_t x, y;  // Position of the upper-left corner of the image.
@@ -125,7 +133,8 @@ private:
   bool darken;
   int start_darkening_depth;
   int half_faded_depth;
-  
+
+  // Storage structures. These are freed upon destruction.
   int *depth_array;  // Image array of depth integers.
   unsigned char *pixel_data;  // Pixel data for the set, as int [component(R,G,B)][width][height].
   unsigned char *png;  // The PNG image.
