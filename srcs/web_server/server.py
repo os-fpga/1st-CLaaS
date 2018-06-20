@@ -142,9 +142,16 @@ class ImageHandler(tornado.web.RequestHandler):
 
   # handles image request via get request 
   def get(self, type, depth=u'1000', tile_z=None, tile_x=None, tile_y=None):
+
+    # Determine who should produce the image.
+    # For tiles, we use type = "python_type" to force Python, or a negative depth to force C++
+    # (because this is what the C++ code looks for); otherwise the GET query arg "renderer"
+    # can be specified to force the renderer.
+    renderer = "python" if (type == "python_tile") else "c" if (int(depth) < 0) else self.get_query_argument("renderer", None)
+    print "Renderer: %s" % renderer
     # Determine image parameters from GET parameters
-    if type == "tile":
-      print "Get tile image %s, %s, %s, %s" % (depth, tile_z, tile_x, tile_y)
+    if type == "tile" or type == "python_tile":
+      print "Get tile image z:%s, y:%s, x:%s, depth:%s" % (tile_z, tile_x, tile_y, depth)
     
       # map parameters to those expected by FPGA, producing 'payload'.
       tile_size = 4.0 / 2.0 ** float(tile_z)  # size of tile x/y in Mandelbrot coords
@@ -153,6 +160,7 @@ class ImageHandler(tornado.web.RequestHandler):
       pix_x = tile_size / 256.0
       pix_y = pix_x
       payload = [x, y, pix_x, pix_y, 256, 256, int(depth)]
+      print "Payload from web server: %s" % payload
     elif type == "img":
       payload_str = self.get_query_argument("data", None)
       try:
@@ -165,9 +173,6 @@ class ImageHandler(tornado.web.RequestHandler):
     else:
       print "Unrecognized type arg in ImageHandler.get(..)"
 
-    # Determine who should produce the image.
-    renderer = self.get_query_argument("renderer", None)
-
     img_data = get_img(payload, renderer)
 
     self.write(img_data)
@@ -179,16 +184,12 @@ Get an image from the appropriate renderer (as requested/available).
 def get_img(payload, renderer):
   # Create image
   if sock == None or renderer == "python":
-    print "Creating image in Python"
     # No socket. Generate image here, in Python.
     outputImg = io.BytesIO()
     img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3])
     img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
     img_data = outputImg.getvalue()
-  #else if renderer == "c":
-  #  print "No support for C rendering, yet."
   else:
-    print "Creating image in FPGA"
     # Send image parameters over socket.
     img_data = handle_request(GET_IMAGE, payload, False)
   return img_data
@@ -220,7 +221,7 @@ def startWebServer():
     (r'/ws', WSHandler),
     #(r'/hw', GetRequestHandler),
     (r'/(img)', ImageHandler),
-    (r"/(?P<type>tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
+    (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
   ],
   template_path = os.path.join(os.path.dirname(__file__), "templates"),
   static_path = os.path.join(os.path.dirname(__file__), "static")

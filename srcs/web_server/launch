@@ -13,8 +13,15 @@ then
 fi
 
 
-../host_app/$1/host &
+# Launch host app.
+if [[ "$1" = "hw" ]];
+then
+    sudo "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; ../host_app/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host ../../mandelbrot/mandelbrot.awsxclbin mandelbrot" &
+else
+    ../host_app/$1/host &
+fi
 HOST_PID=$!
+
 python server.py &
 SERVER_PID=$!
 

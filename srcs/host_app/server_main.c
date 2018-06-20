@@ -110,7 +110,7 @@ int handle_read_data(int socket, unsigned char data[], int data_size);
 int handle_read_data(int socket, int data[], int data_size);
 
 #ifdef OPENCL
-cl_data_types handle_get_image(int socket, int ** data_array_p, cl_data_types cl);
+cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array array_struct, cl_data_types cl);
 #endif
 
 
@@ -250,16 +250,17 @@ int main(int argc, char const *argv[])
 	    }
     
 	    MandelbrotImage mb_img(array_struct.data);  // , true, true for 3d darkened in distance.
-	    // Free the resources in the data structure
-	    free(array_struct.data);
 
 	    int * depth_data = NULL;
 	    if (! force_c) {
 #ifdef OPENCL
 	      // Populate depth_data from FPGA.
-	      cl = handle_get_image(sock, &depth_data, cl);
+	      cl = handle_get_image(sock, &depth_data, array_struct, cl);
 #endif
 	    }
+
+	    // Free memory for array_struct.
+	    free(array_struct.data);
   
 	    mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL, or NULL to generate in C++.
   
@@ -450,12 +451,13 @@ int handle_read_data(int socket, int data[], int data_size) {
 ** cl: OpenCL datatypes
 ** color_scheme: color transition scheme in order to create the PNG image given the computation results
 */
-cl_data_types handle_get_image(int socket, int ** data_array_p, cl_data_types cl) {
+cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array array_struct, cl_data_types cl) {
 
   input_struct input;
 
-  for(int i = 0; i < 4; i++)
+  for(int i = 0; i < 4; i++) {
     input.coordinates[i] = array_struct.data[i];
+  }
 
   input.width = (long) array_struct.data[4];
   input.height = (long) array_struct.data[5];
