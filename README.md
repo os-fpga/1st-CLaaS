@@ -178,6 +178,7 @@ git clone https://github.com/alessandrocomodi/fpga-webserver
 git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR  
 cd $AWS_FPGA_REPO_DIR
 source ./sdaccel_setup.sh
+cd
 ```
 
 OLD INSTRUCTIONS:
@@ -197,7 +198,7 @@ NEW INSTRUCTIONS to try:
 
 ```sh
 cd ~/fpga-webserver/apps/mandelbrot/build
-make build TARGET=hw KERNEL=mandelbrot -j8 ../out/out.log &
+make build TARGET=hw KERNEL=mandelbrot -j8 > ../out/out.log &
 ```
 
 Once the build process is complete you'll have a host application and an Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
