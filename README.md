@@ -217,7 +217,7 @@ aws configure
 S3 Bucket creation:
 
 ```sh
-aws s3 mb s3://<bucket-name> --region us-east-1  # Create an S3 bucket (choose a unique bucket name)
+aws s3 mb s3://<bucket-name>                     # Create an S3 bucket (choose a unique bucket name)
 aws s3 mb s3://<bucket-name>/<dcp-folder-name>   # Create folder for your tarball files
 touch FILES_GO_HERE.txt                          # Create a temp file
 aws s3 cp FILES_GO_HERE.txt s3://<bucket-name>/<dcp-folder-name>/  # Which creates the folder on S3

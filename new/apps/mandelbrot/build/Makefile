@@ -15,13 +15,13 @@
 #     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
 #     KERNEL: the name for the fpga model
 #     PREBUILT=[true] or default to false. True to use the prebuilt files in the repository, rather than building.
-#     S3_BUCKET=bucket_name (defaullt="afi") provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
+#     S3_BUCKET=bucket_name (defaullt="<users>-<kernel>-afi") provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
 #     S3_LOGS_KEY=folder (default="afi_logs") the S3 bucket folder to use for logs for the AFI build.
 #     S3_DCP_KEY=folder (default="afi_dcp_key") the S3 bucket folder to use for logs for the AFI build.
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
-S3_BUCKET=afi
+S3_BUCKET=fpgaserver
 S3_LOGS_KEY=afi_logs
 S3_DCP_KEY=afi_dcp_key
 
@@ -148,11 +148,11 @@ $(DEST_DIR)/$(KERNEL_EXE).xo:
 	mkdir -p $(DEST_DIR)
 	$(XOCC) --platform $(PLATFORM) --target $(TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
 
-$(DEST_DIR)/$(KERNEL_EXE).xclbin:
+$(DEST_DIR)/$(KERNEL_EXE).xclbin: $(DEST_DIR)/$(KERNEL_EXE).xo
 	$(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(DEST_DIR)/$(KERNEL_EXE).xo $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xclbin
 
 $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
-	$SDACCEL_DIR/tools/create_sdaccel_afi.sh -xclbin=$(DEST_DIR)/$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
+	$(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(DEST_DIR)/$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
   # Not sure why this script uses S3. Let's copy to the output direcgtory.
 	# First wait for completion.
 	# ...
