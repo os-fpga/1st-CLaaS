@@ -15,13 +15,13 @@
 #     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
 #     KERNEL: the name for the fpga model
 #     PREBUILT=[true] or default to false. True to use the prebuilt files in the repository, rather than building.
-#     S3_BUCKET=bucket_name (defaullt="afi") provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
+#     S3_BUCKET=bucket_name (defaullt="<users>-<kernel>-afi") provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
 #     S3_LOGS_KEY=folder (default="afi_logs") the S3 bucket folder to use for logs for the AFI build.
 #     S3_DCP_KEY=folder (default="afi_dcp_key") the S3 bucket folder to use for logs for the AFI build.
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
-S3_BUCKET=afi
+S3_BUCKET=fpgaserver
 S3_LOGS_KEY=afi_logs
 S3_DCP_KEY=afi_dcp_key
 
