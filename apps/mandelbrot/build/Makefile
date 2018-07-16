@@ -11,8 +11,6 @@
 #     build: the host application and FPGA image
 #     emulation: ?
 #     run_system: build and run
-#     push: push application directory to S3 storage for transfer to F1 Instance
-#     prebuild: populate contents of "prebuilt" directory with current build (do not set PREBUILT variable)
 #   Variables:
 #     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
 #     KERNEL: the name for the fpga model
@@ -59,7 +57,6 @@ KERNEL_FLAGS=
 KERNEL_EXE=$(KERNEL)
 KERNEL_NAME=$(KERNEL)
 
-# Build dir is "out" or "prebuilt", based on PREBUILT variable.
 BUILD_DIR_NAME = out
 ifeq ($(PREBUILT), true)
 BUILD_DIR_NAME = prebuilt
@@ -112,9 +109,8 @@ endif
 #Translate Target Device name with underscores
 PERIOD:= :
 UNDERSCORE:= _
-DEST_SUBDIR=$(TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
-DEST_DIR=../out/$(DEST_SUBDIR)
-BUILD_DIR=../$(BUILD_DIR_NAME)/$(DEST_SUBDIR)
+DEST_DIR=../out/$(TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
+BUILD_DIR=../$(BUILD_DIR_NAME)/$(TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
 ifeq ($(TARGET), sw)
 DEST_DIR=../out/$(TARGET)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(TARGET)
@@ -165,7 +161,7 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(DEST_DIR)/$(KERNEL_EXE).xo
 
 # Create AFI. Creation is asynchronous on S3 and uses non-descript timestamped names, so it's hard to know
 # when they are ready, where to find them, and when you can delete (ugh).
-$(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
+$(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
 
@@ -195,7 +191,7 @@ emulation:  $(DEST_DIR)/host $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE)
 ifeq ($(TARGET), sw)
 build:  $(BUILD_DIR)/$(HOST_EXE)
 else
-build:  $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+build:  $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin
 endif
 
 .PHONY: launch
@@ -203,11 +199,4 @@ launch: build
 	# TODO: Wait for AFI build to complete.
 	#       In create_sdaccel_afi.sh, use create-fpga-image --wait
 	./launch $(TARGET)
-
-# A target to populate the "prebuilt" directory with the current build results.
-.PHONY: prebuild
-prebuild: build
-	# Directories assumed to exist.
-	cp $(DEST_DIR)/$(HOST_EXE)          $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
-	cp $(DEST_DIR)/$(KERNEL_EXE).xclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).xclbin
 
