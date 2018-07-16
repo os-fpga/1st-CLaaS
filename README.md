@@ -110,6 +110,10 @@ cd apps/mandelbrot/build
 make launch
 ```
 
+The webserver is running. You can open `http://localhost:8888/demo.html` in a local web browser and explore Mandelbrot generated in the Python webserver or in the C++ host application.
+
+You can also open `http://localhost:8888/client.html`. Click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start" for a flythrough.
+
 
 # F1 Instance Setup
 
@@ -150,6 +154,11 @@ source ~/.bashrc
 ```
 
 Use the same user name for all your instances.
+
+
+# X11 Forwarding
+
+It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick.
 
 
 # Running on FPGA
@@ -200,188 +209,75 @@ First, clone this GitHub repository and the aws-fpga GitHub repository and sourc
 ```sh
 cd
 git clone https://github.com/alessandrocomodi/fpga-webserver
-git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR  
+git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
+```
+
+Each time you login:
+
+```sh
 cd $AWS_FPGA_REPO_DIR
 source ./sdaccel_setup.sh
 cd
 ```
 
-OLD INSTRUCTIONS:
-
-Once the environment is set up copy the `apps/mandelbrot/fpga` folder into your workspace and build:
-
-```sh
-cd
-mkdir work
-cd work
-cp -r ~/fpga-webserver/apps/mandelbrot/fpga .
-cd mandelbrot_hw/sdx_imports
-make build TARGET=hw KERNEL=mandelbrot -j8 > out.txt &
-```
-
-NEW INSTRUCTIONS to try:
+Build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
 
 ```sh
 cd ~/fpga-webserver/apps/mandelbrot/build
 make build TARGET=hw KERNEL=mandelbrot -j8 > ../out/out.log &
 ```
 
-Once the build process is complete you'll have a host application and an Amazon FPGA Image (AFI) that the host application will load onto the FPGA. Note that the final step, the AFI creation, produces temporary intermediate files on S3 storage asynchronously in  `s3://fpga-webserver/<user-id>` (where you configured `<user-id>` in your `~/.bashrc`).
-You'll need to get these files to your F1 instance. You can do this through an S3 Bucket.
+TODO: What about hw_emu target and running in emulation?
 
+This produces output files in `/fpga-webserver/apps/mandelbrot/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/`. Additionally, the final step, the AFI creation, produces a `.tar` file on S3 storage asynchronously in `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/*.tar`. (You configured `<user-id>` in your `~/.bashrc`). You can see it with:
 
-S3 Bucket creation (NO LONGER NECESSARY?):
-
-```sh
-aws s3 mb s3://<bucket-name>                     # Create an S3 bucket (choose a unique bucket name)
-# UNNECESSARY? aws s3 mb s3://<bucket-name>/<dcp-folder-name>   # Create folder for your tarball files
-touch FILES_GO_HERE.txt                          # Create a temp file
-aws s3 cp FILES_GO_HERE.txt s3://<bucket-name>/<dcp-folder-name>/  # Which creates the folder on S3
-rm FILES_GO_HERE.txt  # cleanup
-```
-
-(NO LONGER NECESSARY)
-Once the setup is complete you can generate the .awsxclbin binary file that will configure the FPGA:
-
-```sh
-cd ~/work
-mkdir build
-cd build
-$SDACCEL_DIR/tools/create_sdaccel_afi.sh -xclbin=../fpga/sdx_imports/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.xclbin -o=mandelbrot \
-    -s3_bucket=<bucket-name> -s3_dcp_key=<dcp-folder-name> -s3_logs_key=<logs-folder-name>
-```
-
-When the process completes you will have the bitstream configuration file ready to use.
-
-
-## Host Application compilation
-
-(NO LONGER NECESSARY)
-The host program is needed to interface with the FPGA.
-Copy all files from the "host_app" folder into a new one and run the following command:
-
-```sh
-cd ~/work
-cp -r ../fpga-webserver/srcs/host_app .
-cd host_app
-make host TARGET=hw_emu KERNEL=mandelbrot
-```
-
-This will compile the host application and you can find the executable in the `hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/` folder.
-
-## Bundle Result Files
-
-(OBSOLETE)
-Now, you have all the files you will need to run the F1 web server on an F1 Instance. First, bundle the files that you will
-need on that server and store them in your S3 bucket, in a new key, called "deploy". The files include: the python files found in the `web_server` folder,
-the executable and the `.awsxclbin` image
-
-```sh
-cd ~/work
-mkdir deploy
-cp -r ~/fpga-webserver/srcs/web_server/* .
-cp ~/work/host_app/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host .
-cp ~/work/build/mandelbrot.awsxclbin .
-aws s3 mb s3://stevehoover-afi-bucket/deploy
-aws s3 cp --recursive ./deploy s3://<bucket>/deploy
-```
-
-## File Transfer to F1
-
-(OBSOLETE)
-Transfer the "deploy" files to your F1 machine.
-
-`ssh` into your F1 machine, as you did your Build Instance.
-
-Configure, as before using your access keys, and region: `us-east-1` and output: `json`.
-
-```sh
-aws configure
-```
-
-Copy "deploy" files from your S3 bucket.
-
-```sh
-mkdir ~/deploy
-cd ~/deploy
-aws s3 cp --recursive s3://<bucket>/deploy .
-chmod +x ./host  # Seems to lose execute permission along the way.
-```
-
-## Web Server usage
-
-(OBSOLETE)
-Now, you can run the server and the host application. We'll do so from two different terminals.
-
-Run the host application (with a listening socket):
-Run:
-
-```sh
-cd /home/centos/deploy
-sudo sh
-source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh   # Use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this step
-./host mandelbrot.awsxclbin mandelbrot
-```
-  
-`ssh` in from the second terminal (for the web server).
-
-The webserver is written in Python. You'll need the following prerequisites:
-  - Python 2.7 or higher;
-  - tornado python library
-  ```sh
-  sudo pip install tornado
-  ```
-
-Run the WebServer:
-
-(OBSOLETE)
-```sh
-cd ~/deploy
-sudo python2.7 server.py
-```
-
-You can access client.html from any web browser using `http://<IP>:8888/client.html`.
-
-Current usage of client.html requires: host IP, click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start".
-
-You can run the Mandelbrot explorer from any web browser using `http://<IP>;8888/index.html`.
-
-
------------------
-This produced a `.tar` file in `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/` that you can see with:
 ```sh
 aws s3 ls s3://fpga-webserver/<user-id>/mandelbrot/AFIs/
 ```
 
-# Transfer files
+It also produces `/fpga-webserver/apps/mandelbrot/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsclbin` which references the S3 tarball.
 
-# Push
+# Transfer files and Run
 
-You can transfer the contents of your app directory to run on the FPGA using the `push` Make target and an `aws s3` command to pull. Those files include:
+All development is done on the Build Instance. The F1 Instance is just used to run. `fpga-webserver/apps/mandelbrot/` is transferred from the Build Instance to the F1 Instance in its entirety through S3 storage.
+
+## Push
+
+You can transfer your app directory to run on the FPGA using the `push` Make target (which runs an `aws s3 sync` command) and by explicitly running an `aws s3 sync` command to pull. Though the whole directory is copied, the files of importance are:
   - the python webserver (including client content) (everything in `fpga-webserver/apps/mandelbrot/webserver`)
   - the host application (built via intermediate Make target `host`)
-  - and the `.awsxclbin` (AFI) image (which references `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/`)
+  - the `.awsxclbin` (AFI) image (which references `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/`)
+  - `launch` script in `fpga-webserver/apps/mandelbrot/build`
 
 ```sh
 cd ~/fpga-webserver/apps/mandelbrot/build
 make push TARGET=hw KERNEL=mandelbrot &
 ```
 
+## Pull
+
 Now, start and log into your F1 Instance, initialize and configure AWS and pull these files:
 
 ```sh
-mkdir ~/mandelbrot_work
-cd ~/mandelbrot_work
+mkdir ~/work
+cd ~/work
+mkdir mandelbrot
+cd mandelbrot
 aws s3 sync s3://fpga-webserver/<user-id>/mandelbrot/xfer .
 ```
 
 
-# Launch
+## Launch
 
 ```sh
 cd ~/mandelbrot_work/build
+chmod +x launch ../out/*/*/host # execute privs lost in transfer
 ./launch hw
 ```
+
+## Run
+
+As you did locally, you can access `http://<IP>:8888/demo.html` and `http://<IP>:8888/client.html`. Now you can utilize the FPGA to generate images.
 
 
 # Makerchip and TL-Verilog
@@ -391,18 +287,10 @@ After the kernel has been designed in Makerchip we retrieved the Verilog files b
 The content of these files has to be copied and pasted inside of the file "mandelbrot_example_adder.sv" found in the "fpga/imports" folder.
 
 
-# X11 Forwarding
-
-It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick.
-
-
 # To Do
 
-Make instructions more explicit, as a cookbook recipe, and provide information and pointers about the more general use of the commands. After this provide other helpful general information about working with the design. New users should walk through the cookbook as quickly as possible, then learn more about what they have done.
-  - Incorporate web_server/launch command into instructions.
-  - First launch just web server, then web server + host app, then web server + host app + FPGA.
-  - Choose specific file/folder names, and stick with them.
-  - Create small scripts to further automate. Scripts should be useful in production use, not just for cookbook, otherwise we're hiding useful information.
-  - Probably want to use workspace folders inside this with .gitignored contents, so this repo can provide work structure.
-  - Structure the repo to support multiple examples, where mandelbrot is one.
+  - Figure out how to generate .xo.
+  - hw_emu instructions.
+  - Include initialization steps in host application automatically. (For `client.html`, no explicit commands to `open` and `Init FPGA`.)
+  - provide information and pointers about the more general use of the commands.
   - Automate export from Makerchip by providing a script that uses `curl` to access result files via `http://makerchip.com/compile/<compile-id>/results/<filename>`.

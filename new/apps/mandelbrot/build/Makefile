@@ -167,7 +167,7 @@ $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
 ifneq ($(TARGET), sw)
-.PHONY push
+.PHONY: push
 # Push the entire contents of the app directory for running on F1. (SDAccel tarball should already in S3.)
 # Previous transfer contents are deleted.
 push: build
