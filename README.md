@@ -50,7 +50,7 @@ The WebSocket or REST communication between the Web Application and the FPGA pas
       - `out`: The target directory for build results, including the client, webserver, host application, and FPGA images. (This folder is not committed with the repository.)
       - `prebuilt`: Prebuilt client, webserver, host application, and/or FPGA images. These may be committed for convenience so users can run new installations without lengthy builds.
     - _(specific apps)_
-    - `echo`: A template application that simply echoes data on a websocket
+    - `echo`: (To be created.) A template application that simply echoes data on a websocket
       - `client`
       - `host`
       - `fpga`
