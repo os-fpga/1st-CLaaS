@@ -125,9 +125,6 @@ Now let's provision an F1 Instance.
   - Click new instance link to find IP address.
   - You can view your instances from the left panel. Go to your EC2 Dashboard and clicking "Running Instances" or under "Instances", select "Instances". From here, you can, among other things, start and
   stop your instances ("Actions", "Instance State"). Be sure not to accidentally leave them running!!! You should configure monitoring of your resources, but the options are very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. Be sure your instance transitions to "stopped" state (or Amazon tells me charging stops at "stopping" state).
-  - Log into your instance: `ssh -i ~/.ssh/<AWS_my_machine>.pem centos@<ip>`
-
-If all went well, you are now logged into your F1 Instance.
 
 The AWS F1 instance has to allow TCP connections on port 8888 (or the one you choose to serve the GET or WebSocket requests):
   1. Go to the EC2 Dashboard.
@@ -140,10 +137,24 @@ The AWS F1 instance has to allow TCP connections on port 8888 (or the one you ch
   1. You can set "Description" to "webserver".
   1. Save
 
+Log into your instance:
+```sh
+ssh -i ~/.ssh/<AWS_my_machine>.pem centos@<ip>`
+```
+
+Now, configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<user-id>`, so choose a username for yourself, such as your Amazon IAM username, and:
+
+```sh
+echo 'export S3_USER=<unique-username>' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Use the same user name for all your instances.
+
 
 # Running on FPGA
 
-Prebuilt files are included in the repository. Try to run using those first, so you can see the FPGA in acction.
+Prebuilt files are included in the repository. Try to run using those first, so you can see the FPGA in action.
 
 ```sh
 cd
@@ -154,7 +165,7 @@ make PREBUILT=true launch
 
 Point a web browser at `http://<IP>:8888` and play with the application.
 
-When you are done, <ctrl-c>, `exit`, and stop your instance.
+When you are done, _`ctrl-C`_, `exit`, and stop your instance.
 
 
 # Build Instance Setup
@@ -164,9 +175,23 @@ You can build on your F1 instance, but building takes a long time, and its cheap
 Provision a build instance as you did the F1 Instance, but use instance type "c4.4xlarge" (as recommended by Amazon, or we have found "c4.2xlarge" to suffice, though it's slower). `ssh` into this instance. It wouldn't hurt to open port 8888 on this instance as well in case you want to test on this instance without the FPGA.
 
 
+# AWS CLI Configuration
+
+Configure by providing your credentials. These can be found in in the Security Credentials page, which I'm not sure how to navigate to, but here's a <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_ blank">direct link</a>.
+
+Use region: `us-east-1` and output: `json`.
+
+```sh
+aws configure
+```
+
+I believe this is a one-time configuration for the machine.
+
+
 # Building from Source
 
 Now, build both the FPGA image and host application.
+
 
 ## FPGA Build
 
@@ -201,29 +226,21 @@ cd ~/fpga-webserver/apps/mandelbrot/build
 make build TARGET=hw KERNEL=mandelbrot -j8 > ../out/out.log &
 ```
 
-Once the build process is complete you'll have a host application and an Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
+Once the build process is complete you'll have a host application and an Amazon FPGA Image (AFI) that the host application will load onto the FPGA. Note that the final step, the AFI creation, produces temporary intermediate files on S3 storage asynchronously in  `s3://fpga-webserver/<user-id>` (where you configured `<user-id>` in your `~/.bashrc`).
 You'll need to get these files to your F1 instance. You can do this through an S3 Bucket.
 
-AWS CLI configuration:
 
-Configure by providing your credentials. These can be found in in the Security Credentials page, which I'm not sure how to navigate to, but here's a <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_ blank">direct link</a>.
-
-Use region: `us-east-1` and output: `json`.
-
-```sh
-aws configure
-```
-
-S3 Bucket creation:
+S3 Bucket creation (NO LONGER NECESSARY?):
 
 ```sh
 aws s3 mb s3://<bucket-name>                     # Create an S3 bucket (choose a unique bucket name)
-aws s3 mb s3://<bucket-name>/<dcp-folder-name>   # Create folder for your tarball files
+# UNNECESSARY? aws s3 mb s3://<bucket-name>/<dcp-folder-name>   # Create folder for your tarball files
 touch FILES_GO_HERE.txt                          # Create a temp file
 aws s3 cp FILES_GO_HERE.txt s3://<bucket-name>/<dcp-folder-name>/  # Which creates the folder on S3
 rm FILES_GO_HERE.txt  # cleanup
 ```
 
+(NO LONGER NECESSARY)
 Once the setup is complete you can generate the .awsxclbin binary file that will configure the FPGA:
 
 ```sh
@@ -239,6 +256,7 @@ When the process completes you will have the bitstream configuration file ready 
 
 ## Host Application compilation
 
+(NO LONGER NECESSARY)
 The host program is needed to interface with the FPGA.
 Copy all files from the "host_app" folder into a new one and run the following command:
 
@@ -253,6 +271,7 @@ This will compile the host application and you can find the executable in the `h
 
 ## Bundle Result Files
 
+(OBSOLETE)
 Now, you have all the files you will need to run the F1 web server on an F1 Instance. First, bundle the files that you will
 need on that server and store them in your S3 bucket, in a new key, called "deploy". The files include: the python files found in the `web_server` folder,
 the executable and the `.awsxclbin` image
@@ -269,6 +288,7 @@ aws s3 cp --recursive ./deploy s3://<bucket>/deploy
 
 ## File Transfer to F1
 
+(OBSOLETE)
 Transfer the "deploy" files to your F1 machine.
 
 `ssh` into your F1 machine, as you did your Build Instance.
@@ -290,6 +310,7 @@ chmod +x ./host  # Seems to lose execute permission along the way.
 
 ## Web Server usage
 
+(OBSOLETE)
 Now, you can run the server and the host application. We'll do so from two different terminals.
 
 Run the host application (with a listening socket):
@@ -313,6 +334,7 @@ The webserver is written in Python. You'll need the following prerequisites:
 
 Run the WebServer:
 
+(OBSOLETE)
 ```sh
 cd ~/deploy
 sudo python2.7 server.py
@@ -323,6 +345,43 @@ You can access client.html from any web browser using `http://<IP>:8888/client.h
 Current usage of client.html requires: host IP, click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start".
 
 You can run the Mandelbrot explorer from any web browser using `http://<IP>;8888/index.html`.
+
+
+-----------------
+This produced a `.tar` file in `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/` that you can see with:
+```sh
+aws s3 ls s3://fpga-webserver/<user-id>/mandelbrot/AFIs/
+```
+
+# Transfer files
+
+# Push
+
+You can transfer the contents of your app directory to run on the FPGA using the `push` Make target and an `aws s3` command to pull. Those files include:
+  - the python webserver (including client content) (everything in `fpga-webserver/apps/mandelbrot/webserver`)
+  - the host application (built via intermediate Make target `host`)
+  - and the `.awsxclbin` (AFI) image (which references `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/`)
+
+```sh
+cd ~/fpga-webserver/apps/mandelbrot/build
+make push TARGET=hw KERNEL=mandelbrot &
+```
+
+Now, start and log into your F1 Instance, initialize and configure AWS and pull these files:
+
+```sh
+mkdir ~/mandelbrot_work
+cd ~/mandelbrot_work
+aws s3 sync s3://fpga-webserver/<user-id>/mandelbrot/xfer .
+```
+
+
+# Launch
+
+```sh
+cd ~/mandelbrot_work/build
+./launch hw
+```
 
 
 # Makerchip and TL-Verilog

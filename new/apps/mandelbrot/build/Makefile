@@ -21,9 +21,14 @@
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
-S3_BUCKET=fpgaserver
-S3_LOGS_KEY=afi_logs
-S3_DCP_KEY=afi_dcp_key
+# BUILD_ID is used to tag the build for transfer from the build instance to the F1 instance.
+ifndef S3_USER
+S3_USER=default_user
+endif
+S3_BUCKET=fpga-webserver
+S3_LOGS_KEY=${S3_USER}/$(KERNEL)/logs
+S3_DCP_KEY=${S3_USER}/$(KERNEL)/AFIs
+S3_TRANSFER_KEY=${S3_USER}/$(KERNEL)/xfer
 
 HOST_DIR=../host
 
@@ -117,6 +122,7 @@ $(error XILINX_SDX is not set. Please source the SDx settings64.{csh,sh} first)
 endif
 endif
 
+
 .PHONY: clean clean_sw clean_sw_emu clean_hw_emu clean_hw cleanall
 clean:
 	rm -rf .Xil emconfig.json 
@@ -151,22 +157,30 @@ $(DEST_DIR)/$(KERNEL_EXE).xo:
 	cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(DEST_DIR)/$(KERNEL_EXE).xo
-	$(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(DEST_DIR)/$(KERNEL_EXE).xo $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_EXE).xo $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
+# Create AFI. Creation is asynchronous on S3 and uses non-descript timestamped names, so it's hard to know
+# when they are ready, where to find them, and when you can delete (ugh).
 $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
+	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
-	# Not sure why this script uses S3. Let's copy to the output directory.
-	# First wait for completion.
-	# ...
-	# TODO: What's the path to the .awsxclbin. Need to put it in the right place for make.
-	# aws s3 cp s3://$(S3_BUCKET)/$(S3_DCP_KEY) $(DEST_DIR)/$(S3_DCP_KEY)
-	# aws s3 cp s3://$(S3_BUCKET)/$(S3_LOGS_KEY) $(DEST_DIR)/$(S3_LOGS_KEY)
-	# ...
 
-.PHONY: pull
-	# Pull results from S3 bucket.
-	# aws s3 mv s3://$(S3_BUCKET)/$(S3_DCP_KEY) $(DEST_DIR)/$(S3_DCP_KEY)
-	# aws s3 mv s3://$(S3_BUCKET)/$(S3_LOGS_KEY) $(DEST_DIR)/$(S3_LOGS_KEY)
+# Transfer (push) FPGA files from build instance to F1 instance through S3.
+ifneq ($(TARGET), sw)
+.PHONY push
+# Push the entire contents of the app directory for running on F1. (SDAccel tarball should already in S3.)
+# Previous transfer contents are deleted.
+push: build
+	aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/
+endif
+
+# Phony targets for intermediate results
+.PHONY: host xo xclbin awsxclbin afi
+host: $(DEST_DIR)/$(HOST_EXE)
+xo: $(DEST_DIR)/$(KERNEL_EXE).xo
+xclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
+awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+afi: awsxclbin
 
 .PHONY: emulation
 emulation:  $(DEST_DIR)/host $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
