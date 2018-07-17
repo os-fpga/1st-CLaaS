@@ -31,9 +31,9 @@ HOST_PID=$!
 sudo pip -q install tornado
 if [[ "$1" = "sw" ]];
 then
-    python ../webserver/server.py &
+    python ../webserver/mandelbrot_server.py &
 else
-    sudo python ../webserver/server.py &
+    sudo python ../webserver/mandelbrot_server.py &
 fi
 SERVER_PID=$!
 

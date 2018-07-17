@@ -57,6 +57,18 @@
       </div>
 
     </fieldset>
+    <fieldset>
+        <legend>Variables</legend>
+        
+        <label for="var1">Variable 1</label>
+        <input type="range" id="var1" name="var1"
+               min="-100" max="100" value="0" />
+               
+        <label for="var2">Variable 2</label>
+        <input type="range" id="var2" name="var2" 
+               min="-100" max="100" value="0" />
+               
+    </fieldset>
   </div>
   <div id="myImage" class="img-rounded"></div>
   <script type="text/javascript">
@@ -79,14 +91,16 @@
       var tile = $("#cpp").prop("checked")    ? "/tile/-" :
                  $("#python").prop("checked") ? "/python_tile/" :
                                                 "/tile/";
-      var urlsource= "http://" + host + ":" + port + tile + depth;
-      console.log("url:"+urlsource);
+      var urlSource = "http://" + host + ":" + port + tile + depth +
+                      "/{z}/{x}/{y}" +
+                      "?var1=" + $("#var1").value + "&var2=" + $("#var2").value;
+      console.log(urlSource);
       var map = new ol.Map({
         target: 'myImage',
         layers: [
           new ol.layer.Tile({
             source: new ol.source.XYZ({
-              url: urlsource+'/{z}/{x}/{y}'
+              url: urlSource
               })
             })
           ],
