@@ -28,6 +28,7 @@ import base64
 #import numpy
 from server_api import *
 
+
 # Socket with host defines
 SOCKET        = "SOCKET"
 
@@ -38,6 +39,7 @@ PORT          = 8888
 WRITE_DATA    = "WRITE_DATA"
 READ_DATA     = "READ_DATA"
 GET_IMAGE     = "GET_IMAGE"
+
 
 ### Handler for WebSocket connections
 class WSHandler(tornado.websocket.WebSocketHandler):
@@ -53,7 +55,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     payload = msg['payload']
 
     # The request is passed to a request handler which will process the information contained
-    # in the message and produces a result
+    # in the message and produce a result
     result = self.application.handle_request(header, payload)
 
     # The result is sent back to the client
@@ -68,7 +70,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 class MainHandler(tornado.web.RequestHandler):
     # renders main home page
     def get(self):
-       self.render("index.html")
+       self.render(self.application.html_file_path + "/" + "index.html")
        
 class HTMLHandler(tornado.web.RequestHandler):
     # render HTML page
@@ -76,6 +78,7 @@ class HTMLHandler(tornado.web.RequestHandler):
        self.render(self.application.html_file_path + "/" + file)
        
 
+# This class can be overridden to provide application-specific behavior.
 class FPGAServerApplication(tornado.web.Application):
     html_file_path = "."
     def initSocket(self):

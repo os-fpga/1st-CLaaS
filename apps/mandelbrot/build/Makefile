@@ -32,21 +32,23 @@ S3_LOGS_KEY=${S3_USER}/$(KERNEL)/logs
 S3_DCP_KEY=${S3_USER}/$(KERNEL)/AFIs
 S3_TRANSFER_KEY=${S3_USER}/$(KERNEL)/xfer
 
-HOST_DIR=../host
-
 XOCC=xocc
 CC=g++
 
+
+HOST_DIR=../host
+FRAMEWORK_DIR=../../../framework/host
+
 #Software (no FPGA) flags
-SW_SRC=$(HOST_DIR)/server_main.c $(HOST_DIR)/lodepng.c $(HOST_DIR)/mandelbrot.c
+SW_SRC=$(FRAMEWORK_DIR)/server_main.c $(HOST_DIR)/lodepng.c $(HOST_DIR)/mandelbrot.c
 SW_HDRS=$(HOST_DIR)/mandelbrot.h
-SW_CFLAGS=-g -Wall -O3 -std=c++11
+SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_DIR)
 SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64
 
 #Host code
-HOST_SRC=$(SW_SRC) $(HOST_DIR)/kernel.c
+HOST_SRC=$(SW_SRC) $(FRAMEWORK_DIR)/kernel.c
 HOST_HDRS=$(SW_HDRS)
-HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_SDX}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM -D KERNEL=${KERNEL_NAME}
+HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_SDX}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Name of host executable
@@ -127,31 +129,21 @@ endif
 endif
 
 
-.PHONY: clean clean_sw clean_sw_emu clean_hw_emu clean_hw cleanall
+ifdef DEST_DIR  # just to be safe
+.PHONY: clean
 clean:
-	rm -rf .Xil emconfig.json 
-
-clean_sw: clean
-	rm -rf sw
-clean_sw_emu: clean
-	rm -rf sw_emu
-clean_hw_emu: clean
-	rm -rf hw_emu
-clean_hw: clean
-	rm -rf hw
-
-cleanall: clean_sw clean_sw_emu clean_hw_emu clean_hw
-	rm -rf _xocc_* xcl_design_wrapper_*
-
+	rm -rf $(DEST_DIR)
+endif
+# TODO: Add more-selective clean targets.
 
 ifeq ($(TARGET), sw)
 $(DEST_DIR)/$(HOST_EXE):  $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
-	$(CC) $(SW_SRC) $(SW_HDRS) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
+	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 else
 $(DEST_DIR)/$(HOST_EXE):  $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
-	$(CC) $(HOST_SRC) $(HOST_HDRS) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
+	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 endif
 
 $(DEST_DIR)/$(KERNEL_EXE).xo:

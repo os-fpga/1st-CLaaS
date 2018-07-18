@@ -11,6 +11,7 @@
 **
 ** Author: Alessandro Comodi, Politecnico di Milano
 **
+** TODO: There's still a lot of image-specific content here. Partition cleanly.
 */
 
 #include <fcntl.h>

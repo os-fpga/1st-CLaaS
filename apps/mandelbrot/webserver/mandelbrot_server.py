@@ -3,7 +3,9 @@ sys.path.append('../../../framework/webserver')
 from server import *
 
 
-
+"""
+Generic Mandelbrot functionality, independent of the server.
+"""
 class Mandelbrot():
 
   @staticmethod
@@ -45,18 +47,19 @@ class Mandelbrot():
   def depthToPixel(depth):
     return ((depth * 16) % 256, 0, 0)
 
-
-### Handler for .png image GET requests
-### Can be:
-###   get(self, "tile", tile_z, tile_x, tile_y), based on openlayers API,
-###     and (TODO) depth (max iterations) is currently hardcoded
-### Or:
-###   get(self, "img")
-###     with GET query argument ?data=[x,y,pix_x,pix_y,img_width,img_height,depth] as a JSON string
-###     where: x/y are float top,left mandelbrot coords
-###            pix_x/y are float pixel sizes in mandelbrot coords
-###            img_width/height are integers (pixels), and
-###            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
+"""
+Handler for .png image GET requests
+Can be:
+  get(self, "tile", tile_z, tile_x, tile_y), based on openlayers API,
+    and (TODO) depth (max iterations) is currently hardcoded
+Or:
+  get(self, "img")
+    with GET query argument ?data=[x,y,pix_x,pix_y,img_width,img_height,depth] as a JSON string
+    where: x/y are float top,left mandelbrot coords
+           pix_x/y are float pixel sizes in mandelbrot coords
+           img_width/height are integers (pixels), and
+           depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
+"""
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
     def set_default_headers(self):
@@ -99,7 +102,7 @@ class ImageHandler(tornado.web.RequestHandler):
         else:
             print "Unrecognized type arg in ImageHandler.get(..)"
 
-        img_data = self.application.getImage(payload, renderer)
+        img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)
 
@@ -111,7 +114,7 @@ class MandelbrotApplication(FPGAServerApplication):
     """
     Get an image from the appropriate renderer (as requested/available).
     """
-    def getImage(self, payload, renderer):
+    def renderImage(self, payload, renderer):
         # Create image
         if self.sock == None or renderer == "python":
             # No socket. Generate image here, in Python.
