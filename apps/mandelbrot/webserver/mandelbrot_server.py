@@ -9,9 +9,9 @@ Generic Mandelbrot functionality, independent of the server.
 class Mandelbrot():
 
   @staticmethod
-  def getImage(img_width, img_height, x, y, pix_x, pix_y):
+  def getImage(img_width, img_height, x, y, pix_x, pix_y, max_depth):
     # dummy image generation
-    print "Producing image %i, %i, %f, %f, %f, %f" % (img_width, img_height, x, y, pix_x, pix_y)
+    print "Producing image %i, %i, %f, %f, %f, %f, %i" % (img_width, img_height, x, y, pix_x, pix_y, max_depth)
     #self.img = Image.new('RGB', (256, 256), (int(x)*18%256, int(y)*126%256, int(pix_x)*150%256))
     image = Image.new('RGB', (img_width, img_height))  # numpy.empty([img_width, img_height])
     pixels = image.load()
@@ -20,7 +20,7 @@ class Mandelbrot():
       y_pos = y + float(v) * pix_y
       for h in range(img_width):
         x_pos = x + float(h) * pix_x
-        pixels[h, v] = Mandelbrot.depthToPixel(Mandelbrot.getPixelDepth(x_pos, y_pos))
+        pixels[h, v] = Mandelbrot.depthToPixel(Mandelbrot.getPixelDepth(x_pos, y_pos, max_depth))
         bail_cnt -= 1
         if bail_cnt <= 0:
           raise ValueError
@@ -31,11 +31,10 @@ class Mandelbrot():
     return image
  
   @staticmethod
-  def getPixelDepth(x, y):
+  def getPixelDepth(x, y, max_iteration):
     x0 = x
     y0 = y
     iteration = 0
-    max_iteration = 50  # TODO: PARAMETERIZE THIS
     while (x*x + y*y < 2*2 and iteration < max_iteration):
       xtemp = x*x - y*y + x0
       y = 2*x*y + y0
@@ -59,6 +58,7 @@ Or:
            pix_x/y are float pixel sizes in mandelbrot coords
            img_width/height are integers (pixels), and
            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
+In either case, integer query arguments var1 and var2 can also be provided for use in C rendering only.
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
@@ -78,9 +78,21 @@ class ImageHandler(tornado.web.RequestHandler):
         # can be specified to force the renderer.
         renderer = "python" if (type == "python_tile") else "c" if (int(depth) < 0) else self.get_query_argument("renderer", None)
         print "Renderer: %s" % renderer
+        
+        # Extract URL parameters.
+        if (len(self.get_query_arguments("var1")) > 0):
+            var1 = self.get_query_arguments("var1")[0]
+        else:
+            var1 = "0"
+        if (len(self.get_query_arguments("var2")) > 1):
+            var2 = self.get_query_arguments("var2")[0]
+        else:
+            var2 = "0"
+        print "Query Args: var1: " + var1 + ", var2: " + var2
+        
         # Determine image parameters from GET parameters
         if type == "tile" or type == "python_tile":
-            print "Get tile image z:%s, y:%s, x:%s, depth:%s" % (tile_z, tile_x, tile_y, depth)
+            print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s" % (tile_z, tile_x, tile_y, depth, var1, var2)
         
             # map parameters to those expected by FPGA, producing 'payload'.
             tile_size = 4.0 / 2.0 ** float(tile_z)    # size of tile x/y in Mandelbrot coords
@@ -102,6 +114,10 @@ class ImageHandler(tornado.web.RequestHandler):
         else:
             print "Unrecognized type arg in ImageHandler.get(..)"
 
+        # Append var1 and var2 for C++ rendering only.
+        if renderer == "c":
+            payload.append(int(var1))
+            payload.append(int(var2))
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)
@@ -119,7 +135,7 @@ class MandelbrotApplication(FPGAServerApplication):
         if self.sock == None or renderer == "python":
             # No socket. Generate image here, in Python.
             outputImg = io.BytesIO()
-            img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3])
+            img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3], payload[6])
             img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
             img_data = outputImg.getvalue()
         else:
@@ -129,13 +145,15 @@ class MandelbrotApplication(FPGAServerApplication):
 
 
 if __name__ == "__main__":
+    dir = os.path.dirname(__file__)
     application = MandelbrotApplication(
-            [ (r"/", MainHandler),
-              (r"/(.*\.html)", HTMLHandler),
+            [ (r"/()", tornado.web.StaticFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
+              (r"/(.*\.html)", tornado.web.StaticFileHandler, {"path": dir + "/html"}),
+              (r"/css/(.*\.css)", tornado.web.StaticFileHandler, {"path": dir + "/css"}),
+              (r"/js/(.*\.js)",   tornado.web.StaticFileHandler, {"path": dir + "/js"}),
               (r'/ws', WSHandler),
               #(r'/hw', GetRequestHandler),
               (r'/(img)', ImageHandler),
               (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
-            ],
-            "../../apps/mandelbrot/webserver/templates"  # os.path.join(os.path.dirname(__file__), "templates")
+            ]
         )

@@ -24,6 +24,7 @@ MandelbrotImage::MandelbrotImage(bool _is_3d, bool _darken) {
   width = height = 0;
   x = y = pix_x = pix_y = (coord_t)0.0;
   is_3d = _is_3d;
+  adjustment = 0.0;
   
   // For darkening distant 3D depths.
   darken = _darken;
@@ -36,6 +37,8 @@ MandelbrotImage::MandelbrotImage(bool _is_3d, bool _darken) {
 MandelbrotImage::MandelbrotImage(double *params, bool _is_3d, bool _darken) : MandelbrotImage(_is_3d, _darken) {
   setColorScheme();
   setBounds(params);
+  // Interpret var1 and var2 parameters.
+  adjustment = params[7] / 100.0;
 };
  
 MandelbrotImage::~MandelbrotImage() {
@@ -209,8 +212,8 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
       coord_t y0 = yy;
       int iteration = 0;
       while (xx*xx + yy*yy < 2*2 && iteration < max_depth) {
-        coord_t xtemp = xx*xx - yy*yy + x0;
-        yy = 2*xx*yy + y0;
+        coord_t xtemp = xx*xx - yy*yy + x0 + adjustment;
+        yy = 2*xx*yy + y0 - adjustment;
         xx = xtemp;
         iteration += 1;
       }

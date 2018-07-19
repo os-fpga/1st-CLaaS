@@ -1,0 +1,77 @@
+class MandelbrotImage {
+  // Params:
+  //   center_x/y: Mandelbrot coords of center point.
+  //   scale: 1 is Mandelbrot circle fit to image height.
+  //   height/width: Image height/width.
+  //   max_depth: Max number of iterations for calculation.
+  constructor(center_x, center_y, scale, height, width, max_depth) {
+    this.center_x = center_x;
+    this.center_y = center_y;
+    this.height = height;  // Image height/width.
+    this.width = width;
+    this.scale = scale;   // One level for each factor of e (Euler's constant).
+    this.max_depth = max_depth;
+  }
+  
+  // Setters/Getters
+  set height(v) {this._height = v;}
+  get height() {return this._height;}
+  set width(v) {this._width = v;}
+  get width() {return this._width;}
+  
+  set zoom_level(v) {this._zoom_level = v;}
+  get zoom_level() {return this._zoom_level;}
+  
+  set scale(v) {this.zoom_level = Math.log(v);}
+  get scale() {return Math.exp(this.zoom_level);}
+  
+  // Scale of 1.0 has size_y of 4.0.
+  get image_size_x() {return this.pix_size_x * this.width;}
+  get image_size_y() {return this.scale * 4;}
+  
+  // Bound and center coordinates.
+  set center_x(v) {this._center_x = v;}
+  get center_x() {return this._center_x;}
+  set center_y(v) {this._center_y = v;}
+  get center_y() {return this._center_y;}
+  get left_x() {return this.center_x - this.image_size_x / 2;}
+  get top_y() {return this.center_y - this.image_size_y / 2;}
+  get right_x() {return this.center_x + this.image_size_x / 2;}
+  get_bottom_y() {return this.center_y + this.image_size_y / 2;}
+  
+  // Pixel x/y are same, based on height.
+  get pix_size_x() {return this.pix_size_y;}
+  get pix_size_y() {return this.image_size_y / this.height;}
+  
+  set max_depth(v) {this._max_depth = v;}
+  get max_depth() {return this._max_depth;}
+  
+  
+  
+  zoomBy(v) {
+    this.scale *= v;
+  }
+  
+  panBy(horiz_pix, vert_pix) {
+    this.center_x -= horiz_pix * getPixSizeX();
+    this.center_y -= vert_piz  * getPixSizeY();
+  }
+  
+  // Apply change for given delta time at a constant zoom and pan rate.
+  // This involves calculus as the rate of change of position changes over time.
+  // TODO: Undoubtedly I got the calculus wrong. Debug.
+  zoomAndPan(delta_t, zoom_rate, pan_rate) {
+    this.x += pan_rate / zoom_rate * Math.exp(-this.zoom_level) * (1 - Math.exp(-zoom_rate * delta_t))
+    this.zoom_level += zoom_rate * delta_t;
+  }
+  
+  getImageURLParamsArrayJSON() {
+    return "[" + this.left_x + "," +
+                 this.top_y + "," +
+                 this.pix_size_x + "," +
+                 this.pix_size_y + "," +
+                 this.width + "," +
+                 this.height + "," +
+                 this.max_depth + "]";
+  }
+}

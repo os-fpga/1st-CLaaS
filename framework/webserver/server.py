@@ -67,20 +67,9 @@ class WSHandler(tornado.websocket.WebSocketHandler):
   def check_origin(self, origin):
     return True
 
-class MainHandler(tornado.web.RequestHandler):
-    # renders main home page
-    def get(self):
-       self.render(self.application.html_file_path + "/" + "index.html")
-       
-class HTMLHandler(tornado.web.RequestHandler):
-    # render HTML page
-    def get(self, file):
-       self.render(self.application.html_file_path + "/" + file)
-       
 
 # This class can be overridden to provide application-specific behavior.
 class FPGAServerApplication(tornado.web.Application):
-    html_file_path = "."
     def initSocket(self):
         # Opening socket with host
         self.sock = self.__class__.getSocket()
@@ -129,8 +118,7 @@ class FPGAServerApplication(tornado.web.Application):
         return ret
     
     
-    def __init__(self, handlers, _html_path):
-        self.html_file_path = _html_path
+    def __init__(self, handlers):
         self.initSocket()
         super(FPGAServerApplication, self).__init__(handlers)
         server = tornado.httpserver.HTTPServer(self)

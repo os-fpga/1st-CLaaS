@@ -128,6 +128,7 @@ private:
   coord_t pix_x, pix_y;  // Size of a pixel.
   int max_depth;  // Max number of iterations for Mandelbrot calculation.
   bool is_3d;
+  coord_t adjustment; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
   
   // For darkening distant 3D depths.
   bool darken;

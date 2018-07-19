@@ -37,7 +37,7 @@
     <br />
     <input type="text" id="uri" value="/ws" class="form-control" placeholder="url" />
     <br />
-    <input type="submit" id="open" class="btn btn-primary" value="open" />
+    <input type="submit" id="open_map" class="btn btn-primary" value="open" />
     <fieldset>
       <legend>Renderer</legend>
 
@@ -69,48 +69,18 @@
                min="-100" max="100" value="0" />
                
     </fieldset>
+    <input type="submit" id="open_img" class="btn btn-primary" value="image" />
   </div>
   <div id="myImage" class="img-rounded"></div>
   <script type="text/javascript">
     $(document).ready(function () {
       // populate host field
       $("#host").attr("value", location.hostname);
+      demo();
     })
   </script>
-  <script type="text/javascript">
-    var host;
-    var port;
-    var uri;
-    $("#open").click(function (evt) {
-      // Empty the target div to remove any prior Map.
-      $("#myImage").html("");
-      host = $("#host").val();
-      port = $("#port").val();
-      uri = $("#uri").val();
-      var depth = 1000;
-      var tile = $("#cpp").prop("checked")    ? "/tile/-" :
-                 $("#python").prop("checked") ? "/python_tile/" :
-                                                "/tile/";
-      var urlSource = "http://" + host + ":" + port + tile + depth +
-                      "/{z}/{x}/{y}" +
-                      "?var1=" + $("#var1").value + "&var2=" + $("#var2").value;
-      console.log(urlSource);
-      var map = new ol.Map({
-        target: 'myImage',
-        layers: [
-          new ol.layer.Tile({
-            source: new ol.source.XYZ({
-              url: urlSource
-              })
-            })
-          ],
-          view: new ol.View({
-            center: [0, 0],//defualt parameters
-            zoom: 2//defualt zooming
-          })
-        });
-      });
-  </script>
+  <script src="js/MandelbrotImage.js"></script>
+  <script src="js/demo.js"></script>
 </body>
 
 </html>
