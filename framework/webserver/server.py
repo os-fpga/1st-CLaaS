@@ -41,6 +41,11 @@ READ_DATA     = "READ_DATA"
 GET_IMAGE     = "GET_IMAGE"
 
 
+# A simple override of 
+class BasicFileHandler(tornado.web.StaticFileHandler):
+    def set_extra_headers(self, path):
+        self.set_header("Cache-control", "no-cache")
+
 ### Handler for WebSocket connections
 class WSHandler(tornado.websocket.WebSocketHandler):
   def open(self):

@@ -147,10 +147,10 @@ class MandelbrotApplication(FPGAServerApplication):
 if __name__ == "__main__":
     dir = os.path.dirname(__file__)
     application = MandelbrotApplication(
-            [ (r"/()", tornado.web.StaticFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
-              (r"/(.*\.html)", tornado.web.StaticFileHandler, {"path": dir + "/html"}),
-              (r"/css/(.*\.css)", tornado.web.StaticFileHandler, {"path": dir + "/css"}),
-              (r"/js/(.*\.js)",   tornado.web.StaticFileHandler, {"path": dir + "/js"}),
+            [ (r"/()", BasicFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
+              (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"}),
+              (r"/css/(.*\.css)", BasicFileHandler, {"path": dir + "/css"}),
+              (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
               (r'/ws', WSHandler),
               #(r'/hw', GetRequestHandler),
               (r'/(img)', ImageHandler),

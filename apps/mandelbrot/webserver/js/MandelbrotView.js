@@ -1,4 +1,4 @@
-class MandelbrotImage {
+class MandelbrotView {
   // Params:
   //   center_x/y: Mandelbrot coords of center point.
   //   scale: 1 is Mandelbrot circle fit to image height.
@@ -47,14 +47,31 @@ class MandelbrotImage {
   get max_depth() {return this._max_depth;}
   
   
+  // Copy "constructor".
+  copy() {
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.height, this.width, this.max_depth);
+  }
+  
+  // Image comparison.
+  equal(img2) {
+    // Compare using same parameters as construction. Even through these aren't necessarily the object properties,
+    // it's easier not to miss something.
+    return this.center_x == img2.center_x &&
+           this.center_y == img2.center_y &&
+           this.scale == img2.scale &&
+           this.height == img2.height &&
+           this.width == img2.width &&
+           this.max_depth == img2.max_depth;
+  }
+  
   
   zoomBy(v) {
     this.scale *= v;
   }
   
   panBy(horiz_pix, vert_pix) {
-    this.center_x -= horiz_pix * getPixSizeX();
-    this.center_y -= vert_piz  * getPixSizeY();
+    this.center_x -= horiz_pix * this.pix_size_x;
+    this.center_y -= vert_pix  * this.pix_size_y;
   }
   
   // Apply change for given delta time at a constant zoom and pan rate.
