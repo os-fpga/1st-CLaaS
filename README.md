@@ -290,7 +290,11 @@ The content of these files has to be copied and pasted inside of the file "mande
 # To Do
 
   - Figure out how to generate .xo.
+    - `framework/fpga/scripts/create_rtl_kernel.sh` creates parts of `mandelbrot/fpga/mandelbrot_hw` (`imports`?) which should be built through Makefile, not included in repo. (Paths have changed, so scripts are broken).
+    - `mandelbrot/fpga/mandelbrot_hw/imports/package_kernel.tcl` produces `.xo` from `mandelbrot_hw`. (Not sure if it runs xocc itself or if that should be done in Makefile.)
   - hw_emu instructions.
   - Include initialization steps in host application automatically. (For `client.html`, no explicit commands to `open` and `Init FPGA`.)
   - provide information and pointers about the more general use of the commands.
   - Automate export from Makerchip by providing a script that uses `curl` to access result files via `http://makerchip.com/compile/<compile-id>/results/<filename>`.
+  - Split mandelbrot Makefile to provide some parts in framework.
+  - Create CI and CD to host (no-FPGA) application somewhere.
