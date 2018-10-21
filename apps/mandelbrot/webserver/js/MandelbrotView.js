@@ -4,13 +4,18 @@ class MandelbrotView {
   //   scale: 1 is Mandelbrot circle fit to image height.
   //   height/width: Image height/width.
   //   max_depth: Max number of iterations for calculation.
-  constructor(center_x, center_y, scale, height, width, max_depth) {
+  constructor(center_x, center_y, scale, height, width, max_depth, renderer, var1, var2, three_d, darken) {
     this.center_x = center_x;
     this.center_y = center_y;
     this.height = height;  // Image height/width.
     this.width = width;
     this.scale = scale;   // One level for each factor of e (Euler's constant).
     this.max_depth = max_depth;
+    this.renderer = renderer;
+    this.var1 = var1;
+    this.var2 = var2;
+    this.three_d = three_d;
+    this.darken = darken;
   }
   
   // Setters/Getters
@@ -27,7 +32,7 @@ class MandelbrotView {
   
   // Scale of 1.0 has size_y of 4.0.
   get image_size_x() {return this.pix_size_x * this.width;}
-  get image_size_y() {return this.scale * 4;}
+  get image_size_y() {return 4 / this.scale;}
   
   // Bound and center coordinates.
   set center_x(v) {this._center_x = v;}
@@ -37,7 +42,7 @@ class MandelbrotView {
   get left_x() {return this.center_x - this.image_size_x / 2;}
   get top_y() {return this.center_y - this.image_size_y / 2;}
   get right_x() {return this.center_x + this.image_size_x / 2;}
-  get_bottom_y() {return this.center_y + this.image_size_y / 2;}
+  get bottom_y() {return this.center_y + this.image_size_y / 2;}
   
   // Pixel x/y are same, based on height.
   get pix_size_x() {return this.pix_size_y;}
@@ -49,23 +54,33 @@ class MandelbrotView {
   
   // Copy "constructor".
   copy() {
-    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.height, this.width, this.max_depth);
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.height, this.width, this.max_depth, this.renderer, this.var1, this.var2, this.three_d, this.darken);
   }
   
   // Image comparison.
-  equal(img2) {
+  equals(img2) {
     // Compare using same parameters as construction. Even through these aren't necessarily the object properties,
     // it's easier not to miss something.
-    return this.center_x == img2.center_x &&
+    return img2 != null &&
+           this.center_x == img2.center_x &&
            this.center_y == img2.center_y &&
            this.scale == img2.scale &&
            this.height == img2.height &&
            this.width == img2.width &&
-           this.max_depth == img2.max_depth;
+           this.max_depth == img2.max_depth &&
+           this.renderer == img2.renderer &&
+           this.var1 == img2.var1 &&
+           this.var2 == img2.var2 &&
+           this.three_d == img2.three_d &&
+           this.darken == img2.darken;
   }
   
   
   zoomBy(v) {
+    this.zoom_level += v;
+  }
+  
+  scaleBy(v) {
     this.scale *= v;
   }
   
@@ -89,6 +104,10 @@ class MandelbrotView {
                  this.pix_size_y + "," +
                  this.width + "," +
                  this.height + "," +
-                 this.max_depth + "]";
+                 this.max_depth + "," +
+                 this.var1 + "," +
+                 this.var2 + "," +
+                 this.three_d + "," +
+                 this.darken + "]";
   }
 }

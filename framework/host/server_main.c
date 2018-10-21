@@ -212,8 +212,14 @@ int main(int argc, char const *argv[])
           array_struct = handle_write_data(sock);
 
 #ifdef OPENCL
-          // Call the OpenCL utility function to send data to the FPGA
-          cl = write_kernel_data(cl, array_struct.data, array_struct.data_size * sizeof array_struct.data);  // TODO: Should be sizeof double.
+          // Call the OpenCL utility function to send data to the FPGA.
+          // We receive extra datums for C++ rendering only that are not sent to the FPGA.
+          cout << "C++ received " << array_struct.data_size << " parameters. Sending 7 to FPGA." << endl;
+          if (array_struct.data_size < 7) {
+            cerr << "Error: C++ received " << array_struct.data_size << " parameters, but needed 7." << endl;
+            exit(1);
+          }
+          cl = write_kernel_data(cl, array_struct.data, 7 * sizeof array_struct.data);  // TODO: Should be sizeof double.
           cerr << "Received WRITE_DATA_N\n";
 #else
           cerr << "Received unexpected WRITE_DATA_N\n";
@@ -250,7 +256,7 @@ int main(int argc, char const *argv[])
 	      force_c = true;
 	    }
     
-	    MandelbrotImage mb_img(array_struct.data);  // , true, true for 3d darkened in distance.
+	    MandelbrotImage mb_img(array_struct.data);
 
 	    int * depth_data = NULL;
 	    if (! force_c) {

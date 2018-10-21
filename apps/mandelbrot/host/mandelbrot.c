@@ -4,41 +4,35 @@ using namespace std;
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
-MandelbrotImage::MandelbrotImage(bool _is_3d, bool _darken) {
-  
+MandelbrotImage::MandelbrotImage(double *params) {
   // "Static" init (hack).
   if (!static_init_done) {
-    if (_is_3d) {
-      MandelbrotImage::default_color_scheme = allocRandomColorScheme(default_color_scheme_size, 32);
-    } else {
-      MandelbrotImage::default_color_scheme = allocGradientsColorScheme(default_color_scheme_size, 8, 64);
-    }
+    // Allocate color schemes (never deallocated).
+    MandelbrotImage::num_color_schemes = 2;
+    MandelbrotImage::color_scheme_size = (int *) malloc(sizeof(int) * MandelbrotImage::num_color_schemes);
+    MandelbrotImage::color_scheme = (color_t **) malloc(sizeof(color_t *) * MandelbrotImage::num_color_schemes);
+    MandelbrotImage::color_scheme[0] = allocGradientsColorScheme(MandelbrotImage::color_scheme_size[0], 8, 64);
+    MandelbrotImage::color_scheme[1] = allocRandomColorScheme(MandelbrotImage::color_scheme_size[1], 32);
     static_init_done = true;
   }
   
-  color_scheme = NULL;
-  color_scheme_size = 0;
   depth_array = NULL;
   pixel_data = NULL;
   png = NULL;
   width = height = 0;
   x = y = pix_x = pix_y = (coord_t)0.0;
-  is_3d = _is_3d;
-  adjustment = 0.0;
+  is_3d = (params[9] > 0.0);
+  adjustment = params[7] / 100.0;
   
   // For darkening distant 3D depths.
-  darken = _darken;
+  darken = (params[10] > 0.0);
   start_darkening_depth = 0;
   half_faded_depth = 0;
   
   assert(! IS_BIG_ENDIAN);
-};
-  
-MandelbrotImage::MandelbrotImage(double *params, bool _is_3d, bool _darken) : MandelbrotImage(_is_3d, _darken) {
-  setColorScheme();
+
+  setColorScheme(is_3d ? 1 : 0);
   setBounds(params);
-  // Interpret var1 and var2 parameters.
-  adjustment = params[7] / 100.0;
 };
  
 MandelbrotImage::~MandelbrotImage() {
@@ -65,16 +59,18 @@ MandelbrotImage * MandelbrotImage::enableTimer(int level) {
   return this;
 }
 
-// Set the color scheme.
-MandelbrotImage *MandelbrotImage::setColorScheme() {
-  if (color_scheme != NULL) {
-    cerr << "Error (mandelbrot.c): Color scheme set multiple times.\n";
-  }
-  color_scheme = default_color_scheme;
-  color_scheme_size = default_color_scheme_size;
-  
+MandelbrotImage * MandelbrotImage::setColorScheme(int scheme) {
+  active_color_scheme = scheme;  
   return this;
 }
+
+MandelbrotImage::color_t * MandelbrotImage::getColorScheme() {
+  return color_scheme[active_color_scheme];
+}
+int MandelbrotImage::getColorSchemeSize() {
+  return color_scheme_size[active_color_scheme];
+}
+
  
 MandelbrotImage *MandelbrotImage::setBounds(double *params) {
   x = (coord_t)params[0];
@@ -211,9 +207,10 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
       coord_t x0 = xx;
       coord_t y0 = yy;
       int iteration = 0;
-      while (xx*xx + yy*yy < 2*2 && iteration < max_depth) {
-        coord_t xtemp = xx*xx - yy*yy + x0 + adjustment;
-        yy = 2*xx*yy + y0 - adjustment;
+      coord_t dist_sq;
+      while ((dist_sq = xx*xx + yy*yy) < 2*2 && iteration < max_depth) {
+        coord_t xtemp = xx*xx - yy*yy + x0 + adjustment * dist_sq;
+        yy = 2*xx*yy + y0 - adjustment * dist_sq;
         xx = xtemp;
         iteration += 1;
       }
@@ -237,58 +234,57 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
   if (pixel_data != NULL) {
     cerr << "Error (mandelbrot.c): Pixels generated multiple times.\n";
   }
-  if (color_scheme == NULL) {
-    cerr << "Error (mandelbrot.c): Can't generatePixels(..) without a color scheme.\n";
-  } else {
-    if (is_3d) {
-      make3d();
-    }
-    
-    startTimer();
   
-    /*
-    // To avoid byte writes, we pack bytes.
-    ...
-    int byte_ind = 0;
-    int int_data;
-    int int_bytes;
-    for (int h = 0; h < height; h++) {
-      // Handle left-over bytes.
-      for (int w = 0; w < width && byte_ind < sizeof int; w++, byte_ind++) {
-        int_data &= 
-      }
-      for (int w = --; w < width; w++) {
-        if (by)
-      }
-    }
-    */
-    pixel_data = (unsigned char *) malloc(width * height * 3);
-    
-    int j = 0;
-
-    // Building the image pixels data
-    for(int i = 0; i < width * height * 3; i+=3) {
-      int depth = depth_array[j];
-
-      float brightness;
-      bool shadow = darken && depth > start_darkening_depth;
-      if (shadow) {
-        brightness = 1.0L / (1.0L + (long double)(depth - start_darkening_depth) / half_faded_depth);
-      }
-      for(int k = 0; k < 3; k++) {
-        if (depth == max_depth)
-          pixel_data[i + k] = 0;
-        else
-          pixel_data[i + k] = color_scheme[depth % color_scheme_size].component[k];
-          if (shadow) {
-            pixel_data[i + k] = (int)(((float)pixel_data[i + k]) * brightness);
-          }
-      }
-      
-      j++;
-    }
-    stopTimer("generatePixels()");
+  if (is_3d) {
+    make3d();
   }
+  
+  startTimer();
+
+  /*
+  // To avoid byte writes, we pack bytes.
+  ...
+  int byte_ind = 0;
+  int int_data;
+  int int_bytes;
+  for (int h = 0; h < height; h++) {
+    // Handle left-over bytes.
+    for (int w = 0; w < width && byte_ind < sizeof int; w++, byte_ind++) {
+      int_data &= 
+    }
+    for (int w = --; w < width; w++) {
+      if (by)
+    }
+  }
+  */
+  pixel_data = (unsigned char *) malloc(width * height * 3);
+  
+  int j = 0;
+
+  // Building the image pixels data
+  color_t * color_scheme = getColorScheme();
+  int color_scheme_size = getColorSchemeSize();
+  for(int i = 0; i < width * height * 3; i+=3) {
+    int depth = depth_array[j];
+
+    float brightness;
+    bool shadow = darken && depth > start_darkening_depth;
+    if (shadow) {
+      brightness = 1.0L / (1.0L + (long double)(depth - start_darkening_depth) / half_faded_depth);
+    }
+    for(int k = 0; k < 3; k++) {
+      if (depth == max_depth)
+        pixel_data[i + k] = 0;
+      else
+        pixel_data[i + k] = color_scheme[depth % color_scheme_size].component[k];
+        if (shadow) {
+          pixel_data[i + k] = (int)(((float)pixel_data[i + k]) * brightness);
+        }
+    }
+    
+    j++;
+  }
+  stopTimer("generatePixels()");
   
   return this;
 };
@@ -389,5 +385,6 @@ void MandelbrotImage::stopStartTimer(string tag) {
 
 // Static initialization.
 bool MandelbrotImage::static_init_done = false;
-MandelbrotImage::color_t * MandelbrotImage::default_color_scheme;
-int MandelbrotImage::default_color_scheme_size;
+int MandelbrotImage::num_color_schemes = -1;
+int * MandelbrotImage::color_scheme_size = NULL;
+MandelbrotImage::color_t ** MandelbrotImage::color_scheme = NULL;

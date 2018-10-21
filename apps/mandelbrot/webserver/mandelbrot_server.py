@@ -58,7 +58,7 @@ Or:
            pix_x/y are float pixel sizes in mandelbrot coords
            img_width/height are integers (pixels), and
            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
-In either case, integer query arguments var1 and var2 can also be provided for use in C rendering only.
+In either case, integer query arguments var1, var2, three_d, and darken can also be provided (used in C rendering only).
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
@@ -72,27 +72,32 @@ class ImageHandler(tornado.web.RequestHandler):
     # handles image request via get request 
     def get(self, type, depth=u'1000', tile_z=None, tile_x=None, tile_y=None):
 
-        # Determine who should produce the image.
-        # For tiles, we use type = "python_type" to force Python, or a negative depth to force C++
-        # (because this is what the C++ code looks for); otherwise the GET query arg "renderer"
-        # can be specified to force the renderer.
-        renderer = "python" if (type == "python_tile") else "c" if (int(depth) < 0) else self.get_query_argument("renderer", None)
-        print "Renderer: %s" % renderer
+        # Determine who should produce the image from the GET query arg "renderer".
+        renderer = self.get_query_argument("renderer", "fpga")
         
         # Extract URL parameters.
         if (len(self.get_query_arguments("var1")) > 0):
             var1 = self.get_query_arguments("var1")[0]
         else:
             var1 = "0"
-        if (len(self.get_query_arguments("var2")) > 1):
+        if (len(self.get_query_arguments("var2")) > 0):
             var2 = self.get_query_arguments("var2")[0]
         else:
             var2 = "0"
-        print "Query Args: var1: " + var1 + ", var2: " + var2
+        if (len(self.get_query_arguments("three_d")) > 0):
+            three_d = self.get_query_arguments("three_d")[0]
+        else:
+            three_d = "0"
+        if (len(self.get_query_arguments("darken")) > 0):
+            darken = self.get_query_arguments("darken")[0]
+        else:
+            darken = "0"
+        #print "Query Args: var1: " + var1 + ", var2: " + var2, "3d: " + three_d, "darken: " + darken
+        #print "Type: ", type, ", Renderer: ", renderer
         
         # Determine image parameters from GET parameters
         if type == "tile" or type == "python_tile":
-            print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s" % (tile_z, tile_x, tile_y, depth, var1, var2)
+            #print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s, 3d:%s, darken:%s" % (tile_z, tile_x, tile_y, depth, var1, var2, three_d, darken)
         
             # map parameters to those expected by FPGA, producing 'payload'.
             tile_size = 4.0 / 2.0 ** float(tile_z)    # size of tile x/y in Mandelbrot coords
@@ -101,7 +106,7 @@ class ImageHandler(tornado.web.RequestHandler):
             pix_x = tile_size / 256.0
             pix_y = pix_x
             payload = [x, y, pix_x, pix_y, 256, 256, int(depth)]
-            print "Payload from web server: %s" % payload
+            #print "Payload from web server: %s" % payload
         elif type == "img":
             payload_str = self.get_query_argument("data", None)
             try:
@@ -114,10 +119,14 @@ class ImageHandler(tornado.web.RequestHandler):
         else:
             print "Unrecognized type arg in ImageHandler.get(..)"
 
-        # Append var1 and var2 for C++ rendering only.
-        if renderer == "c":
-            payload.append(int(var1))
-            payload.append(int(var2))
+        # Renderer is communicated to C++ as the sign of the depth. Negative for C++.
+        if self.application.sock != None and renderer == "cpp":
+            payload[6] = -payload[6]
+        # Append var1 and var2 (used by C++ rendering only).
+        payload.append(int(var1))
+        payload.append(int(var2))
+        payload.append(1 if three_d else 0)
+        payload.append(1 if darken else 0)
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)

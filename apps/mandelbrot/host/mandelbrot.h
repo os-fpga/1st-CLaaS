@@ -31,8 +31,7 @@ public:
   // Constructors (with optional arguments for some settings)
   //
   
-  MandelbrotImage(bool _is_3d = false, bool _darken = false);
-  MandelbrotImage(double *params, bool _is_3d = false, bool _darken = false);  // Construct, setColorScheme(), setBounds(), generateImage()
+  MandelbrotImage(double *params);  // Construct, setColorScheme(), setBounds(), generateImage()
   ~MandelbrotImage();
   
   
@@ -44,8 +43,9 @@ public:
   MandelbrotImage * setBounds(double *params);
   // Enable 3D effect.
   MandelbrotImage * enable3D();
-  // Set to default color scheme.
-  MandelbrotImage * setColorScheme();  // (Currently taken care of by construction.)
+  // Set color scheme.
+  MandelbrotImage * setColorScheme(int scheme);
+  
   // Enable time reporting at varying levels.
   // Levels are:
   //   0: nothing
@@ -112,17 +112,19 @@ private:
   static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when 2D-scaled to fit (height).
   //
 
+  // Several color schemes are statically allocated in an array.
+  // active_color_scheme is the index of the active one.
+  // A color scheme is some number of color_t's indexed by depth % num_colors.
   static bool static_init_done;
-  static int default_color_scheme_size;  // Size of default_color_scheme.
-  static color_t *default_color_scheme;  // The default color scheme.
+  static int num_color_schemes;      // The number of color schemes.
+  static int * color_scheme_size;   // Size of each color_scheme.
+  static color_t ** color_scheme;  // The color schemes.
+  int active_color_scheme;  // The index of the current color scheme.
   
   int timer_level;
   // check timing
   timespec timer_start_time;
 
-
-  color_t * color_scheme;  // The color scheme (not freed)
-  int color_scheme_size;   // The number of colors in color_scheme.
   int width, height;  // Image size in pixels.
   coord_t x, y;  // Position of the upper-left corner of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.
@@ -139,6 +141,11 @@ private:
   int *depth_array;  // Image array of depth integers.
   unsigned char *pixel_data;  // Pixel data for the set, as int [component(R,G,B)][width][height].
   unsigned char *png;  // The PNG image.
+
+  // Get color scheme.
+  color_t * getColorScheme();
+  // Get color scheme size.
+  int getColorSchemeSize();
 
   // Center points.
   //-coord_t getCenterX();

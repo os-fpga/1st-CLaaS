@@ -27,9 +27,9 @@
 
 <body>
     <nav class="w3-bar w3-black">
-        <a href="/home.html" class="w3-button w3-bar-item">Home</a>
+        <!-- a href="/home.html" class="w3-button w3-bar-item">Home</a -->
         <a href="/demo.html" class="w3-button w3-bar-item">Demo</a>
-        <a href="/contact.html" class="w3-button w3-bar-item">Contact</a>
+        <!-- a href="/contact.html" class="w3-button w3-bar-item">Contact</a -->
       </nav>
   <div id="connection_details" class="form-inline text-center" role="form" align="center">
     <input type="text" id="host" value="localhost" class="form-control" placeholder="host" />
@@ -39,16 +39,16 @@
     <input type="text" id="uri" value="/ws" class="form-control" placeholder="url" />
     <br />
     <input type="submit" id="open_map" class="btn btn-primary" value="open" />
-    <fieldset>
+    <fieldset id="renderer">
       <legend>Renderer</legend>
 
       <div>
-        <input type="radio" id="python" name="renderer" checked />
+        <input type="radio" id="python" name="renderer" />
         <label for="python">Python</label>
       </div>
 
       <div>
-        <input type="radio" id="cpp" name="renderer" />
+        <input type="radio" id="cpp" name="renderer" checked />
         <label for="cpp">C++</label>
       </div>
 
@@ -58,21 +58,41 @@
       </div>
 
     </fieldset>
+    <fieldset id="modes">
+      <legend>Modes (C++)</legend>
+      
+      <div>
+        <input type="checkbox" id="3d" class="mode" name="3d" />
+        <label for="3d">3-D</label>
+      </div>
+    
+      <div>
+        <input type="checkbox" id="darken" class="mode" name="darken" />
+        <label for="darken">Darken</label>
+      </div>
+               
+    </fieldset>
     <fieldset>
         <legend>Variables</legend>
         
-        <label for="var1">Variable 1</label>
-        <input type="range" id="var1" name="var1"
+        <label for="sqrt_depth">Depth</label>
+        <input type="range" id="sqrt_depth" class="var" name="sqrt_depth"
+               min="5" max="100" value="10" />
+        
+        <label for="var1">Variable 1 (C++)</label>
+        <input type="range" id="var1" class="var" name="var1"
                min="-100" max="100" value="0" />
                
-        <label for="var2">Variable 2</label>
-        <input type="range" id="var2" name="var2" 
+        <label for="var2">Variable 2 (dummy)</label>
+        <input type="range" id="var2" class="var" name="var2" 
                min="-100" max="100" value="0" />
                
     </fieldset>
     <input type="submit" id="open_img" class="btn btn-primary" value="image" />
   </div>
   <div id="myImage" class="img-rounded"></div>
+  <p id="debugLog">
+  </p>
   <script type="text/javascript">
     $(document).ready(function () {
       // populate host field
@@ -81,6 +101,7 @@
     })
   </script>
   <script src="js/MandelbrotView.js"></script>
+  <script src="js/FullImageMandelbrotViewer.js"></script>
   <script src="js/demo.js"></script>
 </body>
 
