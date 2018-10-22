@@ -34,39 +34,47 @@ cd "$REPO_ROOT/fpga-webserver" || fail "Failed to cd $REPO_ROOT/fpga-webserver."
 git fetch
 OUT=`cd $REPO_ROOT/fpga-webserver; git status`
 if ! [[ $OUT =~ Your\ branch\ is\ behind ]] ; then
-    echo "Up to date with master. Nothing to be done."
-    exit 0
-fi
-
-# Pull changes.
-git pull origin master || fail "Failed to pull changes from master."
-
-# Compile
-make build
-
-# Kill running launch command.
-OUT=`ps -ao pid,comm | grep launch`
-if [[ $OUT =~ ^[[:space:]]*([0-9]+)\ launch$ ]] ; then
-    kill ${BASH_REMATCH[1]} || fail "Failed to kill running web server."
+  echo "Up to date with master."
+  UPDATE=true
 else
-    if [[ $OUT =~ launch$ ]] ; then
-	echo "Perhaps there are multiple web servers running? Will not launch a new one."
-	echo $OUT
-	exit 1
-    else
-	echo "Failed to find running web server. Launching a new one."
-    fi
-fi
+  # Changes to pull. Pull them and take down the web server.
+  UPDATE=false
+  
+  # Pull changes.
+  git pull origin master || fail "Failed to pull changes from master."
 
-# Wait, to make sure the socket is freed. (Don't know if this is needed, but it seems like a good idea.)
-sleep 1
+  # Compile
+  make build
+  
+  # Kill running launch command.
+  OUT=`ps -ao pid,comm | grep launch`
+  if [[ $OUT =~ ^[[:space:]]*([0-9]+)\ launch$ ]] ; then
+      kill ${BASH_REMATCH[1]} || fail "Failed to kill running web server."
+  else
+    if [[ $OUT =~ launch$ ]] ; then
+      echo "Perhaps there are multiple web servers running? Will not launch a new one."
+      echo $OUT
+      exit 1
+    else
+      echo "Failed to find running web server. Launching a new one."
+    fi
+  fi
+  
+  # Wait, to make sure the socket is freed. (Don't know if this is needed, but it seems like a good idea.)
+  sleep 1
+fi
 
 # Confirm no running web server.
 OUT=`ps -ao pid,comm | grep launch`
 if [[ $OUT =~ ^[[:space:]]*([0-9]+)\ launch$ ]] ; then
+  # Server is running.
+  if [[ $UPDATE = true ]] ; then
     echo "Failed to kill running web server. Not launching new one."
     exit 1
+  else
+    exit 0
+  fi
 fi
 
-# Re-launch
+# Launch.
 cd apps/mandelbrot/build && make launch &
