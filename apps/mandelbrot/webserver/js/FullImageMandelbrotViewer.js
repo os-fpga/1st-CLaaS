@@ -106,9 +106,11 @@ class FullImageMandelbrotViewer {
   }
   
   debugMessage(msg) {
-    let el = $("#debugLog");
-    el.append(`<p>${msg}</p>`);
-    //el.text(el.text() + String.fromCharCode(13, 10) + msg);
+    if (window.debug) {
+      let el = $("#debugLog");
+      el.append(`<p>${msg}</p>`);
+      //el.text(el.text() + String.fromCharCode(13, 10) + msg);
+    }
   }
   
   // Get the URL for the current desired image and, once loaded, call the callback.

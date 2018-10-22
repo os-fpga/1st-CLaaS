@@ -109,7 +109,7 @@ class FPGAServerApplication(tornado.web.Application):
             print "handle_request(WRITE_DATA)"
             response = read_data_handler(self.sock, False, header)
         elif header == GET_IMAGE:
-            print(payload, b64)
+            print "get image:", payload, b64
             response = get_image(self.sock, header, payload, b64)
         elif header:
             print "handle_request(%s)" % header

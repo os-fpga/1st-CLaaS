@@ -25,6 +25,7 @@ function imageQueryArgs() {
 }
 
 function demo() {
+  window.debug = 0;  // 0/1 to disable/enable in-browser debug messages.
   
   var host;
   var port;

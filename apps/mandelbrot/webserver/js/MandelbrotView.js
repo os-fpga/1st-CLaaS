@@ -104,10 +104,6 @@ class MandelbrotView {
                  this.pix_size_y + "," +
                  this.width + "," +
                  this.height + "," +
-                 this.max_depth + "," +
-                 this.var1 + "," +
-                 this.var2 + "," +
-                 this.three_d + "," +
-                 this.darken + "]";
+                 this.max_depth + "]";
   }
 }

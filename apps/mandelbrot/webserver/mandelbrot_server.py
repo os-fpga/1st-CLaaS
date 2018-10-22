@@ -96,7 +96,7 @@ class ImageHandler(tornado.web.RequestHandler):
         #print "Type: ", type, ", Renderer: ", renderer
         
         # Determine image parameters from GET parameters
-        if type == "tile" or type == "python_tile":
+        if type == "tile":
             #print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s, 3d:%s, darken:%s" % (tile_z, tile_x, tile_y, depth, var1, var2, three_d, darken)
         
             # map parameters to those expected by FPGA, producing 'payload'.
@@ -125,8 +125,8 @@ class ImageHandler(tornado.web.RequestHandler):
         # Append var1 and var2 (used by C++ rendering only).
         payload.append(int(var1))
         payload.append(int(var2))
-        payload.append(1 if three_d else 0)
-        payload.append(1 if darken else 0)
+        payload.append(0 if three_d == "0" or type == "tile" else 1)
+        payload.append(0 if darken == "0" or three_d == "0" or type == "tile" else 1)
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)
@@ -149,6 +149,7 @@ class MandelbrotApplication(FPGAServerApplication):
             img_data = outputImg.getvalue()
         else:
             # Send image parameters over socket.
+            print "Python sending to C++: ", payload
             img_data = self.handle_request(GET_IMAGE, payload, False)
         return img_data
 

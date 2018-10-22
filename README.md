@@ -102,8 +102,10 @@ If you are new to AWS, you might find it to be quite complicated. Here are some 
 
 While you wait for F1 access, you can play around with the Mandelbrot example without hardware acceleration.
 
-On a Linux machine:
+On a Ubuntu 16.04 machine:
 ```sh
+sudo apt-get update
+sudo apt-get install make g++ python python-pip python-pil
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd apps/mandelbrot/build
