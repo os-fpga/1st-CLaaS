@@ -147,13 +147,17 @@ int main(int argc, char const *argv[])
   ************************/
 
   // Creating socket file descriptor
-  if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == 0)
+  if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == 0) {
     perror("Socket failed");
+    exit(1);
+  }
     
   // Attaching UNIX SOCKET
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-                          &opt, sizeof(opt)))
+                          &opt, sizeof(opt))) {
     perror("setsockopt failed");
+    exit(1);
+  }
 
   address.sun_family = AF_UNIX;
   unlink(SOCKET);
@@ -161,11 +165,15 @@ int main(int argc, char const *argv[])
     
   // Binding to the UNIX SOCKET
   if (bind(server_fd, (struct sockaddr *)&address, 
-                 sizeof(address))<0)
+                 sizeof(address))<0) {
     perror("Bind failed");
+    exit(1);
+  }
 
-  if (listen(server_fd, 3) < 0)
+  if (listen(server_fd, 3) < 0) {
     perror("Listen failed");
+    exit(1);
+  }
 
   int data_array[262144];  // TODO: YIKES!!!
 
@@ -183,12 +191,13 @@ int main(int argc, char const *argv[])
     if ((sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
       printf("%d\n", sock);
       perror("SOCKET: Accept Failure");
+      exit(1);
     }
 
     while(true) {
       if(!(err = recv(sock, msg, sizeof(msg), 0))){
-        printf("Error %d: Client disconnected\n", err);
-        break;
+        printf("Error %d: Client disconnected. Exiting.\n", err);
+        exit(1);
       }
       
       cout << "Main loop\n";

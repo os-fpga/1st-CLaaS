@@ -1,7 +1,7 @@
 """
 #
 # This is the main python webserver which accepts WebSocket connections as well as 
-# Get requests from a client on port 8080.
+# Get requests from a client on port 8888.
 # 
 # The process is single threaded and all the requests are served synchronously and in order.
 #
@@ -25,6 +25,8 @@ import time
 import subprocess
 import json
 import base64
+import errno
+from socket import error as socket_error
 #import numpy
 from server_api import *
 

@@ -31,14 +31,22 @@
         <a href="/demo.html" class="w3-button w3-bar-item">Demo</a>
         <!-- a href="/contact.html" class="w3-button w3-bar-item">Contact</a -->
       </nav>
-  <div id="connection_details" class="form-inline text-center" role="form" align="center">
+  <!-- These inputs determine web socket connection details. The <div> is hidden because the server for the socket
+       connection is always the same as the one serving the page. We leave this intact in case there is
+       ever a desire to connect to a different one. -->
+  <div id="connection_details" class="form-inline text-center" role="form" align="center" style="display:none">
     <input type="text" id="host" value="localhost" class="form-control" placeholder="host" />
     <br />
     <input type="text" id="port" value="8888" class="form-control" placeholder="port" />
     <br />
     <input type="text" id="uri" value="/ws" class="form-control" placeholder="url" />
     <br />
-    <input type="submit" id="open_map" class="btn btn-primary" value="open" />
+  </div>
+  <div id="parameters" class="form-inline text-center" role="form" align="center">
+    <div>
+      <p><input type="submit" id="open_map" class="btn btn-primary" value="Open Tiled" /></p>
+      <p><input type="submit" id="open_img" class="btn btn-primary" value="Open Untiled" /></p>
+    </div>
     <fieldset id="renderer">
       <legend>Renderer</legend>
 
@@ -88,7 +96,6 @@
                min="-100" max="100" value="0" />
                
     </fieldset>
-    <input type="submit" id="open_img" class="btn btn-primary" value="image" />
   </div>
   <div id="myImage" class="img-rounded"></div>
   <p id="debugLog">
