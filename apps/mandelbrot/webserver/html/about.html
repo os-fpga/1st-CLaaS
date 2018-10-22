@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+  <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+  <!-- Style here -->
+  <link href="https://fonts.googleapis.com/css?family=Just+Another+Hand" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs@1.3.4/dist/interact.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
+  <link rel="stylesheet" href="/css/about.css">
+  <title>Mandelbrot</title>
+</head>
+
+<body>
+  <nav class="w3-bar w3-black">
+    <a href="/demo.html" class="w3-button w3-bar-item">Demo</a>
+    <a href="/about.html" class="w3-button w3-bar-item">About</a>
+    <!-- a href="/contact.html" class="w3-button w3-bar-item">Contact</a -->
+  </nav>
+  <div id="content"><div id="mask">
+    <div id="header" class="section">
+      <h1>Mandelbrot Explorer</h1>
+      <p>
+        <h3>A fun little demo of some game-changing technologies</h3>
+      </p>
+    </div>
+    <div id="overview" class="section">
+      <h3>What is it?</h3>
+      <p>
+        This Mandelbrot fractal explorer is a demonstration and development vehicle for emerging technologies, including:
+        <ul>
+          <li>Cloud FPGAs</li>
+          <li>Hardware-accelerated web applications</li>
+          <li>Advanced hardware modeling in <a href="http://www.makerchip.com" target="_blank">Transaction-Level Verilog</a></li>
+        </ul>
+      </p>
+    </div>
+    <div id="acceleration" class="section">
+      <h3>Enable Hardware Acceleration</h3>
+      <p>
+        The true showcase is enabled by special hardware
+        acceleration technology, called cloud FPGAs. We use these to accelerate the Mandelbrot calculations
+        by ~20x! This specialized hardware isn’t cheap, though, so we do not provide it here, but we enable you to provide
+        your own. It is not for the faint of heart, but we’re doing our best to make it easier. You can find
+        more information from the <a href="https://github.com/alessandrocomodi/fpga-webserver">open-source repository</a>.
+      </p>
+    </div>
+    <div id="tech" class="section">
+      <h3>Cool Technologies</h3>
+      <p><b>Cloud FPGAs</b>:</p>
+      <p>
+        Field Programmable Gate Arrays (FPGAs) are chips containing millions or billions of logic gates that
+        can be configured to perform any logic function. In contrast, Application-Specific Integrated
+        Circuilts (ASICs) are designed and manufactured for a specific purpose. ASICs are optimized; FPGAs
+        are flexible. And FPGAs are now available in the cloud, which is a <b>huge</b> enabler for open-source
+        hardware!
+      </p>
+      <p><b>Hardware Accelerated Web Applications</b>:</p>
+      <p>
+        Could FPGAs have great potential to accelerate compute infrastructure. But they are in their infancy.
+        The barriers to entry are significant. This project is the development vehicle for an open-source
+        framework for accelerating web applications (or services) using cloud FPGAs. The aim is to provide the
+        communication layer by which a web application can communicate through standard web protocols,
+        directly with hardware kernels running on cloud FPGAs. You are witnessing the first implementation
+        of this infrastructure, or at least you would be if a cloud FPGA was attached.
+      </p>
+      <p><b>Transaction-Level Verilog</b>:</p>
+      <p>
+        One of the biggest hurdles to ubiquitous hardware acceleration is the mere fact that hardware is not
+        as easy to program as software. But new technologies are making it easier. This project utilizes
+        advanced modern modeling techniques available in Transaction-Level Verilog (TL-Verilog). You can
+        learn about these techniques and try them for yourself at
+        <a href="http://www.makerchip.com" target="_blank">makerchip.com</a>.
+      </p>
+    </div>
+    <div id="contribute" class="section">
+      <h3>Contribute!</h3>
+      <p>
+        This is a group effort. It’s tons of fun, it’s charting new territory, and it’s got something to
+        offer everyone. You could:
+        <ul>
+          <li>Improve the website.</li>
+          <li>Enhance the algorithms.</li>
+          <li>Optimize the hardware kernel.</li>
+        </ul>
+      </p>
+      <p>
+        If you are a student, <a href="https://summerofcode.withgoogle.com/" target="_blank">Google
+        Summer of Code</a> might be a great opportunity to get involved.
+      </p>
+      <p>
+        Feel free to <a href="mailto:steve@hooverfam.net">contact the authors</a>, or browse the
+        <a href="https://github.com/alessandrocomodi/fpga-webserver">project on github</a>.
+      </p>
+    </div>
+    <div id="donate" class="section">
+      <h3>Donate</h3>
+      <p>
+        Sorry, we do not have a donation system in place, yet. But,
+        <a href="mailto:steve@hooverfam.net">let us know you care</a>. If there is enough
+        interest we will make it possible to sponsor cloud FPGA time in your name.
+      </p>
+    </div>
+    <div id="share" class="section">
+      <h3>Share</h3>
+      <p>
+        Help us spread the word on social media.
+      </p>
+    </div>
+  </div></div>
+</body>
+
+</html>

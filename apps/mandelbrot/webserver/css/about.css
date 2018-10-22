@@ -1,0 +1,17 @@
+#content {
+  background-image: url("/img?data=[-0.3535108995992088, -0.6335339711629606, 5.0e-07, 5.0e-07, 1920, 1920, 730]&renderer=cpp");
+}
+#mask {
+  background: #000A;
+  padding: 20px;
+}
+#content #header {
+  background: #137D;
+  color: #fff;
+}
+#content .section {
+  background: #DDDB;
+  color: #000;
+  margin-bottom: 30px;
+  padding: 10px;
+}

@@ -26,11 +26,11 @@
 </head>
 
 <body>
-    <nav class="w3-bar w3-black">
-        <!-- a href="/home.html" class="w3-button w3-bar-item">Home</a -->
-        <a href="/demo.html" class="w3-button w3-bar-item">Demo</a>
-        <!-- a href="/contact.html" class="w3-button w3-bar-item">Contact</a -->
-      </nav>
+  <nav class="w3-bar w3-black">
+    <a href="/demo.html" class="w3-button w3-bar-item">Demo</a>
+    <a href="/about.html" class="w3-button w3-bar-item">About</a>
+    <!-- a href="/contact.html" class="w3-button w3-bar-item">Contact</a -->
+  </nav>
   <!-- These inputs determine web socket connection details. The <div> is hidden because the server for the socket
        connection is always the same as the one serving the page. We leave this intact in case there is
        ever a desire to connect to a different one. -->
@@ -98,6 +98,11 @@
     </fieldset>
   </div>
   <div id="myImage" class="img-rounded"></div>
+  <div style="padding-top: 10px;">
+    <p>
+      Open, then use mouse to explore. Drag to pan; wheel to zoom.
+    </p>
+  </div>
   <p id="debugLog">
   </p>
   <script type="text/javascript">
