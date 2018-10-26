@@ -25,7 +25,7 @@ MandelbrotImage::MandelbrotImage(double *params) {
   adjustment = params[7] / 100.0;
   
   // For darkening distant 3D depths.
-  darken = (params[10] > 0.0);
+  darken = (params[12] > 0.0);
   start_darkening_depth = 0;
   half_faded_depth = 0;
   
@@ -80,15 +80,23 @@ MandelbrotImage *MandelbrotImage::setBounds(double *params) {
   width = (int)params[4];
   height = (int)params[5];
   max_depth = (int)params[6];
+  center_offset_w = (int)(params[10]);
+  center_offset_h = (int)(params[11]);
   if (is_3d) {
     // For 3D images, we compute larger h/w images for greater resolution of the 1x 3D image.
-    x -= (coord_t)width  / 2.0 * (RESOLUTION_FACTOR_3D - 1) * pix_x;
-    y -= (coord_t)height / 2.0 * (RESOLUTION_FACTOR_3D - 1) * pix_y;
+    //x -= (coord_t)width  / 2.0 * (RESOLUTION_FACTOR_3D - 1) * pix_x;
+    //y -= (coord_t)height / 2.0 * (RESOLUTION_FACTOR_3D - 1) * pix_y;
     width *= RESOLUTION_FACTOR_3D;
     height *= RESOLUTION_FACTOR_3D;
+    // Preserve the relative position of the offset.
+    center_offset_w *= RESOLUTION_FACTOR_3D;
+    center_offset_h *= RESOLUTION_FACTOR_3D;
   }
-  cout << "New image: upper-left = (" << x << ", " << y << "), pix_size = (" << pix_x << ", " << pix_y
-       << "), img_size = (" << width << ", " << height << "), max_depth = " << max_depth << "\n";
+  center_w = (width  >> 1) + center_offset_w;
+  center_h = (height >> 1) + center_offset_h;
+  cout << "New image: center coords = (" << x << ", " << y << "), pix_size = (" << pix_x << ", " << pix_y
+       << "), img_size = (" << width << ", " << height << "), center = (" << center_w << ", " << center_h
+       << "), max_depth = " << max_depth << "\n";
 
   return this;
 };
@@ -103,41 +111,68 @@ coord_t MandelbrotImage::getCenterY() {
 };
 */
 
-const int MandelbrotImage::RESOLUTION_FACTOR_3D = 3;
-const MandelbrotImage::coord_t MandelbrotImage::SCALE_PER_DEPTH = 0.94L;
-const MandelbrotImage::coord_t MandelbrotImage::EYE_DEPTH_FIT = 30.0L;
-const MandelbrotImage::coord_t MandelbrotImage::NATURAL_DEPTH = 7.0L;
+const int MandelbrotImage::RESOLUTION_FACTOR_3D = 3;  // Chosen imperically as an integer. Could scrutinize.
+const MandelbrotImage::coord_t MandelbrotImage::SCALE_PER_DEPTH = 0.85L;
+const MandelbrotImage::coord_t MandelbrotImage::EYE_DEPTH_FIT = 40.0L;
+const MandelbrotImage::coord_t MandelbrotImage::NATURAL_DEPTH = 3.0L;
 
 MandelbrotImage *MandelbrotImage::make3d() {
   startTimer();
-  // The 3D image has a plane at each depth with a cut-out Mandelbrot hole for that depth of iterations.
-  // The separation between each plane is scaled by a scaling factor (< 1.0) from the previous, while
-  // the plane coordinate system remains constant across planes. The scale of the 3D object, however,
-  // grows by 1/SCALE_PER_DEPTH with each depth of zoom. This is achieved by doing all computation based
-  // on units of depth from the eye. Pix_x/y determines the coordinate system at a constant depth (NATURAL_DEPTH)
-  // (and if we implement two eyes, their separation is a constant number of pixels).
-
-  // The shape of each plane is given by the depth data array of the Mandelbrot set already computed.
-  // Beyond the fit_depth we need access to x/y coordinates outside the ones at the fit depth (TODO).
+  // The 3D "Structure":
+  // ------------------
+  // A 3D "structure" is defined based on the 2D Mandelbrot where there is an
+  // infinite planar x/y surface at each depth with a cut-out hole as defined in the Mandelbrot
+  // image. The depth-0 surface has a cut-out for the Mandelbrot depth-0 circle, and so on. X/y
+  // and h/w coordinates in the 3D structure are as in the 2D image and are uniform at each depth. The
+  // separation between each plane is scaled by a scaling factor SCALE_PER_DEPTH (< 1.0) from
+  // the previous. This keeps plane separation on par with feature size which shrinks with each
+  // depth. This scaling factor is determined empirically. The perceived image will scale in depth
+  // proportional to the distance of the eye from the screen. So, there are no absolute coordinates
+  // for the Z dimension (depth), but rather a fixed number of depths from the eye to the screen.
+  //
+  // Exploration:
+  // -----------
+  // To explore the intricacies of the 3D structure, we zoom into, or scale, the 3D surface as
+  // with the 2D surface based on the provided pix_[x/y]. As the structure scales, it moves closer to the eye such
+  // that the separation between depths remains constant relative to the eye. So, with each
+  // 1/SCALE_PER_DEPTH of scaling, the eye moves inward one depth, and the structure grows by
+  // 1/SCALE_PER_DEPTH. So, pixel size determines both the structure size and the depth of the eye.
+  //
+  // Image Generation:
+  // ----------------
+  // To generate the 3D image, we first generate the 2D image (as a depth array). This defines the
+  // cut-outs at each depth. (The cut-out for depth n is where the depth in the depth array > n.)
+  // We then ray-trace each pixel of the 3D image through the cut-outs at each depth beyond the eye until
+  // a depth is reached where the ray point is not in the cut-out. NATURAL_DEPTH is a scaling
+  // factor for the generated image/surface. It specifies the depth at which the 2D image is
+  // scaled 1:1 with the 3D image. Since a ray can contact outside the requested 2D image, we
+  // generate a larger 2D image than requested. The image must be large enough for the projection
+  // of the natural image onto the worst-case maximum depth plane. This is not computed; we
+  // use a hardcoded constant, RESOLUTION_FACTOR_3D. Eye depth is used to determine where
+  // darkening begins if darkening is enabled. Adjustments to SCALE_PER_DEPTH, eye depth, and
+  // darkening constant could be provided as user inputs, but currently are not. The shape of
+  // each plane is given by the depth data array of the Mandelbrot set already computed.
   
   // Assumptions:
   //   o pix_x/pix_y reflect a whole number of depths of zoom.
-
-  int width_3d = width / RESOLUTION_FACTOR_3D;
-  int height_3d = height / RESOLUTION_FACTOR_3D;
-  int *depth_array_3d = (int *)malloc(width_3d * height_3d * sizeof(int));
   
   //-coord_t center_x = getCenterX();
   //-coord_t center_y = getCenterY();
-  coord_t center_w_2d = width / 2.0L;
-  coord_t center_h_2d = height / 2.0L;
-  coord_t center_w_3d = width_3d / 2.0L;
-  coord_t center_h_3d = height_3d / 2.0L;
+  coord_t center_w_2d = (coord_t)center_w;
+  coord_t center_h_2d = (coord_t)center_h;
+  // Revert image scaling to get 3D image size back to the size requested.
+  int width_3d = width / RESOLUTION_FACTOR_3D;
+  int height_3d = height / RESOLUTION_FACTOR_3D;
+  coord_t center_w_3d = center_w / RESOLUTION_FACTOR_3D;
+  coord_t center_h_3d = center_h / RESOLUTION_FACTOR_3D;
+  
+  int *depth_array_3d = (int *)malloc(width_3d * height_3d * sizeof(int));
   
   //-coord_t img_size_y = pix_y * height;
   coord_t pix_y_fit = 4.0L / (coord_t)height;  // Pixel size at which plane-0 (the circle) is fit to the image.
   coord_t zoom_depth = log(SCALE_PER_DEPTH, pix_y / pix_y_fit);  // Number of depths zoomed from fit, where the eye remains a constant number of depths from the image.
   coord_t eye_depth = zoom_depth - EYE_DEPTH_FIT;
+  cout << "Eye depth: " << eye_depth << endl;
   
   // Iterate the depths in front of the eye, so begin with the first depth plane in front of the eye.
   int first_depth = ((int)(eye_depth + 1000.0L + 0.01L)) - 1000 + 1;
@@ -163,8 +198,8 @@ MandelbrotImage *MandelbrotImage::make3d() {
         int h_2d = round(center_h_2d + h_from_center_3d * multiplier_3d_to_2d);
         if (w_2d < 0 || w_2d >= width ||
             h_2d < 0 || h_2d >= height) {
-          // Outside the 2d image. Make everything solid.
-          done = true;
+          // Outside the 2d image. Make everything solid starting w/ depth 0.
+          done = depth >= 0;
         } else {
           done = depth_array[h_2d * width + w_2d] <= depth;
         }
@@ -199,20 +234,31 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
   // Fill depth_array with depth for each pixel.
   
   depth_array = (int *)malloc(width * height * sizeof(int));
-
+  // Upper-left x/y:
+  coord_t ul_x = x - center_w * pix_x;
+  coord_t ul_y = y - center_h * pix_y;
   for (int h = 0; h < height; h++) {
     for (int w = 0; w < width; w++) {
-      coord_t xx = x + pix_x * w;
-      coord_t yy = y + pix_y * h;
-      coord_t x0 = xx;
-      coord_t y0 = yy;
+      coord_t xx = ul_x + pix_x * w;
+      coord_t yy = ul_y + pix_y * h;
+      
       int iteration = 0;
-      coord_t dist_sq;
-      while ((dist_sq = xx*xx + yy*yy) < 2*2 && iteration < max_depth) {
-        coord_t xtemp = xx*xx - yy*yy + x0 + adjustment * dist_sq;
-        yy = 2*xx*yy + y0 - adjustment * dist_sq;
-        xx = xtemp;
-        iteration += 1;
+      if (false) {
+        // For debug:
+        // This generates a square at depth 0.
+        iteration = (xx < 0.3 && xx > -0.3 &&
+                     yy < 0.3 && yy > -0.3) ? 0 : max_depth;
+      } else {
+        // Mandelbrot pixel calc.
+        coord_t x0 = xx;
+        coord_t y0 = yy;
+        coord_t dist_sq;
+        while ((dist_sq = xx*xx + yy*yy) < 2*2 && iteration < max_depth) {
+          coord_t xtemp = xx*xx - yy*yy + x0 + adjustment * dist_sq;
+          yy = 2*xx*yy + y0 - adjustment * dist_sq;
+          xx = xtemp;
+          iteration += 1;
+        }
       }
       depth_array[h * width + w] = iteration;
     }

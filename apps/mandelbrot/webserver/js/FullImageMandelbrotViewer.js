@@ -1,6 +1,8 @@
 // A class for the full-image Mandelbrot viewer.
 class FullImageMandelbrotViewer {
-  constructor(el, host, port, view) {
+  
+  // Construct.
+  constructor(host, port, view) {
     
     // Constants for interaction.
     
@@ -13,20 +15,19 @@ class FullImageMandelbrotViewer {
     // {int} Controls the sensitivity of pinch zoom.
     this.PINCH_SLUGGISHNESS = 30;
     // {int} Controls the sensitivity of wheel zoom.
-    this.WHEEL_ZOOM_SLUGGISHNESS_PIXELS = 200;
+    this.WHEEL_ZOOM_SLUGGISHNESS_PIXELS = 600;//200;
     // {int} Controls the sensitivity of wheel zoom.
-    this.WHEEL_ZOOM_SLUGGISHNESS_LINES = 10;
+    this.WHEEL_ZOOM_SLUGGISHNESS_LINES = 30;//10;
     // {int} Controls the sensitivity of wheel zoom.
     this.WHEEL_ZOOM_SLUGGISHNESS_PAGES = 1;
     
     // Initialize members.
     this.base_url = `http://${host}:${port}/img`;
-    this.desired_image_properties = view;
     // The image last requested.
     this.requested_image_properties = null;
     // The most recent image loaded (requested and returned).
     this.available_image_properties = null;
-    this.view = view;
+    
     this.destroyed = false;
     // `true` if the content is being dragged, and click events for highlighting should be ignored.
     this.dragging = false;
@@ -35,13 +36,17 @@ class FullImageMandelbrotViewer {
     this.image_id = 0;
 
     // Empty the target div to remove any prior Map and add content for full-image viewer.
-    el.html(`<div id="img_container" width=${view.width} height=${view.height}><img></div>`);
+    $("#myImage" ).html(`<div class="img_container" width=${view.width} height=${view.height}><img></div>`);
+    $("#myImage2").html(`<div class="img_container" width=${view.width} height=${view.height} style="left: ${view.width}px"><img></div>`);
+    $("#image_row").css("height", `${view.height}`);
+
+    this.setView(view);
 
     // Load the next image, non-stop until destroyed.
     this.updateImage();
     
-    // Make image interactive.
-    interact("#img_container")
+    // Make images interactive.
+    interact(".img_container")
       .draggable({
         inertia: true
       })
@@ -101,6 +106,15 @@ class FullImageMandelbrotViewer {
     
   }
   
+  updateDOM() {
+    $("#myImage2").css("display", this.desired_image_properties.stereo ? "inline" : "none");
+  }
+  
+  setView(view) {
+    this.desired_image_properties = view;
+    this.updateDOM();
+  }
+  
   destroy() {
     this.destroyed = true;
   }
@@ -114,12 +128,16 @@ class FullImageMandelbrotViewer {
   }
   
   // Get the URL for the current desired image and, once loaded, call the callback.
-  getImage(cb) {
-    let urlSource = `${this.base_url}?data=${this.desired_image_properties.getImageURLParamsArrayJSON()}` +
-                    `&${imageQueryArgs()}`;
+  // Params:
+  //  eye: "left", "right", "-" (anything)
+  //  cb: callback
+  getImage(eye, cb) {
+    let urlSource = `${this.base_url}?data=${this.desired_image_properties.getImageURLParamsArrayJSON(eye === "right")}` +
+                    `&${this.desired_image_properties.getImageURLQueryArgs(eye === "right")}`;
     console.log(`Image URL: ${urlSource}`);
     this.requested_image_properties = this.desired_image_properties.copy();
     let image = new Image(this.w, this.h);
+    image.setAttribute("eye", eye);
     image.src = urlSource;
     image.onload = cb;
     return image;
@@ -132,18 +150,29 @@ class FullImageMandelbrotViewer {
       var image_id = this.image_id++;  // For access from callback.
       var request_time = Date.now();
       var viewer = this;  // For access from callback.
-      var image = this.getImage(function () {
+      var outstanding = this.desired_image_properties.stereo ? 2 : 1;
+      var images = {};  // images that have called back (saved for processing when both return)
+      var cb = function (evt) {
         let time = Date.now() - request_time;
         console.log(`Image ${image_id} loaded after ${time} ms.`);
         // Not sure if the callback will trigger (image onload) after the image is removed from the DOM.
         // In case it does, check.
         if (!viewer.destroyed) {
-          let tmp = $("#img_container").children()[0];
-          tmp.replaceWith(image);
-          // Load next, but give control back to the browser first to render the loaded image.
-          viewer.updateImage();
+          images[evt.target.getAttribute("eye")] = evt.target;
+          if (--outstanding <= 0) {
+            for (let eye of Object.keys(images)) {
+              let old_img = $((eye == "right") ? "#myImage2 img" : "#myImage img");
+              old_img.replaceWith(images[eye]);
+            }
+            // Load next, but give control back to the browser first to render the loaded image.
+            viewer.updateImage();
+          }
         }
-      });
+      }
+      this.getImage("left", cb);
+      if (this.desired_image_properties.stereo) {
+        this.getImage("right", cb);
+      }
     } else {
       // Current desired image is already loaded. Wait a bit and poll again.
       setTimeout(() => {this.updateImage()}, 50)

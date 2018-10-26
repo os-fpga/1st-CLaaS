@@ -16,6 +16,9 @@ class Mandelbrot():
     image = Image.new('RGB', (img_width, img_height))  # numpy.empty([img_width, img_height])
     pixels = image.load()
     bail_cnt = 10000000
+    # Move x, y from center to upper-left.
+    x -= float(img_width) * pix_x / 2.0;
+    y -= float(img_width) * pix_y / 2.0;
     for v in range(img_height):
       y_pos = y + float(v) * pix_y
       for h in range(img_width):
@@ -58,7 +61,7 @@ Or:
            pix_x/y are float pixel sizes in mandelbrot coords
            img_width/height are integers (pixels), and
            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
-In either case, integer query arguments var1, var2, three_d, and darken can also be provided (used in C rendering only).
+In either case, integer query arguments var1, var2, three_d, center_offset_w, center_offset_h, and darken can also be provided (used in C rendering only).
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
@@ -88,21 +91,29 @@ class ImageHandler(tornado.web.RequestHandler):
             three_d = self.get_query_arguments("three_d")[0]
         else:
             three_d = "0"
+        if (len(self.get_query_arguments("offset_w")) > 0):
+            center_offset_w = self.get_query_arguments("offset_w")[0]
+        else:
+            center_offset_w = "0"
+        if (len(self.get_query_arguments("offset_h")) > 0):
+            center_offset_h = self.get_query_arguments("offset_h")[0]
+        else:
+            center_offset_h = "0"
         if (len(self.get_query_arguments("darken")) > 0):
             darken = self.get_query_arguments("darken")[0]
         else:
             darken = "0"
-        #print "Query Args: var1: " + var1 + ", var2: " + var2, "3d: " + three_d, "darken: " + darken
+        #print "Query Args: var1: " + var1 + ", var2: " + var2 + "3d: " + three_d + ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", darken: " + darken
         #print "Type: ", type, ", Renderer: ", renderer
         
         # Determine image parameters from GET parameters
         if type == "tile":
-            #print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s, 3d:%s, darken:%s" % (tile_z, tile_x, tile_y, depth, var1, var2, three_d, darken)
+            #print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s" % (tile_z, tile_x, tile_y, depth, var1, var2)
         
             # map parameters to those expected by FPGA, producing 'payload'.
             tile_size = 4.0 / 2.0 ** float(tile_z)    # size of tile x/y in Mandelbrot coords
-            x = -2.0 + float(tile_x) * tile_size
-            y = -2.0 + float(tile_y) * tile_size
+            x = -2.0 + (float(tile_x) + 0.5) * tile_size
+            y = -2.0 + (float(tile_y) + 0.5) * tile_size
             pix_x = tile_size / 256.0
             pix_y = pix_x
             payload = [x, y, pix_x, pix_y, 256, 256, int(depth)]
@@ -126,6 +137,8 @@ class ImageHandler(tornado.web.RequestHandler):
         payload.append(int(var1))
         payload.append(int(var2))
         payload.append(0 if three_d == "0" or type == "tile" else 1)
+        payload.append(int(center_offset_w))
+        payload.append(int(center_offset_h))
         payload.append(0 if darken == "0" or three_d == "0" or type == "tile" else 1)
         img_data = self.application.renderImage(payload, renderer)
 

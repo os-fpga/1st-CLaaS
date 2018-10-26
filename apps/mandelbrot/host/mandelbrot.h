@@ -108,7 +108,7 @@ private:
   static const coord_t SCALE_PER_DEPTH;  // The scale of the 3D object, grows by 1/SCALE_PER_DEPTH with each depth of zoom. Empirical.
                                          // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
                                          // increments, so the controlling software should be in sync with this factor.
-  static const coord_t NATURAL_DEPTH;  // Depth from eye at which the 3D scaling factor == the 2D scaling factor.
+  static const coord_t NATURAL_DEPTH;  // Depth from eye at which the 3D scaling factor == the 2D scaling factor (2D image is fit to the screen).
   static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when 2D-scaled to fit (height).
   //
 
@@ -126,11 +126,13 @@ private:
   timespec timer_start_time;
 
   int width, height;  // Image size in pixels.
-  coord_t x, y;  // Position of the upper-left corner of the image.
+  coord_t x, y;  // Position of the center of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.
   int max_depth;  // Max number of iterations for Mandelbrot calculation.
   bool is_3d;
+  int center_offset_w, center_offset_h;  // Offset to apply to the w/h center point (aka vanishing point).
   coord_t adjustment; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
+  int center_w, center_h;  // Center (vanishing) point, computed from width/height and center_offset_w/h.
   
   // For darkening distant 3D depths.
   bool darken;

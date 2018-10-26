@@ -1,84 +1,100 @@
+class demo {
+
 // Get renderer from GUI as "python", "cpp", or "fpga".
-function getRenderer() {
+getRenderer() {
   return $("#python").prop("checked") ? "python" : $("#cpp").prop("checked") ? "cpp" : "fpga";
 }
-function getVar1() {
+getVar1() {
   return $("#var1").prop("value");
 }
-function getVar2() {
+getVar2() {
   return $("#var2").prop("value");
 }
-function getMaxDepth() {
+getMaxDepth() {
   var d = $("#sqrt_depth").prop("value");
   return d * d;
 }
-function get3d() {
+get3d() {
   return $("#3d").prop("checked") ? 1 : 0;
 }
-function getDarken() {
+getStereo() {
+  return $("#stereo").prop("checked") ? 1 : 0;
+}
+getDarken() {
   return $("#darken").prop("checked") ? 1 : 0;
 }
 
 
-function imageQueryArgs() {
-  return "var1=" + getVar1() + "&var2=" + getVar2() + "&three_d=" + get3d() + "&darken=" + getDarken() + "&renderer=" + getRenderer();
+mapQueryArgs(right) {
+  return "var1=" + this.getVar1() + "&var2=" + this.getVar2() + "&renderer=" + this.getRenderer();
 }
 
-function demo() {
+// Create a new view based on DOM inputs. Position of image is preserved from current view if existing, o.w. reset.
+newView() {
+  var reset = this.viewer == null || this.viewer.desired_image_properties == null;
+  return new MandelbrotView(
+               reset ? 0.0 : this.viewer.desired_image_properties.center_x,
+               reset ? 0.0 : this.viewer.desired_image_properties.center_y,
+               reset ? 1.0 : this.viewer.desired_image_properties.scale,
+               256, 256, this.getMaxDepth(), this.getRenderer(), this.getVar1(), this.getVar2(), this.get3d(),
+               this.getStereo(),
+               396, // distance between eyes in pixels
+               256, // distance between images in pixel
+               //this.getStereo() ? parseInt((IMAGE_SEPARATION - EYE_SEPARATION) / 2.0) : 0,
+               //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,
+               this.getDarken()
+             );
+}
+
+paramsChanged() {
+  if (this.map) {
+    console.log("Unwritten code.");
+  }
+  if (this.viewer) {
+    this.viewer.setView(this.newView());
+  }
+}
+
+destroy_viewer() {
+  if (this.viewer) {
+    this.viewer.destroy();
+    this.viewer = null;
+  }
+  if (this.map) {
+    this.map = null;
+  }
+  $("#myImage").html("");
+}
+
+constructor() {
   window.debug = 0;  // 0/1 to disable/enable in-browser debug messages.
   
-  var host;
-  var port;
-  var uri;
-  var map = null;  // The open map, or null.
-  var viewer = null;  // The open FullImageMandelbrotViewer, or null.
-  function destroy_viewer() {
-    if (viewer) {
-      viewer.destroy();
-      viewer = null;
-    }
-    if (map) {
-      map = null;
-    }
-    $("#myImage").html("");
-  }
-  $("#renderer input").change(function (evt) {
-    if (map) {
+  this.map = null;  // The open map, or null.
+  this.viewer = null;  // The open FullImageMandelbrotViewer, or null.
+  $("#renderer input").change((evt) => {
+    if (this.map) {
       console.log("Unwritten code.");
     }
-    if (viewer) {
-      viewer.desired_image_properties.renderer = getRenderer();
+    if (this.viewer) {
+      this.viewer.desired_image_properties.renderer = this.getRenderer();
     }
   })
-  $("#modes input").change(function (evt) {
-    if (map) {
-      console.log("Unwritten code.");
-    }
-    if (viewer) {
-      viewer.desired_image_properties.three_d = get3d();
-      viewer.desired_image_properties.darken = getDarken();
-    }
+  $("#modes input").change((evt) => {
+    this.paramsChanged();
   })
-  $(".var").on("input", function (evt) {
-    if (map) {
-      console.log("Unwritten code.");
-    }
-    if (viewer) {
-      viewer.desired_image_properties.var1 = getVar1();
-      viewer.desired_image_properties.var2 = getVar2();
-      viewer.desired_image_properties.max_depth = getMaxDepth();
-    }
+  $(".var").on("input", (evt) => {
+    this.paramsChanged();
   })
-  $("#open_map").click(function (evt) {
-    destroy_viewer();
+  $("#open_map").click((evt) => {
+    this.destroy_viewer();
     let host = $("#host").val();
     let port = $("#port").val();
     let uri = $("#uri").val();
     let tile = "/tile/";
-    var urlSource = "http://" + host + ":" + port + tile + getMaxDepth() +
-                    "/{z}/{x}/{y}?" + imageQueryArgs();
+    var urlSource = "http://" + host + ":" + port + tile + this.getMaxDepth() +
+                    "/{z}/{x}/{y}?" + this.mapQueryArgs(false);
     console.log(`Image URL: ${urlSource}`);
-    map = new ol.Map({
+    this.map = new ol.Map({
       target: 'myImage',
       layers: [
         new ol.layer.Tile({
@@ -94,14 +110,11 @@ function demo() {
     });
   });
   $("#open_img").click((evt) => {
-    destroy_viewer();
+    this.destroy_viewer();
     
     // The image as it *should* currently be displayed.
-    viewer = new FullImageMandelbrotViewer(
-                    $("#myImage"), $("#host").val(), $("#port").val(),
-                    new MandelbrotView(0.0, 0.0, 1.0, 256, 256, getMaxDepth(), getRenderer(),
-                                       getVar1(), getVar2(), get3d(), getDarken()
-                                      )
-                 );
+    this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView());
   });
+}
+
 }

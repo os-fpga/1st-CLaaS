@@ -4,7 +4,13 @@ class MandelbrotView {
   //   scale: 1 is Mandelbrot circle fit to image height.
   //   height/width: Image height/width.
   //   max_depth: Max number of iterations for calculation.
-  constructor(center_x, center_y, scale, height, width, max_depth, renderer, var1, var2, three_d, darken) {
+  //   renderer: "python", "cpp", or "fpga".
+  //   var1/var2: Integer variables that influence the image.
+  //   three_d: 3-D image.
+  //   eye_separation: separation of eyes in pixels.
+  //   image_separation: separation of stereo images in pixels.
+  //   darken: Flag to enable darkening of inner depths.
+  constructor(center_x, center_y, scale, height, width, max_depth, renderer, var1, var2, three_d, stereo, eye_separation, image_separation, darken) {
     this.center_x = center_x;
     this.center_y = center_y;
     this.height = height;  // Image height/width.
@@ -16,6 +22,14 @@ class MandelbrotView {
     this.var2 = var2;
     this.three_d = three_d;
     this.darken = darken;
+    this.stereo = stereo;
+    this.eye_separation = eye_separation;
+    this.image_separation = image_separation;
+    // For stereoscopic images, the given parameters are for an eye between the two eyes. These provide
+    // adjustments from that point for each eye.
+    // For stereoscopic images, the horizontal (width) offset from center of the vanishing point of the left image (negative of this for right).
+    this.center_offset = this.stereo ? parseInt((image_separation - eye_separation) / 2.0) : 0;
+    // For stereoscopic images, the offset to apply to center_x coord for the left image (negative of this for right).
   }
   
   // Setters/Getters
@@ -39,10 +53,11 @@ class MandelbrotView {
   get center_x() {return this._center_x;}
   set center_y(v) {this._center_y = v;}
   get center_y() {return this._center_y;}
-  get left_x() {return this.center_x - this.image_size_x / 2;}
-  get top_y() {return this.center_y - this.image_size_y / 2;}
-  get right_x() {return this.center_x + this.image_size_x / 2;}
-  get bottom_y() {return this.center_y + this.image_size_y / 2;}
+  // These would need center_offset applied, but not used anyway:
+  //get left_x() {return this.center_x - this.image_size_x / 2;}
+  //get top_y() {return this.center_y - this.image_size_y / 2;}
+  //get right_x() {return this.center_x + this.image_size_x / 2;}
+  //get bottom_y() {return this.center_y + this.image_size_y / 2;}
   
   // Pixel x/y are same, based on height.
   get pix_size_x() {return this.pix_size_y;}
@@ -51,10 +66,12 @@ class MandelbrotView {
   set max_depth(v) {this._max_depth = v;}
   get max_depth() {return this._max_depth;}
   
+  get x_offset() {return this.stereo ? - this.eye_separation / 2.0 * this.pix_size_x : 0.0;}
+
   
   // Copy "constructor".
   copy() {
-    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.height, this.width, this.max_depth, this.renderer, this.var1, this.var2, this.three_d, this.darken);
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.height, this.width, this.max_depth, this.renderer, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation, this.image_separation, this.darken);
   }
   
   // Image comparison.
@@ -72,6 +89,9 @@ class MandelbrotView {
            this.var1 == img2.var1 &&
            this.var2 == img2.var2 &&
            this.three_d == img2.three_d &&
+           this.stereo == img2.stereo &&
+           (!this.stereo || (this.eye_separation == img2.eye_separation &&
+                             this.image_separation == img2.image_separation)) &&
            this.darken == img2.darken;
   }
   
@@ -97,13 +117,17 @@ class MandelbrotView {
     this.zoom_level += zoom_rate * delta_t;
   }
   
-  getImageURLParamsArrayJSON() {
-    return "[" + this.left_x + "," +
-                 this.top_y + "," +
+  getImageURLParamsArrayJSON(right) {
+    return "[" + (this.center_x + (right ? -this.x_offset : this.x_offset)) + "," +
+                 this.center_y + "," +
                  this.pix_size_x + "," +
                  this.pix_size_y + "," +
                  this.width + "," +
                  this.height + "," +
                  this.max_depth + "]";
+  }
+  getImageURLQueryArgs(right) {
+    return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
+           "&offset_w=" + (this.center_offset * (right ? -1 : 1)) +"&offset_h=" + 0 + "&darken=" + this.darken + "&renderer=" + this.renderer;
   }
 }
