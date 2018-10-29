@@ -38,7 +38,7 @@ newView() {
                reset ? 1.0 : this.viewer.desired_image_properties.scale,
                256, 256, this.getMaxDepth(), this.getRenderer(), this.getVar1(), this.getVar2(), this.get3d(),
                this.getStereo(),
-               396, // distance between eyes in pixels
+               386, // distance between eyes in pixels
                256, // distance between images in pixel
                //this.getStereo() ? parseInt((IMAGE_SEPARATION - EYE_SEPARATION) / 2.0) : 0,
                //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,

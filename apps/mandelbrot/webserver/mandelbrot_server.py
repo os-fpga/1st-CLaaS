@@ -1,4 +1,6 @@
 import sys
+import os
+import signal
 sys.path.append('../../../framework/webserver')
 from server import *
 
@@ -48,6 +50,15 @@ class Mandelbrot():
   @staticmethod
   def depthToPixel(depth):
     return ((depth * 16) % 256, 0, 0)
+    
+"""
+Handler for /redeploy GET requests. These signal SIGUSR1 in the parent (launch script) process, which triggers
+a pull of the latest git repo and teardown and re-launch of this web server and the host application.
+"""
+class RedeployHandler(tornado.web.RequestHandler):
+    def get(self):
+        print "Redeploying."
+        os.kill(os.getppid(), signal.SIGUSR1)
 
 """
 Handler for .png image GET requests
@@ -174,6 +185,7 @@ if __name__ == "__main__":
               (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"}),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": dir + "/css"}),
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
+              (r"/redeploy", RedeployHandler),
               (r'/ws', WSHandler),
               #(r'/hw', GetRequestHandler),
               (r'/(img)', ImageHandler),

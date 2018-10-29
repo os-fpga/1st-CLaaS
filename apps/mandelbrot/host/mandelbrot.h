@@ -109,8 +109,9 @@ private:
                                          // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
                                          // increments, so the controlling software should be in sync with this factor.
   static const coord_t NATURAL_DEPTH;  // Depth from eye at which the 3D scaling factor == the 2D scaling factor (2D image is fit to the screen).
+                                       //   This is the plane controlled by the mouse.
   static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when 2D-scaled to fit (height).
-  //
+                                       //   In other words, the initial depth of the structure.
 
   // Several color schemes are statically allocated in an array.
   // active_color_scheme is the index of the active one.

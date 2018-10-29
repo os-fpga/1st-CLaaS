@@ -112,8 +112,8 @@ coord_t MandelbrotImage::getCenterY() {
 */
 
 const int MandelbrotImage::RESOLUTION_FACTOR_3D = 3;  // Chosen imperically as an integer. Could scrutinize.
-const MandelbrotImage::coord_t MandelbrotImage::SCALE_PER_DEPTH = 0.85L;
-const MandelbrotImage::coord_t MandelbrotImage::EYE_DEPTH_FIT = 40.0L;
+const MandelbrotImage::coord_t MandelbrotImage::SCALE_PER_DEPTH = 0.84L;
+const MandelbrotImage::coord_t MandelbrotImage::EYE_DEPTH_FIT = 30.0L;
 const MandelbrotImage::coord_t MandelbrotImage::NATURAL_DEPTH = 3.0L;
 
 MandelbrotImage *MandelbrotImage::make3d() {

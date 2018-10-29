@@ -5,47 +5,103 @@
 #       the socket and host when it's done/killed.
 
 # Usage:
-#   launch hw
-#   launch sw
+#   ./launch hw
+#   ./launch sw
+
+# Must be launched from its own directory.
 
 # TODO: Make a function to wrap commands in sudo if necessary.
 
-if [[ "$1" = "" ]];
+TYPE="$1"
+if [[ $TYPE = "" ]];
 then
     echo "Usage: launch [sw/hw]"
     exit 1
 fi
 
 
-# Launch host app.
-if [[ "$1" = "sw" ]];
-then
-    ../out/$1/host &
-else
-    # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this setup.sh step.
-    sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsxclbin mandelbrot" &
-fi
-HOST_PID=$!
-
-# Make sure we have tornado.
-sudo pip -q install tornado
-if [[ "$1" = "sw" ]];
-then
-    python ../webserver/mandelbrot_server.py &
-else
-    sudo python ../webserver/mandelbrot_server.py &
-fi
-SERVER_PID=$!
-
-function finish {
-    # Kill child processes
-    kill $HOST_PID
-    kill $SERVER_PID
-    rm SOCKET
-    echo "Killed host app and web server"
+fail () {
+    echo $1
+    exit 1
 }
 
-trap finish EXIT
+# Launch web server and host application.
+launch () {
+  # Launch host app.
+  if [[ $TYPE = "sw" ]];
+  then
+      ../out/$TYPE/host &
+  else
+      # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this setup.sh step.
+      sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsxclbin mandelbrot" &
+  fi
+  export HOST_PID=$!
 
-wait
+  # Make sure we have tornado.
+  pip -q install tornado
+  
+  # Launch web server.
+  if [[ $TYPE = "sw" ]];
+  then
+      python ../webserver/mandelbrot_server.py &
+  else
+      sudo python ../webserver/mandelbrot_server.py &
+  fi
+  export SERVER_PID=$!
+}
 
+# Tear down.
+teardown () {
+  # Kill child processes
+  echo "Killing web server and host application."
+  kill $HOST_PID
+  kill $SERVER_PID
+  rm SOCKET
+}
+
+# Kill signal handler.
+finish () {
+  echo "finish()"
+  teardown
+  echo "Killed host app and web server"
+  DONE=1
+}
+
+
+# SIGUSR1 signal invokes this to pull the latest repository and re-launch.
+upgrade () {
+  echo "Upgrade"
+  # Return if there are no changes in master.
+  git fetch
+  OUT=`git status`
+  if ! [[ $OUT =~ Your\ branch\ is\ behind ]] ; then
+    echo "Up to date with master."
+  else
+    echo "Pulling changes from master and re-launching web server."
+    
+    # Kill children.
+    teardown
+    
+    # Pull changes.
+    git pull origin master || fail "Failed to pull changes from master."
+
+    # Compile
+    make build || fail "Compilation for Mandelbrot failed."
+    
+    # Re-launch.
+    echo "Re-launching web server"
+    launch
+  fi
+}
+
+launch
+
+trap finish SIGINT SIGQUIT SIGABRT SIGKILL SIGPIPE SIGTERM
+trap upgrade SIGUSR1
+
+DONE=0
+while [ $DONE -le 0 ] ; do
+  sleep 2
+done
+
+echo "[launch script] Done."

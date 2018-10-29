@@ -1,14 +1,8 @@
 #!/bin/bash
 
-# Script to be run as a cron job on a machine that will act as a web server, hosting this application.
-# This script will keep fpga-server mandelbrot server running w/ the latest code in master.
-# To install from the server in ubuntu 16.04, update script parameters, below, then:
-#  > sudo cp cron_deploy.sh /etc/cron.hourly
-# And reboot.
-# To test the script:
-#  > sudo /etc/cron.hourly
+# This functionality has been incorporated into the 'launch' script, which now re-launches on SIGUSR1 signal.
+# TODO: DELETE this once all is working well.
 
-#!/bin/bash
 
 # Script to be run as a cron job on a machine that will act as a web server, hosting this application.
 # This script will keep fpga-server mandelbrot server running w/ the latest code in master.
