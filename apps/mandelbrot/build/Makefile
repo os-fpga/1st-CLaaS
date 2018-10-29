@@ -16,7 +16,7 @@
 #   Variables:
 #     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
 #     KERNEL: the name for the fpga model
-#     PREBUILT=[true] or default to false. True to use the prebuilt files in the repository, rather than building.
+#     PREBUILT=[true] or default to false behavior. True to use the prebuilt files in the repository, rather than building.
 #     S3_BUCKET=bucket_name (defaullt="<users>-<kernel>-afi") provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
 #     S3_LOGS_KEY=folder (default="afi_logs") the S3 bucket folder to use for logs for the AFI build.
 #     S3_DCP_KEY=folder (default="afi_dcp_key") the S3 bucket folder to use for logs for the AFI build.
@@ -143,6 +143,7 @@ endif
 
 # Rule to build host application, only if not using pre-built.
 ifeq ($(PREBUILT), true)
+else
 
 # TODO: Instead of this condition, define $(SW_SRC) and $HOST_SRC) as $(SRC) conditionally, etc.
 ifeq ($(TARGET), sw)
@@ -169,6 +170,7 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(DEST_DIR)/$(KERNEL_EXE).xo
 # Create AFI. Creation is asynchronous on S3 and uses non-descript timestamped names, so it's hard to know
 # when they are ready, where to find them, and when you can delete (ugh).
 $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
+	mkdir -p $(DEST_DIR)
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=../../$(BUILD_DIR)/$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
 
