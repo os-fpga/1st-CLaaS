@@ -67,9 +67,15 @@ launch () {
 teardown () {
   # Kill child processes
   echo "Killing web server and host application."
-  kill $HOST_PID
-  kill $SERVER_PID
-  rm SOCKET
+  if [[ $TYPE = "sw" ]];
+  then
+    kill $HOST_PID
+    kill $SERVER_PID
+    #rm SOCKET
+  else
+    sudo kill -9 $HOST_PID
+    sudo kill -9 $SERVER_PID
+  fi
 }
 
 # Kill signal handler.
