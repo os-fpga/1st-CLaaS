@@ -159,7 +159,7 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(DEST_DIR)/$(KERNEL_EXE).xo
 # when they are ready, where to find them, and when you can delete (ugh).
 $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
-	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
+	$(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(BUILD_DIR)/$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
 
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
 ifneq ($(TARGET), sw)
@@ -179,7 +179,7 @@ awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 afi: awsxclbin
 
 .PHONY: emulation
-emulation:  $(DEST_DIR)/host $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
+emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emcondigutil for emulation purposes)
 
@@ -196,10 +196,9 @@ launch: build
 	#       In create_sdaccel_afi.sh, use create-fpga-image --wait
 	./launch $(TARGET)
 
-# A target to populate the "prebuilt" directory with the current build results.
 .PHONY: prebuild
 prebuild: build
-	# Directories assumed to exist.
+	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
 	cp $(DEST_DIR)/$(HOST_EXE)          $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
 	cp $(DEST_DIR)/$(KERNEL_EXE).xclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).xclbin
 

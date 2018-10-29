@@ -6,7 +6,7 @@ This repository contains the generic framework as well as sample applications th
 
 # Status
 
-While the layer is intended to be generic, in its current form, this repo contains both generic functionality and components that are specific to the initial demonstration application -- a [Mandelbrot explorer](tree/master/apps/mandelbrot).
+While the layer is intended to be generic, in its current form, this repo contains both generic functionality and components that are specific to the initial demonstration application -- a [Mandelbrot explorer](https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot).
 
 
 # Project description
@@ -116,7 +116,7 @@ The webserver is running. You can open `http://localhost:8888/demo.html` in a lo
 
 You can also open `http://localhost:8888/client.html`. Click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start" for a flythrough.
 
-More instructions for the Mandelbrot application are [here](tree/master/apps/mandelbrot).
+More instructions for the Mandelbrot application are [here](https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot).
 
 
 # F1 Instance Setup
@@ -172,8 +172,8 @@ Prebuilt files are included in the repository. Try to run using those first, so 
 ```sh
 cd
 git clone https://github.com/alessandrocomodi/fpga-webserver
-cd ~/fpga-webserver/apps/mandlebrot/build
-make PREBUILT=true launch
+cd ~/fpga-webserver/apps/mandelbrot/build
+make PREBUILT=true TARGET=hw KERNEL=mandelbrot launch
 ```
 
 Point a web browser at `http://<IP>:8888` and play with the application.
@@ -301,4 +301,9 @@ The content of these files has to be copied and pasted inside of the file "mande
   - provide information and pointers about the more general use of the commands.
   - Automate export from Makerchip by providing a script that uses `curl` to access result files via `http://makerchip.com/compile/<compile-id>/results/<filename>`.
   - Split mandelbrot Makefile to provide some parts in framework.
-  - Create CI and CD to host (no-FPGA) application somewhere.
+
+
+# Immediate Issues
+
+  - apps/mandelbrot/out/ does not exist for make command above.
+  - no pre-built files in apps/mandelbrot/prebuilt
