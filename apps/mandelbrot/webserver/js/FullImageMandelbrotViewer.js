@@ -37,7 +37,7 @@ class FullImageMandelbrotViewer {
 
     // Empty the target div to remove any prior Map and add content for full-image viewer.
     $("#myImage" ).html(`<div class="img_container" width=${view.width} height=${view.height}><img></div>`);
-    $("#myImage2").html(`<div class="img_container" width=${view.width} height=${view.height} style="left: ${view.width}px"><img></div>`);
+    $("#myImage2").html(`<div class="img_container" width=${view.width} height=${view.height} style="left: ${view.image_separation}px"><img></div>`);
     $("#image_row").css("height", `${view.height}`);
 
     this.setView(view);
