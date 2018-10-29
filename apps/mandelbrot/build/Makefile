@@ -61,12 +61,6 @@ KERNEL_FLAGS=
 KERNEL_EXE=$(KERNEL)
 KERNEL_NAME=$(KERNEL)
 
-# Build dir is "out" or "prebuilt", based on PREBUILT variable.
-BUILD_DIR_NAME = out
-ifeq ($(PREBUILT), true)
-BUILD_DIR_NAME = prebuilt
-endif
-
 #Custom flag to give to xocc
 KERNEL_LDCLFLAGS=--nk $(KERNEL_NAME):1 \
 	--xp param:compiler.preserveHlsOutput=1 \
@@ -110,16 +104,26 @@ $(info no TARGET specified, SW assumed)
 TARGET=sw
 endif
 
+
+# Build dir is "out" or "prebuilt", based on PREBUILT variable.
+BUILD_DIR_NAME = out
+OUT_DIR_NAME = out
+ifeq ($(PREBUILT), true)
+BUILD_DIR_NAME = prebuilt
+OUT_DIR_NAME = prebuilt_out
+endif
+
 #Assign DEST_DIR as <TARGET>/<TARGET_DEVICE>, or just <TARGET> for sw build (w/ no target device).
+ifeq ($(TARGET), sw)
+DEST_DIR=../$(OUT_DIR_NAME)/$(TARGET)
+BUILD_DIR=../$(BUILD_DIR_NAME)/$(TARGET)
+else
 #Translate Target Device name with underscores
 PERIOD:= :
 UNDERSCORE:= _
 DEST_SUBDIR=$(TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
-DEST_DIR=../out/$(DEST_SUBDIR)
+DEST_DIR=../$(OUT_DIR_NAME)/$(DEST_SUBDIR)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(DEST_SUBDIR)
-ifeq ($(TARGET), sw)
-DEST_DIR=../out/$(TARGET)
-BUILD_DIR=../$(BUILD_DIR_NAME)/$(TARGET)
 endif
 
 ifndef XILINX_SDX
@@ -136,6 +140,11 @@ clean:
 endif
 # TODO: Add more-selective clean targets.
 
+
+# Rule to build host application, only if not using pre-built.
+ifeq ($(PREBUILT), true)
+
+# TODO: Instead of this condition, define $(SW_SRC) and $HOST_SRC) as $(SRC) conditionally, etc.
 ifeq ($(TARGET), sw)
 $(DEST_DIR)/$(HOST_EXE):  $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
@@ -144,6 +153,8 @@ else
 $(DEST_DIR)/$(HOST_EXE):  $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
+endif
+
 endif
 
 $(DEST_DIR)/$(KERNEL_EXE).xo:
@@ -194,7 +205,7 @@ endif
 launch: build
 	# TODO: Wait for AFI build to complete.
 	#       In create_sdaccel_afi.sh, use create-fpga-image --wait
-	./launch $(TARGET)
+	./launch $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 
 .PHONY: prebuild
 prebuild: build

@@ -5,18 +5,31 @@
 #       the socket and host when it's done/killed.
 
 # Usage:
-#   ./launch hw
+#   ./launch hw path/to/host
 #   ./launch sw
 
 # Must be launched from its own directory.
 
 # TODO: Make a function to wrap commands in sudo if necessary.
 
+usage () {
+    echo "Usage: launch [sw | hw path/to/host_app path/to/mandelbrot.awsxclbin]"
+    exit 1
+}
+
 TYPE="$1"
+HOST="$2"
+AWSXCLBIN="$3"
 if [[ $TYPE = "" ]];
 then
-    echo "Usage: launch [sw/hw]"
-    exit 1
+  usage
+fi
+if [[ $TYPE = "hw" ]];
+then
+    if [[ $HOST = "" ]] && [[ $AWSXCLBIN = "" ]];
+    then
+      usage
+    fi
 fi
 
 
@@ -33,7 +46,7 @@ launch () {
       ../out/$TYPE/host &
   else
       # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG. Other runtime env settings needed by the host app should be setup after this setup.sh step.
-      sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsxclbin mandelbrot" &
+      sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; $HOST $AWSXCLBIN mandelbrot" &
   fi
   export HOST_PID=$!
 
