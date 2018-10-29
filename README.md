@@ -6,7 +6,7 @@ This repository contains the generic framework as well as sample applications th
 
 # Status
 
-While the layer is intended to be generic, in its current form, this repo contains both generic functionality and components that are specific to the initial demonstration application -- a Mandelbrot image generator.
+While the layer is intended to be generic, in its current form, this repo contains both generic functionality and components that are specific to the initial demonstration application -- a [Mandelbrot explorer](tree/master/apps/mandelbrot).
 
 
 # Project description
@@ -115,6 +115,8 @@ make launch
 The webserver is running. You can open `http://localhost:8888/demo.html` in a local web browser and explore Mandelbrot generated in the Python webserver or in the C++ host application.
 
 You can also open `http://localhost:8888/client.html`. Click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start" for a flythrough.
+
+More instructions for the Mandelbrot application are [here](tree/master/apps/mandelbrot).
 
 
 # F1 Instance Setup
