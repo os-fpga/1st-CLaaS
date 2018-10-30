@@ -58,7 +58,7 @@ launch () {
   then
       python ../webserver/mandelbrot_server.py &
   else
-      sudo python ../webserver/mandelbrot_server.py &
+      sudo python ../webserver/mandelbrot_server.py kill-me &
   fi
   export SERVER_PID=$!
 }
@@ -73,8 +73,12 @@ teardown () {
     kill $SERVER_PID
     #rm SOCKET
   else
+    # Kill running commands containing the tag 'kill-me' and HOST_PID and SERVER_PID.
+    PIDS=`ps -a -o pid= -o cmd= | grep kill-me | grep -v grep | sed 's/^\s*\([0-9]\+\).*$/\1/g'`
+    echo "Killing PIDs: $HOST_PID $SERVER_PID $PIDS"
     sudo kill -9 $HOST_PID
     sudo kill -9 $SERVER_PID
+    sudo kill $PIDS
   fi
 }
 
