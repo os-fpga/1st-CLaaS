@@ -68,7 +68,7 @@
 
     </fieldset>
     <fieldset id="modes">
-      <legend>Modes (C++)</legend>
+      <legend>Modes (C++, Untiled only)</legend>
       
       <div>
         <input type="checkbox" id="3d" class="mode" name="3d" />
@@ -103,9 +103,13 @@
                
     </fieldset>
   </div>
-  <div id="image_row">
-    <div id="myImage" position: "inline"></div>
-    <div id="myImage2" position: "inline"></div>
+  <div id="imagesContainer">
+    <div id="fullImageViewerContainer" class="viewerContainer">
+      <div id="leftEye" class="mandelbrotImage"></div>
+      <div id="rightEye" class="mandelbrotImage"></div>
+    </div>
+    <div id="mapContainer" class="viewerContainer">
+    </div>
   </div>
   <div style="padding-top: 10px;">
     <p>

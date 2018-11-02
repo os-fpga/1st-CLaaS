@@ -3,7 +3,6 @@ class FullImageMandelbrotViewer {
   
   // Construct.
   constructor(host, port, view) {
-    
     // Constants for interaction.
     
     this.PINCH_SLUGGISHNESS = 30;
@@ -35,18 +34,13 @@ class FullImageMandelbrotViewer {
     // Each image request is given a unique sequential ID.
     this.image_id = 0;
 
-    // Empty the target div to remove any prior Map and add content for full-image viewer.
-    $("#myImage" ).html(`<div class="img_container" width=${view.width} height=${view.height}><img></div>`);
-    $("#myImage2").html(`<div class="img_container" width=${view.width} height=${view.height} style="left: ${view.image_separation}px"><img></div>`);
-    $("#image_row").css("height", `${view.height}`);
-
     this.setView(view);
 
     // Load the next image, non-stop until destroyed.
     this.updateImage();
     
     // Make images interactive.
-    interact(".img_container")
+    interact(".imgContainer")
       .draggable({
         inertia: true
       })
@@ -107,7 +101,7 @@ class FullImageMandelbrotViewer {
   }
   
   updateDOM() {
-    $("#myImage2").css("display", this.desired_image_properties.stereo ? "inline" : "none");
+    $("#rightEye").css("display", this.desired_image_properties.stereo ? "inline" : "none");
   }
   
   setView(view) {
@@ -161,7 +155,7 @@ class FullImageMandelbrotViewer {
           images[evt.target.getAttribute("eye")] = evt.target;
           if (--outstanding <= 0) {
             for (let eye of Object.keys(images)) {
-              let old_img = $((eye == "right") ? "#myImage2 img" : "#myImage img");
+              let old_img = $((eye == "right") ? "#rightEye img" : "#leftEye img");
               old_img.replaceWith(images[eye]);
             }
             // Load next, but give control back to the browser first to render the loaded image.

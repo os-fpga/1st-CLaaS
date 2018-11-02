@@ -1,3 +1,25 @@
-.img_container {
+#imagesContainer {
+  box-sizing: content-box;
+  resize: both;
+  overflow: hidden;
+  border: 2px solid;
+  padding: 6px;
+  background-color: grey;
+  height: 256px;
+  width: 256px;
+  position: relative;
+}
+.viewerContainer {
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+.mandelbrotImage {
+  box-sizing: content-box;
   position: absolute;
+}
+.imgContainer {
+  box-sizing: content-box;
+  width: 100%;
+  height: 100%;
 }

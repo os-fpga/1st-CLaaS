@@ -23,6 +23,12 @@ getStereo() {
 getDarken() {
   return $("#darken").prop("checked") ? 1 : 0;
 }
+getHeight() {
+  return $("#leftEye").height();
+}
+getWidth() {
+  return $("#rightEye").width();
+}
 
 
 mapQueryArgs(right) {
@@ -36,10 +42,10 @@ newView() {
                reset ? 0.0 : this.viewer.desired_image_properties.center_x,
                reset ? 0.0 : this.viewer.desired_image_properties.center_y,
                reset ? 1.0 : this.viewer.desired_image_properties.scale,
-               256, 256, this.getMaxDepth(), this.getRenderer(), this.getVar1(), this.getVar2(), this.get3d(),
+               this.getWidth(), this.getHeight(), this.getMaxDepth(), this.getRenderer(), this.getVar1(), this.getVar2(), this.get3d(),
                this.getStereo(),
-               386, // distance between eyes in pixels
-               256 + 4, // distance between images in pixel
+               this.EYE_SEPARATION, // distance between eyes in pixels
+               this.getWidth() + this.STEREO_IMAGE_GAP, // distance between images in pixel
                //this.getStereo() ? parseInt((IMAGE_SEPARATION - EYE_SEPARATION) / 2.0) : 0,
                //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,
                this.getDarken()
@@ -48,70 +54,135 @@ newView() {
 
 paramsChanged() {
   if (this.map) {
-    console.log("Unwritten code.");
+    this.map_source.setUrl(this.getMapURL());
   }
   if (this.viewer) {
     this.viewer.setView(this.newView());
   }
 }
 
-destroy_viewer() {
+sizeFullViewer() {
+    let c = $("#imagesContainer");
+    let c_w = c.width();
+    let w = c_w; // Assuming not stereo.
+    let h = c.height();
+    if (this.getStereo()) {
+      // Do not allow the eye to be outside of the image in x/y as this will not render properly.
+      let min_c_w = this.EYE_SEPARATION + 2;
+      if (c_w < min_c_w) {
+        c_w = min_c_w;
+        c.width(c_w);
+      }
+      w = (c_w - this.STEREO_IMAGE_GAP) / 2;
+    }
+    w = Math.floor(w / 2) * 2;  // use multiples of two so center is a whole number.
+    h = Math.floor(h / 2) * 2;
+    let imgs = $(".mandelbrotImage");
+    imgs.width(w);
+    imgs.height(h);
+    imgs.eq(1).css("left", w + this.STEREO_IMAGE_GAP + imgs.eq(0).position().left);
+}
+
+resized() {
+  if (this.map) {
+    this.map.updateSize();
+  }
+  if (this.viewer) {
+    this.sizeFullViewer();
+    this.paramsChanged();
+  }
+}
+
+destroyViewer() {
   if (this.viewer) {
     this.viewer.destroy();
     this.viewer = null;
+    $("#leftEye").html("");
+    $("#rightEye").html("");
+    $("#fullImageViewerContainer").css("display", "none");
   }
   if (this.map) {
     this.map = null;
+    this.map_source = null;  // since we're done with it
+    $("#mapContainer").html("");
+    $("#mapContainer").css("display", "none");
   }
-  $("#myImage").html("");
+}
+
+getMapURL() {
+  let host = $("#host").val();
+  let port = $("#port").val();
+  let uri = $("#uri").val();
+  let tile = "/tile/";
+  var urlSource = "http://" + host + ":" + port + tile + this.getMaxDepth() +
+                  "/{z}/{x}/{y}?" + this.mapQueryArgs(false);
+  return urlSource;
 }
 
 constructor() {
+  
+  // Constants
+  
+  this.STEREO_IMAGE_GAP = 4;  // Pixels of gap between stereo images.
+  this.EYE_SEPARATION = 386;  // Distance between eyes in pixels.
+  
   window.debug = 0;  // 0/1 to disable/enable in-browser debug messages.
   
+  // Member variables
+  
   this.map = null;  // The open map, or null.
+  this.map_source = null; // The 'source' of the map.
   this.viewer = null;  // The open FullImageMandelbrotViewer, or null.
+  
+  
+  // Event handling
+  
   $("#renderer input").change((evt) => {
     if (this.map) {
-      console.log("Unwritten code.");
+      this.map_source.setUrl(this.getMapURL());
     }
     if (this.viewer) {
       this.viewer.desired_image_properties.renderer = this.getRenderer();
     }
   })
   $("#modes input").change((evt) => {
-    this.paramsChanged();
+    this.resized();  // resized() vs. paramsChanged() because stereo can affect sizing.
   })
   $(".var").on("input", (evt) => {
     this.paramsChanged();
   })
+  new ResizeObserver(entries => {
+    this.resized();
+  }).observe($("#imagesContainer")[0]);
   $("#open_map").click((evt) => {
-    this.destroy_viewer();
-    let host = $("#host").val();
-    let port = $("#port").val();
-    let uri = $("#uri").val();
-    let tile = "/tile/";
-    var urlSource = "http://" + host + ":" + port + tile + this.getMaxDepth() +
-                    "/{z}/{x}/{y}?" + this.mapQueryArgs(false);
+    this.destroyViewer();
+    $("#mapContainer").css("display", "block");
+    var urlSource = this.getMapURL();
+    this.map_source = new ol.source.XYZ({url: urlSource});
     console.log(`Image URL: ${urlSource}`);
     this.map = new ol.Map({
-      target: 'myImage',
+      target: 'mapContainer',
       layers: [
         new ol.layer.Tile({
-          source: new ol.source.XYZ({
-            url: urlSource
-          })
+          source: this.map_source
         })
       ],
       view: new ol.View({
         center: [0, 0],//defualt parameters
-        zoom: 2  //defualt zooming
+        zoom: 2,  //defualt zooming
+        maxZoom: 1000
       })
     });
   });
   $("#open_img").click((evt) => {
-    this.destroy_viewer();
+    this.destroyViewer();
+    $("#fullImageViewerContainer").css("display", "inline");
     
+    // Empty the target div to remove any prior Map and add content for full-image viewer.
+    $("#leftEye" ).html(`<div class="imgContainer"><img></div>`);
+    $("#rightEye").html(`<div class="imgContainer"><img></div>`);
+
+    this.sizeFullViewer();
     // The image as it *should* currently be displayed.
     this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView());
   });

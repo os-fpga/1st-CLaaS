@@ -307,3 +307,6 @@ The content of these files has to be copied and pasted inside of the file "mande
 
   - apps/mandelbrot/out/ does not exist for make command above.
   - no pre-built files in apps/mandelbrot/prebuilt
+  - still need to initialize FPGA w/ client.html?
+  - failing w/ "ERROR: Failed to load xclbin" (sdx_imports/main.c). Solved by stopping & starting F1 Instance (not by rebooting).
+

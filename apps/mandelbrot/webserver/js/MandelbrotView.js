@@ -10,7 +10,7 @@ class MandelbrotView {
   //   eye_separation: separation of eyes in pixels.
   //   image_separation: separation of stereo images in pixels.
   //   darken: Flag to enable darkening of inner depths.
-  constructor(center_x, center_y, scale, height, width, max_depth, renderer, var1, var2, three_d, stereo, eye_separation, image_separation, darken) {
+  constructor(center_x, center_y, scale, width, height, max_depth, renderer, var1, var2, three_d, stereo, eye_separation, image_separation, darken) {
     this.center_x = center_x;
     this.center_y = center_y;
     this.height = height;  // Image height/width.
@@ -71,7 +71,7 @@ class MandelbrotView {
   
   // Copy "constructor".
   copy() {
-    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.height, this.width, this.max_depth, this.renderer, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation, this.image_separation, this.darken);
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, this.max_depth, this.renderer, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation, this.image_separation, this.darken);
   }
   
   // Image comparison.

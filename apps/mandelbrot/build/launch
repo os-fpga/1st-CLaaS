@@ -5,7 +5,7 @@
 #       the socket and host when it's done/killed.
 
 # Usage:
-#   ./launch hw path/to/host
+#   ./launch hw path/to/host path/to/awsxclbin
 #   ./launch sw
 
 # Must be launched from its own directory.

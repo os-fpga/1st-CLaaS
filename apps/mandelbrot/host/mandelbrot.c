@@ -154,10 +154,8 @@ MandelbrotImage *MandelbrotImage::make3d() {
   // each plane is given by the depth data array of the Mandelbrot set already computed.
   
   // Assumptions:
-  //   o pix_x/pix_y reflect a whole number of depths of zoom.
+  //   o pix_x/pix_y reflect a whole number of depths of zoom. (TODO: Not currently the case, but it looks okay anyway.)
   
-  //-coord_t center_x = getCenterX();
-  //-coord_t center_y = getCenterY();
   coord_t center_w_2d = (coord_t)center_w;
   coord_t center_h_2d = (coord_t)center_h;
   // Revert image scaling to get 3D image size back to the size requested.
@@ -168,7 +166,6 @@ MandelbrotImage *MandelbrotImage::make3d() {
   
   int *depth_array_3d = (int *)malloc(width_3d * height_3d * sizeof(int));
   
-  //-coord_t img_size_y = pix_y * height;
   coord_t pix_y_fit = 4.0L / (coord_t)height;  // Pixel size at which plane-0 (the circle) is fit to the image.
   coord_t zoom_depth = log(SCALE_PER_DEPTH, pix_y / pix_y_fit);  // Number of depths zoomed from fit, where the eye remains a constant number of depths from the image.
   coord_t eye_depth = zoom_depth - EYE_DEPTH_FIT;
@@ -177,10 +174,6 @@ MandelbrotImage *MandelbrotImage::make3d() {
   // Iterate the depths in front of the eye, so begin with the first depth plane in front of the eye.
   int first_depth = ((int)(eye_depth + 1000.0L + 0.01L)) - 1000 + 1;
      // Round up (+1000.0 used to operate on positive value; +0.01 to avoid depth w/ infinite pix_x/y; +1 to round up, not down).
-  //-// Initialize depth_pix_x/y for the first depth.
-  //-coord_t tmp = pow(1.0 / SCALE_PER_DEPTH, zoom_depth - first_depth);
-  //-coord_t depth_pix_x = pix_x * tmp;
-  //-coord_t depth_pix_y = pix_y * tmp;
   
   for (int h_3d = 0; h_3d < height_3d; h_3d++) {
     coord_t h_from_center_3d = (coord_t)h_3d - center_h_3d;
@@ -200,6 +193,7 @@ MandelbrotImage *MandelbrotImage::make3d() {
             h_2d < 0 || h_2d >= height) {
           // Outside the 2d image. Make everything solid starting w/ depth 0.
           done = depth >= 0;
+          if (done) {cout << "(" << depth << ": " << w_2d << ", " << h_2d << ")" << flush;}
         } else {
           done = depth_array[h_2d * width + w_2d] <= depth;
         }
@@ -281,6 +275,8 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
     cerr << "Error (mandelbrot.c): Pixels generated multiple times.\n";
   }
   
+  // TODO: Optimization: Currently for 3-D we generate two images independently, but we could generate a single
+  //       DepthArray, and 3-D-ify it twice.
   if (is_3d) {
     make3d();
   }
