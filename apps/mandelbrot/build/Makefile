@@ -147,11 +147,11 @@ else
 
 # TODO: Instead of this condition, define $(SW_SRC) and $HOST_SRC) as $(SRC) conditionally, etc.
 ifeq ($(TARGET), sw)
-$(DEST_DIR)/$(HOST_EXE):  $(SW_SRC) $(SW_HDRS)
+$(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 else
-$(DEST_DIR)/$(HOST_EXE):  $(HOST_SRC) $(HOST_HDRS)
+$(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 endif

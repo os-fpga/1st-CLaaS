@@ -13,7 +13,7 @@ class Mandelbrot():
   @staticmethod
   def getImage(img_width, img_height, x, y, pix_x, pix_y, max_depth):
     # dummy image generation
-    print "Producing image %i, %i, %f, %f, %f, %f, %i" % (img_width, img_height, x, y, pix_x, pix_y, max_depth)
+    #print "Producing image %i, %i, %f, %f, %f, %f, %i" % (img_width, img_height, x, y, pix_x, pix_y, max_depth)
     #self.img = Image.new('RGB', (256, 256), (int(x)*18%256, int(y)*126%256, int(pix_x)*150%256))
     image = Image.new('RGB', (img_width, img_height))  # numpy.empty([img_width, img_height])
     pixels = image.load()
@@ -72,7 +72,7 @@ Or:
            pix_x/y are float pixel sizes in mandelbrot coords
            img_width/height are integers (pixels), and
            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
-In either case, integer query arguments var1, var2, three_d, center_offset_w, center_offset_h, and darken can also be provided (used in C rendering only).
+In either case, integer query arguments var1, var2, three_d, center_offset_w, center_offset_h, darken, brighten, and eye_adjust can also be provided (used in C rendering only).
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
@@ -114,7 +114,15 @@ class ImageHandler(tornado.web.RequestHandler):
             darken = self.get_query_arguments("darken")[0]
         else:
             darken = "0"
-        #print "Query Args: var1: " + var1 + ", var2: " + var2 + "3d: " + three_d + ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", darken: " + darken
+        if (len(self.get_query_arguments("brighten")) > 0):
+            brighten = self.get_query_arguments("brighten")[0]
+        else:
+            brighten = "0"
+        if (len(self.get_query_arguments("eye_adjust")) > 0):
+            eye_adjust = self.get_query_arguments("eye_adjust")[0]
+        else:
+            eye_adjust = "0"
+        #print "Query Args: var1: " + var1 + ", var2: " + var2 + "3d: " + three_d + ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", darken: " + darken + ", brighten: " + brighten + ", eye_adjust: " + eye_adjust
         #print "Type: ", type, ", Renderer: ", renderer
         
         # Determine image parameters from GET parameters
@@ -150,7 +158,9 @@ class ImageHandler(tornado.web.RequestHandler):
         payload.append(0 if three_d == "0" or type == "tile" else 1)
         payload.append(int(center_offset_w))
         payload.append(int(center_offset_h))
-        payload.append(0 if darken == "0" or three_d == "0" or type == "tile" else 1)
+        payload.append(0 if darken == "0" else 1)
+        payload.append(int(brighten))
+        payload.append(int(eye_adjust))
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)
@@ -173,7 +183,7 @@ class MandelbrotApplication(FPGAServerApplication):
             img_data = outputImg.getvalue()
         else:
             # Send image parameters over socket.
-            print "Python sending to C++: ", payload
+            #print "Python sending to C++: ", payload
             img_data = self.handle_request(GET_IMAGE, payload, False)
         return img_data
 

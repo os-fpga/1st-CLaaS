@@ -14,11 +14,20 @@
   height: 100%;
   display: none;
 }
+#eventRecipient {
+  box-sizing: content-box;
+  z-index: 100;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
 .mandelbrotImage {
+  pointer-events: none;
   box-sizing: content-box;
   position: absolute;
 }
 .imgContainer {
+  pointer-events: none;
   box-sizing: content-box;
   width: 100%;
   height: 100%;

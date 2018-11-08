@@ -4,6 +4,12 @@ class demo {
 getRenderer() {
   return $("#python").prop("checked") ? "python" : $("#cpp").prop("checked") ? "cpp" : "fpga";
 }
+getEyeAdjust() {
+  return $("#eye_adjust").prop("value");
+}
+getBrighten() {
+  return $("#brighten").prop("value");
+}
 getVar1() {
   return $("#var1").prop("value");
 }
@@ -23,6 +29,11 @@ getStereo() {
 getDarken() {
   return $("#darken").prop("checked") ? 1 : 0;
 }
+getMotion() {
+  return $("#motionAcceleration").prop("checked") ? "acceleration" :
+         $("#motionVelocity")    .prop("checked") ? "velocity"     :
+                                                    "position";
+}
 getHeight() {
   return $("#leftEye").height();
 }
@@ -32,7 +43,8 @@ getWidth() {
 
 
 mapQueryArgs(right) {
-  return "var1=" + this.getVar1() + "&var2=" + this.getVar2() + "&renderer=" + this.getRenderer();
+  return "darken=" + this.getDarken() + "&brighten=" + this.getBrighten() +
+         "&var1=" + this.getVar1() + "&var2=" + this.getVar2() + "&renderer=" + this.getRenderer();
 }
 
 // Create a new view based on DOM inputs. Position of image is preserved from current view if existing, o.w. reset.
@@ -42,7 +54,7 @@ newView() {
                reset ? 0.0 : this.viewer.desired_image_properties.center_x,
                reset ? 0.0 : this.viewer.desired_image_properties.center_y,
                reset ? 1.0 : this.viewer.desired_image_properties.scale,
-               this.getWidth(), this.getHeight(), this.getMaxDepth(), this.getRenderer(), this.getVar1(), this.getVar2(), this.get3d(),
+               this.getWidth(), this.getHeight(), this.getMaxDepth(), this.getRenderer(), this.getBrighten(), this.getEyeAdjust(), this.getVar1(), this.getVar2(), this.get3d(),
                this.getStereo(),
                this.EYE_SEPARATION, // distance between eyes in pixels
                this.getWidth() + this.STEREO_IMAGE_GAP, // distance between images in pixel
@@ -66,6 +78,14 @@ sizeFullViewer() {
     let c_w = c.width();
     let w = c_w; // Assuming not stereo.
     let h = c.height();
+    
+    // For some reason 100% h/w isn't working in child?
+    //c.children().width(w);
+    //c.children().height(h);
+    $("#eventRecipient").width(w);
+    $("#eventRecipient").height(h);
+    
+    $("#rightEye").css("display", this.getStereo() ? "inline" : "none");
     if (this.getStereo()) {
       // Do not allow the eye to be outside of the image in x/y as this will not render properly.
       let min_c_w = this.EYE_SEPARATION + 2;
@@ -89,8 +109,8 @@ resized() {
   }
   if (this.viewer) {
     this.sizeFullViewer();
-    this.paramsChanged();
   }
+  this.paramsChanged();
 }
 
 destroyViewer() {
@@ -144,13 +164,19 @@ constructor() {
     if (this.viewer) {
       this.viewer.desired_image_properties.renderer = this.getRenderer();
     }
-  })
+    $("#modes").css("display", this.getRenderer() === "python" ? "none" : "block")
+  });
   $("#modes input").change((evt) => {
-    this.resized();  // resized() vs. paramsChanged() because stereo can affect sizing.
-  })
+    this.resized();  // because stereo can affect sizing
+  });
   $(".var").on("input", (evt) => {
     this.paramsChanged();
-  })
+  });
+  $("#motion input").change((evt) => {
+    if (this.viewer) {
+      this.viewer.motion = this.getMotion();
+    }
+  });
   new ResizeObserver(entries => {
     this.resized();
   }).observe($("#imagesContainer")[0]);
@@ -184,7 +210,7 @@ constructor() {
 
     this.sizeFullViewer();
     // The image as it *should* currently be displayed.
-    this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView());
+    this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView(), this.getMotion());
   });
 }
 

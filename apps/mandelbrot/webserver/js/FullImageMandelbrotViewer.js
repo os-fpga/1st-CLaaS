@@ -2,7 +2,9 @@
 class FullImageMandelbrotViewer {
   
   // Construct.
-  constructor(host, port, view) {
+  constructor(host, port, view, motion) {
+    this.MOTION_TIMEOUT = 25;
+    
     // Constants for interaction.
     
     this.PINCH_SLUGGISHNESS = 30;
@@ -14,11 +16,20 @@ class FullImageMandelbrotViewer {
     // {int} Controls the sensitivity of pinch zoom.
     this.PINCH_SLUGGISHNESS = 30;
     // {int} Controls the sensitivity of wheel zoom.
-    this.WHEEL_ZOOM_SLUGGISHNESS_PIXELS = 600;//200;
+    this.WHEEL_ZOOM_SLUGGISHNESS_PIXELS = 600;
     // {int} Controls the sensitivity of wheel zoom.
-    this.WHEEL_ZOOM_SLUGGISHNESS_LINES = 30;//10;
+    this.WHEEL_ZOOM_SLUGGISHNESS_LINES = 30;
     // {int} Controls the sensitivity of wheel zoom.
-    this.WHEEL_ZOOM_SLUGGISHNESS_PAGES = 1;
+    this.WHEEL_ZOOM_SLUGGISHNESS_PAGES = 3;
+    // {float} Multiplier for velocity.
+    this.VELOCITY_FACTOR = 1 / this.MOTION_TIMEOUT;  // Move by mouse position every second.
+    // {float} Multiplier for zoom velocity.
+    this.ZOOM_VELOCITY_FACTOR = this.VELOCITY_FACTOR * 0.6;
+    // {float} Multiplier for acceleration.
+    this.ACCELERATION_FACTOR = this.VELOCITY_FACTOR / this.MOTION_TIMEOUT; // Every second, increase velocity by mouse position/sec.
+    // {float} Multiplier for zoom acceleration.
+    this.ZOOM_ACCELERATION_FACTOR = this.ACCELERATION_FACTOR * 0.6;
+    
     
     // Initialize members.
     this.base_url = `http://${host}:${port}/img`;
@@ -28,8 +39,15 @@ class FullImageMandelbrotViewer {
     this.available_image_properties = null;
     
     this.destroyed = false;
-    // `true` if the content is being dragged, and click events for highlighting should be ignored.
+    // `true` iff the content is being dragged.
     this.dragging = false;
+    this.motion = motion;
+    this.motion_x = 0;
+    this.motion_y = 0;
+    this.motion_z = 0;
+    this.velocity_x = 0;
+    this.velocity_y = 0;
+    this.velocity_z = 0;
 
     // Each image request is given a unique sequential ID.
     this.image_id = 0;
@@ -39,8 +57,9 @@ class FullImageMandelbrotViewer {
     // Load the next image, non-stop until destroyed.
     this.updateImage();
     
+    
     // Make images interactive.
-    interact(".imgContainer")
+    interact("#fullImageViewerContainer")
       .draggable({
         inertia: true
       })
@@ -61,24 +80,56 @@ class FullImageMandelbrotViewer {
         this.debugMessage(`TouchMove: e = ${e}`);
         e.preventDefault();
       })
-      // Set flag `dragging` to disable mouseclicks
-      .on('dragstart', (e) => {
+      
+      // Handle drag. We must recognize mouse-down as well for non-positional (velocity/acceleration) controls
+      // because these must react to mousewheel only when the mouse button is down. Begin drag on mousedown and
+      // end on mouse-up or enddrag. (TODO: Need to test on mobile.)
+      .on('down', (e) => {
+        // Set flag `dragging`.
         this.dragging = true;
+        if (this.motion !== "position") {
+          this.motion_x = e.offsetX - e.target.clientWidth / 2.0;
+          this.motion_y = e.offsetY - e.target.clientHeight / 2.0;
+          this.motion_z = 0;
+          this.velocity_x = 0;
+          this.velocity_y = 0;
+          this.velocity_z = 0;
+          this.setMotionTimeout();
+        }
       })
-      // Remove flag `dragging` to re-enable mouseclicks.
-      // Uses setTimeout to ensure that actions currently firing (on mouseup at the end of a drag)
-      // are still blocked from changing the content.
+      .on('up', (e) => {
+        this.endDrag();
+      })
+      //.on('dragstart', (e) => {
+      //  this.dragging = true;
+      //})
       .on('dragend', (e) => {
-        setTimeout (() => {this.dragging = false;}, 0)
+        // Clear flag `dragging` to re-enable mouseclicks.
+        // Uses setTimeout to ensure that actions currently firing (on mouseup at the end of a drag)
+        // are still blocked from changing the content.
+        this.endDrag();
       })
       // Zoom and pan the content by dragging.
       .on('dragmove', (e) => {
         this.debugMessage(`DragMove: e = ${e}`);
         e.preventDefault();
         if ((e.buttons & this.ZOOM_BUTTON_MASK) != 0) {
-          this.desired_image_properties.zoomBy(e.dy / this.ZOOM_SLUGGISHNESS);
+          // Mouse button & drag used for zoom (not currently enabled).
+          let amt = e.dy / this.ZOOM_SLUGGISHNESS;
+          if (this.motion === "position") {
+            this.desired_image_properties.zoomBy(amt);
+          } else {
+            this.motion_z += amt;
+          }
         } else {
-          this.desired_image_properties.panBy(e.dx, e.dy);
+          // Default for position.
+          let dx = e.dx;
+          let dy = e.dy;
+          this.motion_x += dx;
+          this.motion_y += dy;
+          if (this.motion === "position") {
+            this.desired_image_properties.panBy(dx, dy);
+          }
         }
       })
       .on("wheel", (e) => {
@@ -95,21 +146,47 @@ class FullImageMandelbrotViewer {
         } else {
           sluggishness = this.WHEEL_ZOOM_SLUGGISHNESS_PAGES;
         }
-        this.desired_image_properties.zoomBy(- e.originalEvent.deltaY / sluggishness);
+        let amt = - e.originalEvent.deltaY / sluggishness;
+        if (this.motion === "position") {
+          this.desired_image_properties.zoomByAt(amt, (e.offsetX - e.target.clientWidth  / 2.0) * this.desired_image_properties.pix_size_x,
+                                                      (e.offsetY - e.target.clientHeight / 2.0) * this.desired_image_properties.pix_size_y);
+        } else {
+          this.motion_z += amt;
+        }
       });
     
   }
   
-  updateDOM() {
-    $("#rightEye").css("display", this.desired_image_properties.stereo ? "inline" : "none");
+  endDrag() {
+    setTimeout (() => {this.dragging = false;}, 0);
+  }
+  
+  setMotionTimeout() {
+    setTimeout(() => {this.applyMotion();}, this.MOTION_TIMEOUT);
+  }
+  applyMotion() {
+    if (this.motion === "acceleration") {
+      this.velocity_x += this.motion_x * - this.ACCELERATION_FACTOR;
+      this.velocity_y += this.motion_y * - this.ACCELERATION_FACTOR;
+      this.velocity_z += this.motion_z * this.ZOOM_ACCELERATION_FACTOR;
+    } else {
+      this.velocity_x = this.motion_x * - this.VELOCITY_FACTOR;
+      this.velocity_y = this.motion_y * - this.VELOCITY_FACTOR;
+      this.velocity_z = this.motion_z * this.ZOOM_VELOCITY_FACTOR;
+    }
+    if (this.dragging) {
+      this.desired_image_properties.panBy(this.velocity_x, this.velocity_y);
+      this.desired_image_properties.zoomBy(this.velocity_z);
+      this.setMotionTimeout();
+    }
   }
   
   setView(view) {
     this.desired_image_properties = view;
-    this.updateDOM();
   }
   
   destroy() {
+    interact("#fullImageViewerContainer").unset();
     this.destroyed = true;
   }
   

@@ -5,12 +5,14 @@ class MandelbrotView {
   //   height/width: Image height/width.
   //   max_depth: Max number of iterations for calculation.
   //   renderer: "python", "cpp", or "fpga".
+  //   brighten: depth by which to adjust the start of darkening.
+  //   eye_adjust: adjustment in depths for the position of the eye.
   //   var1/var2: Integer variables that influence the image.
   //   three_d: 3-D image.
   //   eye_separation: separation of eyes in pixels.
   //   image_separation: separation of stereo images in pixels.
   //   darken: Flag to enable darkening of inner depths.
-  constructor(center_x, center_y, scale, width, height, max_depth, renderer, var1, var2, three_d, stereo, eye_separation, image_separation, darken) {
+  constructor(center_x, center_y, scale, width, height, max_depth, renderer, brighten, eye_adjust, var1, var2, three_d, stereo, eye_separation, image_separation, darken) {
     this.center_x = center_x;
     this.center_y = center_y;
     this.height = height;  // Image height/width.
@@ -18,6 +20,8 @@ class MandelbrotView {
     this.scale = scale;   // One level for each factor of e (Euler's constant).
     this.max_depth = max_depth;
     this.renderer = renderer;
+    this.brighten = brighten;
+    this.eye_adjust = eye_adjust;
     this.var1 = var1;
     this.var2 = var2;
     this.three_d = three_d;
@@ -71,7 +75,9 @@ class MandelbrotView {
   
   // Copy "constructor".
   copy() {
-    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, this.max_depth, this.renderer, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation, this.image_separation, this.darken);
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, this.max_depth, this.renderer,
+                              this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
+                              this.image_separation, this.darken);
   }
   
   // Image comparison.
@@ -86,6 +92,8 @@ class MandelbrotView {
            this.width == img2.width &&
            this.max_depth == img2.max_depth &&
            this.renderer == img2.renderer &&
+           this.brighten == img2.brighten &&
+           this.eye_adjust == img2.eye_adjust &&
            this.var1 == img2.var1 &&
            this.var2 == img2.var2 &&
            this.three_d == img2.three_d &&
@@ -99,6 +107,13 @@ class MandelbrotView {
   zoomBy(v) {
     this.zoom_level += v;
   }
+  zoomByAt(v, offset_x, offset_y) {
+    let scale_up = Math.exp(v);
+    console.log(`v: ${v}, offset_x: ${offset_x}, offset_y: ${offset_y}, scale_up: ${scale_up}`)
+    this.zoom_level += v;
+    this.center_x += offset_x * (scale_up - 1) / scale_up;
+    this.center_y += offset_y * (scale_up - 1) / scale_up;
+  }
   
   scaleBy(v) {
     this.scale *= v;
@@ -111,7 +126,8 @@ class MandelbrotView {
   
   // Apply change for given delta time at a constant zoom and pan rate.
   // This involves calculus as the rate of change of position changes over time.
-  // TODO: Undoubtedly I got the calculus wrong. Debug.
+  // TODO: Undoubtedly I got the calculus wrong. Debug. Not currently used. Current approach applies deltas
+  //       at consistent time deltas.
   zoomAndPan(delta_t, zoom_rate, pan_rate) {
     this.x += pan_rate / zoom_rate * Math.exp(-this.zoom_level) * (1 - Math.exp(-zoom_rate * delta_t))
     this.zoom_level += zoom_rate * delta_t;
@@ -128,6 +144,8 @@ class MandelbrotView {
   }
   getImageURLQueryArgs(right) {
     return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
-           "&offset_w=" + (this.center_offset * (right ? -1 : 1)) +"&offset_h=" + 0 + "&darken=" + this.darken + "&renderer=" + this.renderer;
+           "&offset_w=" + (this.center_offset * (right ? -1 : 1)) +"&offset_h=" + 0 +
+           "&darken=" + this.darken + "&brighten=" + this.brighten +
+           "&eye_adjust=" + this.eye_adjust + "&renderer=" + this.renderer;
   }
 }

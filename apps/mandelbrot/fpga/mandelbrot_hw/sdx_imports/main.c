@@ -189,6 +189,7 @@ int main(int argc, char** argv)
     //------------------------------------------------------------------------------
     printf("INFO: loading xclbin %s\n", xclbin);
     int n_i0 = load_file_to_memory(xclbin, (char **) &kernelbinary);
+    printf("INFO: load_file_to_memory returned %s\n", n_i0);
     if (n_i0 < 0) {
         printf("failed to load kernel from xclbin: %s\n", xclbin);
         printf("Test failed\n");

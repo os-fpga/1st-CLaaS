@@ -200,7 +200,7 @@ int main(int argc, char const *argv[])
         exit(1);
       }
       
-      cout << "Main loop\n";
+      //cout << "Main loop\n";
 
       // Translate message to an integer
       command = get_command(msg);
@@ -209,11 +209,11 @@ int main(int argc, char const *argv[])
       dynamic_array array_struct;
       char response[MSG_LENGTH];
       
-      cout << "Got message (" << command << ")\n";
+      //cout << "Got message (" << command << ")\n";
       
       switch( command ) {
         case WRITE_DATA_N:
-	  cout << "INFO: WRITE DATA (isn't this obsolete?)" << endl;
+          cout << "INFO: WRITE DATA (isn't this obsolete?)" << endl;
           sprintf(response, "INFO: Write Data");
           send(sock, response, strlen(response), MSG_NOSIGNAL);
 

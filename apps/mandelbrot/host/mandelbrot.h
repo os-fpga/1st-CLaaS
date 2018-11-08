@@ -102,6 +102,8 @@ private:
     color_t color_transition[256];
   } color_transition_t;
   */
+  
+  static const bool TIMER_ENABLED;  // True to enable timer reporting.
 
   // 3-D parameters
   static const int RESOLUTION_FACTOR_3D;  // Multiply hight/width by this factor for 3D to pad edges (non-integer would require care).
@@ -126,25 +128,32 @@ private:
   // check timing
   timespec timer_start_time;
 
-  int width, height;  // Image size in pixels.
+  int req_width, req_height;  // Requested image width, height in pixels.
+  int calc_width, calc_height;  // Size of the depth_array to compute.
   coord_t x, y;  // Position of the center of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.
   int max_depth;  // Max number of iterations for Mandelbrot calculation.
+  int brighten;  // An adjustment for darkness, as a delta in darken_start_depth.
+  coord_t eye_adjust;  // An adjustment for the depth of the eye.
   bool is_3d;
   int center_offset_w, center_offset_h;  // Offset to apply to the w/h center point (aka vanishing point).
   coord_t adjustment; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
+  coord_t adjustment2; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
   int center_w, center_h;  // Center (vanishing) point, computed from width/height and center_offset_w/h.
   
   // For darkening distant 3D depths.
   bool darken;
-  int start_darkening_depth;
   int half_faded_depth;
+  coord_t start_darkening_depth;
 
   // Storage structures. These are freed upon destruction.
   int *depth_array;  // Image array of depth integers.
   unsigned char *pixel_data;  // Pixel data for the set, as int [component(R,G,B)][width][height].
   unsigned char *png;  // The PNG image.
 
+
+  coord_t getZoomDepth();
+  
   // Get color scheme.
   color_t * getColorScheme();
   // Get color scheme size.
@@ -158,8 +167,11 @@ private:
   void stopStartTimer(string tag);
   int *get_bits(int n, int bitswanted);
   int extract_bits(int value, int bit_quantity, int start_from);
-  color_t * allocGradientsColorScheme(int &, int, int);
-  color_t * allocRandomColorScheme(int &, int);
+  void completeRGBShiftedColorScheme(color_t *partial_scheme, int partial_size);
+  color_t * allocGradientEdgePairColorScheme(int &size, int edge_increments);
+  color_t * allocGradientDiagonalColorScheme(int &size, int increments);
+  color_t * allocGradientsColorScheme(int &size, int num_gradients, int increments);
+  color_t * allocRandomColorScheme(int &size, int num_colors);
   coord_t log(coord_t base, coord_t exp);
   
 };

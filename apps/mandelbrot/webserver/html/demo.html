@@ -68,7 +68,7 @@
 
     </fieldset>
     <fieldset id="modes">
-      <legend>Modes (C++, Untiled only)</legend>
+      <legend>Modes (Untiled only)</legend>
       
       <div>
         <input type="checkbox" id="3d" class="mode" name="3d" />
@@ -93,6 +93,14 @@
         <input type="range" id="sqrt_depth" class="var" name="sqrt_depth"
                min="5" max="100" value="10" />
         
+        <label for="brighten">Dark Adjust</label>
+        <input type="range" id="brighten" class="var" name="brighten"
+               min="-200" max="200" value="0" />
+               
+        <label for="eyeAdjust">Z Adjust</label>
+        <input type="range" id="eye_adjust" class="var" name="eye_adjust" 
+               min="-100" max="100" value="0" />
+        
         <label for="var1">Variable 1 (C++)</label>
         <input type="range" id="var1" class="var" name="var1"
                min="-100" max="100" value="0" />
@@ -102,9 +110,29 @@
                min="-100" max="100" value="0" />
                
     </fieldset>
+    <fieldset id="motion">
+      <legend>Motion</legend>
+
+      <div>
+        <input type="radio" id="motionPosition" name="motion" checked />
+        <label for="position">Position</label>
+      </div>
+
+      <div>
+        <input type="radio" id="motionVelocity" name="motion" />
+        <label for="velocity">Velocity</label>
+      </div>
+      
+      <div style="display: none">
+        <input type="radio" id="motionAcceleration" name="motion" />
+        <label for="acceleration">Acceleration</label>
+      </div>
+
+    </fieldset>
   </div>
   <div id="imagesContainer">
     <div id="fullImageViewerContainer" class="viewerContainer">
+      <div id="eventRecipient"></div>
       <div id="leftEye" class="mandelbrotImage"></div>
       <div id="rightEye" class="mandelbrotImage"></div>
     </div>
