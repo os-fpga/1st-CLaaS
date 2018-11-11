@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <cstdlib>
+#include <limits.h>
 #include <assert.h>
 #include <iostream>
 #include <stdint.h>
@@ -27,6 +28,11 @@ class MandelbrotImage {
 public:
   typedef long double coord_t;
   
+  typedef union {
+    int color;
+    unsigned char component[3];
+  } color_t;
+
   //
   // Constructors (with optional arguments for some settings)
   //
@@ -39,10 +45,6 @@ public:
   // Configuration Methods
   //
   
-  // Set data from an array of double-precision parameter values (as passed from webserver over socket).
-  MandelbrotImage * setBounds(double *params);
-  // Enable 3D effect.
-  MandelbrotImage * enable3D();
   // Set color scheme.
   MandelbrotImage * setColorScheme(int scheme);
   
@@ -70,6 +72,7 @@ public:
   //
   // Generate Pixels
   //
+  void toPixelData(unsigned char *pixel_data, int *depth_array, color_t * color_scheme, int color_scheme_size);
   
   // Generate pixel color data according to the color scheme from a [width][height] array of pixel depths.
   // The depths array can be:
@@ -91,19 +94,12 @@ public:
 private:
   
   // Types
-  
-  typedef union {
-    int color;
-    unsigned char component[3];
-  } color_t;
 
   /*
   typedef struct color_transition {
     color_t color_transition[256];
   } color_transition_t;
   */
-  
-  static const bool TIMER_ENABLED;  // True to enable timer reporting.
 
   // 3-D parameters
   static const int RESOLUTION_FACTOR_3D;  // Multiply hight/width by this factor for 3D to pad edges (non-integer would require care).
@@ -123,23 +119,30 @@ private:
   static int * color_scheme_size;   // Size of each color_scheme.
   static color_t ** color_scheme;  // The color schemes.
   int active_color_scheme;  // The index of the current color scheme.
+  int auto_depth;   // Heuristically-determined depth of view computed during depth array calculation.
+  bool auto_dive;   // Enable eye movement based on auto_depth (vs. scaling based on zoom).
+  bool auto_darken; // Enable darkening based on auto_depth (vs. scaling based on zoom).
+  int auto_depth_w, auto_depth_h;
   
-  int timer_level;
+  int timer_level;  // 0 to disable timer.
   // check timing
   timespec timer_start_time;
 
   int req_width, req_height;  // Requested image width, height in pixels.
-  int calc_width, calc_height;  // Size of the depth_array to compute.
+  int req_eye_offset;  // Requested eye offset in requested-image pixels.
   coord_t x, y;  // Position of the center of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.
   int max_depth;  // Max number of iterations for Mandelbrot calculation.
   int brighten;  // An adjustment for darkness, as a delta in darken_start_depth.
   coord_t eye_adjust;  // An adjustment for the depth of the eye.
+  int eye_separation;  // The separation between the eyes in requested image pixels (should be a multiple of 2).
   bool is_3d;
-  int center_offset_w, center_offset_h;  // Offset to apply to the w/h center point (aka vanishing point).
+  bool is_stereo;
+  int req_center_w, req_center_h;  // w/h center point (aka vanishing point) of the requested image in pixel coords.
   coord_t adjustment; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
   coord_t adjustment2; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
-  int center_w, center_h;  // Center (vanishing) point, computed from width/height and center_offset_w/h.
+  int calc_width, calc_height;  // Size of the depth_array to compute.
+  int calc_center_w, calc_center_h;  // Center (vanishing) point in the computed depth_array.
   
   // For darkening distant 3D depths.
   bool darken;
@@ -148,16 +151,25 @@ private:
 
   // Storage structures. These are freed upon destruction.
   int *depth_array;  // Image array of depth integers.
+  int *right_depth_array; // For stereo images, depth_array is the left eye and this is the right. 
   unsigned char *pixel_data;  // Pixel data for the set, as int [component(R,G,B)][width][height].
+                              // For stereo images, this is a single array for both eyes, left-then-right.
   unsigned char *png;  // The PNG image.
 
 
   coord_t getZoomDepth();
   
+  int pixelDepth(int h, int w, bool adjust, bool need_derivatives);
+  int tryPixelDepth(int h, int w, bool adjust, bool need_derivatives);   // A non-inlined version of pixelDepth.
+  void updateMaxDepth(int new_auto_depth = INT_MIN);
+  
   // Get color scheme.
   color_t * getColorScheme();
   // Get color scheme size.
   int getColorSchemeSize();
+  
+  // Used by make3d() to make image for one eye.
+  int * makeEye(bool right);
 
   // Center points.
   //-coord_t getCenterX();

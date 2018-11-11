@@ -21,7 +21,7 @@ getMaxDepth() {
   return d * d;
 }
 get3d() {
-  return $("#3d").prop("checked") ? 1 : 0;
+  return ! $("#2d").prop("checked") ? 1 : 0;
 }
 getStereo() {
   return $("#stereo").prop("checked") ? 1 : 0;
@@ -101,6 +101,7 @@ sizeFullViewer() {
     imgs.width(w);
     imgs.height(h);
     imgs.eq(1).css("left", w + this.STEREO_IMAGE_GAP + imgs.eq(0).position().left);
+    imgs.eq(1).children().children().css("top", -h);
 }
 
 resized() {

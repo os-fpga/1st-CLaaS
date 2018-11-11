@@ -200,15 +200,13 @@ class FullImageMandelbrotViewer {
   
   // Get the URL for the current desired image and, once loaded, call the callback.
   // Params:
-  //  eye: "left", "right", "-" (anything)
   //  cb: callback
-  getImage(eye, cb) {
-    let urlSource = `${this.base_url}?data=${this.desired_image_properties.getImageURLParamsArrayJSON(eye === "right")}` +
-                    `&${this.desired_image_properties.getImageURLQueryArgs(eye === "right")}`;
+  getImage(cb) {
+    let urlSource = `${this.base_url}?data=${this.desired_image_properties.getImageURLParamsArrayJSON()}` +
+                    `&${this.desired_image_properties.getImageURLQueryArgs()}`;
     console.log(`Image URL: ${urlSource}`);
     this.requested_image_properties = this.desired_image_properties.copy();
     let image = new Image(this.w, this.h);
-    image.setAttribute("eye", eye);
     image.src = urlSource;
     image.onload = cb;
     return image;
@@ -221,29 +219,24 @@ class FullImageMandelbrotViewer {
       var image_id = this.image_id++;  // For access from callback.
       var request_time = Date.now();
       var viewer = this;  // For access from callback.
-      var outstanding = this.desired_image_properties.stereo ? 2 : 1;
-      var images = {};  // images that have called back (saved for processing when both return)
       var cb = function (evt) {
         let time = Date.now() - request_time;
         console.log(`Image ${image_id} loaded after ${time} ms.`);
         // Not sure if the callback will trigger (image onload) after the image is removed from the DOM.
         // In case it does, check.
         if (!viewer.destroyed) {
-          images[evt.target.getAttribute("eye")] = evt.target;
-          if (--outstanding <= 0) {
-            for (let eye of Object.keys(images)) {
-              let old_img = $((eye == "right") ? "#rightEye img" : "#leftEye img");
-              old_img.replaceWith(images[eye]);
-            }
-            // Load next, but give control back to the browser first to render the loaded image.
-            viewer.updateImage();
+          let src = evt.target.getAttribute("src");
+          $("#leftEye img").attr("src", src);
+          if (viewer.desired_image_properties.stereo) {
+            $("#rightEye img").attr("src", src);
           }
+          // Update download link to hold this URL.
+          $("#downloadImage").attr("href", src);
+          // Load next, but give control back to the browser first to render the loaded image.
+          viewer.updateImage();
         }
       }
-      this.getImage("left", cb);
-      if (this.desired_image_properties.stereo) {
-        this.getImage("right", cb);
-      }
+      this.getImage(cb);
     } else {
       // Current desired image is already loaded. Wait a bit and poll again.
       setTimeout(() => {this.updateImage()}, 50)

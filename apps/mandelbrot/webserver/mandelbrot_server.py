@@ -72,7 +72,7 @@ Or:
            pix_x/y are float pixel sizes in mandelbrot coords
            img_width/height are integers (pixels), and
            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
-In either case, integer query arguments var1, var2, three_d, center_offset_w, center_offset_h, darken, brighten, and eye_adjust can also be provided (used in C rendering only).
+In either case, integer query arguments var1, var2, three_d, center_offset_w, center_offset_h, eye_sep, darken, brighten, and eye_adjust can also be provided (used in C rendering only).
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
@@ -110,6 +110,10 @@ class ImageHandler(tornado.web.RequestHandler):
             center_offset_h = self.get_query_arguments("offset_h")[0]
         else:
             center_offset_h = "0"
+        if (len(self.get_query_arguments("eye_sep")) > 0):
+            eye_sep = self.get_query_arguments("eye_sep")[0]
+        else:
+            eye_sep = "0"
         if (len(self.get_query_arguments("darken")) > 0):
             darken = self.get_query_arguments("darken")[0]
         else:
@@ -122,7 +126,7 @@ class ImageHandler(tornado.web.RequestHandler):
             eye_adjust = self.get_query_arguments("eye_adjust")[0]
         else:
             eye_adjust = "0"
-        #print "Query Args: var1: " + var1 + ", var2: " + var2 + "3d: " + three_d + ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", darken: " + darken + ", brighten: " + brighten + ", eye_adjust: " + eye_adjust
+        #print "Query Args: var1: " + var1 + ", var2: " + var2 + "3d: " + three_d + ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", eye_sep: " + eye_sep + ", darken: " + darken + ", brighten: " + brighten + ", eye_adjust: " + eye_adjust
         #print "Type: ", type, ", Renderer: ", renderer
         
         # Determine image parameters from GET parameters
@@ -161,6 +165,7 @@ class ImageHandler(tornado.web.RequestHandler):
         payload.append(0 if darken == "0" else 1)
         payload.append(int(brighten))
         payload.append(int(eye_adjust))
+        payload.append(int(eye_sep))
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)

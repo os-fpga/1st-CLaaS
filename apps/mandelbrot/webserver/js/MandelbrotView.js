@@ -31,9 +31,8 @@ class MandelbrotView {
     this.image_separation = image_separation;
     // For stereoscopic images, the given parameters are for an eye between the two eyes. These provide
     // adjustments from that point for each eye.
-    // For stereoscopic images, the horizontal (width) offset from center of the vanishing point of the left image (negative of this for right).
+    // For stereoscopic images, the horizontal (width) offset from the center of the left image of the vanishing point (negative of this for right).
     this.center_offset = this.stereo ? parseInt((image_separation - eye_separation) / 2.0) : 0;
-    // For stereoscopic images, the offset to apply to center_x coord for the left image (negative of this for right).
   }
   
   // Setters/Getters
@@ -70,7 +69,7 @@ class MandelbrotView {
   set max_depth(v) {this._max_depth = v;}
   get max_depth() {return this._max_depth;}
   
-  get x_offset() {return this.stereo ? - this.eye_separation / 2.0 * this.pix_size_x : 0.0;}
+  //get x_offset() {return this.stereo ? - this.eye_separation / 2.0 * this.pix_size_x : 0.0;}
 
   
   // Copy "constructor".
@@ -133,8 +132,8 @@ class MandelbrotView {
     this.zoom_level += zoom_rate * delta_t;
   }
   
-  getImageURLParamsArrayJSON(right) {
-    return "[" + (this.center_x + (right ? -this.x_offset : this.x_offset)) + "," +
+  getImageURLParamsArrayJSON() {
+    return "[" + this.center_x + "," +
                  this.center_y + "," +
                  this.pix_size_x + "," +
                  this.pix_size_y + "," +
@@ -142,9 +141,9 @@ class MandelbrotView {
                  this.height + "," +
                  this.max_depth + "]";
   }
-  getImageURLQueryArgs(right) {
+  getImageURLQueryArgs() {
     return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
-           "&offset_w=" + (this.center_offset * (right ? -1 : 1)) +"&offset_h=" + 0 +
+           "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
            "&darken=" + this.darken + "&brighten=" + this.brighten +
            "&eye_adjust=" + this.eye_adjust + "&renderer=" + this.renderer;
   }

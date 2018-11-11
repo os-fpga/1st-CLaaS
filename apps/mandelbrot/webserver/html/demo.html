@@ -71,13 +71,18 @@
       <legend>Modes (Untiled only)</legend>
       
       <div>
-        <input type="checkbox" id="3d" class="mode" name="3d" />
+        <input type="radio" id="2d" class="mode" name="3d" checked />
+        <label for="normal">Normal</label>
+      </div>
+      
+      <div>
+        <input type="radio" id="3d" class="mode" name="3d" />
         <label for="3d">3-D</label>
       </div>
     
       <div>
-        <input type="checkbox" id="stereo" class="mode" name="3d" />
-        <label for="stereo">Stereo</label>
+        <input type="radio" id="stereo" class="mode" name="3d" />
+        <label for="stereo">Stereo 3-D</label>
       </div>
     
       <div>
@@ -130,7 +135,7 @@
 
     </fieldset>
   </div>
-  <div id="imagesContainer">
+  <div id="imagesContainer" class="unselectable">
     <div id="fullImageViewerContainer" class="viewerContainer">
       <div id="eventRecipient"></div>
       <div id="leftEye" class="mandelbrotImage"></div>
@@ -140,6 +145,9 @@
     </div>
   </div>
   <div style="padding-top: 10px;">
+    <p>
+      <a id="downloadImage" class="btn btn-primary" href="" download>Download Image</a>
+    </p>
     <p>
       Open, then use mouse to explore. Drag to pan; wheel to zoom.
     </p>
