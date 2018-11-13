@@ -231,7 +231,7 @@ class FullImageMandelbrotViewer {
             $("#rightEye img").attr("src", src);
           }
           // Update download link to hold this URL.
-          $("#downloadImage").attr("href", src);
+          $(".imgLink").attr("href", src);
           // Load next, but give control back to the browser first to render the loaded image.
           viewer.updateImage();
         }

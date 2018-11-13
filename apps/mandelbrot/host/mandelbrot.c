@@ -34,13 +34,16 @@ MandelbrotImage::MandelbrotImage(double *params) {
   eye_separation = params[15];
   adjustment = params[7] / 100.0L;
   adjustment2 = params[8] / 100.0L;
+  adjust = adjustment != 0.0L || adjustment2 != 0.0L;
+  enable_step = false;
+  need_derivatives = adjust || enable_step;
   
   // For darkening distant 3D depths.
   darken = (params[12] > 0.0L);
   half_faded_depth = 30;
   
-  auto_dive = true;
-  auto_darken = true;
+  auto_dive = true;  // (Relevant for 3D/Stereo-3D.)
+  auto_darken = true;  // TODO: Must make this false for tiled.
   
   assert(! IS_BIG_ENDIAN);
 
@@ -235,12 +238,16 @@ MandelbrotImage * MandelbrotImage::make3d() {
   return this;
 };
 
-inline int MandelbrotImage::pixelDepth(int h, int w, bool adjust, bool need_derivatives) {
+inline int MandelbrotImage::pixelDepth(int h, int w, int & step) {
+  step = 1; // Just provide on pixel, unless othewise determined.
+  
   coord_t scaled_adjustment  = adjustment  * (req_width + req_height) * pix_x * 0.03;
   coord_t scaled_adjustment2 = adjustment2 * (req_width + req_height) * pix_x * 0.03;
 
-  coord_t xx = x + (w - calc_center_w) * pix_x;
-  coord_t yy = y + (h - calc_center_h) * pix_y;
+  coord_t next_xx = x + (w - calc_center_w) * pix_x;
+  coord_t next_yy = y + (h - calc_center_h) * pix_y;
+  coord_t xx = 0.0;
+  coord_t yy = 0.0;
   
   // These track the impact of a delta_x/y applied to layer 0 on subsequent depths.
   // This has a few uses:
@@ -258,24 +265,27 @@ inline int MandelbrotImage::pixelDepth(int h, int w, bool adjust, bool need_deri
   coord_t dxx_dy0 = 0.0L;
   coord_t dyy_dx0 = 0.0L;
   coord_t dyy_dy0 = 0.0L;
-  coord_t next_dxx_dx0 = 0.0L;
+  coord_t next_dxx_dx0 = 1.0L;
   coord_t next_dxx_dy0 = 0.0L;
   coord_t next_dyy_dx0 = 0.0L;
-  coord_t next_dyy_dy0 = 0.0L;
+  coord_t next_dyy_dy0 = 1.0L;
   
-  int iteration = 0;
+  int depth = 0;
+  bool next_diverges = true;
   if (false) {
     // For debug:
     // This generates a square at depth 0.
-    iteration = (xx < 0.3 && xx > -0.3 &&
-                 yy < 0.3 && yy > -0.3) ? 0 : max_depth;
+    depth = (next_xx < 0.3 && next_xx > -0.3 &&
+             next_yy < 0.3 && next_yy > -0.3) ? 0 : max_depth;
   } else {
     // Mandelbrot pixel calc.
-    coord_t x0 = xx;
-    coord_t y0 = yy;
-    coord_t dist_sq;
-    while ((//(
-             (dist_sq = xx*xx + yy*yy) < 2*2
+    coord_t x0 = next_xx;
+    coord_t y0 = next_yy;
+    do {
+      next_diverges = (next_xx * next_xx + next_yy * next_yy) > 4.0; // (< 2 * 2)
+
+      if (//(
+            next_diverges
             //) ^
             //(//((xx - floor(xx) < 0.05 || ceil(xx) - xx < 0.05) ||
              // (yy - floor(yy) < 0.05 || ceil(yy) - yy < 0.05)
@@ -284,16 +294,31 @@ inline int MandelbrotImage::pixelDepth(int h, int w, bool adjust, bool need_deri
              // ((((int)(xx * 4.0) + 1000) % 2 == 0) ^
              //  (((int)(yy * 4.0) + 1000) % 2 == 0)
              // ) &&
-             // (iteration > (int)getZoomDepth() - (int)eye_adjust + brighten && iteration < (int)getZoomDepth() - (int)eye_adjust + brighten + 3)
+             // (depth > (int)getZoomDepth() - (int)eye_adjust + brighten && depth < (int)getZoomDepth() - (int)eye_adjust + brighten + 3)
              //)
             //)
-           ) && iteration < max_depth
-          ) {
+           || depth >= max_depth) {break;}
             
-      // Calculate adjustments
+
+      // Update to next
+      //
+      
+      yy = next_yy;
+      xx = next_xx;
+      if (need_derivatives) {
+        // Update derivatives based on last depth.
+        dxx_dx0 = next_dxx_dx0;
+        dxx_dy0 = next_dxx_dy0;
+        dyy_dx0 = next_dyy_dx0;
+        dyy_dy0 = next_dyy_dy0;
+      }
+      
+      depth += 1;
+      
       
       // Delta sensitivity (x/y dirivatives w.r.t. top-level).
       if (need_derivatives) {
+        // Derivatives for this depth.
         // (These assume un-adjusted Mandelbrot equations.)
         next_dxx_dx0 = 2.0L * (xx * dxx_dx0 - yy * dyy_dx0) + 1.0L;
         next_dxx_dy0 = 2.0L * (xx * dxx_dy0 - yy * dyy_dy0);
@@ -301,49 +326,101 @@ inline int MandelbrotImage::pixelDepth(int h, int w, bool adjust, bool need_deri
         next_dyy_dy0 = 2.0L * (xx * dyy_dy0 + yy * dxx_dy0) + 1.0L;
       }
       
-      coord_t xtemp = xx*xx - yy*yy + x0;
+      // Mandelbrot equations:
+      next_xx = (xx * xx) - (yy * yy) + x0;  // TODO: Optimize by calculating squares only once.
+      next_yy = 2.0L * (xx * yy) + y0;
+      // Apply adjustments:
+      if (adjust) {
+        next_xx += scaled_adjustment2 * next_dyy_dy0;
+        next_yy += scaled_adjustment  * next_dxx_dx0;
+      }
       /*
       coord_t adj = adjustment;
       int int_adjust_depth = (int)(adjust_depth + 1000.0L) - 1000 + 1;  // +1000,-1000 to keep (int) operating on positive number. +1 to round up.
-      if (adjust && (iteration >= int_adjust_depth)) {
-        if (iteration == int_adjust_depth) {
+      if (adjust && (depth >= int_adjust_depth)) {
+        if (depth == int_adjust_depth) {
           // prorate adj.
-          coord_t prorate_factor = (coord_t)iteration - adjust_depth;
+          coord_t prorate_factor = (coord_t)depth - adjust_depth;
           adj *= prorate_factor;
         }
-        xtemp += adj / 2.0L; //  (((coord_t)iteration - adjust_depth) / 200.0L);
+        xtemp += adj / 2.0L; //  (((coord_t)depth - adjust_depth) / 200.0L);
       }
       */
-      yy = 2*xx*yy + y0;
-      xx = xtemp;
-      if (adjust) {
-        yy += scaled_adjustment  * next_dxx_dx0;
-        xx += scaled_adjustment2 * next_dyy_dy0;
+    } while (true);
+    
+    // Done pixel.
+    // next_* reflect divergent level. * (not next_) reflect last non-divergent level.
+    
+    // step
+    //
+    
+    step = 1;
+    if (enable_step && depth > 0) {
+      if (next_diverges) {
+        // Diverged.
+        // See how many pixels ahead we can look before divergence changes.
+        // First estimate when the last non-diverged level will diverge. If that was behind us, see
+        // when the divergent level will no longer diverge.
+        
+        // Divergence value (r) is (xx*xx + yy*yy) (which is tested for < 2*2).
+        // So, dr/dx0 = 2*(xx*dx/dx0 + yy*dy/dx0)
+        coord_t dr_dx0 = 2.0L * (xx * dxx_dx0 + yy * dyy_dx0);
+        if (dr_dx0 > 0.0L) {
+          coord_t step_xx = xx;
+          coord_t step_yy = yy;
+          coord_t r;
+          step = 0;
+          do {
+            step++;
+            step_xx += dxx_dx0 * pix_x;
+            step_yy += dyy_dx0 * pix_x;
+            r = step_xx * step_xx + step_yy * step_yy;
+          } while(r < 4.0L - step * 0.2);  // TODO: This fudge factor is not perfect.
+          /*
+            // Last non-divergent layer will diverge to the right.
+            step = 0;
+            do {
+              step++;
+              r = 
+            }
+            coord_t est_divergent_delta_x0 = (4.0 - r) / dr_dx0;
+            coord_t est_divergent_delta_w = est_divergent_delta_x0 / pix_x;
+            // Jump 1/3 of the estimate (as a quick hack)
+            step = (int)(est_divergent_delta_w / 3.0) + 1;
+            // No more than 5 pixels.
+            if (step > 5) {
+              step = 5;
+            }
+          */
+        } else {
+          //coord_t delta...
+        }
+        //...coord_t diver
+        //coord_t to_next_depth
+      } else {
+        // Reached max depth.
+        //...
       }
-      if (need_derivatives) {
-        dxx_dx0 = next_dxx_dx0;
-        dxx_dy0 = next_dxx_dy0;
-        dyy_dx0 = next_dyy_dx0;
-        dyy_dy0 = next_dyy_dy0;
-      }
-      iteration += 1;
+    
     }
+
   }
   
   // Darken heuristic
   // If this pixel is within the rectangle used to determine auto-depth, see if we found the lowest depth yet, and if
   // we did, update max_depth to reflect it to save time in the future.
-  if (iteration < auto_depth &&
+  if (depth < auto_depth &&
       (abs(w - calc_center_w) <= auto_depth_w) &&
       (abs(h - calc_center_h) <= auto_depth_h)
      ) {
-    updateMaxDepth(iteration);
+    updateMaxDepth(depth);
   }
-  return iteration;
+  return depth;
 }
 
-int MandelbrotImage::tryPixelDepth(int h, int w, bool adjust, bool need_derivatives) {
-  return pixelDepth(h, w, adjust, need_derivatives);
+int MandelbrotImage::tryPixelDepth(int h, int w) {
+  int step;
+  return pixelDepth(h, w, step);
 }
 
 MandelbrotImage *MandelbrotImage::generateDepthArray() {
@@ -351,8 +428,7 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
   startTimer();
   
   // Fill depth_array with depth for each pixel.
-  
-  bool adjust = adjustment != 0.0L || adjustment2 != 0.0;
+
   coord_t adjust_depth = 0.0L;
   if (adjustment != 0.0L) {
     // Matched to eye depth.
@@ -362,8 +438,6 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
   
   depth_array = (int *)malloc(calc_width * calc_height * sizeof(int));
   auto_depth = max_depth;  // Current heuristic is to use the minimum depth within a 2/3-w/h rectangle around the center.
-
-  bool need_derivatives = adjust;  
   
   // Since auto_depth can be used to determine darkening which determines max_depth, we don't know max_depth
   // before we need it. To address this, we determine an initial conservative value for auto_depth to use here
@@ -381,19 +455,48 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
                  is_3d     ? (req_height * 3 / 4) / 2 :
                              (req_height * 2 / 3) / 2;
   if (false && auto_darken) {
-    tryPixelDepth(req_center_w - auto_depth_w, req_center_h - auto_depth_h, adjust, need_derivatives);
-    tryPixelDepth(req_center_w + auto_depth_w, req_center_h - auto_depth_h, adjust, need_derivatives);
-    tryPixelDepth(req_center_w - auto_depth_w, req_center_h + auto_depth_h, adjust, need_derivatives);
-    tryPixelDepth(req_center_w + auto_depth_w, req_center_h + auto_depth_h, adjust, need_derivatives);
+    tryPixelDepth(req_center_w - auto_depth_w, req_center_h - auto_depth_h);
+    tryPixelDepth(req_center_w + auto_depth_w, req_center_h - auto_depth_h);
+    tryPixelDepth(req_center_w - auto_depth_w, req_center_h + auto_depth_h);
+    tryPixelDepth(req_center_w + auto_depth_w, req_center_h + auto_depth_h);
   }
-   
+  
+  int num_pixels = calc_width * calc_height;
+  int num_steps = 0;
   for (int h = 0; h < calc_height; h++) {
-    for (int w = 0; w < calc_width; w++) {
-      depth_array[h * calc_width + w] = pixelDepth(h, w, adjust, need_derivatives);;
+    // For remembering the step that brought us here.
+    int stepped = 1;        // previous step value
+    int stepped_depth = -1; // previous depth value
+    for (int w = 0; w < calc_width;) {
+      int step;
+      int dummy_step;
+      int depth;
+      depth = pixelDepth(h, w, step);
+      num_steps++;
+      if (enable_step) {
+        // While the depth isn't right, step back and re-compute.
+        for (int step_back = 1; depth != stepped_depth && step_back < stepped; step_back++) {
+          int step_back_depth = pixelDepth(h, w - step_back, dummy_step);
+          num_steps++;  // Count step-backs as steps.
+          // Correct depth array.
+          depth_array[h * calc_width + w - step_back] = max_depth; // : step_back_depth;   // Use max_depth to make step-back visible.
+        };
+        // Now, looking forward, don't step past last pixel. We must do this one.
+        if (w < calc_width - 1 && w + step >= calc_width) {
+          step = calc_width - 1 - w;  // Step to last pixel.
+        }
+      }
+      // Remember what we will have stepped.
+      stepped = step;
+      stepped_depth = depth;
+      // Fill array for this step.
+      for (; step > 0; w++, step--) {
+        depth_array[h * calc_width + w] = depth;
+      }
     }
   }
   
-  cout << ", auto_depth: " << auto_depth << ", brighten: " << brighten << ". ";
+  cout << ", % guessed pixels: %" << ((coord_t)(num_pixels - num_steps) / (coord_t)num_steps * 100.0) << ", auto_depth: " << auto_depth << ", brighten: " << brighten << ". ";
   
   stopTimer("generateDepthArray()");
 

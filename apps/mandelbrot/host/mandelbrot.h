@@ -124,6 +124,8 @@ private:
   bool auto_darken; // Enable darkening based on auto_depth (vs. scaling based on zoom).
   int auto_depth_w, auto_depth_h;
   
+  bool enable_step;  // True to enable optimization where we step ahead some number of pixels based on differentials.
+  
   int timer_level;  // 0 to disable timer.
   // check timing
   timespec timer_start_time;
@@ -132,7 +134,7 @@ private:
   int req_eye_offset;  // Requested eye offset in requested-image pixels.
   coord_t x, y;  // Position of the center of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.
-  int max_depth;  // Max number of iterations for Mandelbrot calculation.
+  int max_depth;  // Max number of depths for Mandelbrot calculation.
   int brighten;  // An adjustment for darkness, as a delta in darken_start_depth.
   coord_t eye_adjust;  // An adjustment for the depth of the eye.
   int eye_separation;  // The separation between the eyes in requested image pixels (should be a multiple of 2).
@@ -141,6 +143,8 @@ private:
   int req_center_w, req_center_h;  // w/h center point (aka vanishing point) of the requested image in pixel coords.
   coord_t adjustment; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
   coord_t adjustment2; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
+  bool adjust;  // True if an adjustment is non-zero.
+  bool need_derivatives; // True if this image calculation needs to compute derivatives.
   int calc_width, calc_height;  // Size of the depth_array to compute.
   int calc_center_w, calc_center_h;  // Center (vanishing) point in the computed depth_array.
   
@@ -159,8 +163,8 @@ private:
 
   coord_t getZoomDepth();
   
-  int pixelDepth(int h, int w, bool adjust, bool need_derivatives);
-  int tryPixelDepth(int h, int w, bool adjust, bool need_derivatives);   // A non-inlined version of pixelDepth.
+  int pixelDepth(int h, int w, int & skip);
+  int tryPixelDepth(int h, int w);   // A non-inlined version of pixelDepth.
   void updateMaxDepth(int new_auto_depth = INT_MIN);
   
   // Get color scheme.
