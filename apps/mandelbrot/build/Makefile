@@ -197,17 +197,19 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emcondigutil for emulation purposes)
 
 .PHONY: build
+.PHONY: launch
 ifeq ($(TARGET), sw)
 build:  $(BUILD_DIR)/$(HOST_EXE)
+launch: build
+	./launch $(TARGET) $(BUILD_DIR)/$(HOST_EXE)
 else
 build:  $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
-endif
-
-.PHONY: launch
 launch: build
 	# TODO: Wait for AFI build to complete.
 	#       In create_sdaccel_afi.sh, use create-fpga-image --wait
 	./launch $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+endif
+
 
 .PHONY: prebuild
 prebuild: build

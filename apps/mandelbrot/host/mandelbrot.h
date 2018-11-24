@@ -72,7 +72,7 @@ public:
   //
   // Generate Pixels
   //
-  void toPixelData(unsigned char *pixel_data, int *depth_array, color_t * color_scheme, int color_scheme_size);
+  void toPixelData(unsigned char *pixel_data, int *depth_array, unsigned char *fractional_depth_array, color_t * color_scheme, int color_scheme_size);
   
   // Generate pixel color data according to the color scheme from a [width][height] array of pixel depths.
   // The depths array can be:
@@ -100,16 +100,19 @@ private:
     color_t color_transition[256];
   } color_transition_t;
   */
+  
+  static const int VERBOSITY;  // For debug.
 
   // 3-D parameters
   static const int RESOLUTION_FACTOR_3D;  // Multiply hight/width by this factor for 3D to pad edges (non-integer would require care).
   static const coord_t SCALE_PER_DEPTH;  // The scale of the 3D object, grows by 1/SCALE_PER_DEPTH with each depth of zoom. Empirical.
                                          // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
                                          // increments, so the controlling software should be in sync with this factor.
-  static const coord_t NATURAL_DEPTH;  // Depth from eye at which the 3D scaling factor == the 2D scaling factor (2D image is fit to the screen).
+  static const coord_t NATURAL_DEPTH;  // Depth from the eye (really, absolute distance in units of first-depth-distance) at which the
+                                       //   3D scaling factor == the 2D scaling factor (2D image is fit to the screen).
                                        //   This is the plane controlled by the mouse.
-  static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when 2D-scaled to fit (height).
-                                       //   In other words, the initial depth of the structure.
+  static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when sized to fit the height, or the depth from the
+                                       //   eye of the auto-depth.
 
   // Several color schemes are statically allocated in an array.
   // active_color_scheme is the index of the active one.
@@ -120,11 +123,15 @@ private:
   static color_t ** color_scheme;  // The color schemes.
   int active_color_scheme;  // The index of the current color scheme.
   int auto_depth;   // Heuristically-determined depth of view computed during depth array calculation.
+  unsigned char auto_depth_frac;  // Fractional portion of auto_depth.
   bool auto_dive;   // Enable eye movement based on auto_depth (vs. scaling based on zoom).
   bool auto_darken; // Enable darkening based on auto_depth (vs. scaling based on zoom).
   int auto_depth_w, auto_depth_h;
+  coord_t adjust_depth;   // Depth at which adjustment begins.
   
   bool enable_step;  // True to enable optimization where we step ahead some number of pixels based on differentials.
+  bool full_image;   // This is a full image, so decisions can be made with full knowledge (such as darkening and eye depth).
+  bool smooth;       // Smooth the image.
   
   int timer_level;  // 0 to disable timer.
   // check timing
@@ -155,7 +162,9 @@ private:
 
   // Storage structures. These are freed upon destruction.
   int *depth_array;  // Image array of depth integers.
+  unsigned char *fractional_depth_array; // A fractional depth for smoothing. This value / 256 is added to depth (giving the ratio of depth color to depth+1 color).
   int *right_depth_array; // For stereo images, depth_array is the left eye and this is the right. 
+  unsigned char *right_fractional_depth_array;
   unsigned char *pixel_data;  // Pixel data for the set, as int [component(R,G,B)][width][height].
                               // For stereo images, this is a single array for both eyes, left-then-right.
   unsigned char *png;  // The PNG image.
@@ -163,9 +172,10 @@ private:
 
   coord_t getZoomDepth();
   
-  int pixelDepth(int h, int w, int & skip);
-  int tryPixelDepth(int h, int w);   // A non-inlined version of pixelDepth.
-  void updateMaxDepth(int new_auto_depth = INT_MIN);
+  int pixelDepth(int w, int h, int & skip);
+  int tryPixelDepth(int w, int h);   // A non-inlined version of pixelDepth.
+  void writeDepthArray(int w, int h, int depth);
+  void updateMaxDepth(int new_auto_depth, unsigned char new_auto_depth_frac);
   
   // Get color scheme.
   color_t * getColorScheme();
@@ -173,7 +183,7 @@ private:
   int getColorSchemeSize();
   
   // Used by make3d() to make image for one eye.
-  int * makeEye(bool right);
+  int * makeEye(bool right, unsigned char * &fractional_depth_array_3d);
 
   // Center points.
   //-coord_t getCenterX();

@@ -241,7 +241,7 @@ int main(int argc, char const *argv[])
           free(array_struct.data);
           break;
         case READ_DATA_N:
-	  cout << "INFO: READ DATA (isn't this obsolete?)" << endl;
+          cout << "INFO: READ DATA (isn't this obsolete?)" << endl;
           sprintf(response, "INFO: Read Data");
           send(sock, response, strlen(response), MSG_NOSIGNAL);
           
@@ -254,42 +254,45 @@ int main(int argc, char const *argv[])
           handle_read_data(sock, data_array, sizeof(data_array));
           break;
         case GET_IMAGE_N:
-	  {  // Provides scope for local variables.
-	    sprintf(response, "INFO: Get Image");
-	    send(sock, response, strlen(response), MSG_NOSIGNAL);
-	  
-	    dynamic_array array_struct;
+          {  // Provides scope for local variables.
+            sprintf(response, "INFO: Get Image");
+            send(sock, response, strlen(response), MSG_NOSIGNAL);
+          
+            dynamic_array array_struct;
 
-	    array_struct = handle_write_data(sock);
-	    bool force_c = false;
-	    if (array_struct.data[6] < 0) {
-	      // Depth argument is negative. This is our indication that we must render in C++. TODO: Ick!
-	      array_struct.data[6] = - array_struct.data[6];
-	      force_c = true;
-	    }
+            array_struct = handle_write_data(sock);
+            bool force_c = false;
+            if (array_struct.data[6] < 0) {
+              // Depth argument is negative. This is our indication that we must render in C++. TODO: Ick!
+              array_struct.data[6] = - array_struct.data[6];
+              force_c = true;
+            }
+            // Or, newer, only slightly less icky flag
+            if ((int)(array_struct.data[16]) & (1 << 1)) {
+              force_c = true;
+            }
     
-	    MandelbrotImage mb_img(array_struct.data);
+            MandelbrotImage mb_img(array_struct.data);
 
-	    int * depth_data = NULL;
-	    if (! force_c) {
+            int * depth_data = NULL;
+            if (! force_c) {
 #ifdef OPENCL
-	      // Populate depth_data from FPGA.
-	      cl = handle_get_image(sock, &depth_data, array_struct, cl);
+              // Populate depth_data from FPGA.
+              cl = handle_get_image(sock, &depth_data, array_struct, cl);
 #endif
-	    }
-
-	    // Free memory for array_struct.
-	    free(array_struct.data);
+            }
+            // Free memory for array_struct.
+            free(array_struct.data);
   
-	    mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL, or NULL to generate in C++.
+            mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL, or NULL to generate in C++.
   
-	    size_t png_size;
-	    unsigned char *png;
-	    png = mb_img.generatePNG(&png_size);
+            size_t png_size;
+            unsigned char *png;
+            png = mb_img.generatePNG(&png_size);
 
-	    // Call the utility function to send data over the socket
-	    handle_read_data(sock, png, (int)png_size);
-	  }
+            // Call the utility function to send data over the socket
+            handle_read_data(sock, png, (int)png_size);
+          }
           break;
         default:
 #ifdef OPENCL

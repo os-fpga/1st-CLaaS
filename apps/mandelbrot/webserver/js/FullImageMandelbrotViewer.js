@@ -227,7 +227,7 @@ class FullImageMandelbrotViewer {
         if (!viewer.destroyed) {
           let src = evt.target.getAttribute("src");
           $("#leftEye img").attr("src", src);
-          if (viewer.desired_image_properties.stereo) {
+          if (viewer.desired_image_properties.settings.stereo) {
             $("#rightEye img").attr("src", src);
           }
           // Update download link to hold this URL.

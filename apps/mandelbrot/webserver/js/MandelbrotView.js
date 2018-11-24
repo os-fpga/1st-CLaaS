@@ -1,8 +1,4 @@
-class MandelbrotView {
-  // Params:
-  //   center_x/y: Mandelbrot coords of center point.
-  //   scale: 1 is Mandelbrot circle fit to image height.
-  //   height/width: Image height/width.
+class MandelbrotSettings {
   //   max_depth: Max number of iterations for calculation.
   //   renderer: "python", "cpp", or "fpga".
   //   brighten: depth by which to adjust the start of darkening.
@@ -12,12 +8,13 @@ class MandelbrotView {
   //   eye_separation: separation of eyes in pixels.
   //   image_separation: separation of stereo images in pixels.
   //   darken: Flag to enable darkening of inner depths.
-  constructor(center_x, center_y, scale, width, height, max_depth, renderer, brighten, eye_adjust, var1, var2, three_d, stereo, eye_separation, image_separation, darken) {
-    this.center_x = center_x;
-    this.center_y = center_y;
-    this.height = height;  // Image height/width.
-    this.width = width;
-    this.scale = scale;   // One level for each factor of e (Euler's constant).
+  //   smooth: Flag to enable smoothing.
+  //   full_image: Flag indicating that this is a full image, which can enable auto adjustments.
+  constructor() {
+  }
+  
+  set(max_depth, renderer, brighten, eye_adjust, var1, var2,
+      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image) {
     this.max_depth = max_depth;
     this.renderer = renderer;
     this.brighten = brighten;
@@ -33,6 +30,69 @@ class MandelbrotView {
     // adjustments from that point for each eye.
     // For stereoscopic images, the horizontal (width) offset from the center of the left image of the vanishing point (negative of this for right).
     this.center_offset = this.stereo ? parseInt((image_separation - eye_separation) / 2.0) : 0;
+    this.smooth = smooth;
+    this.full_image = full_image;
+    this.modes =
+           (((this.renderer == "python") ? 1 : 0) << 0) |
+           (((this.renderer == "cpp") ? 1 : 0) << 1) |
+           (((this.renderer == "fpga") ? 1 : 0) << 3) |  // enable optimizations currently using FPGA setting
+           (((this.full_image) ? 1 : 0) << 6) |  // full image render
+           ((this.smooth ? 1 : 0) << 7);
+    return this;
+  }
+  
+  copy() {
+    return new MandelbrotSettings().set(this.max_depth, this.renderer,
+                                        this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
+                                        this.image_separation, this.darken, this.smooth, this.full_image);
+  }
+  
+  equals(settings2) {
+    return settings2 != null &&
+           this.max_depth == settings2.max_depth &&
+           this.renderer == settings2.renderer &&
+           this.brighten == settings2.brighten &&
+           this.eye_adjust == settings2.eye_adjust &&
+           this.var1 == settings2.var1 &&
+           this.var2 == settings2.var2 &&
+           this.three_d == settings2.three_d &&
+           this.stereo == settings2.stereo &&
+           (!this.stereo || (this.eye_separation == settings2.eye_separation &&
+                             this.image_separation == settings2.image_separation)) &&
+           this.darken == settings2.darken &&
+           this.smooth == settings2.smooth &&
+           this.modes == settings2.modes &&
+           this.full_image == settings2.full_image;
+  }
+  
+  getImageURLQueryArgs() {
+    return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
+           "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
+           "&darken=" + this.darken + "&brighten=" + this.brighten +
+           "&eye_adjust=" + this.eye_adjust + "&renderer=" + this.renderer + "&modes=" + this.modes +
+           "&colors=" + 0;
+  }
+  
+  mapQueryArgs(right) {
+    return "darken=" + this.darken + "&brighten=" + this.brighten + "&modes=" + this.modes +
+           "&var1=" + this.var1 + "&var2=" + this.var2 + "&renderer=" + this.renderer;
+  }
+  
+}
+
+
+class MandelbrotView {
+  // Params:
+  //   center_x/y: Mandelbrot coords of center point.
+  //   scale: 1 is Mandelbrot circle fit to image height.
+  //   height/width: Image height/width.
+  constructor(center_x, center_y, scale, width, height, settings) {
+    this.center_x = center_x;
+    this.center_y = center_y;
+    this.height = height;  // Image height/width.
+    this.width = width;
+    this.scale = scale;   // One level for each factor of e (Euler's constant).
+    this.settings = settings;
   }
   
   // Setters/Getters
@@ -74,9 +134,7 @@ class MandelbrotView {
   
   // Copy "constructor".
   copy() {
-    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, this.max_depth, this.renderer,
-                              this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
-                              this.image_separation, this.darken);
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, this.settings.copy());
   }
   
   // Image comparison.
@@ -89,17 +147,7 @@ class MandelbrotView {
            this.scale == img2.scale &&
            this.height == img2.height &&
            this.width == img2.width &&
-           this.max_depth == img2.max_depth &&
-           this.renderer == img2.renderer &&
-           this.brighten == img2.brighten &&
-           this.eye_adjust == img2.eye_adjust &&
-           this.var1 == img2.var1 &&
-           this.var2 == img2.var2 &&
-           this.three_d == img2.three_d &&
-           this.stereo == img2.stereo &&
-           (!this.stereo || (this.eye_separation == img2.eye_separation &&
-                             this.image_separation == img2.image_separation)) &&
-           this.darken == img2.darken;
+           this.settings.equals(img2.settings);
   }
   
   
@@ -139,12 +187,9 @@ class MandelbrotView {
                  this.pix_size_y + "," +
                  this.width + "," +
                  this.height + "," +
-                 this.max_depth + "]";
+                 this.settings.max_depth + "]";
   }
   getImageURLQueryArgs() {
-    return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
-           "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
-           "&darken=" + this.darken + "&brighten=" + this.brighten +
-           "&eye_adjust=" + this.eye_adjust + "&renderer=" + this.renderer;
+    return this.settings.getImageURLQueryArgs();
   }
 }

@@ -4,6 +4,9 @@ class demo {
 getRenderer() {
   return $("#python").prop("checked") ? "python" : $("#cpp").prop("checked") ? "cpp" : "fpga";
 }
+getTiled() {
+  return $("#tiled").prop("checked");
+}
 getEyeAdjust() {
   return $("#eye_adjust").prop("value");
 }
@@ -29,6 +32,9 @@ getStereo() {
 getDarken() {
   return $("#darken").prop("checked") ? 1 : 0;
 }
+getSmooth() {
+  return $("#smooth").prop("checked") ? 1 : 0;
+}
 getMotion() {
   return $("#motionAcceleration").prop("checked") ? "acceleration" :
          $("#motionVelocity")    .prop("checked") ? "velocity"     :
@@ -42,11 +48,6 @@ getWidth() {
 }
 
 
-mapQueryArgs(right) {
-  return "darken=" + this.getDarken() + "&brighten=" + this.getBrighten() +
-         "&var1=" + this.getVar1() + "&var2=" + this.getVar2() + "&renderer=" + this.getRenderer();
-}
-
 // Create a new view based on DOM inputs. Position of image is preserved from current view if existing, o.w. reset.
 newView() {
   var reset = this.viewer == null || this.viewer.desired_image_properties == null;
@@ -54,17 +55,23 @@ newView() {
                reset ? 0.0 : this.viewer.desired_image_properties.center_x,
                reset ? 0.0 : this.viewer.desired_image_properties.center_y,
                reset ? 1.0 : this.viewer.desired_image_properties.scale,
-               this.getWidth(), this.getHeight(), this.getMaxDepth(), this.getRenderer(), this.getBrighten(), this.getEyeAdjust(), this.getVar1(), this.getVar2(), this.get3d(),
-               this.getStereo(),
-               this.EYE_SEPARATION, // distance between eyes in pixels
-               this.getWidth() + this.STEREO_IMAGE_GAP, // distance between images in pixel
-               //this.getStereo() ? parseInt((IMAGE_SEPARATION - EYE_SEPARATION) / 2.0) : 0,
-               //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,
-               this.getDarken()
+               this.getWidth(), this.getHeight(),
+               this.settings
              );
 }
 
-paramsChanged() {
+// Settings or view size has changed in GUI and must be reflected.
+settingsChanged() {
+  this.settings.set(
+         this.getMaxDepth(), this.getRenderer(), this.getBrighten(), this.getEyeAdjust(),
+         this.getVar1(), this.getVar2(), this.get3d(), this.getStereo(),
+         this.EYE_SEPARATION, // distance between eyes in pixels
+         this.getWidth() + this.STEREO_IMAGE_GAP, // distance between images in pixel
+         //this.getStereo() ? parseInt((IMAGE_SEPARATION - EYE_SEPARATION) / 2.0) : 0,
+         //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,
+         this.getDarken(), this.getSmooth(),
+         !this.getTiled()
+       );  // The viewer is polling this structure for changes.
   if (this.map) {
     this.map_source.setUrl(this.getMapURL());
   }
@@ -111,7 +118,7 @@ resized() {
   if (this.viewer) {
     this.sizeFullViewer();
   }
-  this.paramsChanged();
+  this.settingsChanged();
 }
 
 destroyViewer() {
@@ -135,9 +142,54 @@ getMapURL() {
   let port = $("#port").val();
   let uri = $("#uri").val();
   let tile = "/tile/";
-  var urlSource = "http://" + host + ":" + port + tile + this.getMaxDepth() +
-                  "/{z}/{x}/{y}?" + this.mapQueryArgs(false);
+  var urlSource = "http://" + host + ":" + port + tile + this.settings.max_depth +
+                  "/{z}/{x}/{y}?" + this.settings.mapQueryArgs(false);
   return urlSource;
+}
+
+setMotionMessage() {
+  let motion = this.getMotion();
+  // Only the viewer supports non-positional motion.
+  if (!this.viewer) {
+    motion = "position";
+  }
+  $(".motionInstructions").css("display", "none");
+  if (this.viewer) {
+    $(`#${motion}MotionInstructions`).css("display", "block")
+  }
+}
+
+openMap() {
+  $("#mapContainer").css("display", "block");
+  var urlSource = this.getMapURL();
+  this.map_source = new ol.source.XYZ({url: urlSource});
+  console.log(`Image URL: ${urlSource}`);
+  this.map = new ol.Map({
+    target: 'mapContainer',
+    layers: [
+      new ol.layer.Tile({
+        source: this.map_source
+      })
+    ],
+    view: new ol.View({
+      center: [0, 0],//defualt parameters
+      zoom: 2,  //defualt zooming
+      maxZoom: 1000
+    })
+  });
+}
+
+openFullViewer() {
+  // Open full image viewer
+  $("#fullImageViewerContainer").css("display", "inline");
+
+  // Empty the target div to remove any prior Map and add content for full-image viewer.
+  $("#leftEye" ).html(`<div class="imgContainer"><img></div>`);
+  $("#rightEye").html(`<div class="imgContainer"><img></div>`);
+
+  this.sizeFullViewer();
+  // The image as it *should* currently be displayed.
+  this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView(), this.getMotion());
 }
 
 constructor() {
@@ -151,6 +203,7 @@ constructor() {
   
   // Member variables
   
+  this.settings = new MandelbrotSettings(); // Modified each time settings are changed in GUI.
   this.map = null;  // The open map, or null.
   this.map_source = null; // The 'source' of the map.
   this.viewer = null;  // The open FullImageMandelbrotViewer, or null.
@@ -163,56 +216,42 @@ constructor() {
       this.map_source.setUrl(this.getMapURL());
     }
     if (this.viewer) {
-      this.viewer.desired_image_properties.renderer = this.getRenderer();
+      this.viewer.desired_image_properties.settings.renderer = this.getRenderer();
     }
     $("#modes").css("display", this.getRenderer() === "python" ? "none" : "block")
+    if (evt.target.id == "tiled") {
+      this.destroyViewer();
+      this.settingsChanged();
+      if (this.getTiled()) {
+        this.openMap();
+      } else {
+        this.openFullViewer();
+      }
+      this.setMotionMessage();
+    }
   });
   $("#modes input").change((evt) => {
     this.resized();  // because stereo can affect sizing
   });
   $(".var").on("input", (evt) => {
-    this.paramsChanged();
+    this.settingsChanged();
   });
   $("#motion input").change((evt) => {
     if (this.viewer) {
       this.viewer.motion = this.getMotion();
     }
+    this.setMotionMessage();
   });
   new ResizeObserver(entries => {
     this.resized();
   }).observe($("#imagesContainer")[0]);
-  $("#open_map").click((evt) => {
-    this.destroyViewer();
-    $("#mapContainer").css("display", "block");
-    var urlSource = this.getMapURL();
-    this.map_source = new ol.source.XYZ({url: urlSource});
-    console.log(`Image URL: ${urlSource}`);
-    this.map = new ol.Map({
-      target: 'mapContainer',
-      layers: [
-        new ol.layer.Tile({
-          source: this.map_source
-        })
-      ],
-      view: new ol.View({
-        center: [0, 0],//defualt parameters
-        zoom: 2,  //defualt zooming
-        maxZoom: 1000
-      })
-    });
-  });
-  $("#open_img").click((evt) => {
-    this.destroyViewer();
-    $("#fullImageViewerContainer").css("display", "inline");
-    
-    // Empty the target div to remove any prior Map and add content for full-image viewer.
-    $("#leftEye" ).html(`<div class="imgContainer"><img></div>`);
-    $("#rightEye").html(`<div class="imgContainer"><img></div>`);
-
-    this.sizeFullViewer();
-    // The image as it *should* currently be displayed.
-    this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView(), this.getMotion());
-  });
+  
+  
+  
+  // Initialization
+  
+  this.settingsChanged();
+  this.openFullViewer();
 }
 
 }

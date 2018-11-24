@@ -36,6 +36,12 @@
 .imgContainer img {
   position: relative;
 }
+.motionInstructions {
+  display: none;
+}
+#positionMotionInstructions {
+  display: block;
+}
 
 .unselectable {
     -webkit-touch-callout: none;
