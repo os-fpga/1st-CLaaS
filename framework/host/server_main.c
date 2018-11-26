@@ -90,6 +90,8 @@ void perror(const char * error);
 ** connection with the python webserver
 */
 #ifdef OPENCL
+cl_data_types init_platform(cl_data_types cl);
+cl_data_types initialize_kernel(cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size);
 cl_data_types handle_command(int socket, int command, cl_data_types opencl, const char *xclbin, const char *kernel_name, int memory_size);
 #else
 char *image_buffer;
@@ -131,6 +133,10 @@ int main(int argc, char const *argv[])
   // OpenCL data type definition
   cl_data_types cl;
   cl.status = 1;
+  
+  // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
+  cl = init_platform(cl);
+  cl = init_kernel(cl, xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #endif
 
   // Socket-related variables
@@ -316,38 +322,47 @@ void perror(const char * error) {
 }
 
 #ifdef OPENCL
+cl_data_types init_platform(cl_data_types cl) {
+  if(!cl.initialized) {
+    cl = initialize_platform();
+    if (cl.status)
+      sprintf(response, "Error: could not initialize platform");
+    else
+      sprintf(response, "INFO: platform initialized");
+  } else
+    sprintf(response, "Error: Platform already initialized");
+  }
+}
+
+cl_data_types init_kernel(cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
+  if(cl.status){
+    sprintf(response, "Error: first initialize platform");
+    break;
+  }
+
+  if(!cl.initialized) {
+    cl = initialize_kernel(cl, xclbin, kernel_name, memory_size);
+    if (cl.status)
+      sprintf(response, "Error: Could not initialize the kernel");
+    else {
+      sprintf(response, "INFO: kernel initialized");
+      cl.initialized = true;
+    }
+  }
+}
+
 cl_data_types handle_command(int socket, int command, cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
   char response[MSG_LENGTH];
 
   switch (command) {
     // Initialization of the platform
     case INIT_PLATFORM_N:
-      if(!cl.initialized) {
-        cl = initialize_platform();
-        if (cl.status)
-          sprintf(response, "Error: could not initialize platform");
-        else
-          sprintf(response, "INFO: platform initialized");
-      } else
-        sprintf(response, "Error: Platform already initialized");
+      cl = init_platform(cl);
       break;
 
     // Initialization of the kernel (loads the fpga program)
     case INIT_KERNEL_N:
-      if(cl.status){
-        sprintf(response, "Error: first initialize platform");
-        break;
-      }
-
-      if(!cl.initialized) {
-        cl = initialize_kernel(cl, xclbin, kernel_name, memory_size);
-        if (cl.status)
-          sprintf(response, "Error: Could not initialize the kernel");
-        else {
-          sprintf(response, "INFO: kernel initialized");
-          cl.initialized = true;
-        }
-      }
+      cl = init_kernel(cl, xclbin, kernel_name, memory_size);
       break;
 
     // Releasing all OpenCL links to the fpga
