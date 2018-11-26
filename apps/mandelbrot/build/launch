@@ -19,7 +19,7 @@ usage () {
 
 TYPE="$1"
 HOST="$2"
-AWSXCLBIN="$3"
+AWSXCLBIN="/home/centos/fpga-webserver2/apps/mandelbrot/prebuilt_out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsxclbin"
 if [[ $TYPE = "" ]];
 then
   usage
