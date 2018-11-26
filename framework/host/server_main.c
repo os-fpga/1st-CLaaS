@@ -133,10 +133,6 @@ int main(int argc, char const *argv[])
   // OpenCL data type definition
   cl_data_types cl;
   cl.status = 1;
-  
-  // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
-  cl = init_platform(cl, NULL);
-  cl = init_kernel(cl, NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #endif
 
   // Socket-related variables
@@ -192,6 +188,13 @@ int main(int argc, char const *argv[])
   int err;
   int exit_status;
 
+
+
+#ifdef OPENCL
+  // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).                            
+  cl = init_platform(cl, NULL);
+  cl = init_kernel(cl, NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+#endif
 
   while (true) {
     if ((sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
@@ -519,6 +522,8 @@ cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array ar
 
   input.width = (long) array_struct.data[4];
   input.height = (long) array_struct.data[5];
+  // TODO: I think there's currently a limitation that width must be a multiple of 16.
+  input.width = (input.width + 15) / 16 * 16;  // Round up to nearest 16.
 
   input.max_depth = (long) array_struct.data[6];
 
