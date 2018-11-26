@@ -90,8 +90,8 @@ void perror(const char * error);
 ** connection with the python webserver
 */
 #ifdef OPENCL
-cl_data_types init_platform(cl_data_types cl);
-cl_data_types initialize_kernel(cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size);
+cl_data_types init_platform(cl_data_types cl, char * response);
+cl_data_types init_kernel(cl_data_types cl, char * response, const char *xclbin, const char *kernel_name, int memory_size);
 cl_data_types handle_command(int socket, int command, cl_data_types opencl, const char *xclbin, const char *kernel_name, int memory_size);
 #else
 char *image_buffer;
@@ -135,8 +135,8 @@ int main(int argc, char const *argv[])
   cl.status = 1;
   
   // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
-  cl = init_platform(cl);
-  cl = init_kernel(cl, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+  cl = init_platform(cl, NULL);
+  cl = init_kernel(cl, NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #endif
 
   // Socket-related variables
@@ -322,33 +322,53 @@ void perror(const char * error) {
 }
 
 #ifdef OPENCL
-cl_data_types init_platform(cl_data_types cl) {
+
+// A wrapper around initialize_platform that reports errors.
+// Use NULL response to report errors.
+cl_data_types init_platform(cl_data_types cl, char * response) {
+  char rsp[MSG_LENGTH];
+  if (response == NULL) {
+    response = rsp;
+  }
   if(!cl.initialized) {
     cl = initialize_platform();
     if (cl.status)
       sprintf(response, "Error: could not initialize platform");
     else
       sprintf(response, "INFO: platform initialized");
-  } else
+  } else {
     sprintf(response, "Error: Platform already initialized");
   }
+  if (response == rsp) {
+    printf("%s\n", response);
+  }
+  return cl;
 }
 
-cl_data_types init_kernel(cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
+// A wrapper around init_kernel that reports errors.
+// Use NULL response to report errors.                                                                                                                        
+cl_data_types init_kernel(cl_data_types cl, char * response, const char *xclbin, const char *kernel_name, int memory_size) {
+  char rsp[MSG_LENGTH];
+  if (response == NULL) {
+    response = rsp;
+  }
   if(cl.status){
     sprintf(response, "Error: first initialize platform");
-    break;
-  }
-
-  if(!cl.initialized) {
-    cl = initialize_kernel(cl, xclbin, kernel_name, memory_size);
-    if (cl.status)
-      sprintf(response, "Error: Could not initialize the kernel");
-    else {
-      sprintf(response, "INFO: kernel initialized");
-      cl.initialized = true;
+  } else {
+    if(!cl.initialized) {
+      cl = initialize_kernel(cl, xclbin, kernel_name, memory_size);
+      if (cl.status)
+        sprintf(response, "Error: Could not initialize the kernel");
+      else {
+        sprintf(response, "INFO: kernel initialized");
+        cl.initialized = true;
+      }
     }
   }
+  if (response == rsp) {
+    printf("%s\n", response);
+  }
+  return cl;
 }
 
 cl_data_types handle_command(int socket, int command, cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
@@ -357,12 +377,12 @@ cl_data_types handle_command(int socket, int command, cl_data_types cl, const ch
   switch (command) {
     // Initialization of the platform
     case INIT_PLATFORM_N:
-      cl = init_platform(cl);
+      cl = init_platform(cl, NULL);
       break;
 
     // Initialization of the kernel (loads the fpga program)
     case INIT_KERNEL_N:
-      cl = init_kernel(cl, xclbin, kernel_name, memory_size);
+      cl = init_kernel(cl, NULL, xclbin, kernel_name, memory_size);
       break;
 
     // Releasing all OpenCL links to the fpga

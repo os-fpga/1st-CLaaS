@@ -218,3 +218,7 @@ prebuild: build
 	cp $(DEST_DIR)/$(HOST_EXE)          $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
 	cp $(DEST_DIR)/$(KERNEL_EXE).xclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).xclbin
 
+
+.PHONY: debug_prints
+debug_prints:
+	$(info host path: $(DEST_DIR)/$(HOST_EXE))
