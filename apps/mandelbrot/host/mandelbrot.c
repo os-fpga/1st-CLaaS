@@ -38,6 +38,8 @@ MandelbrotImage::MandelbrotImage(double *params) {
   smooth = (modes >> 7) & 1;
   if (smooth) {enable_step = false;}  // Need to compute every pixel for smoothing.
   //+int color_scheme = (int)(params[17]);
+  spot_depth = (int)(params[18]);
+  show_spot = spot_depth >= 0;
   brighten = (int)(params[13]);
   eye_adjust = params[14];
   eye_separation = params[15];
@@ -143,10 +145,10 @@ MandelbrotImage::coord_t MandelbrotImage::getZoomDepth() {
     return log(SCALE_PER_DEPTH, zoom);
 }
 
-const int MandelbrotImage::RESOLUTION_FACTOR_3D = 3;  // TODO: Chosen empirically as an integer. It should be: distance from eye to most-distant visible depth / distance from eye to screen (and should be float).
-const MandelbrotImage::coord_t MandelbrotImage::SCALE_PER_DEPTH = 0.84L;
-const MandelbrotImage::coord_t MandelbrotImage::EYE_DEPTH_FIT = 8.0L;
-const MandelbrotImage::coord_t MandelbrotImage::NATURAL_DEPTH = 3.0L;
+const int MandelbrotImage::RESOLUTION_FACTOR_3D = 2;  // TODO: Chosen empirically as an integer. It should be: distance from eye to most-distant visible depth / distance from eye to screen (and should be float).
+const MandelbrotImage::coord_t MandelbrotImage::SCALE_PER_DEPTH = 0.9L;
+const MandelbrotImage::coord_t MandelbrotImage::EYE_DEPTH_FIT = 10.0L;
+const MandelbrotImage::coord_t MandelbrotImage::NATURAL_DEPTH = 5.0L;
 
 int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_array_3d) {
   // The 3D "Structure":
@@ -201,14 +203,11 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
     fractional_depth_array_3d = (unsigned char *)malloc(req_width * req_height * sizeof(unsigned char *));
   }
   
-  coord_t eye_depth = (auto_dive ? (coord_t)(((auto_depth << 8) + auto_depth_frac)) / 256.0L : getZoomDepth()) - EYE_DEPTH_FIT - eye_adjust;
-  if (VERBOSITY)
-    cout << "Eye depth: " << eye_depth << ". ";
-  
   // Iterate the depths in front of the eye, so begin with the first depth plane in front of the eye.
   int first_depth = ((int)(eye_depth + 1000.0L + 0.01L)) - 1000 + 1;
      // Round up (+1000.0 used to ensure positive value for (int); +0.01 to avoid depth w/ infinite pix_x/y; +1 to round up, not down).
   
+  coord_t max_multiplier = 0.0;
   for (int h_3d = 0; h_3d < req_height; h_3d++) {
     coord_t h_from_center_3d = (coord_t)h_3d - center_h_3d;
     for (int w_3d = 0; w_3d < req_width; w_3d++) {
@@ -220,6 +219,12 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
       coord_t dist_from_eye = depth_separation; // Absolute distance from eye in units of first-depth-distance.
       while (depth < max_depth) {
         coord_t multiplier_3d_to_2d = dist_from_eye / NATURAL_DEPTH;
+        // Check that multiplier doesn't exceed RESOLUTION_FACTOR_3D.
+        if (depth == max_depth - 1) {
+          if (max_multiplier < multiplier_3d_to_2d) {
+            max_multiplier = multiplier_3d_to_2d;
+          }
+        }
         
         w_2d = round(center_w_2d + w_from_center_3d * multiplier_3d_to_2d);
         h_2d = round(center_h_2d + h_from_center_3d * multiplier_3d_to_2d);
@@ -231,6 +236,19 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
             break;
           }
         } else {
+          // Normal case. Break if we are at depth in 2d image.
+          
+          // But, first handle the spot.
+          if (show_spot && depth == spot_depth) {
+            int spot_w = w_2d - calc_center_w;
+            int spot_h = h_2d - calc_center_h;
+            if (spot_w * spot_w + spot_h * spot_h < calc_height * calc_height / 900) {
+              depth = -1;  // Used to signify spot.
+              break;
+            }
+          }
+          
+          // Now, break if we're at depth.
           if (depth_array[h_2d * calc_width + w_2d] <= depth) {
             break;
           }
@@ -242,20 +260,51 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
         depth_separation *= SCALE_PER_DEPTH;
         dist_from_eye += depth_separation;
       }
-      depth_array_3d[h_3d * req_width + w_3d] = depth;
-      if (smooth) {
-        fractional_depth_array_3d[h_3d * req_width + w_3d] =
-             (depth_array[h_2d * calc_width + w_2d] < depth)
-                ? (unsigned char)0  // in the shadow of a closer layer.
-                : fractional_depth_array[h_2d * calc_width + w_2d];
+      if (depth < 0) {
+        // Spot.
+        depth_array_3d[h_3d * req_width + w_3d] = 0;  // Use depth 0 color.
+        fractional_depth_array_3d[h_3d * req_width + w_3d] = (unsigned char)0;
+      } else {
+        depth_array_3d[h_3d * req_width + w_3d] = depth;
+        if (smooth) {
+          fractional_depth_array_3d[h_3d * req_width + w_3d] =
+               (depth_array[h_2d * calc_width + w_2d] < depth)
+                  ? (unsigned char)0  // in the shadow of a closer layer.
+                  : fractional_depth_array[h_2d * calc_width + w_2d];
+        }
       }
     }
   }
+  //cout << "max_multiplier: " << max_multiplier << endl;
   return depth_array_3d;
 }
 
 MandelbrotImage * MandelbrotImage::make3d() {
   startTimer();
+  
+  eye_depth = (auto_dive ? (coord_t)(((auto_depth << 8) + auto_depth_frac)) / 256.0L : getZoomDepth()) - EYE_DEPTH_FIT - eye_adjust;
+  if (VERBOSITY)
+    cout << "Eye depth: " << eye_depth << ". ";
+  // Adjust spot_depth to be relative to eye.
+  if (show_spot) {
+    spot_depth = (int)eye_depth + NATURAL_DEPTH + spot_depth;
+  }
+  
+  // Make the spot by changing the depth of the center circle.
+  if (false && show_spot) {
+    for (int h = calc_center_h - calc_height / 30; h < calc_center_h + calc_height / 30; h++) {
+      for (int w = calc_center_w - calc_height / 30; w < calc_center_w + calc_height / 30; w++) {
+        if (true) {
+          // Inside the circle.
+          int ind = h * calc_width + w;
+          if (depth_array[ind] >= spot_depth) {
+            depth_array[ind] = spot_depth;
+            fractional_depth_array[ind] = 0;
+          }
+        }
+      }
+    }
+  }
 
   // Compute new 3D-iffied depth array(s) from depth_array.
   unsigned char *fractional_depth_array_3d;
@@ -377,7 +426,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, int & step) {
         coord_t next_xx_adj = scaled_adjustment2 * next_dyy_dy0;
         coord_t next_yy_adj = scaled_adjustment  * next_dxx_dx0;
         if (depth == int_adj_depth) {
-          coord_t prorate = (coord_t)depth - adjust_depth;
+          coord_t prorate = (coord_t)depth - (coord_t)adjust_depth;
           next_xx_adj *= prorate;
           next_yy_adj *= prorate;
         }
@@ -413,7 +462,12 @@ inline int MandelbrotImage::pixelDepth(int w, int h, int & step) {
         if (int_frac < 0) {
           int depth_decr = ((-int_frac + 255) >> 8);
           depth -= depth_decr;
-          int_frac += depth_decr << 8; 
+          int_frac += depth_decr << 8;
+          // but not less than depth 0.
+          if (depth < 0) {
+            depth = 0;
+            int_frac = 0;
+          }
         } else if (int_frac >= 256) {
           int depth_incr = int_frac >> 8;
           cout << "\nWARNING: Unexpected smoothing adjustment of " << depth_incr << " (frac: " << int_frac << ").\n";
@@ -558,16 +612,22 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
   auto_depth_h = is_stereo ? (req_height * 3 / 4) / 2 :
                  is_3d     ? (req_height * 3 / 4) / 2 :
                              (req_height * 2 / 3) / 2;
-  if (false && auto_darken) {
+  // Adjustment depth must be determined before determining depths. We'll determine it here based on the four corners
+  // (TODO: which is less than ideal).
+  // (This also sets initial start_darkening_depth.) Assumption no adjustment for this determination.
+  if (auto_darken || auto_dive) {
+    bool real_adjust = adjust;
+    adjust = false;
     tryPixelDepth(req_center_w - auto_depth_w, req_center_h - auto_depth_h);
     tryPixelDepth(req_center_w + auto_depth_w, req_center_h - auto_depth_h);
     tryPixelDepth(req_center_w - auto_depth_w, req_center_h + auto_depth_h);
     tryPixelDepth(req_center_w + auto_depth_w, req_center_h + auto_depth_h);
+    adjust = real_adjust;
   }
-
+  
+  adjust_depth = 0.0f;
   // Apply adjustments based on auto_depth, but adjustments must be applied as depths are computed, so we use this
   // initial approximation.
-  adjust_depth = 0.0L;
   if (adjust) {
     // Matched to eye depth.
     adjust_depth = start_darkening_depth;  // Begin adjustment where we begin darkening (both should be around first visible level) //- getZoomDepth() - EYE_DEPTH_FIT - eye_adjust;
@@ -633,7 +693,7 @@ void MandelbrotImage::updateMaxDepth(int new_auto_depth, unsigned char new_auto_
   if ((new_auto_depth << 8) + new_auto_depth_frac < (auto_depth << 8) + auto_depth_frac) {
     auto_depth = new_auto_depth;
     auto_depth_frac = new_auto_depth_frac;
-    start_darkening_depth = (auto_darken ? ((coord_t)((auto_depth << 8) + auto_depth_frac)) / 256.0L
+    start_darkening_depth = (auto_darken ? ((float)((auto_depth << 8) + (int)auto_depth_frac)) / 256.0f
                                          : getZoomDepth()) - eye_adjust - (coord_t)brighten;
     if (darken) {
       int dark_depth = (int)start_darkening_depth + half_faded_depth * 6; // Light fades exponentially w/ depth. After 6 half_faded_depth's, brightness is 1/32.
@@ -707,10 +767,11 @@ void MandelbrotImage::toPixelData(unsigned char *pixel_data, int *depth_array, u
   // Building the image pixels data
   for(int i = 0; i < req_width * req_height * 3; i+=3) {
     int depth = depth_array[j];
+    float smooth_depth = (float)depth + (smooth ? (float)fractional_depth_array[j] / 256.0f : 0.0f);
     float brightness;
-    bool shadow = darken && depth > (int)start_darkening_depth;
+    bool shadow = darken && smooth_depth > start_darkening_depth;
     if (shadow) {
-      brightness = 1.0L / (1.0L + ((coord_t)depth - start_darkening_depth) / (coord_t)half_faded_depth);
+      brightness = 1.0L / (1.0f + (smooth_depth - start_darkening_depth) / (float)half_faded_depth);
     }
     unsigned int frac = smooth ? (unsigned int)fractional_depth_array[j] : 0u;
     for(int k = 0; k < 3; k++) {

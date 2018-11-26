@@ -108,9 +108,7 @@ private:
   static const coord_t SCALE_PER_DEPTH;  // The scale of the 3D object, grows by 1/SCALE_PER_DEPTH with each depth of zoom. Empirical.
                                          // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
                                          // increments, so the controlling software should be in sync with this factor.
-  static const coord_t NATURAL_DEPTH;  // Depth from the eye (really, absolute distance in units of first-depth-distance) at which the
-                                       //   3D scaling factor == the 2D scaling factor (2D image is fit to the screen).
-                                       //   This is the plane controlled by the mouse.
+  static const coord_t NATURAL_DEPTH;  // Depth from the eye (really, absolute distance in units of first-depth-distance) of the screen.
   static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when sized to fit the height, or the depth from the
                                        //   eye of the auto-depth.
 
@@ -127,7 +125,9 @@ private:
   bool auto_dive;   // Enable eye movement based on auto_depth (vs. scaling based on zoom).
   bool auto_darken; // Enable darkening based on auto_depth (vs. scaling based on zoom).
   int auto_depth_w, auto_depth_h;
-  coord_t adjust_depth;   // Depth at which adjustment begins.
+  float adjust_depth;   // Depth at which adjustment begins.
+  int spot_depth;  // Depth of the "spot," used to help lock in on the stereo image. (Initially -1, or 0..n, then adjusted to be relative to eye.)
+  bool show_spot;  // Show the spot (spot_depth is initially -1).
   
   bool enable_step;  // True to enable optimization where we step ahead some number of pixels based on differentials.
   bool full_image;   // This is a full image, so decisions can be made with full knowledge (such as darkening and eye depth).
@@ -154,11 +154,12 @@ private:
   bool need_derivatives; // True if this image calculation needs to compute derivatives.
   int calc_width, calc_height;  // Size of the depth_array to compute.
   int calc_center_w, calc_center_h;  // Center (vanishing) point in the computed depth_array.
+  coord_t eye_depth;  // Depth of the eye.
   
   // For darkening distant 3D depths.
   bool darken;
   int half_faded_depth;
-  coord_t start_darkening_depth;
+  float start_darkening_depth;
 
   // Storage structures. These are freed upon destruction.
   int *depth_array;  // Image array of depth integers.

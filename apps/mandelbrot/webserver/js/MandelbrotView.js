@@ -14,7 +14,7 @@ class MandelbrotSettings {
   }
   
   set(max_depth, renderer, brighten, eye_adjust, var1, var2,
-      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image) {
+      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth) {
     this.max_depth = max_depth;
     this.renderer = renderer;
     this.brighten = brighten;
@@ -38,13 +38,14 @@ class MandelbrotSettings {
            (((this.renderer == "fpga") ? 1 : 0) << 3) |  // enable optimizations currently using FPGA setting
            (((this.full_image) ? 1 : 0) << 6) |  // full image render
            ((this.smooth ? 1 : 0) << 7);
+    this.spot_depth = spot_depth;
     return this;
   }
   
   copy() {
     return new MandelbrotSettings().set(this.max_depth, this.renderer,
                                         this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
-                                        this.image_separation, this.darken, this.smooth, this.full_image);
+                                        this.image_separation, this.darken, this.smooth, this.full_image, this.spot_depth);
   }
   
   equals(settings2) {
@@ -62,7 +63,8 @@ class MandelbrotSettings {
            this.darken == settings2.darken &&
            this.smooth == settings2.smooth &&
            this.modes == settings2.modes &&
-           this.full_image == settings2.full_image;
+           this.full_image == settings2.full_image &&
+           this.spot_depth == settings2.spot_depth;
   }
   
   getImageURLQueryArgs() {
@@ -70,7 +72,7 @@ class MandelbrotSettings {
            "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
            "&darken=" + this.darken + "&brighten=" + this.brighten +
            "&eye_adjust=" + this.eye_adjust + "&renderer=" + this.renderer + "&modes=" + this.modes +
-           "&colors=" + 0;
+           "&colors=" + 0 + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth);
   }
   
   mapQueryArgs(right) {
@@ -192,4 +194,13 @@ class MandelbrotView {
   getImageURLQueryArgs() {
     return this.settings.getImageURLQueryArgs();
   }
+  
+  
+  // Jumps to a good place in the image for trying stereo 3-D.
+  goToGoodPlace() {
+    this.center_x =  0.43821971;
+    this.center_y = -0.34128329;
+    this.zoom_level = 7.0;
+  }
+
 }

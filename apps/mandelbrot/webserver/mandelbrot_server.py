@@ -72,7 +72,7 @@ Or:
            pix_x/y are float pixel sizes in mandelbrot coords
            img_width/height are integers (pixels), and
            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
-In either case, integer query arguments var1, var2, three_d, modes, color_scheme, center_offset_w, center_offset_h, eye_sep, darken, brighten, and eye_adjust can also be provided (used in C rendering only).
+In either case, integer query arguments var1, var2, three_d, modes, color_scheme, spot_depth, center_offset_w, center_offset_h, eye_sep, darken, brighten, and eye_adjust can also be provided (used in C rendering only).
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
@@ -134,7 +134,11 @@ class ImageHandler(tornado.web.RequestHandler):
             eye_adjust = self.get_query_arguments("eye_adjust")[0]
         else:
             eye_adjust = "0"
-        #print "Query Args: var1: " + var1 + ", var2: " + var2 + ", 3d: " + three_d + ", modes: " + modes + ", color_scheme" + colors_scheme +
+        if (len(self.get_query_arguments("spot_depth")) > 0):
+            spot_depth = self.get_query_arguments("spot_depth")[0]
+        else:
+            spot_depth = "-1";
+        #print "Query Args: var1: " + var1 + ", var2: " + var2 + ", 3d: " + three_d + ", modes: " + modes + ", color_scheme" + colors_scheme + ", spot_depth" + spot_depth +
         #         ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", eye_sep: " + eye_sep + ", darken: " + darken + ", brighten: " + brighten + ", eye_adjust: " + eye_adjust
         #print "Type: ", type, ", Renderer: ", renderer
         
@@ -177,6 +181,7 @@ class ImageHandler(tornado.web.RequestHandler):
         payload.append(int(eye_sep))
         payload.append(int(modes))
         payload.append(int(color_scheme))
+        payload.append(int(spot_depth))
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)

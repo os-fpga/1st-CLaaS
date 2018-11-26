@@ -43,6 +43,26 @@
   display: block;
 }
 
+#parameters {
+  align-items: normal;
+}
+#parameters div {
+  text-align: left;
+}
+#renderer label, #modes label, #motion label {
+  display: inline;
+}
+#good-place {
+  color: blue;
+}
+#good-place:hover {
+  color: purple;
+  text-decoration: underline;
+}
+.three-d-only, .stereo-only {
+  display: none;
+}
+
 .unselectable {
     -webkit-touch-callout: none;
     -webkit-user-select: none;

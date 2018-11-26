@@ -41,10 +41,10 @@ getMotion() {
                                                     "position";
 }
 getHeight() {
-  return $("#leftEye").height();
+  return parseInt($("#leftEye").height());
 }
 getWidth() {
-  return $("#rightEye").width();
+  return parseInt($("#rightEye").width());
 }
 
 
@@ -70,7 +70,8 @@ settingsChanged() {
          //this.getStereo() ? parseInt((IMAGE_SEPARATION - EYE_SEPARATION) / 2.0) : 0,
          //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,
          this.getDarken(), this.getSmooth(),
-         !this.getTiled()
+         !this.getTiled(),
+         -1  // spot_depth (no spot)
        );  // The viewer is polling this structure for changes.
   if (this.map) {
     this.map_source.setUrl(this.getMapURL());
@@ -218,20 +219,30 @@ constructor() {
     if (this.viewer) {
       this.viewer.desired_image_properties.settings.renderer = this.getRenderer();
     }
-    $("#modes").css("display", this.getRenderer() === "python" ? "none" : "block")
+    
+    // Hide/show appropriate options based on renderer.
+    $(".not-python").css("display", this.getRenderer() === "python" ? "none" : "block")
+    
     if (evt.target.id == "tiled") {
       this.destroyViewer();
       this.settingsChanged();
+      $(".full-img-only").css("display", this.getTiled() ? "none" : "block")
       if (this.getTiled()) {
         this.openMap();
       } else {
         this.openFullViewer();
       }
       this.setMotionMessage();
+    } else {
+      this.settingsChanged();
     }
   });
   $("#modes input").change((evt) => {
     this.resized();  // because stereo can affect sizing
+    // Update visibility based on modes.
+    $(".darken-only").css("display", this.getDarken() ? "block" : "none");
+    $(".three-d-only").css("display", this.get3d() ? "block" : "none");
+    $(".stereo-only").css("display", this.getStereo() ? "block" : "none");
   });
   $(".var").on("input", (evt) => {
     this.settingsChanged();
@@ -242,6 +253,16 @@ constructor() {
     }
     this.setMotionMessage();
   });
+  $("body").keypress((evt) => {
+    if (evt.which == 32 /*space*/ && this.viewer && this.getStereo()) {
+      this.viewer.sendSpot();
+    }
+  })
+  $("#good-place").click((evt) => {
+    if (this.viewer) {
+      this.viewer.desired_image_properties.goToGoodPlace();
+    }
+  })
   new ResizeObserver(entries => {
     this.resized();
   }).observe($("#imagesContainer")[0]);

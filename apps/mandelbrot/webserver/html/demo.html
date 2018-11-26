@@ -43,82 +43,90 @@
     <input type="text" id="uri" value="/ws" class="form-control" placeholder="url" />
     <br />
   </div>
-  <div id="parameters" class="form-inline text-center" role="form" align="center">
+  <div id="parameters" class="form-inline" role="form" align="center">
     <fieldset id="renderer">
       <legend>Renderer</legend>
-
-      <div>
-        <input type="radio" id="python" name="renderer" />
-        <label for="python">Python</label>
-      </div>
-
-      <div>
-        <input type="radio" id="cpp" name="renderer" checked />
-        <label for="cpp">C++</label>
-      </div>
-
-      <div>
-        <input type="radio" id="fpga" name="renderer" />
-        <label for="fpga">FPGA/opt</label>
-      </div>
       
       <div>
         <input type="checkbox" id="tiled" name="tiled" />
-        <label for="tiled">Tiled (resets view; smoother, but fewer options)</label>
+        <label for="tiled" title="Use OpenLayers for tiled rendering (smoother, but fewer options); view is reset when changed">Tiled</label>
+      </div>
+      
+      <p></p>
+      
+      <div>
+        <input type="radio" id="python" name="renderer" />
+        <label for="python" title="Render images using Python (scripting language) on server">Python</label>
+      </div>
+      <div>
+        <input type="radio" id="cpp" name="renderer" checked />
+        <label for="cpp" title="Render images using C++ on server">C++</label>
+      </div>
+      <div>
+        <input type="radio" id="fpga" name="renderer" />
+        <label for="fpga" title="Render using FPGA in datacenter or using optimized algorithm">FPGA/opt</label>
       </div>
 
     </fieldset>
-    <fieldset id="modes">
-      <legend>Modes (Untiled only)</legend>
+    <fieldset id="modes" class="not-python">
+      <legend>Modes</legend>
       
       <div>
-        <input type="radio" id="2d" class="mode" name="3d" checked />
-        <label for="normal">Normal</label>
+        <input type="checkbox" id="darken" class="mode" name="darken" checked />
+        <label for="darken" title="Darken deeper depths">Darken</label>
+      </div>
+    
+      <div>
+        <input type="checkbox" id="smooth" class="mode" name="smooth" checked />
+        <label for="smooth" title="Blend colors">Smooth</label>
       </div>
       
-      <div>
-        <input type="radio" id="3d" class="mode" name="3d" />
-        <label for="3d">3-D</label>
+      <div id="3d-modes" class="full-img-only">
+        <p></p>
+        <div>
+          <input type="radio" id="2d" class="mode" name="3d" checked />
+          <label for="normal" title="No 3-D perspective">2-D</label>
+        </div>
+        
+        <div>
+          <input type="radio" id="3d" class="mode" name="3d" />
+          <label for="3d" title="3-D perspective effect">3-D</label>
+        </div>
+      
+        <div>
+          <input type="radio" id="stereo" class="mode" name="3d" />
+          <label for="stereo" title="True stereoscopic images (1 image for each eye); instructions appear when selected">Stereo 3-D</label>
+        </div>
       </div>
-    
-      <div>
-        <input type="radio" id="stereo" class="mode" name="3d" />
-        <label for="stereo">Stereo 3-D</label>
-      </div>
-    
-      <div>
-        <input type="checkbox" id="darken" class="mode" name="darken" />
-        <label for="darken">Darken</label>
-      </div>
-    
-      <div>
-        <input type="checkbox" id="smooth" class="mode" name="smooth" />
-        <label for="smooth">Smooth</label>
-      </div>
-               
+      
     </fieldset>
     <fieldset>
         <legend>Variables</legend>
         
-        <label for="sqrt_depth">Depth</label>
+        <label for="sqrt_depth" title="Maximum number of iterations/depths/colors to search before going black">Depth</label>
         <input type="range" id="sqrt_depth" class="var" name="sqrt_depth"
-               min="5" max="100" value="10" />
+               min="5" max="100" value="50" />
         
-        <label for="brighten">Dark Adjust</label>
-        <input type="range" id="brighten" class="var" name="brighten"
-               min="-200" max="200" value="0" />
-               
-        <label for="eyeAdjust">Z Adjust</label>
-        <input type="range" id="eye_adjust" class="var" name="eye_adjust" 
-               min="-100" max="100" value="0" />
-        
-        <label for="var1">Variable 1 (C++)</label>
-        <input type="range" id="var1" class="var" name="var1"
-               min="-100" max="100" value="0" />
-               
-        <label for="var2">Variable 2 (dummy)</label>
-        <input type="range" id="var2" class="var" name="var2" 
-               min="-100" max="100" value="0" />
+        <div class="not-python">
+          <label for="var1" title="Tweaks the algorithm">Morph 1</label>
+          <input type="range" id="var1" class="var" name="var1"
+                 min="-100" max="100" value="0" />
+                 
+          <label for="var2" title="Tweaks the algorithm">Morph 2</label>
+          <input type="range" id="var2" class="var" name="var2" 
+                 min="-100" max="100" value="0" />
+          
+          <div class="darken-only">
+            <label for="brighten" title="Adjusts the depth at which darkening begins">Dark Adjust</label>
+            <input type="range" id="brighten" class="var" name="brighten"
+                   min="-200" max="200" value="0" />
+          </div>
+          <div class="three-d-only">
+            <label for="eyeAdjust" title="Adjusts the distance of the 3-D surface from the eye">Z Adjust</label>
+            <input type="range" id="eye_adjust" class="var" name="eye_adjust" 
+                   min="-100" max="100" value="0" />
+          </div>
+        </div>
                
     </fieldset>
     <fieldset id="motion">
@@ -126,17 +134,17 @@
 
       <div>
         <input type="radio" id="motionPosition" name="motion" checked />
-        <label for="position">Position</label>
+        <label for="position" title="Easier controls; instructions below">Position</label>
       </div>
 
       <div>
         <input type="radio" id="motionVelocity" name="motion" />
-        <label for="velocity">Velocity</label>
+        <label for="velocity" title="Continuous motion; instructions below">Velocity</label>
       </div>
       
       <div style="display: none">
         <input type="radio" id="motionAcceleration" name="motion" />
-        <label for="acceleration">Acceleration</label>
+        <label for="acceleration" title="Smoothest, but most difficult controls; instructions below">Acceleration</label>
       </div>
 
     </fieldset>
@@ -163,6 +171,30 @@
     </p>
     <p id="accelerationMotionInstructions" class="motionInstructions">
       Left-click-and-hold on image to move. Mouse position is panning acceleration. Mouse wheel position is zoom acceleration.
+    </p>
+  </div>
+  <div class="stereo-only">
+    <h3>Stereoscopic 3-D instructions</h3>
+    <p>
+      No special glasses are needed! But it's difficult to trick your mind. Here are some steps to try:
+      <ul>
+        <li>Create a divider to hold or hang over your monitor so each eye sees only its own image and not the other. Use a piece of cardboard or a
+          manilla folder extended from the screen between the images. Be sure that with either eye closed you only see one image. Getting this right
+          will make a big difference.</li>
+        <li>Find a good place in the Mandelbrot set that doesn't drop down too quickly, especially on the left and right sides.
+          Or let us take you to <span id="good-place">a good place</span>. The "Morph" options tend to produce shallower regions.</li>
+        <li>Slide "Z Adjust" right and "Dark Adjust" left. This flattens the image. Once you see the flat image as a single image
+          you can adjust these back (or have a friend do it while you stay focused on the scene).</li>
+        <li>Check the separation of the images. The flattened images should be separated by less than the distance between your eyes -- ideally about half, or a bit less for your first try.
+          There is no adjustment currently, but you can magnify or shrink your browser window. (<Ctrl>+/- in Chrome.)</li>
+        <li>Stare at the images from roughly a 1-foot distance.</li>
+        <li>Allow your eyes to correct your double vision. Your mind should naturally
+          adjust your eyes to bring the two images together as one.</li>
+        <li>Look beyond the screen. In fact, reach your finger around your monitor behind the images and tell your mind to look at your finger.</li>
+        <li>Keep your head still.</li>
+        <li>If you can't get it after trying for a few minutes, press the space bar. A dot will shot step-by-step into the screen. Focus on the dot, following it into
+            the great beyond.</li>
+      </ul>
     </p>
   </div>
   <p id="debugLog">

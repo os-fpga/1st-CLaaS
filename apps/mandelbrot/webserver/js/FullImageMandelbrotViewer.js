@@ -35,8 +35,6 @@ class FullImageMandelbrotViewer {
     this.base_url = `http://${host}:${port}/img`;
     // The image last requested.
     this.requested_image_properties = null;
-    // The most recent image loaded (requested and returned).
-    this.available_image_properties = null;
     
     this.destroyed = false;
     // `true` iff the content is being dragged.
@@ -179,6 +177,26 @@ class FullImageMandelbrotViewer {
       this.desired_image_properties.zoomBy(this.velocity_z);
       this.setMotionTimeout();
     }
+  }
+  
+  // Start the spot at depth 0 and increment it to a certain depth as long as the spot_depth has not been reset by another call.
+  sendSpot() {
+    this.desired_image_properties.settings.spot_depth = -1;
+    let spot_depth = -1;
+    let cb = () => {
+      if (spot_depth < 40 && this.desired_image_properties.settings.spot_depth == spot_depth) {
+        console.log(`spot_depth: ${spot_depth}`);
+        // As expected from last iteration; spot has not been reset.
+        this.desired_image_properties.settings.spot_depth++;
+        spot_depth++;
+        if (spot_depth < 40) {
+          setTimeout(cb, 5000 / (5 + this.desired_image_properties.settings.spot_depth));  // 1 sec to go to depth 2, 2 seconds at depth 10, 3 at 20, etc.
+        } else {
+          this.desired_image_properties.settings.spot_depth = -1;
+        }
+      }
+    }
+    cb();
   }
   
   setView(view) {
