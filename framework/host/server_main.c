@@ -279,26 +279,31 @@ int main(int argc, char const *argv[])
             }
             
 #ifdef OPENCL
-            // TODO: I think there's currently a limitation that width must be a multiple of 16.
-            array_struct.data[4] = (array_struct.data[4] + 15) / 16 * 16;  // Round up to nearest 16.
-            // And don't go bigger that allocated sizes.
-            if (array_struct.data[4] > COLS) {
-              array_struct.data[4] = COLS;
-            }
-            if (array_struct.data[5] > ROWS) {
-              array_struct.data[5] = ROWS;
+            if (!force_c) {
+              // TODO: I think there's currently a limitation that width must be a multiple of 16.
+              array_struct.data[4] = (double)((((int)(array_struct.data[4])) + 15) / 16 * 16);  // Round up to nearest 16.
+              // And don't go bigger that allocated sizes.
+              if (((int)(array_struct.data[4])) > COLS) {
+                array_struct.data[4] = (double)COLS;
+              }
+              if (((int)(array_struct.data[5])) > ROWS) {
+                array_struct.data[5] = (double)ROWS;
+              }
+              if (array_struct.data[5] > ROWS) {
+                array_struct.data[5] = ROWS;
+              }
             }
 #endif
     
             MandelbrotImage mb_img(array_struct.data);
 
             int * depth_data = NULL;
-            if (! force_c) {
 #ifdef OPENCL
+            if (! force_c) {
               // Populate depth_data from FPGA.
               cl = handle_get_image(sock, &depth_data, array_struct, cl);
-#endif
             }
+#endif
             // Free memory for array_struct.
             free(array_struct.data);
   
