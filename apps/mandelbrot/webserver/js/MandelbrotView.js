@@ -1,23 +1,24 @@
-class MandelbrotView {
-  // Params:
-  //   center_x/y: Mandelbrot coords of center point.
-  //   scale: 1 is Mandelbrot circle fit to image height.
-  //   height/width: Image height/width.
+class MandelbrotSettings {
   //   max_depth: Max number of iterations for calculation.
   //   renderer: "python", "cpp", or "fpga".
+  //   brighten: depth by which to adjust the start of darkening.
+  //   eye_adjust: adjustment in depths for the position of the eye.
   //   var1/var2: Integer variables that influence the image.
   //   three_d: 3-D image.
   //   eye_separation: separation of eyes in pixels.
   //   image_separation: separation of stereo images in pixels.
   //   darken: Flag to enable darkening of inner depths.
-  constructor(center_x, center_y, scale, height, width, max_depth, renderer, var1, var2, three_d, stereo, eye_separation, image_separation, darken) {
-    this.center_x = center_x;
-    this.center_y = center_y;
-    this.height = height;  // Image height/width.
-    this.width = width;
-    this.scale = scale;   // One level for each factor of e (Euler's constant).
+  //   smooth: Flag to enable smoothing.
+  //   full_image: Flag indicating that this is a full image, which can enable auto adjustments.
+  constructor() {
+  }
+  
+  set(max_depth, renderer, brighten, eye_adjust, var1, var2,
+      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth) {
     this.max_depth = max_depth;
     this.renderer = renderer;
+    this.brighten = brighten;
+    this.eye_adjust = eye_adjust;
     this.var1 = var1;
     this.var2 = var2;
     this.three_d = three_d;
@@ -27,9 +28,73 @@ class MandelbrotView {
     this.image_separation = image_separation;
     // For stereoscopic images, the given parameters are for an eye between the two eyes. These provide
     // adjustments from that point for each eye.
-    // For stereoscopic images, the horizontal (width) offset from center of the vanishing point of the left image (negative of this for right).
+    // For stereoscopic images, the horizontal (width) offset from the center of the left image of the vanishing point (negative of this for right).
     this.center_offset = this.stereo ? parseInt((image_separation - eye_separation) / 2.0) : 0;
-    // For stereoscopic images, the offset to apply to center_x coord for the left image (negative of this for right).
+    this.smooth = smooth;
+    this.full_image = full_image;
+    this.modes =
+           (((this.renderer == "python") ? 1 : 0) << 0) |
+           (((this.renderer == "cpp") ? 1 : 0) << 1) |
+           (((this.renderer == "fpga") ? 1 : 0) << 3) |  // enable optimizations currently using FPGA setting
+           (((this.full_image) ? 1 : 0) << 6) |  // full image render
+           ((this.smooth ? 1 : 0) << 7);
+    this.spot_depth = spot_depth;
+    return this;
+  }
+  
+  copy() {
+    return new MandelbrotSettings().set(this.max_depth, this.renderer,
+                                        this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
+                                        this.image_separation, this.darken, this.smooth, this.full_image, this.spot_depth);
+  }
+  
+  equals(settings2) {
+    return settings2 != null &&
+           this.max_depth == settings2.max_depth &&
+           this.renderer == settings2.renderer &&
+           this.brighten == settings2.brighten &&
+           this.eye_adjust == settings2.eye_adjust &&
+           this.var1 == settings2.var1 &&
+           this.var2 == settings2.var2 &&
+           this.three_d == settings2.three_d &&
+           this.stereo == settings2.stereo &&
+           (!this.stereo || (this.eye_separation == settings2.eye_separation &&
+                             this.image_separation == settings2.image_separation)) &&
+           this.darken == settings2.darken &&
+           this.smooth == settings2.smooth &&
+           this.modes == settings2.modes &&
+           this.full_image == settings2.full_image &&
+           this.spot_depth == settings2.spot_depth;
+  }
+  
+  getImageURLQueryArgs() {
+    return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
+           "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
+           "&darken=" + this.darken + "&brighten=" + this.brighten +
+           "&eye_adjust=" + this.eye_adjust + "&renderer=" + this.renderer + "&modes=" + this.modes +
+           "&colors=" + 0 + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth);
+  }
+  
+  mapQueryArgs(right) {
+    return "darken=" + this.darken + "&brighten=" + this.brighten + "&modes=" + this.modes +
+           "&var1=" + this.var1 + "&var2=" + this.var2 + "&renderer=" + this.renderer;
+  }
+  
+}
+
+
+class MandelbrotView {
+  // Params:
+  //   center_x/y: Mandelbrot coords of center point.
+  //   scale: 1 is Mandelbrot circle fit to image height.
+  //   height/width: Image height/width.
+  constructor(center_x, center_y, scale, width, height, settings) {
+    this.center_x = center_x;
+    this.center_y = center_y;
+    this.height = height;  // Image height/width.
+    this.width = width;
+    this.scale = scale;   // One level for each factor of e (Euler's constant).
+    this.settings = settings;
   }
   
   // Setters/Getters
@@ -66,12 +131,12 @@ class MandelbrotView {
   set max_depth(v) {this._max_depth = v;}
   get max_depth() {return this._max_depth;}
   
-  get x_offset() {return this.stereo ? - this.eye_separation / 2.0 * this.pix_size_x : 0.0;}
+  //get x_offset() {return this.stereo ? - this.eye_separation / 2.0 * this.pix_size_x : 0.0;}
 
   
   // Copy "constructor".
   copy() {
-    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.height, this.width, this.max_depth, this.renderer, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation, this.image_separation, this.darken);
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, this.settings.copy());
   }
   
   // Image comparison.
@@ -84,20 +149,19 @@ class MandelbrotView {
            this.scale == img2.scale &&
            this.height == img2.height &&
            this.width == img2.width &&
-           this.max_depth == img2.max_depth &&
-           this.renderer == img2.renderer &&
-           this.var1 == img2.var1 &&
-           this.var2 == img2.var2 &&
-           this.three_d == img2.three_d &&
-           this.stereo == img2.stereo &&
-           (!this.stereo || (this.eye_separation == img2.eye_separation &&
-                             this.image_separation == img2.image_separation)) &&
-           this.darken == img2.darken;
+           this.settings.equals(img2.settings);
   }
   
   
   zoomBy(v) {
     this.zoom_level += v;
+  }
+  zoomByAt(v, offset_x, offset_y) {
+    let scale_up = Math.exp(v);
+    console.log(`v: ${v}, offset_x: ${offset_x}, offset_y: ${offset_y}, scale_up: ${scale_up}`)
+    this.zoom_level += v;
+    this.center_x += offset_x * (scale_up - 1) / scale_up;
+    this.center_y += offset_y * (scale_up - 1) / scale_up;
   }
   
   scaleBy(v) {
@@ -111,23 +175,32 @@ class MandelbrotView {
   
   // Apply change for given delta time at a constant zoom and pan rate.
   // This involves calculus as the rate of change of position changes over time.
-  // TODO: Undoubtedly I got the calculus wrong. Debug.
+  // TODO: Undoubtedly I got the calculus wrong. Debug. Not currently used. Current approach applies deltas
+  //       at consistent time deltas.
   zoomAndPan(delta_t, zoom_rate, pan_rate) {
     this.x += pan_rate / zoom_rate * Math.exp(-this.zoom_level) * (1 - Math.exp(-zoom_rate * delta_t))
     this.zoom_level += zoom_rate * delta_t;
   }
   
-  getImageURLParamsArrayJSON(right) {
-    return "[" + (this.center_x + (right ? -this.x_offset : this.x_offset)) + "," +
+  getImageURLParamsArrayJSON() {
+    return "[" + this.center_x + "," +
                  this.center_y + "," +
                  this.pix_size_x + "," +
                  this.pix_size_y + "," +
                  this.width + "," +
                  this.height + "," +
-                 this.max_depth + "]";
+                 this.settings.max_depth + "]";
   }
-  getImageURLQueryArgs(right) {
-    return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
-           "&offset_w=" + (this.center_offset * (right ? -1 : 1)) +"&offset_h=" + 0 + "&darken=" + this.darken + "&renderer=" + this.renderer;
+  getImageURLQueryArgs() {
+    return this.settings.getImageURLQueryArgs();
   }
+  
+  
+  // Jumps to a good place in the image for trying stereo 3-D.
+  goToGoodPlace() {
+    this.center_x =  0.43821971;
+    this.center_y = -0.34128329;
+    this.zoom_level = 7.0;
+  }
+
 }

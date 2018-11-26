@@ -147,11 +147,11 @@ else
 
 # TODO: Instead of this condition, define $(SW_SRC) and $HOST_SRC) as $(SRC) conditionally, etc.
 ifeq ($(TARGET), sw)
-$(DEST_DIR)/$(HOST_EXE):  $(SW_SRC) $(SW_HDRS)
+$(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 else
-$(DEST_DIR)/$(HOST_EXE):  $(HOST_SRC) $(HOST_HDRS)
+$(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 endif
@@ -198,17 +198,19 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emcondigutil for emulation purposes)
 
 .PHONY: build
+.PHONY: launch
 ifeq ($(TARGET), sw)
 build:  $(BUILD_DIR)/$(HOST_EXE)
+launch: build
+	./launch $(TARGET) $(BUILD_DIR)/$(HOST_EXE)
 else
 build:  $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
-endif
-
-.PHONY: launch
 launch: build
 	# TODO: Wait for AFI build to complete.
 	#       In create_sdaccel_afi.sh, use create-fpga-image --wait
 	./launch $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+endif
+
 
 .PHONY: prebuild
 prebuild: build
