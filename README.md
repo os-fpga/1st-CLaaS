@@ -219,9 +219,7 @@ git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 Each time you login:
 
 ```sh
-cd $AWS_FPGA_REPO_DIR
-source ./sdaccel_setup.sh
-cd
+fpga-webserver/sdaccel_setup
 ```
 
 Build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.

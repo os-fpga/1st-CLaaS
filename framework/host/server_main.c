@@ -227,9 +227,6 @@ int main(int argc, char const *argv[])
           array_struct = handle_write_data(sock);
 
 #ifdef OPENCL
-          // X,Y are center position, and must be passed to FPGA as top left.
-          array_struct.data[0] = array_struct.data[0] - array_struct.data[2] * (array_struct.data[4] / 2.0);
-          array_struct.data[1] = array_struct.data[1] - array_struct.data[3] * (array_struct.data[5] / 2.0);
           // Call the OpenCL utility function to send data to the FPGA.
           // We receive extra datums for C++ rendering only that are not sent to the FPGA.
           cout << "C++ received " << array_struct.data_size << " parameters. Sending 7 to FPGA." << endl;
@@ -492,7 +489,11 @@ cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array ar
 
   input_struct input;
 
-  for(int i = 0; i < 4; i++) {
+  // X,Y are center position, and must be passed to FPGA as top left.
+  input.coordinates[0] = array_struct.data[0] - array_struct.data[2] * (array_struct.data[4] / 2.0);
+  input.coordinates[1] = array_struct.data[1] - array_struct.data[3] * (array_struct.data[5] / 2.0);
+  // pix X/Y are straight from array_struct.
+  for(int i = 2; i < 4; i++) {
     input.coordinates[i] = array_struct.data[i];
   }
 
