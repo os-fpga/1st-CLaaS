@@ -519,6 +519,15 @@ cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array ar
 
   input.width = (long) array_struct.data[4];
   input.height = (long) array_struct.data[5];
+  // TODO: I think there's currently a limitation that width must be a multiple of 16.
+  input.width = (input.width + 15) / 16 * 16;  // Round up to nearest 16.
+  // And don't go bigger that allocated sizes.
+  if (input.width > COLS) {
+    input.width = COLS;
+  }
+  if (input.height > ROWS) {
+    input.height = ROWS;
+  }
 
   input.max_depth = (long) array_struct.data[6];
 
