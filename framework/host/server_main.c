@@ -277,6 +277,18 @@ int main(int argc, char const *argv[])
             if ((int)(array_struct.data[16]) & (1 << 1)) {
               force_c = true;
             }
+            
+#ifdef OPENCL
+            // TODO: I think there's currently a limitation that width must be a multiple of 16.
+            array_struct.data[4] = (array_struct.data[4] + 15) / 16 * 16;  // Round up to nearest 16.
+            // And don't go bigger that allocated sizes.
+            if (array_struct.data[4] > COLS) {
+              array_struct.data[4] = COLS;
+            }
+            if (array_struct.data[5] > ROWS) {
+              array_struct.data[5] = ROWS;
+            }
+#endif
     
             MandelbrotImage mb_img(array_struct.data);
 
@@ -522,15 +534,6 @@ cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array ar
 
   input.width = (long) array_struct.data[4];
   input.height = (long) array_struct.data[5];
-  // TODO: I think there's currently a limitation that width must be a multiple of 16.
-  input.width = (input.width + 15) / 16 * 16;  // Round up to nearest 16.
-  // And don't go bigger that allocated sizes.
-  if (input.width > COLS) {
-    input.width = COLS;
-  }
-  if (input.height > ROWS) {
-    input.height = ROWS;
-  }
 
   input.max_depth = (long) array_struct.data[6];
 
