@@ -88,9 +88,14 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
   
   
   // TODO: I think there's currently a limitation that width must be a multiple of 16 for the FPGA.
+  //       We will generate an image with width extended to a multiple of 16, where the extended pixels
+  //       should not be displayed (because the redered image for 3D is sized to support the requested size).
   if (fpga) {
     int multiple = 16;
-    calc_width = (calc_width + multiple - 1) / multiple * multiple;  // Round up to nearest 16.
+    req_width = (req_width + multiple - 1) / multiple * multiple;  // Round up to nearest 16.
+    if (!is_3d) {
+      calc_width = req_width;
+    }
   }
 
 };
