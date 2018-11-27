@@ -29,7 +29,6 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
   fractional_depth_array = right_fractional_depth_array = NULL;
   pixel_data = NULL;
   png = NULL;
-  int real_req_width = 0; int real_req_height = 0;  // Requested image width/height.
   req_width = req_height = 0;
   calc_width = calc_height = 0;
   x = y = pix_x = pix_y = (coord_t)0.0L;
@@ -65,20 +64,20 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
   y = (coord_t)params[1];
   pix_x = (coord_t)params[2];
   pix_y = (coord_t)params[3];
-  real_req_width  = (int)params[4];
-  real_req_height = (int)params[5];
-  calc_width  = real_req_width;   // assuming not 3d
-  calc_height = real_req_height;  // "
+  req_width  = (int)params[4];
+  req_height = (int)params[5];
+  calc_width  = req_width;   // assuming not 3d and not limited by FPGA restrictions
+  calc_height = req_height;  // "
   max_depth = (int)params[6];
   req_eye_offset = (int)(params[10]);
   is_stereo = is_3d && eye_separation > 0;
-  req_center_w = real_req_width  >> 1;  // (adjusted by req_eye_offset for stereo 3D)
-  req_center_h = real_req_height >> 1;
+  req_center_w = req_width  >> 1;  // (adjusted by req_eye_offset for stereo 3D)
+  req_center_h = req_height >> 1;
   
   if (is_3d) {
     // For 3D images, we compute larger h/w images for greater resolution of the 1x 3D image.
-    calc_width  = (real_req_width + eye_separation) * RESOLUTION_FACTOR_3D;
-    calc_height = real_req_height * RESOLUTION_FACTOR_3D;
+    calc_width  = (req_width + eye_separation) * RESOLUTION_FACTOR_3D;
+    calc_height = req_height * RESOLUTION_FACTOR_3D;
   }
   calc_center_w = (calc_width  >> 1);
   calc_center_h = (calc_height >> 1);
@@ -89,12 +88,9 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
   
   
   // TODO: I think there's currently a limitation that width must be a multiple of 16 for the FPGA.
-  req_width = real_req_width;
-  req_height = real_req_height;
-
   if (fpga) {
     int multiple = 16;
-    req_width = (real_req_width + 15) / multiple * multiple;  // Round up to nearest 16.
+    calc_width = (calc_width + multiple - 1) / multiple * multiple;  // Round up to nearest 16.
   }
 
 };
