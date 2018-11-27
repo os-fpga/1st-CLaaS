@@ -321,6 +321,8 @@ int main(int argc, char const *argv[])
                   }
                 }
                 free(depth_data);
+              } else {
+                
               }
               
               // Populate depth_data from FPGA.

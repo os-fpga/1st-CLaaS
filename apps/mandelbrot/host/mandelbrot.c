@@ -94,7 +94,8 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
     int multiple = 16;
     calc_width = (calc_width + multiple - 1) / multiple * multiple;  // Round up depth array width to nearest 16.
   }
-
+  
+  start_darkening_depth = getZoomDepth() - eye_adjust - (coord_t)brighten;   // default assuming no auto-darkening
 };
  
 MandelbrotImage::~MandelbrotImage() {
@@ -715,12 +716,11 @@ void MandelbrotImage::updateMaxDepth(int new_auto_depth, unsigned char new_auto_
   if ((new_auto_depth << 8) + new_auto_depth_frac < (auto_depth << 8) + auto_depth_frac) {
     auto_depth = new_auto_depth;
     auto_depth_frac = new_auto_depth_frac;
-    if (darken) {
-      start_darkening_depth = (auto_darken ? ((float)((auto_depth << 8) + (int)auto_depth_frac)) / 256.0f
-                                           : getZoomDepth()) - eye_adjust - (coord_t)brighten;
+    if (auto_darken) {
+      start_darkening_depth = ((float)((auto_depth << 8) + (int)auto_depth_frac)) / 256.0f - eye_adjust - (coord_t)brighten;
     }
     if (auto_darken) {
-      int dark_depth = (int)start_darkening_depth + half_faded_depth * 6; // Light fades exponentially w/ depth. After 6 half_faded_depth's, brightness is 1/32.
+      int dark_depth = (int)start_darkening_depth + half_faded_depth * 6;  // Light fades exponentially w/ depth. After 6 half_faded_depth's, brightness is 1/32.
       if (max_depth > dark_depth) {
         max_depth = dark_depth;
       }
