@@ -292,6 +292,8 @@ int main(int argc, char const *argv[])
 #endif
                 
             MandelbrotImage mb_img(array_struct.data, fpga);
+            // Free memory for array_struct.
+            free(array_struct.data);
 
             int * depth_data = NULL;
 #ifdef OPENCL
@@ -311,8 +313,6 @@ int main(int argc, char const *argv[])
               cl = handle_get_image(sock, &depth_data, &input, cl);
             }
 #endif
-            // Free memory for array_struct.
-            free(array_struct.data);
   
             mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL, or NULL to generate in C++.
   

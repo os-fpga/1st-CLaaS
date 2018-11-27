@@ -145,7 +145,7 @@ private:
   // check timing
   timespec timer_start_time;
 
-  int req_width, req_height;  // The width/height of the reslting image (for one eye). As requested except for FPGA size restrictions.
+  int req_width, req_height;  // The requested width/height.
   int req_eye_offset;  // Requested eye offset in requested-image pixels.
   coord_t x, y;  // Position of the center of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.
@@ -160,7 +160,7 @@ private:
   coord_t adjustment2; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
   bool adjust;  // True if an adjustment is non-zero.
   bool need_derivatives; // True if this image calculation needs to compute derivatives.
-  int calc_width, calc_height;  // Size of the depth_array to compute.
+  int calc_width, calc_height;  // Size of the depth_array to compute. These may differ from req_width/height for 3d and for FPGA with width restrictions.
   int calc_center_w, calc_center_h;  // Center (vanishing) point in the computed depth_array.
   coord_t eye_depth;  // Depth of the eye.
   
