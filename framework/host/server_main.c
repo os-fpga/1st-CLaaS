@@ -532,7 +532,7 @@ int handle_read_data(int socket, int data[], int data_size) {
 ** color_scheme: color transition scheme in order to create the PNG image given the computation results
 */
 cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
-  cl = write_kernel_data(cl, input_p, sizeof input);
+  cl = write_kernel_data(cl, input_p, sizeof input_struct);
 
   // check timing
   struct timespec start, end;
@@ -543,9 +543,9 @@ cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * i
 
   cl = start_kernel(cl);
 
-  *data_array_p = (int *) malloc(input.width * input.height * sizeof(int));
+  *data_array_p = (int *) malloc(input_p->width * input_p->height * sizeof(int));
 
-  cl = read_kernel_data(cl, *data_array_p, input.width * input.height * sizeof(int));
+  cl = read_kernel_data(cl, *data_array_p, input_p->width * input_p->height * sizeof(int));
 
   // getting end time
   clock_gettime(CLOCK_MONOTONIC_RAW, &end);
