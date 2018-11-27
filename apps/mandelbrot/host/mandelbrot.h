@@ -37,7 +37,7 @@ public:
   // Constructors (with optional arguments for some settings)
   //
   
-  MandelbrotImage(double *params);  // Construct, setColorScheme(), setBounds(), generateImage()
+  MandelbrotImage(double *params, bool fpga);  // Construct, setColorScheme(), setBounds(), generateImage()
   ~MandelbrotImage();
   
   
@@ -90,6 +90,14 @@ public:
   // If generatePixels() has not been called, it will be called by this method.
   unsigned char * generatePNG(size_t *png_size_p);
   
+  int getDepthArrayWidth()  {return calc_width; }
+  int getDepthArrayHeight() {return calc_height;}
+  coord_t wToX(int w) {return x + (w - calc_center_w) * pix_x;}
+  coord_t hToY(int h) {return y + (h - calc_center_h) * pix_y;}
+  coord_t getPixX() {return pix_x;}
+  coord_t getPixY() {return pix_y;}
+  int getMaxDepth() {return max_depth;}
+  
 
 private:
   
@@ -137,7 +145,7 @@ private:
   // check timing
   timespec timer_start_time;
 
-  int req_width, req_height;  // Requested image width, height in pixels.
+  int req_width, req_height;  // The width/height of the reslting image (for one eye). As requested except for FPGA size restrictions.
   int req_eye_offset;  // Requested eye offset in requested-image pixels.
   coord_t x, y;  // Position of the center of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.

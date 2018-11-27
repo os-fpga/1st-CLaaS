@@ -113,7 +113,7 @@ int handle_read_data(int socket, unsigned char data[], int data_size);
 int handle_read_data(int socket, int data[], int data_size);
 
 #ifdef OPENCL
-cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array array_struct, cl_data_types cl);
+cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl);
 #endif
 
 
@@ -267,41 +267,47 @@ int main(int argc, char const *argv[])
             dynamic_array array_struct;
 
             array_struct = handle_write_data(sock);
-            bool force_c = false;
+#ifdef OPENCL
+            bool fpga = true;
+#else
+            bool fpga = false;
+#endif
             if (array_struct.data[6] < 0) {
               // Depth argument is negative. This is our indication that we must render in C++. TODO: Ick!
               array_struct.data[6] = - array_struct.data[6];
-              force_c = true;
+              fpga = false;
             }
             // Or, newer, only slightly less icky flag
-            if ((int)(array_struct.data[16]) & (1 << 1)) {
-              force_c = true;
+            if ((array_struct.data_size >= 16) && (((int)(array_struct.data[16])) & (1 << 1))) {
+              fpga = false;
             }
-            
 #ifdef OPENCL
-            if (!force_c) {
-              // TODO: I think there's currently a limitation that width must be a multiple of 16.
-              array_struct.data[4] = (double)((((int)(array_struct.data[4])) + 15) / 16 * 16);  // Round up to nearest 16.
-              // And don't go bigger that allocated sizes.
-              if (((int)(array_struct.data[4])) > COLS) {
-                array_struct.data[4] = (double)COLS;
-              }
-              if (((int)(array_struct.data[5])) > ROWS) {
-                array_struct.data[5] = (double)ROWS;
-              }
-              if (array_struct.data[5] > ROWS) {
-                array_struct.data[5] = ROWS;
-              }
+            // Don't go bigger than allocated sizes.
+            if (((int)(array_struct.data[4])) > COLS) {
+              array_struct.data[4] = (double)COLS;  // (COLS should be a multiple of 16.)
+            }
+            if (((int)(array_struct.data[5])) > ROWS) {
+              array_struct.data[5] = (double)ROWS;
             }
 #endif
-    
-            MandelbrotImage mb_img(array_struct.data);
+                
+            MandelbrotImage mb_img(array_struct.data, fpga);
 
             int * depth_data = NULL;
 #ifdef OPENCL
-            if (! force_c) {
+            if (fpga) {
               // Populate depth_data from FPGA.
-              cl = handle_get_image(sock, &depth_data, array_struct, cl);
+              // X,Y are center position, and must be passed to FPGA as top left.
+              input_struct input;
+              input.coordinates[0] = mb_img.wToX(0);
+              input.coordinates[1] = mb_img.hToY(0);
+              input.coordinates[2] = mb_img.getPixX();
+              input.coordinates[3] = mb_img.getPixY();
+              input.width  = (long)(mb_img.getDepthArrayWidth());
+              input.height = (long)(mb_img.getDepthArrayHeight());
+              input.max_depth = (long)(mb_img.getMaxDepth());
+
+              cl = handle_get_image(sock, &depth_data, &input, cl);
             }
 #endif
             // Free memory for array_struct.
@@ -525,24 +531,8 @@ int handle_read_data(int socket, int data[], int data_size) {
 ** cl: OpenCL datatypes
 ** color_scheme: color transition scheme in order to create the PNG image given the computation results
 */
-cl_data_types handle_get_image(int socket, int ** data_array_p, dynamic_array array_struct, cl_data_types cl) {
-
-  input_struct input;
-
-  // X,Y are center position, and must be passed to FPGA as top left.
-  input.coordinates[0] = array_struct.data[0] - array_struct.data[2] * (array_struct.data[4] / 2.0);
-  input.coordinates[1] = array_struct.data[1] - array_struct.data[3] * (array_struct.data[5] / 2.0);
-  // pix X/Y are straight from array_struct.
-  for(int i = 2; i < 4; i++) {
-    input.coordinates[i] = array_struct.data[i];
-  }
-
-  input.width = (long) array_struct.data[4];
-  input.height = (long) array_struct.data[5];
-
-  input.max_depth = (long) array_struct.data[6];
-
-  cl = write_kernel_data(cl, &input, sizeof input);
+cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
+  cl = write_kernel_data(cl, input_p, sizeof input);
 
   // check timing
   struct timespec start, end;

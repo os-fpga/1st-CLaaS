@@ -8,7 +8,7 @@ using namespace std;
 
 const int MandelbrotImage::VERBOSITY = 0;
 
-MandelbrotImage::MandelbrotImage(double *params) {
+MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
   // "Static" init (hack).
   if (!static_init_done) {
     // Allocate color schemes (never deallocated).
@@ -24,18 +24,20 @@ MandelbrotImage::MandelbrotImage(double *params) {
   
   enableTimer(0);
   
+    
   depth_array = right_depth_array = NULL;
   fractional_depth_array = right_fractional_depth_array = NULL;
   pixel_data = NULL;
   png = NULL;
+  int real_req_width = 0; int real_req_height = 0;  // Requested image width/height.
   req_width = req_height = 0;
   calc_width = calc_height = 0;
   x = y = pix_x = pix_y = (coord_t)0.0L;
   is_3d = (params[9] > 0.0L);
   int modes = (int)(params[16]);  // Bits, lsb first: 0: python(irrelevant here), 1: C++, 2: reserved, 3: optimize1, 4-5: reserved, 6: full-image, ...
-  enable_step = (modes >> 3) & 1;
+  enable_step = ((modes >> 3) & 1) && !fpga;
   full_image = (modes >> 6) & 1;
-  smooth = (modes >> 7) & 1;
+  smooth = ((modes >> 7) & 1) && !fpga;
   if (smooth) {enable_step = false;}  // Need to compute every pixel for smoothing.
   //+int color_scheme = (int)(params[17]);
   spot_depth = (int)(params[18]);
@@ -45,7 +47,7 @@ MandelbrotImage::MandelbrotImage(double *params) {
   eye_separation = params[15];
   adjustment = params[7] / 100.0L;
   adjustment2 = params[8] / 100.0L;
-  adjust = adjustment != 0.0L || adjustment2 != 0.0L;
+  adjust = (adjustment != 0.0L || adjustment2 != 0.0L) && !fpga;
   need_derivatives = adjust || enable_step;
   
   // For darkening distant 3D depths.
@@ -63,20 +65,20 @@ MandelbrotImage::MandelbrotImage(double *params) {
   y = (coord_t)params[1];
   pix_x = (coord_t)params[2];
   pix_y = (coord_t)params[3];
-  req_width  = (int)params[4];
-  req_height = (int)params[5];
-  calc_width  = req_width;   // assuming not 3d
-  calc_height = req_height;  // "
+  real_req_width  = (int)params[4];
+  real_req_height = (int)params[5];
+  calc_width  = real_req_width;   // assuming not 3d
+  calc_height = real_req_height;  // "
   max_depth = (int)params[6];
   req_eye_offset = (int)(params[10]);
   is_stereo = is_3d && eye_separation > 0;
-  req_center_w = req_width  >> 1;  // (adjusted by req_eye_offset for stereo 3D)
-  req_center_h = req_height >> 1;
+  req_center_w = real_req_width  >> 1;  // (adjusted by req_eye_offset for stereo 3D)
+  req_center_h = real_req_height >> 1;
   
   if (is_3d) {
     // For 3D images, we compute larger h/w images for greater resolution of the 1x 3D image.
-    calc_width  = (req_width + eye_separation) * RESOLUTION_FACTOR_3D;
-    calc_height = req_height * RESOLUTION_FACTOR_3D;
+    calc_width  = (real_req_width + eye_separation) * RESOLUTION_FACTOR_3D;
+    calc_height = real_req_height * RESOLUTION_FACTOR_3D;
   }
   calc_center_w = (calc_width  >> 1);
   calc_center_h = (calc_height >> 1);
@@ -84,6 +86,17 @@ MandelbrotImage::MandelbrotImage(double *params) {
     cout << "New image: center coords = (" << x << ", " << y << "), pix_size = (" << pix_x << ", " << pix_y
          << ")" /* << ", calc_img_size = (" << calc_width << ", " << calc_height << "), calc_center = (" << calc_center_w << ", " << calc_center_h
          << "), max_depth = " << max_depth */ << ", modes = " << modes << ", full = " << full_image << ". ";
+  
+  
+  // TODO: I think there's currently a limitation that width must be a multiple of 16 for the FPGA.
+  req_width = real_req_width;
+  req_height = real_req_height;
+
+  if (fpga) {
+    int multiple = 16;
+    req_width = (real_req_width + 15) / multiple * multiple;  // Round up to nearest 16.
+  }
+
 };
  
 MandelbrotImage::~MandelbrotImage() {
@@ -333,8 +346,8 @@ inline int MandelbrotImage::pixelDepth(int w, int h, int & step) {
   coord_t scaled_adjustment  = adjustment  * (req_width + req_height) * pix_x * 0.06;
   coord_t scaled_adjustment2 = adjustment2 * (req_width + req_height) * pix_x * 0.06;
 
-  coord_t next_xx = x + (w - calc_center_w) * pix_x;
-  coord_t next_yy = y + (h - calc_center_h) * pix_y;
+  coord_t next_xx = wToX(w);
+  coord_t next_yy = hToY(h);
   coord_t xx = 0.0;
   coord_t yy = 0.0;
   
@@ -710,7 +723,7 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
     depth_array = data;
   }
   if (depth_array == NULL) {
-    generateDepthArray();
+    generateDepthArray();   // This produces more than just depth_array, and FPGA doesn't. FIXME!!!
   }
   if (pixel_data != NULL) {
     cerr << "ERROR (mandelbrot.c): Pixels generated multiple times.\n";
