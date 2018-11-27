@@ -306,6 +306,7 @@ int main(int argc, char const *argv[])
               input.width  = (long)(mb_img.getDepthArrayWidth());
               input.height = (long)(mb_img.getDepthArrayHeight());
               input.max_depth = (long)(mb_img.getMaxDepth());
+	      cout << "input: " << input.coordinates[0] << ", " << input.coordinates[1] << ", " << input.coordinates[2] << ", " << input.coordinates[3] << ", " << input.width << ", " << input.height << ", " << input.max_depth << endl;
 
               cl = handle_get_image(sock, &depth_data, &input, cl);
             }
@@ -532,7 +533,7 @@ int handle_read_data(int socket, int data[], int data_size) {
 ** color_scheme: color transition scheme in order to create the PNG image given the computation results
 */
 cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
-  cl = write_kernel_data(cl, input_p, sizeof input_struct);
+  cl = write_kernel_data(cl, input_p, sizeof(input_struct));
 
   // check timing
   struct timespec start, end;
