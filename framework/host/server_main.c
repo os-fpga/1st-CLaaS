@@ -298,22 +298,46 @@ int main(int argc, char const *argv[])
             int * depth_data = NULL;
 #ifdef OPENCL
             if (fpga) {
+              input_struct input;
+
+              // Determine autodepth by generating a coarse-grained image for the auto-depth bounding box.
+              if (mb_img.auto_dive || mb_img.auto_darken) {
+                mb_img.setAutoDepthBounds();
+                input.width = 16;
+                input.height = 8;
+                input.coordinates[0] = mb_img.wToX(mb_img.calc_center_w - mb_img.auto_depth_w);
+                input.coordinates[1] = mb_img.hToY(mb_img.calc_center_h - mb_img.auto_depth_h);
+                input.coordinates[2] = mb_img.getPixX() * mb_img.auto_depth_w * 2 / (input.width - 1);
+                input.coordinates[3] = mb_img.getPixY() * mb_img.auto_depth_h * 2 / (input.height - 1);
+                input.max_depth = (long)(mb_img.getMaxDepth());
+                
+                // Generate this coarse image on FPGA (allocated by handle_get_image).
+                cl = handle_get_image(sock, &depth_data, &input, cl);
+                
+                // Scan all depths to determine auto-depth.
+                for (int w = 0; w < input.width; w++) {
+                  for (int h = 0; h < input.height; h++) {
+                    mb_img.updateMaxDepth(depth_data[h * input.width + w], (unsigned char)0);
+                  }
+                }
+                free(depth_data);
+              }
+              
               // Populate depth_data from FPGA.
               // X,Y are center position, and must be passed to FPGA as top left.
-              input_struct input;
               input.coordinates[0] = mb_img.wToX(0);
               input.coordinates[1] = mb_img.hToY(0);
               input.coordinates[2] = mb_img.getPixX();
               input.coordinates[3] = mb_img.getPixY();
               input.width  = (long)(mb_img.getDepthArrayWidth());
               input.height = (long)(mb_img.getDepthArrayHeight());
-              input.max_depth = (long)(mb_img.getMaxDepth());
+              input.max_depth = (long)(mb_img.getMaxDepth());  // may have been changed based on auto-depth.
 
               cl = handle_get_image(sock, &depth_data, &input, cl);
             }
 #endif
   
-            mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL, or NULL to generate in C++.
+            mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL (and given here to mb_img to free), or NULL to generate in C++.
   
             size_t png_size;
             unsigned char *png;

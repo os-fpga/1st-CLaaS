@@ -90,6 +90,7 @@ public:
   // If generatePixels() has not been called, it will be called by this method.
   unsigned char * generatePNG(size_t *png_size_p);
   
+  // Get depth array dimensions. Initially this is the depth array to generate; after 3D-iffication, this is the requested h/w.
   int getDepthArrayWidth()  {return calc_width; }
   int getDepthArrayHeight() {return calc_height;}
   coord_t wToX(int w) {return x + (w - calc_center_w) * pix_x;}
@@ -97,9 +98,9 @@ public:
   coord_t getPixX() {return pix_x;}
   coord_t getPixY() {return pix_y;}
   int getMaxDepth() {return max_depth;}
-  
 
 private:
+  friend int main(int argc, char const *argv[]); // Contains functionality that should be moved here.
   
   // Types
 
@@ -161,6 +162,7 @@ private:
   bool adjust;  // True if an adjustment is non-zero.
   bool need_derivatives; // True if this image calculation needs to compute derivatives.
   int calc_width, calc_height;  // Size of the depth_array to compute. These may differ from req_width/height for 3d and for FPGA with width restrictions.
+                                // Updated for 3D-iffied depth array.
   int calc_center_w, calc_center_h;  // Center (vanishing) point in the computed depth_array.
   coord_t eye_depth;  // Depth of the eye.
   
@@ -181,6 +183,7 @@ private:
 
   coord_t getZoomDepth();
   
+  void setAutoDepthBounds();
   int pixelDepth(int w, int h, int & skip);
   int tryPixelDepth(int w, int h);   // A non-inlined version of pixelDepth.
   void writeDepthArray(int w, int h, int depth);
@@ -195,8 +198,6 @@ private:
   int * makeEye(bool right, unsigned char * &fractional_depth_array_3d);
 
   // Center points.
-  //-coord_t getCenterX();
-  //-coord_t getCenterY();
   void startTimer();
   timespec stopTimer(string tag);
   void stopStartTimer(string tag);

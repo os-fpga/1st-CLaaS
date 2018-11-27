@@ -92,10 +92,7 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
   //       should not be displayed (because the redered image for 3D is sized to support the requested size).
   if (fpga) {
     int multiple = 16;
-    req_width = (req_width + multiple - 1) / multiple * multiple;  // Round up to nearest 16.
-    if (!is_3d) {
-      calc_width = req_width;
-    }
+    calc_width = (calc_width + multiple - 1) / multiple * multiple;  // Round up depth array width to nearest 16.
   }
 
 };
@@ -327,9 +324,11 @@ MandelbrotImage * MandelbrotImage::make3d() {
     right_depth_array = makeEye(true, right_fractional_depth_array);  // (freed upon destruction)
   }
   
-  // Replace depth_array w/ 3d depth array.
+  // Replace depth_array w/ 3d depth array, and update calc_width/height to reflect new depth_array.
   free(depth_array);
   depth_array = depth_array_3d;
+  calc_width = req_width;
+  calc_height = req_height;
   // Same for fractional_depth_array.
   if (smooth) {
     free(fractional_depth_array);
@@ -599,24 +598,11 @@ inline void MandelbrotImage::writeDepthArray(int w, int h, int depth) {
   depth_array[h * calc_width + w] = depth;
 }
 
-MandelbrotImage *MandelbrotImage::generateDepthArray() {
-  startTimer();
-  
-  // Fill depth_array with depth for each pixel.
-  
-  depth_array = (int *)malloc(calc_width * calc_height * sizeof(int));
-  if (smooth) {
-    fractional_depth_array = (unsigned char *)malloc(calc_width * calc_height * sizeof(unsigned char));
-  }
-  auto_depth = max_depth;  // Current heuristic is to use the minimum depth within a 2/3-w/h rectangle around the center.
+// Set up for auto-depth determination (for either C++ or FPGA mechanism).
+void MandelbrotImage::setAutoDepthBounds() {
+  auto_depth = max_depth;  // reduced dynamically
   auto_depth_frac = 0;
-  
-  // Since auto_depth can be used to determine darkening which determines max_depth, we don't know max_depth
-  // before we need it. To address this, we determine an initial conservative value for auto_depth to use here
-  // by trying the four corners of the rectangle within which we look for depth. Likely these will find the
-  // least depth. If not, we waste some time. Depth array may fill with values > max_depth. Max depth is updated
-  // as each pixel is processed.
-  // Use a different auto-depth for different modes:
+  // Use a different auto-depth bounding box for different modes:
   //   2-D: Auto-depth (darkening) at depth that touches 2/3-scaled requested rectangle.
   //   3-D: Auto-depth (darkening and screen depth) at depth that touches 3/4-scaled requested rectangle.
   //   Stereo 3-D: Auto-depth (darkening) and screen depth) at depth touching rectangle between eyes in width and 3/4 requested height.
@@ -626,9 +612,31 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
   auto_depth_h = is_stereo ? (req_height * 3 / 4) / 2 :
                  is_3d     ? (req_height * 3 / 4) / 2 :
                              (req_height * 2 / 3) / 2;
-  // Adjustment depth must be determined before determining depths. We'll determine it here based on the four corners
+}
+
+MandelbrotImage *MandelbrotImage::generateDepthArray() {
+  startTimer();
+  
+  // Fill depth_array with depth for each pixel.
+  
+  depth_array = (int *)malloc(calc_width * calc_height * sizeof(int));
+  if (smooth) {
+    fractional_depth_array = (unsigned char *)malloc(calc_width * calc_height * sizeof(unsigned char));
+  }
+  
+  // Since auto_depth can be used to determine darkening which determines max_depth, we don't know max_depth
+  // before we need it. To address this, we determine an initial conservative value for auto_depth to use here
+  // by trying the four corners of the rectangle within which we look for depth. Likely these will find the
+  // least depth. If not, we waste some time. Depth array may fill with values > max_depth. Max depth is updated
+  // as each pixel is processed.
+  //
+  // For FPGA computation of depth_array, auto_depth is set based on a 16x16 image in
+  // this bounding box, and is not updated during computation.
+  //
+  setAutoDepthBounds();
+  // Adjustment depth must be determined before computing depth_array. We'll determine it here based on the four corners
   // (TODO: which is less than ideal).
-  // (This also sets initial start_darkening_depth.) Assumption no adjustment for this determination.
+  // (This also sets initial start_darkening_depth, where no adjustment is assumed for this determination).
   if (auto_darken || auto_dive) {
     bool real_adjust = adjust;
     adjust = false;
@@ -707,9 +715,11 @@ void MandelbrotImage::updateMaxDepth(int new_auto_depth, unsigned char new_auto_
   if ((new_auto_depth << 8) + new_auto_depth_frac < (auto_depth << 8) + auto_depth_frac) {
     auto_depth = new_auto_depth;
     auto_depth_frac = new_auto_depth_frac;
-    start_darkening_depth = (auto_darken ? ((float)((auto_depth << 8) + (int)auto_depth_frac)) / 256.0f
-                                         : getZoomDepth()) - eye_adjust - (coord_t)brighten;
     if (darken) {
+      start_darkening_depth = (auto_darken ? ((float)((auto_depth << 8) + (int)auto_depth_frac)) / 256.0f
+                                           : getZoomDepth()) - eye_adjust - (coord_t)brighten;
+    }
+    if (auto_darken) {
       int dark_depth = (int)start_darkening_depth + half_faded_depth * 6; // Light fades exponentially w/ depth. After 6 half_faded_depth's, brightness is 1/32.
       if (max_depth > dark_depth) {
         max_depth = dark_depth;
@@ -724,7 +734,7 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
     depth_array = data;
   }
   if (depth_array == NULL) {
-    generateDepthArray();   // This produces more than just depth_array, and FPGA doesn't. FIXME!!!
+    generateDepthArray();
   }
   if (pixel_data != NULL) {
     cerr << "ERROR (mandelbrot.c): Pixels generated multiple times.\n";
@@ -777,34 +787,40 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
 void MandelbrotImage::toPixelData(unsigned char *pixel_data, int *depth_array, unsigned char *fractional_depth_array, color_t * color_scheme, int color_scheme_size) {
   
   int j = 0;
+  int i = 0;
 
   // Building the image pixels data
-  for(int i = 0; i < req_width * req_height * 3; i+=3) {
-    int depth = depth_array[j];
-    float smooth_depth = (float)depth + (smooth ? (float)fractional_depth_array[j] / 256.0f : 0.0f);
-    float brightness;
-    bool shadow = darken && smooth_depth > start_darkening_depth;
-    if (shadow) {
-      brightness = 1.0L / (1.0f + (smooth_depth - start_darkening_depth) / (float)half_faded_depth);
-    }
-    unsigned int frac = smooth ? (unsigned int)fractional_depth_array[j] : 0u;
-    for(int k = 0; k < 3; k++) {
-      if (depth >= max_depth) {  // > is a necessary check because we sometimes dynamically determine max_depth based on auto_depth and look too far before we know better.
-        pixel_data[i + k] = 0;
-      } else {
-        if (smooth) {
-          pixel_data[i + k] = (unsigned char)(((unsigned int)(color_scheme[depth % color_scheme_size].component[k]) * (256 - frac) +
-                                               (unsigned int)(color_scheme[(depth + 1) % color_scheme_size].component[k]) * frac) / 256) ;
+  for(int h = 0; h < req_height; h++) {
+    // Because depth array might be wider than req_width for FPGA, we must reset each row.
+    j = h * calc_width;
+    for(int w = 0; w < req_width; w++) {
+      int depth = depth_array[j];
+      float smooth_depth = (float)depth + (smooth ? (float)fractional_depth_array[j] / 256.0f : 0.0f);
+      float brightness;
+      bool shadow = darken && smooth_depth > start_darkening_depth;
+      if (shadow) {
+        brightness = 1.0L / (1.0f + (smooth_depth - start_darkening_depth) / (float)half_faded_depth);
+      }
+      unsigned int frac = smooth ? (unsigned int)fractional_depth_array[j] : 0u;
+      for(int k = 0; k < 3; k++) {
+        if (depth >= max_depth) {  // > is a necessary check because we sometimes dynamically determine max_depth based on auto_depth and look too far before we know better.
+          pixel_data[i + k] = 0;
         } else {
-          pixel_data[i + k] = color_scheme[depth % color_scheme_size].component[k];
-        }
-        if (shadow) {
-          pixel_data[i + k] = (int)(((float)pixel_data[i + k]) * brightness);
+          if (smooth) {
+            pixel_data[i + k] = (unsigned char)(((unsigned int)(color_scheme[depth % color_scheme_size].component[k]) * (256 - frac) +
+                                                 (unsigned int)(color_scheme[(depth + 1) % color_scheme_size].component[k]) * frac) / 256) ;
+          } else {
+            pixel_data[i + k] = color_scheme[depth % color_scheme_size].component[k];
+          }
+          if (shadow) {
+            pixel_data[i + k] = (int)(((float)pixel_data[i + k]) * brightness);
+          }
         }
       }
+      
+      j++;
+      i+=3;
     }
-    
-    j++;
   }
 }
 
