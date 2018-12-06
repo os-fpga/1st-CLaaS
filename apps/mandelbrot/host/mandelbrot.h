@@ -11,6 +11,65 @@
 
 using namespace std;
 
+
+class Color {
+
+private:
+
+  void capAmount(float &amount, bool cap) {
+    if (cap) {
+      if (amount > 1.0L) {
+        amount = 1.0L;
+      }
+      if (amount < 0.0L) {
+        amount = 0.0L;
+      }
+    }
+  }
+  
+public:
+
+  Color(unsigned char r, unsigned char g, unsigned char b) {
+    component[0] = r;
+    component[1] = g;
+    component[2] = b;
+  }
+  Color(const Color &c) {
+    color = c.color;
+  }
+  
+  // Lighten/darken by amout [0.0..1.0]. If outside
+  void lightenComponent(int c, float inv_amount) {
+    component[c] = (unsigned char)(255 - (int)((float)(255 - (int)(component[c])) * inv_amount));
+  }
+  void lighten(float inv_amount, bool cap = false) {
+    capAmount(inv_amount, cap);
+    for (int c = 0; c < 3; c++) {
+      lightenComponent(c, inv_amount);
+    }
+  }
+  void darkenComponent(int c, float inv_amount) {
+    component[c] = (unsigned char)((float)(component[c]) * inv_amount);
+  }
+  void darken(float inv_amount, bool cap = false) {
+    capAmount(inv_amount, cap);
+    for (int c = 0; c < 3; c++) {
+      darkenComponent(c, inv_amount);
+    }
+  }
+  
+  void blend(Color color2) {
+    for (int c = 0; c < 3; c++) {
+      component[c] = (unsigned char)((int)(component[c]) + ((int)(color2.component[c]) >> 1));
+    }
+  }
+
+  union {
+    int color;
+    unsigned char component[3];
+  };
+};
+
 /*
  * A class for generating Mandelbrot images (without external assistance).
  *
@@ -28,25 +87,23 @@ class MandelbrotImage {
 public:
   typedef long double coord_t;
   
+  // TODO: replace w/ Color.
   typedef union {
     int color;
     unsigned char component[3];
   } color_t;
-
+  
   //
   // Constructors (with optional arguments for some settings)
   //
   
-  MandelbrotImage(double *params, bool fpga);  // Construct, setColorScheme(), setBounds(), generateImage()
+  MandelbrotImage(double *params, bool fpga);
   ~MandelbrotImage();
   
   
   //
   // Configuration Methods
   //
-  
-  // Set color scheme.
-  MandelbrotImage * setColorScheme(int scheme);
   
   // Enable time reporting at varying levels.
   // Levels are:
@@ -72,7 +129,7 @@ public:
   //
   // Generate Pixels
   //
-  void toPixelData(unsigned char *pixel_data, int *depth_array, unsigned char *fractional_depth_array, color_t * color_scheme, int color_scheme_size);
+  void toPixelData(unsigned char *pixel_data, int *depth_array, unsigned char *fractional_depth_array, color_t *color_array);
   
   // Generate pixel color data according to the color scheme from a [width][height] array of pixel depths.
   // The depths array can be:
@@ -110,7 +167,7 @@ private:
   } color_transition_t;
   */
   
-  static const int VERBOSITY;  // For debug.
+  static const int VERBOSITY;  // 0-10 For debug. >0 enables checking.
 
   // 3-D parameters
   static const int RESOLUTION_FACTOR_3D;  // Multiply hight/width by this factor for 3D to pad edges (non-integer would require care).
@@ -118,29 +175,49 @@ private:
                                          // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
                                          // increments, so the controlling software should be in sync with this factor.
   static const coord_t NATURAL_DEPTH;  // Depth from the eye (really, absolute distance in units of first-depth-distance) of the screen.
-  static const coord_t EYE_DEPTH_FIT;  // Depth from the eye of the plane-0 circle when sized to fit the height, or the depth from the
-                                       //   eye of the auto-depth.
+  static const coord_t EYE_DEPTH_FIT;  // Distance of structure from eye (and structure size). Specifically, the depth from the eye of the plane-0 circle
+                                       //   when sized to fit the height, or the depth from the eye of the auto-depth.
 
   // Several color schemes are statically allocated in an array.
-  // active_color_scheme is the index of the active one.
   // A color scheme is some number of color_t's indexed by depth % num_colors.
   static bool static_init_done;
+  
+  // Color scheme
   static int num_color_schemes;      // The number of color schemes.
   static int * color_scheme_size;   // Size of each color_scheme.
   static color_t ** color_scheme;  // The color schemes.
-  int active_color_scheme;  // The index of the current color scheme.
+  int active_color_scheme_index;  // The index of the current color scheme.
+  color_t * active_color_scheme;  // The active one.
+  int active_color_scheme_size;   // "
+  
+  bool electrify;
+  int color_shift;
+  
   int auto_depth;   // Heuristically-determined depth of view computed during depth array calculation.
   unsigned char auto_depth_frac;  // Fractional portion of auto_depth.
   bool auto_dive;   // Enable eye movement based on auto_depth (vs. scaling based on zoom).
   bool auto_darken; // Enable darkening based on auto_depth (vs. scaling based on zoom).
   int auto_depth_w, auto_depth_h;
+  
   float adjust_depth;   // Depth at which adjustment begins.
+  
   int spot_depth;  // Depth of the "spot," used to help lock in on the stereo image. (Initially -1, or 0..n, then adjusted to be relative to eye.)
   bool show_spot;  // Show the spot (spot_depth is initially -1).
   
   bool enable_step;  // True to enable optimization where we step ahead some number of pixels based on differentials.
   bool full_image;   // This is a full image, so decisions can be made with full knowledge (such as darkening and eye depth).
-  bool smooth;       // Smooth the image.
+  bool smooth;       // Smooth the image using the approach on wikipedia.
+  bool textured;     // Use color_arrays. Depth alone is not enough to determine color. Each layer has a texture.
+  bool smooth_texture; // A different approach to smoothing. This is less computationally-intensive and has a nice property that it does not change coarse-grained depth.
+                       // This means texturing effects based on layer edges will remain consistent.
+  bool cutouts;      // True to not extend each layer infinitely, but rather treat each layer as a cutout from the one above.
+  bool square_divergence;  // Edge style bound by x/y square.
+  bool y_squared_divergence;  // Edge style using y-squared, aka "villi".
+  bool normal_divergence;  // No special edge style.
+  bool power_divergence;  // Edge style x^p + y^p.
+  
+  int test_flags;
+  int test_vars[8];
   
   int timer_level;  // 0 to disable timer.
   // check timing
@@ -160,11 +237,21 @@ private:
   coord_t adjustment; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
   coord_t adjustment2; // A parameter that can be varied to impact the mandelbrot algorithm (exactly how is currently a matter of experimentation.)
   bool adjust;  // True if an adjustment is non-zero.
+  // Texture effects:
+  bool test_texture;  // True to enable test textures.
+  bool string_lights;  // True for string lights texture effect.
+  bool fanciful_pattern;  // True for "fanciful" (X-gradient scale-4) texture.
+  bool shadow_interior; // True for shadowed layers effect.
+  bool round_edges; // True to shade edges between layers for rounded edges effect.
+  
   bool need_derivatives; // True if this image calculation needs to compute derivatives.
   int calc_width, calc_height;  // Size of the depth_array to compute. These may differ from req_width/height for 3d and for FPGA with width restrictions.
                                 // Updated for 3D-iffied depth array.
   int calc_center_w, calc_center_h;  // Center (vanishing) point in the computed depth_array.
   coord_t eye_depth;  // Depth of the eye.
+  
+  color_t inf_color;  // Color at infinity.
+  static color_t BLACK;
   
   // For darkening distant 3D depths.
   bool darken;
@@ -174,12 +261,17 @@ private:
   // Storage structures. These are freed upon destruction.
   int *depth_array;  // Image array of depth integers.
   unsigned char *fractional_depth_array; // A fractional depth for smoothing. This value / 256 is added to depth (giving the ratio of depth color to depth+1 color).
+  color_t *color_array;  // Colors for the image (corresponding to depth_array), used when depth alone is not enough to determine color. (These are later packed into an image.)
   int *right_depth_array; // For stereo images, depth_array is the left eye and this is the right. 
   unsigned char *right_fractional_depth_array;
+  color_t *right_color_array;
   unsigned char *pixel_data;  // Pixel data for the set, as int [component(R,G,B)][width][height].
                               // For stereo images, this is a single array for both eyes, left-then-right.
   unsigned char *png;  // The PNG image.
 
+  bool getTestFlag(int i) {return (bool)((test_flags >> i) & 1);}
+  coord_t getTestVar(int i, coord_t min, coord_t max) {return min + (coord_t)(test_vars[i] + 100) / 200.0L * (max - min);}
+  int getTestVar(int i) {return test_vars[i];}
 
   coord_t getZoomDepth();
   
@@ -188,14 +280,21 @@ private:
   int tryPixelDepth(int w, int h);   // A non-inlined version of pixelDepth.
   void writeDepthArray(int w, int h, int depth);
   void updateMaxDepth(int new_auto_depth, unsigned char new_auto_depth_frac);
+  color_t depthToColor(int depth, int fractional_depth);
   
-  // Get color scheme.
-  color_t * getColorScheme();
-  // Get color scheme size.
-  int getColorSchemeSize();
+  void meldWithColor(color_t &color, color_t color2, float amount, bool cap = false);
+
+  void lightenColor(color_t &color);
+  void darkenColor(color_t &color);
+  void lightenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
+  void darkenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
+  void darkenForDepth(color_t &color, int depth, int fractional_depth);
+  void illuminateColor(color_t &color, float * amts);
+  
+  float cartesianToAngle(float xx, float yy);
   
   // Used by make3d() to make image for one eye.
-  int * makeEye(bool right, unsigned char * &fractional_depth_array_3d);
+  int * makeEye(bool right, unsigned char * &fractional_depth_array_3d, color_t * &color_array);
 
   // Center points.
   void startTimer();
@@ -210,4 +309,15 @@ private:
   color_t * allocRandomColorScheme(int &size, int num_colors);
   coord_t log(coord_t base, coord_t exp);
   
+  void capColorAmount(float &amount, bool cap) {
+    if (cap) {
+      if (amount > 1.0L) {
+        amount = 1.0L;
+      }
+      if (amount < 0.0L) {
+        amount = 0.0L;
+      }
+    }
+  }
+
 };

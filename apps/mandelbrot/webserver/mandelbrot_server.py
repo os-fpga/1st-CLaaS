@@ -72,7 +72,7 @@ Or:
            pix_x/y are float pixel sizes in mandelbrot coords
            img_width/height are integers (pixels), and
            depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
-In either case, integer query arguments var1, var2, three_d, modes, color_scheme, spot_depth, center_offset_w, center_offset_h, eye_sep, darken, brighten, and eye_adjust can also be provided (used in C rendering only).
+In either case, integer query arguments var1, var2, three_d, modes, color_scheme, spot_depth, center_offset_w, center_offset_h, eye_sep, darken, brighten, and eye_adjust, test1/2 can also be provided (used in C rendering only).
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
@@ -90,6 +90,7 @@ class ImageHandler(tornado.web.RequestHandler):
         renderer = self.get_query_argument("renderer", "fpga")
         
         # Extract URL parameters.
+        # TODO: This should all be JSON.
         if (len(self.get_query_arguments("var1")) > 0):
             var1 = self.get_query_arguments("var1")[0]
         else:
@@ -138,8 +139,27 @@ class ImageHandler(tornado.web.RequestHandler):
             spot_depth = self.get_query_arguments("spot_depth")[0]
         else:
             spot_depth = "-1";
+        if (len(self.get_query_arguments("texture")) > 0):
+            texture = self.get_query_arguments("texture")[0]
+        else:
+            texture = "0";
+        if (len(self.get_query_arguments("edge")) > 0):
+            edge_style = self.get_query_arguments("edge")[0]
+        else:
+            edge_style = "0";
+        if (len(self.get_query_arguments("test_flags")) > 0):
+            test_flags = self.get_query_arguments("test_flags")[0]
+        else:
+            test_flags = "0"
+        test_vars = []
+        for i in range(8):
+            if (len(self.get_query_arguments("test%i" % i)) > 0):
+                test_vars.append(self.get_query_arguments("test%i" % i)[0])
+            else:
+                test_vars.append("0")
         #print "Query Args: var1: " + var1 + ", var2: " + var2 + ", 3d: " + three_d + ", modes: " + modes + ", color_scheme" + colors_scheme + ", spot_depth" + spot_depth +
-        #         ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", eye_sep: " + eye_sep + ", darken: " + darken + ", brighten: " + brighten + ", eye_adjust: " + eye_adjust
+        #         ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", eye_sep: " + eye_sep + ", darken: " + darken + ", brighten: " + brighten + ", eye_adjust: " + eye_adjust +
+        #         ", test1: " + test1 + ", test2: " + test2 
         #print "Type: ", type, ", Renderer: ", renderer
         
         # Determine image parameters from GET parameters
@@ -169,7 +189,7 @@ class ImageHandler(tornado.web.RequestHandler):
         # Renderer is communicated to C++ as the sign of the depth. Negative for C++.
         if self.application.sock != None and renderer == "cpp":
             payload[6] = -payload[6]
-        # Append var1 and var2 (used by C++ rendering only).
+        # Append parameters.
         payload.append(int(var1))
         payload.append(int(var2))
         payload.append(0 if three_d == "0" or type == "tile" else 1)
@@ -182,6 +202,11 @@ class ImageHandler(tornado.web.RequestHandler):
         payload.append(int(modes))
         payload.append(int(color_scheme))
         payload.append(int(spot_depth))
+        payload.append(int(texture))
+        payload.append(int(edge_style))
+        payload.append(int(test_flags))
+        for i in range(8):
+          payload.append(int(test_vars[i]))
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)

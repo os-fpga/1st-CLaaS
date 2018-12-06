@@ -10,11 +10,14 @@ class MandelbrotSettings {
   //   darken: Flag to enable darkening of inner depths.
   //   smooth: Flag to enable smoothing.
   //   full_image: Flag indicating that this is a full image, which can enable auto adjustments.
+  //   colors: Encoded bits that control the color scheme.
+  //   spot_depth: Depth of a spot used to help find stereo image.
+  //   test1/2: For testing.
   constructor() {
   }
   
   set(max_depth, renderer, brighten, eye_adjust, var1, var2,
-      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth) {
+      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth, colors, texture, edge_style, test_flags, test_vars) {
     this.max_depth = max_depth;
     this.renderer = renderer;
     this.brighten = brighten;
@@ -32,26 +35,40 @@ class MandelbrotSettings {
     this.center_offset = this.stereo ? parseInt((image_separation - eye_separation) / 2.0) : 0;
     this.smooth = smooth;
     this.full_image = full_image;
+    // TODO: Replace transmission of individual fields with just modes.
     this.modes =
-           (((this.renderer == "python") ? 1 : 0) << 0) |
-           (((this.renderer == "cpp") ? 1 : 0) << 1) |
-           (((this.renderer == "fpga") ? 1 : 0) << 3) |  // enable optimizations currently using FPGA setting
-           (((this.full_image) ? 1 : 0) << 6) |  // full image render
-           ((this.smooth ? 1 : 0) << 7);
+         (((this.renderer == "python") ? 1 : 0) << 0) |
+         (((this.renderer == "cpp") ? 1 : 0) << 1) |
+         (((this.renderer == "fpga") ? 1 : 0) << 3) |  // enable optimizations currently using FPGA setting
+         (((this.full_image) ? 1 : 0) << 6) |  // full image render
+         ((this.smooth ? 1 : 0) << 7);
     this.spot_depth = spot_depth;
+    this.colors = colors;
+    this.texture = texture;
+    this.edge_style = edge_style;
+    this.test_flags = test_flags;
+    this.test_vars = [];
+    for (let i = 0; i < test_vars.length; i++) {
+      this.test_vars[i] = test_vars[i];
+    }
     return this;
   }
   
   copy() {
     return new MandelbrotSettings().set(this.max_depth, this.renderer,
                                         this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
-                                        this.image_separation, this.darken, this.smooth, this.full_image, this.spot_depth);
+                                        this.image_separation, this.darken, this.smooth, this.full_image, this.spot_depth, this.colors, this.texture,
+                                        this.edge_style, this.test_flags, this.test_vars);
   }
   
   equals(settings2) {
+    let test_vars_match = this.test_vars.length == settings2.test_vars.length;
+    for (let i = 0; i < this.test_vars.length; i++) {
+      test_vars_match = test_vars_match && (this.test_vars[i] == settings2.test_vars[i]); 
+    }
     return settings2 != null &&
            this.max_depth == settings2.max_depth &&
-           this.renderer == settings2.renderer &&
+           //-this.renderer == settings2.renderer &&
            this.brighten == settings2.brighten &&
            this.eye_adjust == settings2.eye_adjust &&
            this.var1 == settings2.var1 &&
@@ -61,23 +78,30 @@ class MandelbrotSettings {
            (!this.stereo || (this.eye_separation == settings2.eye_separation &&
                              this.image_separation == settings2.image_separation)) &&
            this.darken == settings2.darken &&
-           this.smooth == settings2.smooth &&
+           //-this.smooth == settings2.smooth &&
            this.modes == settings2.modes &&
-           this.full_image == settings2.full_image &&
-           this.spot_depth == settings2.spot_depth;
+           this.colors == settings2.colors &&
+           //-this.full_image == settings2.full_image &&
+           this.spot_depth == settings2.spot_depth &&
+           this.test_flags == settings2.test_flags &&
+           this.texture == settings2.texture &&
+           this.edge_style == settings2.edge_style &&
+           test_vars_match;
   }
   
   getImageURLQueryArgs() {
-    return "var1=" + this.var1 + "&var2=" + this.var2 + "&three_d=" + this.three_d +
-           "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
-           "&darken=" + this.darken + "&brighten=" + this.brighten +
-           "&eye_adjust=" + this.eye_adjust + "&renderer=" + this.renderer + "&modes=" + this.modes +
-           "&colors=" + 0 + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth);
+    return this.mapQueryArgs() +
+           "&three_d=" + this.three_d + "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
+           "&eye_adjust=" + this.eye_adjust + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth);
   }
   
-  mapQueryArgs(right) {
-    return "darken=" + this.darken + "&brighten=" + this.brighten + "&modes=" + this.modes +
-           "&var1=" + this.var1 + "&var2=" + this.var2 + "&renderer=" + this.renderer;
+  mapQueryArgs() {
+    let test_args = "&test_flags=" + this.test_flags;
+    for (let i = 0; i < this.test_vars.length; i++) {
+      test_args += `&test${i}=${this.test_vars[i]}`;
+    }
+    return "darken=" + this.darken + "&brighten=" + this.brighten + "&modes=" + this.modes +"&colors=" + this.colors + "&texture=" + this.texture + "&edge=" + this.edge_style +
+           "&var1=" + this.var1 + "&var2=" + this.var2 + "&renderer=" + this.renderer + test_args;
   }
   
 }
@@ -195,6 +219,11 @@ class MandelbrotView {
     return this.settings.getImageURLQueryArgs();
   }
   
+  resetPosition() {
+    this.center_x = 0.0;
+    this.center_y = 0.0;
+    this.zoom_level = 0.0;
+  }
   
   // Jumps to a good place in the image for trying stereo 3-D.
   goToGoodPlace() {

@@ -496,6 +496,8 @@ dynamic_array handle_write_data(int socket) {
 
     j++;
   }
+  
+  free(data_chunks);
 
   // Sending ACK to state that data was correctly received
   send(socket, ACK_DATA, strlen(ACK_DATA), MSG_NOSIGNAL);

@@ -35,7 +35,7 @@
   <!-- These inputs determine web socket connection details. The <div> is hidden because the server for the socket
        connection is always the same as the one serving the page. We leave this intact in case there is
        ever a desire to connect to a different one. -->
-  <div id="connection_details" class="form-inline text-center" role="form" align="center" style="display:none">
+  <div id="connection_details" class="form-inline text-center debug-only" role="form" align="center">
     <input type="text" id="host" value="localhost" class="form-control" placeholder="host" />
     <br />
     <input type="text" id="port" value="8888" class="form-control" placeholder="port" />
@@ -68,21 +68,10 @@
       </div>
 
     </fieldset>
-    <fieldset id="modes" class="not-python">
-      <legend>Modes</legend>
-      
-      <div>
-        <input type="checkbox" id="darken" class="mode" name="darken" checked />
-        <label for="darken" title="Darken deeper depths">Darken</label>
-      </div>
-    
-      <div>
-        <input type="checkbox" id="smooth" class="mode" name="smooth" checked />
-        <label for="smooth" title="Blend colors">Smooth</label>
-      </div>
+    <fieldset id="modes" class="full-img-only">
+      <legend>3-D</legend>
       
       <div id="3d-modes" class="full-img-only">
-        <p></p>
         <div>
           <input type="radio" id="2d" class="mode" name="3d" checked />
           <label for="normal" title="No 3-D perspective">2-D</label>
@@ -98,14 +87,97 @@
           <label for="stereo" title="True stereoscopic images (1 image for each eye); instructions appear when selected">Stereo 3-D</label>
         </div>
       </div>
-      
     </fieldset>
+    
+    <fieldset id="color-params" class="not-python">
+      <legend>Colors</legend>
+      
+      <div class="debug-only">
+        <input type="checkbox" id="electrify" class="flag" name="electrify" />
+        <label for="electrify" title="A special effect">Electrify</label>
+        <p></p>
+      </div>
+    
+      <div id="color-schemes">
+        <div>
+          <input type="radio" id="color-scheme-1" class="flag" name="color-scheme" encoding="2" checked />
+          <label for="medium-gradient-scheme" title="A medium gradient color scheme">Medium Gradient</label>
+        </div>
+        
+        <div>
+          <input type="radio" id="color-scheme-2" class="flag" name="color-scheme" encoding="1" />
+          <label for="random-scheme" title="Random colors">Random</label>
+        </div>
+      
+        <div>
+          <input type="radio" id="color-scheme-3" class="flag" name="color-scheme" encoding="0" />
+          <label for="grandient-scheme" title="A gradual gradient scheme">Gradual Gradient</label>
+        </div>
+        
+        <div>
+          <label for="color-shift" title="Adjusts the color cycle depth">Z-Shift</label>
+          <input type="range" id="color-shift" class="var" name="color-shift" 
+                 min="0" max="99" value="0" />
+        </div>
+      </div>
+    </fieldset>
+    
+    <fieldset id="texture">
+      <legend>Texture</legend>
+      
+      <div>
+        <input type="checkbox" id="darken" class="flag" name="darken" checked />
+        <label for="darken" title="Darken deeper depths">Darken</label>
+      </div>
+      <div>
+        <input type="checkbox" id="smooth" class="flag" name="smooth" checked />
+        <label for="smooth" title="Blend colors">Smooth</label>
+      </div>
+      <div>
+        <input type="checkbox" id="string-lights" class="flag" name="string-lights" />
+        <label for="string-lights" title="Apply lighting effect">String lights</label>
+      </div>
+      <div>
+        <input type="checkbox" id="fanciful" class="flag" name="fanciful" />
+        <label for="fanciful" title="Apply fanciful effect">Fanciful</label>
+      </div>
+      <div>
+        <input type="checkbox" id="shadow" class="flag" name="shadow" />
+        <label for="shadow" title="Apply layer shadow effect">Shadow</label>
+      </div>
+      <div>
+        <input type="checkbox" id="round-edges" class="flag" name="round-edges" />
+        <label for="round-edges" title="Apply rounded edges effect">Rounded edges</label>
+      </div>
+    </fieldset>
+    
+    <fieldset id="edge">
+      <legend>Edge</legend>
+      
+      <div id="edge-style">
+        <div>
+          <input type="radio" id="curved" class="edge-style selection" name="edge-style" encoding="0" checked />
+          <label for="curved" title="Normal layer edges">Curved</label>
+        </div>
+        
+        <div>
+          <input type="radio" id="bumpy" class="edge-style selection" name="edge-style" encoding="1" />
+          <label for="bumpy" title="Bumpy layer edges">Bumpy</label>
+        </div>
+      
+        <div>
+          <input type="radio" id="villi" class="edge-style selection" name="edge-style" encoding="2" />
+          <label for="stereo" title="Villi layer edges (like your intestines)">Villi</label>
+        </div>
+      </div>
+    </fieldset>
+    
     <fieldset>
-        <legend>Variables</legend>
+        <legend>Adjustments</legend>
         
         <label for="sqrt_depth" title="Maximum number of iterations/depths/colors to search before going black">Depth</label>
         <input type="range" id="sqrt_depth" class="var" name="sqrt_depth"
-               min="5" max="100" value="50" />
+               min="5" max="100" value="35" />
         
         <div class="not-python">
           <label for="var1" title="Tweaks the algorithm">Morph 1</label>
@@ -117,19 +189,19 @@
                  min="-100" max="100" value="0" />
           
           <div class="darken-only">
-            <label for="brighten" title="Adjusts the depth at which darkening begins">Dark Adjust</label>
+            <label for="brighten" title="Adjusts the depth at which darkening begins">Dark/Morph Adjust</label>
             <input type="range" id="brighten" class="var" name="brighten"
                    min="-200" max="200" value="0" />
           </div>
           <div class="three-d-only">
-            <label for="eyeAdjust" title="Adjusts the distance of the 3-D surface from the eye">Z Adjust</label>
+            <label for="eye_adjust" title="Adjusts the distance of the 3-D surface from the eye">Z Adjust</label>
             <input type="range" id="eye_adjust" class="var" name="eye_adjust" 
                    min="-100" max="100" value="0" />
           </div>
         </div>
-               
     </fieldset>
-    <fieldset id="motion">
+    
+    <fieldset id="motion" class="full-img-only">
       <legend>Motion</legend>
 
       <div>
@@ -142,12 +214,117 @@
         <label for="velocity" title="Continuous motion; instructions below">Velocity</label>
       </div>
       
-      <div style="display: none">
+      <div class="debug-only">
         <input type="radio" id="motionAcceleration" name="motion" />
         <label for="acceleration" title="Smoothest, but most difficult controls; instructions below">Acceleration</label>
       </div>
-
     </fieldset>
+
+    <div class="debug-only">
+    <fieldset id="test-params" class="not-python">
+      <legend>Testing</legend>
+      <div>
+        <label for="test0" title="For testing during development">Test 0 - Divergence radius course</label>
+        <input type="range" id="test0" class="var" name="test0"
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <label for="test1" title="For testing during development">Test 1 - Divergence radius fine</label>
+        <input type="range" id="test1" class="var" name="test1"
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <label for="test2" title="for testing during development">Test 2 - Divergence function parameter 1</label>
+        <input type="range" id="test2" class="var" name="test2" 
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <label for="test3" title="For testing during development">Test 3 - Texture shift x/angle</label>
+        <input type="range" id="test3" class="var" name="test3"
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <label for="test4" title="for testing during development">Test 4 - Texture shift y/radius</label>
+        <input type="range" id="test4" class="var" name="test4" 
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <label for="test5" title="For testing during development">Test 5 - Granularity x/angle</label>
+        <input type="range" id="test5" class="var" name="test5"
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <label for="test6" title="For testing during development">Test 6- Granularity y/radius</label>
+        <input type="range" id="test6" class="var" name="test6"
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <label for="test7" title="For testing during development">Test 7 - Fade</label>
+        <input type="range" id="test7" class="var" name="test7"
+               min="-100" max="100" value="0" />
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag0" class="flag" name="test-flag0" />
+        <label for="test-flag0" title="For debug">Test Flag 0 - Textured</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag1" class="flag" name="test-flag1" />
+        <label for="test-flag1" title="For debug">Test Flag 1 - Radial texture</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag2" class="flag" name="test-flag2" />
+        <label for="test-flag2" title="For debug">Test Flag 2 - fine-grained depth control</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag3" class="flag" name="test-flag3" />
+        <label for="test-flag3" title="For debug">Test Flag 3 - texture smoothing</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag4" class="flag" name="test-flag4" />
+        <label for="test-flag4" title="For debug">Test Flag 4 - no debug texture</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag5" class="flag" name="test-flag5" />
+        <label for="test-flag5" title="For debug">Test Flag 5 - sawtooth smoothing</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag6" class="flag" name="test-flag6" />
+        <label for="test-flag6" title="For debug">Test Flag 6 - power divergence</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag7" class="flag" name="test-flag7" />
+        <label for="test-flag7" title="For debug">Test Flag 7 - discrete texture map</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag8" class="flag" name="test-flag8" />
+        <label for="test-flag8" title="For debug">Test Flag 8 - radius inversion</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag9" class="flag" name="test-flag9" />
+        <label for="test-flag9" title="For debug">Test Flag 9 - cycle texture</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag10" class="flag" name="test-flag10" />
+        <label for="test-flag10" title="For debug">Test Flag 10 - two-tone coords (x/y, rad/ang, anti-blue/red)</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag11" class="flag" name="test-flag11" />
+        <label for="test-flag11" title="For debug">Test Flag 11 - edge-outward texture (use next/diverged values)</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag12" class="flag" name="test-flag12" />
+        <label for="test-flag12" title="For debug">Test Flag 12 - no color scheme</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag13" class="flag" name="test-flag13" />
+        <label for="test-flag13" title="For debug">Test Flag 13 - smoothing disregards divergence</label>
+      </div>
+      <div>
+        <input type="checkbox" id="test-flag14" class="flag" name="test-flag14" />
+        <label for="test-flag14" title="For debug">Test Flag 14 - adjust texture w/ divergence</label>
+      </div>
+    </fieldset>
+    </div>
   </div>
   <div id="imagesContainer" class="unselectable">
     <div id="fullImageViewerContainer" class="viewerContainer">
@@ -159,9 +336,10 @@
     </div>
   </div>
   <div style="padding-top: 10px;">
-    <p>
+    <p class="full-img-only">
       <a id="downloadImage" class="btn btn-primary imgLink" download>Download Image</a>
       <a id="openImage" class="btn btn-primary imgLink" target="_blank" >Open Image</a>
+      <button id="resetImage" class="btn btn-primary">Reset Image</button>
     </p>
     <p id="positionMotionInstructions" class="motionInstructions">
       Click-and-drag to pan. Mouse-wheel to zoom.

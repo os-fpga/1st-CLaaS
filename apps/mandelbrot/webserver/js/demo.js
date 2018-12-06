@@ -1,5 +1,7 @@
 class demo {
 
+// Methods to get parameter values from GUI.
+
 // Get renderer from GUI as "python", "cpp", or "fpga".
 getRenderer() {
   return $("#python").prop("checked") ? "python" : $("#cpp").prop("checked") ? "cpp" : "fpga";
@@ -20,7 +22,7 @@ getVar2() {
   return $("#var2").prop("value");
 }
 getMaxDepth() {
-  var d = $("#sqrt_depth").prop("value");
+  let d = $("#sqrt_depth").prop("value");
   return d * d;
 }
 get3d() {
@@ -40,11 +42,45 @@ getMotion() {
          $("#motionVelocity")    .prop("checked") ? "velocity"     :
                                                     "position";
 }
+getColorScheme() {
+  return parseInt($("[name=color-scheme]:checked").attr("encoding"));
+}
+getColorShift() {
+  return $("#color-shift").prop("value");
+}
+getStringLights() {
+  return $("#string-lights").prop("checked") ? 1 : 0;
+}
+getFanciful() {
+  return $("#fanciful").prop("checked") ? 1 : 0;
+}
+getShadow() {
+  return $("#shadow").prop("checked") ? 1 : 0;
+}
+getRoundEdges() {
+  return $("#round-edges").prop("checked") ? 1 : 0;
+}
+getElectrify() {
+  return $("#electrify").prop("checked");
+}
+getEdgeStyle() {
+  return parseInt($(".edge-style:checked").attr("encoding"));
+}
 getHeight() {
-  return parseInt($("#leftEye").height());
+  return $("#leftEye").height();
 }
 getWidth() {
-  return parseInt($("#rightEye").width());
+  return $("#rightEye").width();
+}
+getTestEnabled() {
+  return $("#test0").css("display") != "none";
+}
+getTestFlag(num) {
+  let ret = $(`#test-flag${num}`).prop("checked");
+  return ret;
+}
+getTestVar(num) {
+  return $(`#test${num}`).prop("value");
 }
 
 
@@ -62,6 +98,16 @@ newView() {
 
 // Settings or view size has changed in GUI and must be reflected.
 settingsChanged() {
+  let test_flags = 0;
+  let test_vars = [];
+  if (this.getTestEnabled()) {
+    for (let i = 0; i < 8; i++) {
+      // twice as many test flags as vars, so double up on flags here
+      test_flags |= (this.getTestFlag(i*2) ? 1 : 0) << i*2;
+      test_flags |= (this.getTestFlag(i*2+1) ? 1 : 0) << i*2+1;
+      test_vars[i] = this.getTestVar(i);
+    }
+  }
   this.settings.set(
          this.getMaxDepth(), this.getRenderer(), this.getBrighten(), this.getEyeAdjust(),
          this.getVar1(), this.getVar2(), this.get3d(), this.getStereo(),
@@ -71,7 +117,12 @@ settingsChanged() {
          //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,
          this.getDarken(), this.getSmooth(),
          !this.getTiled(),
-         -1  // spot_depth (no spot)
+         -1,  // spot_depth (no spot)
+         this.getColorScheme() | this.getColorShift() << 16 | this.getElectrify() << 25,
+         this.getStringLights() << 0 | this.getFanciful() << 1 | this.getShadow() << 2 | this.getRoundEdges() << 3,
+         this.getEdgeStyle(),
+         test_flags,
+         test_vars
        );  // The viewer is polling this structure for changes.
   if (this.map) {
     this.map_source.setUrl(this.getMapURL());
@@ -144,7 +195,7 @@ getMapURL() {
   let uri = $("#uri").val();
   let tile = "/tile/";
   var urlSource = "http://" + host + ":" + port + tile + this.settings.max_depth +
-                  "/{z}/{x}/{y}?" + this.settings.mapQueryArgs(false);
+                  "/{z}/{x}/{y}?" + this.settings.mapQueryArgs();
   return urlSource;
 }
 
@@ -240,11 +291,21 @@ constructor() {
   $("#modes input").change((evt) => {
     this.resized();  // because stereo can affect sizing
     // Update visibility based on modes.
-    $(".darken-only").css("display", this.getDarken() ? "block" : "none");
     $(".three-d-only").css("display", this.get3d() ? "block" : "none");
     $(".stereo-only").css("display", this.getStereo() ? "block" : "none");
+    $("#imagesContainer").css("min-width", this.getStereo() ? `${this.EYE_SEPARATION + 2}px` : "20px");
+  });
+  $("#texture input").change((evt) => {
+    //this.settingsChanged();
+    $(".darken-only").css("display", this.getDarken() ? "block" : "none");
   });
   $(".var").on("input", (evt) => {
+    this.settingsChanged();
+  });
+  $(".selection").change((evt) => {
+    this.settingsChanged();
+  });
+  $(".flag").change((evt) => {
     this.settingsChanged();
   });
   $("#motion input").change((evt) => {
@@ -257,6 +318,9 @@ constructor() {
     if (evt.which == 32 /*space*/ && this.viewer && this.getStereo()) {
       this.viewer.sendSpot();
     }
+  })
+  $("#resetImage").click((evt) => {
+    this.viewer.desired_image_properties.resetPosition();
   })
   $("#good-place").click((evt) => {
     if (this.viewer) {
