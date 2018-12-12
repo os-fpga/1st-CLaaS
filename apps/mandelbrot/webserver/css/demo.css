@@ -2,6 +2,10 @@
   display: none;  /* block/none */
 }
 
+.contained-fieldset {
+  height: 100%;
+}
+
 #imagesContainer {
   box-sizing: content-box;
   resize: both;
@@ -55,7 +59,7 @@
 #parameters div {
   text-align: left;
 }
-#renderer label, #modes label, #edge-style label, #texture label, #motion label, #color-params label, #test-params label {
+#renderer label, #modes label, #theme label, #edge-style label, #texture label, #motion label, #color-params label, #test-vars label, #test-flags label {
   display: inline;
 }
 #good-place {

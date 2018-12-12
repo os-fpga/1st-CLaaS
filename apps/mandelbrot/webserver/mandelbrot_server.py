@@ -147,12 +147,20 @@ class ImageHandler(tornado.web.RequestHandler):
             edge_style = self.get_query_arguments("edge")[0]
         else:
             edge_style = "0";
+        if (len(self.get_query_arguments("theme")) > 0):
+            theme = self.get_query_arguments("theme")[0]
+        else:
+            theme = "0";
+        if (len(self.get_query_arguments("cycle")) > 0):
+            cycle = self.get_query_arguments("cycle")[0]
+        else:
+            cycle = "0";
         if (len(self.get_query_arguments("test_flags")) > 0):
             test_flags = self.get_query_arguments("test_flags")[0]
         else:
             test_flags = "0"
         test_vars = []
-        for i in range(8):
+        for i in range(16):
             if (len(self.get_query_arguments("test%i" % i)) > 0):
                 test_vars.append(self.get_query_arguments("test%i" % i)[0])
             else:
@@ -204,8 +212,10 @@ class ImageHandler(tornado.web.RequestHandler):
         payload.append(int(spot_depth))
         payload.append(int(texture))
         payload.append(int(edge_style))
+        payload.append(int(theme))
+        payload.append(int(cycle))
         payload.append(int(test_flags))
-        for i in range(8):
+        for i in range(16):
           payload.append(int(test_vars[i]))
         img_data = self.application.renderImage(payload, renderer)
 

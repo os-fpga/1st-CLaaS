@@ -82,6 +82,30 @@ getTestFlag(num) {
 getTestVar(num) {
   return $(`#test${num}`).prop("value");
 }
+getTheme() {
+  let ret =  parseInt($(".theme:checked").attr("encoding"));
+  return ret;
+}
+getThemeName() {
+  let ret = $(".theme:checked").attr("id");
+  return ret;
+}
+
+// Configure for a theme appropriate for today's data.
+setHolidayTheme() {
+  let date = new Date();
+  let month = date.getMonth();
+  let day = date. getDate();
+  let holiday = "none";
+  if ((month == 11) && ((day <= 27) && (day > 5))) {
+    holiday = "xmas";
+  }
+  if (holiday !== "none") {
+    let holiday_el = $(`#${holiday}`);
+    holiday_el.prop("checked", true);
+    holiday_el.trigger("change");
+  }
+}
 
 
 // Create a new view based on DOM inputs. Position of image is preserved from current view if existing, o.w. reset.
@@ -96,15 +120,38 @@ newView() {
              );
 }
 
+// A function for settings to update settings that change over time, based on current time and other settings.
+getUpdateTimeBasedSettingsFn() {
+  return function (settings) {
+    if (settings.theme == 1) {
+      // Xmas
+      // Blink lights and wave branches.
+      settings.cycle = new Date().getSeconds() % 3;
+      /*
+      if (settings.cycle == 0) {
+        settings.var1 = 0;
+        settings.var2 = 0;
+      } else if (settings.cycle == 1) {
+        settings.var1 = 5;
+        settings.var2 = 2;
+      } else {
+        settings.var1 = 2;
+        settings.var2 = 5;
+      }
+      */
+    } 
+  }
+}
+
 // Settings or view size has changed in GUI and must be reflected.
 settingsChanged() {
   let test_flags = 0;
   let test_vars = [];
   if (this.getTestEnabled()) {
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 16; i++) {
       // twice as many test flags as vars, so double up on flags here
-      test_flags |= (this.getTestFlag(i*2) ? 1 : 0) << i*2;
-      test_flags |= (this.getTestFlag(i*2+1) ? 1 : 0) << i*2+1;
+      test_flags |= (this.getTestFlag(i*2) ? 1 : 0) << (i*2);
+      test_flags |= (this.getTestFlag(i*2+1) ? 1 : 0) << (i*2+1);
       test_vars[i] = this.getTestVar(i);
     }
   }
@@ -121,8 +168,11 @@ settingsChanged() {
          this.getColorScheme() | this.getColorShift() << 16 | this.getElectrify() << 25,
          this.getStringLights() << 0 | this.getFanciful() << 1 | this.getShadow() << 2 | this.getRoundEdges() << 3,
          this.getEdgeStyle(),
+         this.getTheme(),
+         0,  // cycle
          test_flags,
-         test_vars
+         test_vars,
+         this.getUpdateTimeBasedSettingsFn()
        );  // The viewer is polling this structure for changes.
   if (this.map) {
     this.map_source.setUrl(this.getMapURL());
@@ -253,13 +303,13 @@ constructor() {
   
   window.debug = 0;  // 0/1 to disable/enable in-browser debug messages.
   
+  
   // Member variables
   
   this.settings = new MandelbrotSettings(); // Modified each time settings are changed in GUI.
   this.map = null;  // The open map, or null.
   this.map_source = null; // The 'source' of the map.
   this.viewer = null;  // The open FullImageMandelbrotViewer, or null.
-  
   
   // Event handling
   
@@ -299,6 +349,16 @@ constructor() {
     //this.settingsChanged();
     $(".darken-only").css("display", this.getDarken() ? "block" : "none");
   });
+  $("#theme input").change((evt) => {
+    $(".not-themed").css("display", (this.getTheme() == 0) ? "block" : "none");
+    let theme = this.getThemeName();
+    $("[forTheme]").css("display", "none");
+    $(`[forTheme=${theme}`).css("display", "block");
+    // Reset the view if themes are not compatible. (Currently it's just xmas, which is not compatible w/ normal.)
+    if (this.viewer) {
+      this.viewer.desired_image_properties.resetPosition();
+    }
+  });
   $(".var").on("input", (evt) => {
     this.settingsChanged();
   });
@@ -332,11 +392,13 @@ constructor() {
   }).observe($("#imagesContainer")[0]);
   
   
+  this.setHolidayTheme();
+  
   
   // Initialization
   
   this.settingsChanged();
   this.openFullViewer();
+  
 }
-
 }

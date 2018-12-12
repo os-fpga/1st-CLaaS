@@ -167,7 +167,8 @@ private:
   } color_transition_t;
   */
   
-  static const int VERBOSITY;  // 0-10 For debug. >0 enables checking.
+  int verbosity;  // 0-10 For debug. >0 enables checking.
+  int debug_cnt;  // Printed after image generation if non-zero.
 
   // 3-D parameters
   static const int RESOLUTION_FACTOR_3D;  // Multiply hight/width by this factor for 3D to pad edges (non-integer would require care).
@@ -216,8 +217,10 @@ private:
   bool normal_divergence;  // No special edge style.
   bool power_divergence;  // Edge style x^p + y^p.
   
+  bool ornaments;  // Decarate with ornaments.
+  
   int test_flags;
-  int test_vars[8];
+  int test_vars[16];
   
   int timer_level;  // 0 to disable timer.
   // check timing
@@ -227,7 +230,8 @@ private:
   int req_eye_offset;  // Requested eye offset in requested-image pixels.
   coord_t x, y;  // Position of the center of the image.
   coord_t pix_x, pix_y;  // Size of a pixel.
-  int max_depth;  // Max number of depths for Mandelbrot calculation.
+  int max_depth;  // Max number of depths for Mandelbrot calculation. This can be determined dynamically.
+  int spec_max_depth; // Max depth until it is non-speculative.
   int brighten;  // An adjustment for darkness, as a delta in darken_start_depth.
   coord_t eye_adjust;  // An adjustment for the depth of the eye.
   int eye_separation;  // The separation between the eyes in requested image pixels (should be a multiple of 2).
@@ -243,6 +247,12 @@ private:
   bool fanciful_pattern;  // True for "fanciful" (X-gradient scale-4) texture.
   bool shadow_interior; // True for shadowed layers effect.
   bool round_edges; // True to shade edges between layers for rounded edges effect.
+  // Decoding of theme.
+  bool no_theme;
+  bool xmas_theme;
+  int cycle;  // Used to cycle through animation steps.
+  
+  float light_brightness;
   
   bool need_derivatives; // True if this image calculation needs to compute derivatives.
   int calc_width, calc_height;  // Size of the depth_array to compute. These may differ from req_width/height for 3d and for FPGA with width restrictions.
@@ -255,6 +265,7 @@ private:
   
   // For darkening distant 3D depths.
   bool darken;
+  bool texture_max;  // Color at max_depth (not possible if darken, as this sets max_depth dynamically). Mainly for debug.
   int half_faded_depth;
   float start_darkening_depth;
 
@@ -291,7 +302,8 @@ private:
   void darkenForDepth(color_t &color, int depth, int fractional_depth);
   void illuminateColor(color_t &color, float * amts);
   
-  float cartesianToAngle(float xx, float yy);
+  float cartesianToAnglef(float xx, float yy);
+  double cartesianToAngle(double xx, double yy);
   
   // Used by make3d() to make image for one eye.
   int * makeEye(bool right, unsigned char * &fractional_depth_array_3d, color_t * &color_array);
@@ -307,6 +319,7 @@ private:
   color_t * allocGradientDiagonalColorScheme(int &size, int increments);
   color_t * allocGradientsColorScheme(int &size, int num_gradients, int increments);
   color_t * allocRandomColorScheme(int &size, int num_colors);
+  color_t * allocRainbowColorScheme(int &size);
   coord_t log(coord_t base, coord_t exp);
   
   void capColorAmount(float &amount, bool cap) {

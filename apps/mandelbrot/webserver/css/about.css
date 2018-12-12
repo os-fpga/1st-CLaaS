@@ -1,16 +1,17 @@
 #content {
-  background-image: url("/img?data=[-1.0221004461908865,0.37353728027791605,0.000002985021213376194,0.000002985021213376194,1670,1490,2500]&var1=0&var2=0&three_d=0&offset_w=0&offset_h=0&eye_sep=0&darken=1&brighten=0&eye_adjust=0&renderer=cpp&modes=194&colors=0");
+  background-image: url("/img?data=[-1.0221004461908865,0.37353728027791605,0.000002985021213376194,0.000002985021213376194,1670,1490,2500]&var1=0&var2=0&three_d=0&offset_w=0&offset_h=0&eye_sep=0&darken=1&brighten=0&eye_adjust=0&renderer=cpp&modes=194&colors=3604480");
+  background-attachment: fixed;
 }
 #mask {
   background: #000A;
   padding: 20px;
 }
 #content #header {
-  background: #137D;
+  background: #137E;
   color: #fff;
 }
 #content .section {
-  background: #DDDB;
+  background: #DDDD;
   color: #000;
   margin-bottom: 30px;
   padding: 10px;

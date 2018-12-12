@@ -12,12 +12,16 @@ class MandelbrotSettings {
   //   full_image: Flag indicating that this is a full image, which can enable auto adjustments.
   //   colors: Encoded bits that control the color scheme.
   //   spot_depth: Depth of a spot used to help find stereo image.
-  //   test1/2: For testing.
+  //   colors: An encoded representation of color scheme.
+  //   texture: An encoded representation of texture.
+  //   edge_style: An encoded representation of the edge style (aka divergence function).
+  //   theme: An encoded representation of the pre-defined theme to apply (0 for none).
+  //   test_flags/vars: Flags/variables (as an array) for testing.
   constructor() {
   }
   
   set(max_depth, renderer, brighten, eye_adjust, var1, var2,
-      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth, colors, texture, edge_style, test_flags, test_vars) {
+      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth, colors, texture, edge_style, theme, cycle, test_flags, test_vars, updateTimeBasedSettingsFn) {
     this.max_depth = max_depth;
     this.renderer = renderer;
     this.brighten = brighten;
@@ -46,19 +50,27 @@ class MandelbrotSettings {
     this.colors = colors;
     this.texture = texture;
     this.edge_style = edge_style;
+    this.theme = theme;
+    this.cycle = cycle; // Time-based value. (Set by updateTimeBasedSettings().)
     this.test_flags = test_flags;
     this.test_vars = [];
     for (let i = 0; i < test_vars.length; i++) {
       this.test_vars[i] = test_vars[i];
     }
+    // Initially an empty function.
+    this.updateTimeBasedSettingsFn = updateTimeBasedSettingsFn;
     return this;
+  }
+  
+  updateTimeBasedSettings() {
+    this.updateTimeBasedSettingsFn(this);
   }
   
   copy() {
     return new MandelbrotSettings().set(this.max_depth, this.renderer,
                                         this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
                                         this.image_separation, this.darken, this.smooth, this.full_image, this.spot_depth, this.colors, this.texture,
-                                        this.edge_style, this.test_flags, this.test_vars);
+                                        this.edge_style, this.theme, this.cycle, this.test_flags, this.test_vars, this.updateTimeBasedSettingsFn);
   }
   
   equals(settings2) {
@@ -86,13 +98,16 @@ class MandelbrotSettings {
            this.test_flags == settings2.test_flags &&
            this.texture == settings2.texture &&
            this.edge_style == settings2.edge_style &&
+           this.theme == settings2.theme &&
+           this.cycle == settings2.cycle &&
            test_vars_match;
   }
+  
   
   getImageURLQueryArgs() {
     return this.mapQueryArgs() +
            "&three_d=" + this.three_d + "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
-           "&eye_adjust=" + this.eye_adjust + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth);
+           "&eye_adjust=" + this.eye_adjust + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth) + (this.cycle ? `&cycle=${this.cycle}` : "");
   }
   
   mapQueryArgs() {
@@ -101,7 +116,7 @@ class MandelbrotSettings {
       test_args += `&test${i}=${this.test_vars[i]}`;
     }
     return "darken=" + this.darken + "&brighten=" + this.brighten + "&modes=" + this.modes +"&colors=" + this.colors + "&texture=" + this.texture + "&edge=" + this.edge_style +
-           "&var1=" + this.var1 + "&var2=" + this.var2 + "&renderer=" + this.renderer + test_args;
+           "&var1=" + this.var1 + "&var2=" + this.var2 + "&renderer=" + this.renderer + "&theme=" + this.theme + test_args;
   }
   
 }

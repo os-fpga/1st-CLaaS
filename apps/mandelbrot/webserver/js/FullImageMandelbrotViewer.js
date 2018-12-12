@@ -232,6 +232,7 @@ class FullImageMandelbrotViewer {
 
   // Load the next image if needed, non-stop until destroyed.
   updateImage() {
+    this.desired_image_properties.settings.updateTimeBasedSettings();
     if (!this.desired_image_properties.equals(this.requested_image_properties)) {  // TODO: Rounding error might cause this check to fail.
       // New image needed.
       var image_id = this.image_id++;  // For access from callback.
