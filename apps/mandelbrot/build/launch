@@ -12,10 +12,31 @@
 
 # TODO: Make a function to wrap commands in sudo if necessary.
 
+
+
 usage () {
-    echo "Usage: launch [sw | hw path/to/host_app path/to/mandelbrot.awsxclbin]"
+    echo "Usage: launch [-p #] (sw | hw path/to/host_app path/to/mandelbrot.awsxclbin)"
     exit 1
 }
+
+
+
+# Defaults
+
+PORT="8888"
+
+
+
+# Read command line options
+
+while getopts "p:" opt
+  do
+    case "${opt}"
+      in
+        p) PORT=${OPTARG};;
+    esac
+  done
+shift $((OPTIND -1))
 
 TYPE="$1"
 HOST="$2"
@@ -33,10 +54,12 @@ then
 fi
 
 
+
 fail () {
     echo $1
     exit 1
 }
+
 
 # Launch web server and host application.
 launch () {
@@ -59,9 +82,9 @@ launch () {
   # Launch web server.
   if [[ $TYPE = "sw" ]];
   then
-      python ../webserver/mandelbrot_server.py &
+      python ../webserver/mandelbrot_server.py --port=${PORT} &
   else
-      sudo python ../webserver/mandelbrot_server.py &
+      sudo python ../webserver/mandelbrot_server.py --port=${PORT} &
   fi
   export SERVER_PID=$!
 }

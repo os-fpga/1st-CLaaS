@@ -1,0 +1,2 @@
+#!/bin/bash
+make PORT=80 launch

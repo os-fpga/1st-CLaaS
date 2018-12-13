@@ -2,7 +2,7 @@
 
 ## Demo
 
-The Mandelbrot example is currently hosted [here](http://104.248.227.48:8888/demo.html), by [Steve Hoover](mailto:stevehoover@redwoodeda.com), without hardware acceleration.
+The Mandelbrot example is hosted [here](http://fractalvalley.net), by [Steve Hoover](mailto:stevehoover@redwoodeda.com), without hardware acceleration.
 It includes an About page with general project information.
 
 ## Development

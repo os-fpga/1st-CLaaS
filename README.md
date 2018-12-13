@@ -112,7 +112,7 @@ cd apps/mandelbrot/build
 make launch
 ```
 
-The webserver is running. You can open `http://localhost:8888/demo.html` in a local web browser and explore Mandelbrot generated in the Python webserver or in the C++ host application.
+The webserver is running. You can open `http://localhost:8888/index.html` in a local web browser and explore Mandelbrot generated in the Python webserver or in the C++ host application.
 
 You can also open `http://localhost:8888/client.html`. Click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start" for a flythrough.
 
@@ -279,7 +279,7 @@ chmod +x launch ../out/*/*/host # execute privs lost in transfer
 
 ## Run
 
-As you did locally, you can access `http://<IP>:8888/demo.html` and `http://<IP>:8888/client.html`. Now you can utilize the FPGA to generate images.
+As you did locally, you can access `http://<IP>:8888/index.html`. Now you can utilize the FPGA to generate images.
 
 
 # Makerchip and TL-Verilog

@@ -34,9 +34,6 @@ from server_api import *
 # Socket with host defines
 SOCKET        = "SOCKET"
 
-# Server defines
-PORT          = 8888
-
 # Communication protocol defines
 WRITE_DATA    = "WRITE_DATA"
 READ_DATA     = "READ_DATA"
@@ -77,13 +74,13 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
 # This class can be overridden to provide application-specific behavior.
 class FPGAServerApplication(tornado.web.Application):
-    def initSocket(self):
+    def initSocket(self, port):
         # Opening socket with host
         self.sock = self.__class__.getSocket()
 
         # Setting IP
         myIP = socket.gethostbyname(socket.gethostname())
-        print('*** Websocket Server Started at %s***' % myIP)
+        print '*** Websocket Server Started at %s***:%i' % (myIP, port)
 
 
     ### Function that creates a socket communication with the Host application
@@ -125,11 +122,11 @@ class FPGAServerApplication(tornado.web.Application):
         return ret
     
     
-    def __init__(self, handlers):
-        self.initSocket()
+    def __init__(self, handlers, port):
+        self.initSocket(port)
         super(FPGAServerApplication, self).__init__(handlers)
         server = tornado.httpserver.HTTPServer(self)
-        server.listen(PORT)
+        server.listen(port)
         # Starting webserver
         tornado.ioloop.IOLoop.instance().start()
 

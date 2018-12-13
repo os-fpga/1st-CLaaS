@@ -23,6 +23,8 @@
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
+PORT=8888
+
 # BUILD_ID is used to tag the build for transfer from the build instance to the F1 instance.
 ifndef S3_USER
 S3_USER=default_user
@@ -202,13 +204,13 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 ifeq ($(TARGET), sw)
 build:  $(BUILD_DIR)/$(HOST_EXE)
 launch: build
-	./launch $(TARGET) $(BUILD_DIR)/$(HOST_EXE)
+	./launch -p $(PORT) $(TARGET) $(BUILD_DIR)/$(HOST_EXE)
 else
 build:  $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 launch: build
 	# TODO: Wait for AFI build to complete.
 	#       In create_sdaccel_afi.sh, use create-fpga-image --wait
-	./launch $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+	./launch -p $(PORT) $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 endif
 
 

@@ -1,3 +1,4 @@
+import getopt
 import sys
 import os
 import signal
@@ -245,6 +246,21 @@ class MandelbrotApplication(FPGAServerApplication):
 
 
 if __name__ == "__main__":
+    
+    # Command-line options
+    
+    port = 8888
+    try:
+        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port="])
+    except getopt.GetoptError:
+        print 'Usage: %s --port #' % (sys.argv[0])
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '--port':
+            port = int(arg)
+    
+    # Webserver
+    
     dir = os.path.dirname(__file__)
     application = MandelbrotApplication(
             [ (r"/()", BasicFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
@@ -256,5 +272,6 @@ if __name__ == "__main__":
               #(r'/hw', GetRequestHandler),
               (r'/(img)', ImageHandler),
               (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
-            ]
+            ], 
+            port
         )
