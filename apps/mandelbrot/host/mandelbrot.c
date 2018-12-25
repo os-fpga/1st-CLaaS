@@ -93,7 +93,7 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga) {
   show_spot = spot_depth >= 0;
   brighten = (int)(params[13]);
   eye_adjust = params[14];
-  eye_separation = params[15];
+  eye_separation = params[15] + (int)(getTestVar(14, -500.0f, 500.0f));
   adjustment = params[7] / 100.0L;
   adjustment2 = params[8] / 100.0L;
   adjust = (adjustment != 0.0L || adjustment2 != 0.0L) && !fpga;
@@ -622,10 +622,15 @@ inline double fastPow(double a, double b) {
   return u.d;
 }
 
+// Used for debug to provide output only for the center pixel.
+inline bool MandelbrotImage::isCenter(int w, int h) {
+  return w == calc_center_w && h == calc_center_h;
+}
+
 // Compute the depth of a pixel. Also populate fractional_depth_array and color_array as needed.
 // Used by generateDepthArray.
 // TODO: Math would be a little simpler if divergent_radius was always 2.0, and x0 & y0 were scaled down instead.
-inline int MandelbrotImage::pixelDepth(int w, int h, int & step) {
+inline int MandelbrotImage::pixelDepth(int w, int h, int & step, bool trying) {
   
   // Initialization.
   
@@ -941,7 +946,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, int & step) {
     
     // For smoothing, compute fractional depth. Use computation from https://en.wikipedia.org/wiki/Mandelbrot_set.
     
-    if (fractional_depth_array != NULL) {
+    if (fractional_depth_array != NULL || trying) {
       if (depth < spec_max_depth) {
         coord_t log_zn = std::log(getTestFlag(13) ? next_radius_sq : next_effective_radius_sq) / 2.0L;
         coord_t log_2 = std::log(2.0L);
@@ -1354,7 +1359,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, int & step) {
 
 int MandelbrotImage::tryPixelDepth(int w, int h) {
   int step;
-  return pixelDepth(w, h, step);
+  return pixelDepth(w, h, step, true);
 }
 
 inline void MandelbrotImage::writeDepthArray(int w, int h, int depth) {
@@ -1392,6 +1397,7 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
   startTimer();
   debug_cnt = 0;
   
+  
   // Since auto_depth can be used to determine darkening which determines spec_max_depth, we don't know max_depth
   // before we need it. To address this, we determine an initial conservative value for auto_depth to use here
   // by trying the four corners of the rectangle within which we look for depth. Likely these will find the
@@ -1417,6 +1423,7 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
     adjust = real_adjust;
   }
   
+  
   // Allocate arrays to be filled by pixelDepth().
   if (!textured || is_3d || darken) {
     depth_array = (int *)malloc(calc_width * calc_height * sizeof(int));
@@ -1427,6 +1434,7 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
   if (textured) {
     color_array = (color_t *)malloc(calc_width * calc_height * sizeof(color_t));
   }
+  
   
   // Apply adjustments based on auto_depth, but adjustments must be applied as depths are computed, so we use this
   // initial approximation.
@@ -1447,13 +1455,13 @@ MandelbrotImage *MandelbrotImage::generateDepthArray() {
       int step;
       int dummy_step;
       int depth;
-      depth = pixelDepth(w, h, step);
+      depth = pixelDepth(w, h, step, false);
       num_steps++;
       if (enable_step) {
         // While the depth isn't right, step back and re-compute.
         int step_back_depth = depth;
         for (int step_back = 1; (step_back_depth != stepped_depth) && (step_back < stepped); step_back++) {
-          step_back_depth = pixelDepth(w - step_back, h, dummy_step);
+          step_back_depth = pixelDepth(w - step_back, h, dummy_step, false);
           num_steps++;  // Count step-backs as steps.
           // Correct depth array.
           writeDepthArray(w - step_back, h, step_back_depth);   // Use spec_max_depth to make step-back visible.
@@ -1514,8 +1522,6 @@ void MandelbrotImage::updateMaxDepth(int new_auto_depth, unsigned char new_auto_
     auto_depth_frac = new_auto_depth_frac;
     if (auto_darken) {
       start_darkening_depth = ((float)((auto_depth << 8) + (int)auto_depth_frac)) / 256.0f - eye_adjust - (coord_t)brighten;
-    }
-    if (auto_darken) {
       int dark_depth = (int)start_darkening_depth + half_faded_depth * 6;  // Light fades exponentially w/ depth. After 6 half_faded_depth's, brightness is 1/32.
       if (spec_max_depth > dark_depth) {
         spec_max_depth = dark_depth;
@@ -1566,9 +1572,10 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
   if (pixel_data == NULL) {
     int chars_per_image = req_width * req_height * 3;
     pixel_data = (unsigned char *) malloc(chars_per_image * (is_stereo ? 2 : 1));
-    toPixelData(pixel_data, depth_array, fractional_depth_array, color_array);
+    toPixelData(0, depth_array, fractional_depth_array, color_array);
     if (is_stereo) {
-      toPixelData(pixel_data + sizeof(char) * chars_per_image, right_depth_array, right_fractional_depth_array, right_color_array);
+      // Generate the stereo image
+      toPixelData(req_width * 3, right_depth_array, right_fractional_depth_array, right_color_array);
     }
   }
 
@@ -1635,10 +1642,10 @@ inline MandelbrotImage::color_t MandelbrotImage::depthToColor(int depth, int fra
   return color;
 }
 
-void MandelbrotImage::toPixelData(unsigned char *pixel_data, int *depth_array, unsigned char *fractional_depth_array, color_t *color_array) {
+void MandelbrotImage::toPixelData(int char_offset, int *depth_array, unsigned char *fractional_depth_array, color_t *color_array) {
   
   int j = 0;
-  int i = 0;
+  int i = 0;  // Char position within pixel_array.
 
   // Building the image pixels data
   for(int h = 0; h < req_height; h++) {
@@ -1655,11 +1662,14 @@ void MandelbrotImage::toPixelData(unsigned char *pixel_data, int *depth_array, u
         darkenForDepth(color, depth, frac);
       }
       for(int k = 0; k < 3; k++) {
-        pixel_data[i+k] = color.component[k];
+        pixel_data[i+k+char_offset] = color.component[k];
       }
       
       j++;
-      i+=3;
+      i += 3;
+    }
+    if (is_stereo) {
+      i += req_width * 3;  // Skip over other eye.
     }
   }
 }
@@ -1675,7 +1685,7 @@ unsigned char *MandelbrotImage::generatePNG(size_t *png_size_p) {
   startTimer();
   
   // Generate the png image
-  unsigned error = lodepng_encode24(&png, png_size_p, pixel_data, req_width, req_height * (is_stereo ? 2 : 1));
+  unsigned error = lodepng_encode24(&png, png_size_p, pixel_data, req_width * (is_stereo ? 2 : 1), req_height);
   if(error) perror("\nERROR (mandelbrot.c): Error in generating png");
 
   stopTimer("generatePNG()");

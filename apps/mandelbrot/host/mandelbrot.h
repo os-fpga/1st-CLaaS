@@ -129,7 +129,9 @@ public:
   //
   // Generate Pixels
   //
-  void toPixelData(unsigned char *pixel_data, int *depth_array, unsigned char *fractional_depth_array, color_t *color_array);
+  // Fill one eye of data into pixel_data. 
+  //   char_offset: The starting char position to fill (depending on eye).
+  void toPixelData(int char_offset, int *depth_array, unsigned char *fractional_depth_array, color_t *color_array);
   
   // Generate pixel color data according to the color scheme from a [width][height] array of pixel depths.
   // The depths array can be:
@@ -280,6 +282,7 @@ private:
                               // For stereo images, this is a single array for both eyes, left-then-right.
   unsigned char *png;  // The PNG image.
 
+  bool isCenter(int w, int h);  // For debug
   bool getTestFlag(int i) {return (bool)((test_flags >> i) & 1);}
   coord_t getTestVar(int i, coord_t min, coord_t max) {return min + (coord_t)(test_vars[i] + 100) / 200.0L * (max - min);}
   int getTestVar(int i) {return test_vars[i];}
@@ -287,7 +290,7 @@ private:
   coord_t getZoomDepth();
   
   void setAutoDepthBounds();
-  int pixelDepth(int w, int h, int & skip);
+  int pixelDepth(int w, int h, int & skip, bool need_frac);
   int tryPixelDepth(int w, int h);   // A non-inlined version of pixelDepth.
   void writeDepthArray(int w, int h, int depth);
   void updateMaxDepth(int new_auto_depth, unsigned char new_auto_depth_frac);

@@ -2,6 +2,10 @@
   display: none;  /* block/none */
 }
 
+.playback-only {
+  display: none;
+}
+
 .contained-fieldset {
   height: 100%;
 }
@@ -71,6 +75,10 @@
 }
 .three-d-only, .stereo-only {
   display: none;
+}
+
+#record-button[state="on"], #play-recording[state="on"], #burn-video[state="on"]{
+  background-color: red;
 }
 
 .unselectable {

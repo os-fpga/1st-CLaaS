@@ -1,3 +1,4 @@
 *~
 **/webserver/*.pyc
 **/apps/*/out/
+apps/mandelbrot/build/video

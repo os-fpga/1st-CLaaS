@@ -1,2 +1,2 @@
 #!/bin/bash
-make PORT=80 launch
+nohup make PORT=80 launch

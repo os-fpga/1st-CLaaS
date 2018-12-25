@@ -62,8 +62,8 @@ class MandelbrotSettings {
     return this;
   }
   
-  updateTimeBasedSettings() {
-    this.updateTimeBasedSettingsFn(this);
+  updateTimeBasedSettings(ms) {
+    this.updateTimeBasedSettingsFn(this, ms);
   }
   
   copy() {
@@ -118,7 +118,6 @@ class MandelbrotSettings {
     return "darken=" + this.darken + "&brighten=" + this.brighten + "&modes=" + this.modes +"&colors=" + this.colors + "&texture=" + this.texture + "&edge=" + this.edge_style +
            "&var1=" + this.var1 + "&var2=" + this.var2 + "&renderer=" + this.renderer + "&theme=" + this.theme + test_args;
   }
-  
 }
 
 
@@ -174,8 +173,9 @@ class MandelbrotView {
 
   
   // Copy "constructor".
-  copy() {
-    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, this.settings.copy());
+  // Optional settings arg. If not provided a copy of the original settings is created.
+  copy(settings) {
+    return new MandelbrotView(this.center_x, this.center_y, this.scale, this.width, this.height, settings ? settings : this.settings.copy());
   }
   
   // Image comparison.
@@ -189,6 +189,14 @@ class MandelbrotView {
            this.height == img2.height &&
            this.width == img2.width &&
            this.settings.equals(img2.settings);
+  }
+  
+  // Set position to that of another MandelbrotView.
+  // Height and width are not changed.
+  positionAs(pos) {
+    this.center_x = pos.center_x;
+    this.center_y = pos.center_y;
+    this.scale = pos.scale;
   }
   
   
@@ -231,9 +239,15 @@ class MandelbrotView {
                  this.settings.max_depth + "]";
   }
   getImageURLQueryArgs() {
-    return this.settings.getImageURLQueryArgs();
+    return `?data=${this.getImageURLParamsArrayJSON()}&${this.settings.getImageURLQueryArgs()}`;
   }
   
+  getImageURL() {
+    return `${this.base_url}?data=${this.desired_image_properties.getImageURLParamsArrayJSON()}` +
+           `&${this.desired_image_properties.getImageURLQueryArgs()}`;
+  }
+  
+
   resetPosition() {
     this.center_x = 0.0;
     this.center_y = 0.0;

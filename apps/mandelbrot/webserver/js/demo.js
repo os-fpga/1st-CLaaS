@@ -122,11 +122,11 @@ newView() {
 
 // A function for settings to update settings that change over time, based on current time and other settings.
 getUpdateTimeBasedSettingsFn() {
-  return function (settings) {
+  return function (settings, ms) {
     if (settings.theme == 1) {
       // Xmas
       // Blink lights and wave branches.
-      settings.cycle = new Date().getSeconds() % 3;
+        settings.cycle = Math.floor(ms / 1000) % 3;
       /*
       if (settings.cycle == 0) {
         settings.var1 = 0;
@@ -188,6 +188,9 @@ sizeFullViewer() {
     let w = c_w; // Assuming not stereo.
     let h = c.height();
     
+    $("#img-width").text(w);
+    $("#img-height").text(h);
+    
     // For some reason 100% h/w isn't working in child?
     //c.children().width(w);
     //c.children().height(h);
@@ -209,8 +212,9 @@ sizeFullViewer() {
     let imgs = $(".mandelbrotImage");
     imgs.width(w);
     imgs.height(h);
+    // Position right eye image.
     imgs.eq(1).css("left", w + this.STEREO_IMAGE_GAP + imgs.eq(0).position().left);
-    imgs.eq(1).children().children().css("top", -h);
+    imgs.eq(1).children().children().css("left", -w);
 }
 
 resized() {
@@ -385,6 +389,29 @@ constructor() {
   $("#good-place").click((evt) => {
     if (this.viewer) {
       this.viewer.desired_image_properties.goToGoodPlace();
+    }
+  })
+  $("#record-button").click((evt) => {
+    if (this.viewer) {
+      if (evt.target.getAttribute("state") === "off") {
+        evt.target.setAttribute("state", "on");
+        this.viewer.setRecording(true);
+      } else {
+        evt.target.setAttribute("state", "off");
+        this.viewer.setRecording(false);
+      }
+    }
+  })
+  $("#play-recording, #burn-video").click((evt) => {
+    let burn = evt.target.id == "burn-video";
+    if (this.viewer) {
+      if (evt.target.getAttribute("state") === "off") {
+        evt.target.setAttribute("state", "on");
+        this.viewer.setPlayback(true, burn);
+      } else {
+        evt.target.setAttribute("state", "off");
+        this.viewer.setPlayback(false, burn);
+      }
     }
   })
   new ResizeObserver(entries => {

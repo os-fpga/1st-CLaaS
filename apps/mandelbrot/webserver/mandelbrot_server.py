@@ -2,6 +2,7 @@ import getopt
 import sys
 import os
 import signal
+import re
 sys.path.append('../../../framework/webserver')
 from server import *
 
@@ -139,23 +140,35 @@ class ImageHandler(tornado.web.RequestHandler):
         if (len(self.get_query_arguments("spot_depth")) > 0):
             spot_depth = self.get_query_arguments("spot_depth")[0]
         else:
-            spot_depth = "-1";
+            spot_depth = "-1"
         if (len(self.get_query_arguments("texture")) > 0):
             texture = self.get_query_arguments("texture")[0]
         else:
-            texture = "0";
+            texture = "0"
         if (len(self.get_query_arguments("edge")) > 0):
             edge_style = self.get_query_arguments("edge")[0]
         else:
-            edge_style = "0";
+            edge_style = "0"
         if (len(self.get_query_arguments("theme")) > 0):
             theme = self.get_query_arguments("theme")[0]
         else:
-            theme = "0";
+            theme = "0"
         if (len(self.get_query_arguments("cycle")) > 0):
             cycle = self.get_query_arguments("cycle")[0]
         else:
-            cycle = "0";
+            cycle = "0"
+        # For "burning" video:
+        if (len(self.get_query_arguments("burn_dir")) > 0):
+            burn_subdir = self.get_query_arguments("burn_dir")[0]
+        else:
+            burn_subdir = ""
+        if (len(self.get_query_arguments("burn_frame")) > 0):
+            burn_frame = self.get_query_arguments("burn_frame")[0]
+        else:
+            burn_frame = "NULL"
+        burn_first = (len(self.get_query_arguments("burn_first")) > 0)
+        burn_last  = (len(self.get_query_arguments("burn_last")) > 0)
+        # For testing:
         if (len(self.get_query_arguments("test_flags")) > 0):
             test_flags = self.get_query_arguments("test_flags")[0]
         else:
@@ -217,10 +230,52 @@ class ImageHandler(tornado.web.RequestHandler):
         payload.append(int(cycle))
         payload.append(int(test_flags))
         for i in range(16):
-          payload.append(int(test_vars[i]))
+            payload.append(int(test_vars[i]))
         img_data = self.application.renderImage(payload, renderer)
 
         self.write(img_data)
+        
+        
+        # Burn?
+        # Validate dir name.
+        ok = re.match("^\w+$", burn_subdir)
+        if ok:
+            burn_dir = "video/" + burn_subdir
+            if burn_first:
+                # Create directory for images.
+                try:
+                    # Remove any existing directory (which should only be leftover from a failure).
+                    if not subprocess.call("rm -rf " + burn_dir, shell=True):
+                        print "Remove pre-existing directory " + burn_dir + " for video creation."
+                    os.makedirs(burn_dir)
+                    print "Successfully created the directory %s " % burn_dir
+                except OSError:
+                    print "Creation of the directory %s failed" % burn_dir
+            # Write file.
+            filepath = burn_dir + "/" + burn_frame + ".png"
+            try:
+                file = open(filepath, "w")
+                file.write(img_data)
+                file.close()
+                if burn_last:
+                    # Got all the images, now convert to video and clean up.
+                    try:
+                        mp4_name = burn_dir + ".mp4"
+                        print "Burning video " + mp4_name
+                        # Delete existing video.
+                        if not subprocess.call("rm " + mp4_name, shell=True):
+                            print "Removed pre-existing video " + mp4_name
+                        # Create video from images.
+                        if subprocess.call("ffmpeg -framerate 24 -i " + burn_dir + "/%d.png " + mp4_name, shell=True):
+                            sys.stderr.write("ffmpeg command failed.")
+                        else:
+                            print "Burned video as %s" % mp4_name
+                            if subprocess.call("rm -rf " + burn_dir, shell=True):
+                                sys.stderr. write("failed to remove images in " + burn_dir)
+                    except Error:
+                        sys.stderr.write("Failed to convert images to video.")
+            except IOError:
+                print "Failed to write file %s" % filepath
 
 
 """

@@ -3,7 +3,46 @@ class FullImageMandelbrotViewer {
   
   // Construct.
   constructor(host, port, view, motion) {
-    this.MOTION_TIMEOUT = 25;
+    
+    
+    // Settings Updates, Motion, and Image Updates
+    //
+    // Settings are updated by DOM triggers and reflected in desired_image_properties.
+    // Every MOTION_TIMEOUT, panning and zooming is applied to desired_image_properties for the timeout time delta (not for the real time delta).
+    // Independently, the image is refreshed as needed. The last requested image properties are reflected in requested_image_properties.
+    // After one image is loaded, desired_image_properties are compared with requested_image_properties, and if anything has changed, a new image
+    // is requested. If not, we'll try again in a few milliseconds.
+    
+    // Video flythrough
+    //
+    // For video, we can capture a sequence of frames as image properties. Only position is captured, not settings. Different settings can
+    // be applied after the recording. A frame is captured in motion processing callbacks after TIMEOUTS_PER_FRAME motion timeouts.
+    //
+    // Playback is done in separate DOM resources in separate timeout event handlers. Playback uses settings at the time playback is started.
+    // Playback can optionally "burn" video on the server in the process by including query args. Nomal playback presents frames based on
+    // wall-clock time. Burning processes and displays one frame at a time.
+    
+    
+    // Flythrough video capture.
+    //
+    this.frame_rate = 25;  // Frames per second (roughly)
+    this.video_speedup = 1.4;  // Factor by which video will be sped up vs. realtime capture. (Just factors into frame_rate.)
+    // Recording state:
+    this.recording = false;
+    this.frame_timeout_cnt = 0;  // Countdown for timeouts within frame.
+    // Playback state:
+    this.playback = false;
+    this.playback_time_zero = null;
+    this.playback_properties = null;  // The properties for playback/burning.
+    this.playback_id = 0;  // Incremented for each new playback. The allows lingering playbacks to self-destruct.
+    this.playback_frame = 0;  // The frame being burned.
+    this.burn_dir = "video";
+    this.burning = false;  // True if "burning" a video. this.playback will also be true.
+    
+    
+    
+    this.timeouts_per_frame = 2;
+    this.MOTION_TIMEOUT = Math.round(1000 / this.frame_rate * this.video_speedup / this.timeouts_per_frame);
     
     // Constants for interaction.
     
@@ -33,6 +72,10 @@ class FullImageMandelbrotViewer {
     
     // Initialize members.
     this.base_url = `http://${host}:${port}/img`;
+    
+    // A reference time.
+    this.ref_time = new Date();
+    
     // The image last requested.
     this.requested_image_properties = null;
     
@@ -163,19 +206,38 @@ class FullImageMandelbrotViewer {
     setTimeout(() => {this.applyMotion();}, this.MOTION_TIMEOUT);
   }
   applyMotion() {
-    if (this.motion === "acceleration") {
-      this.velocity_x += this.motion_x * - this.ACCELERATION_FACTOR;
-      this.velocity_y += this.motion_y * - this.ACCELERATION_FACTOR;
-      this.velocity_z += this.motion_z * this.ZOOM_ACCELERATION_FACTOR;
-    } else {
-      this.velocity_x = this.motion_x * - this.VELOCITY_FACTOR;
-      this.velocity_y = this.motion_y * - this.VELOCITY_FACTOR;
-      this.velocity_z = this.motion_z * this.ZOOM_VELOCITY_FACTOR;
-    }
     if (this.dragging) {
+      if (this.motion === "acceleration") {
+        this.velocity_x += this.motion_x * - this.ACCELERATION_FACTOR;
+        this.velocity_y += this.motion_y * - this.ACCELERATION_FACTOR;
+        this.velocity_z += this.motion_z * this.ZOOM_ACCELERATION_FACTOR;
+      } else {
+        this.velocity_x = this.motion_x * - this.VELOCITY_FACTOR;
+        this.velocity_y = this.motion_y * - this.VELOCITY_FACTOR;
+        this.velocity_z = this.motion_z * this.ZOOM_VELOCITY_FACTOR;
+      }
       this.desired_image_properties.panBy(this.velocity_x, this.velocity_y);
       this.desired_image_properties.zoomBy(this.velocity_z);
       this.setMotionTimeout();
+
+  
+      // Capture frame? (only while dragging and not w/ positional control)
+      if (this.recording) {
+        if (this.frame_timeout_cnt <= 0) {
+          // Yes, capture frame.
+          if (this.frames.length >= 2000) {
+            console.log("Video exceeded maximum number of frames");
+            this.setRecording(false);
+          }
+          console.log(`Frame #${this.frames.length}`)
+          this.frames.push(this.desired_image_properties.copy(null));
+          $("#num-frames").text(this.frames.length);
+          
+          this.frame_timeout_cnt = this.timeouts_per_frame;
+        } else {
+          this.frame_timeout_cnt--;
+        }
+      }
     }
   }
   
@@ -216,23 +278,46 @@ class FullImageMandelbrotViewer {
     }
   }
   
+  getImageURL() {
+    return `${this.base_url}${this.desired_image_properties.getImageURLQueryArgs()}`;
+  }
+  getFrameURL(burn, dir, frame, first, last) {
+    let url = `${this.base_url}${this.playback_properties.getImageURLQueryArgs()}`;
+    if (burn) {
+      if (dir) {
+        url = `${url}&burn_dir=${dir}&burn_frame=${frame}`;
+        if (first) {
+          url = url + "&burn_first=1";
+        }
+        if (last) {
+          url = url + "&burn_last=1";
+        }
+        // Avoid caching
+        url = url + `&uniquifier=${this.playback_id}`;
+      } else {
+        console.log("Refusing to burn video with no name.")
+      }
+    }
+    return url;
+  }
+  
+  /*-
   // Get the URL for the current desired image and, once loaded, call the callback.
   // Params:
+  //  url: the URL of the image
   //  cb: callback
-  getImage(cb) {
-    let urlSource = `${this.base_url}?data=${this.desired_image_properties.getImageURLParamsArrayJSON()}` +
-                    `&${this.desired_image_properties.getImageURLQueryArgs()}`;
-    console.log(`Image URL: ${urlSource}`);
-    this.requested_image_properties = this.desired_image_properties.copy();
+  getImage(url, cb) {
+    //console.log(`Image URL: ${urlSource}`);
     let image = new Image(this.w, this.h);
-    image.src = urlSource;
+    image.src = url;
     image.onload = cb;
     return image;
   }
+  */
 
   // Load the next image if needed, non-stop until destroyed.
   updateImage() {
-    this.desired_image_properties.settings.updateTimeBasedSettings();
+    this.desired_image_properties.settings.updateTimeBasedSettings(new Date() - this.ref_time);
     if (!this.desired_image_properties.equals(this.requested_image_properties)) {  // TODO: Rounding error might cause this check to fail.
       // New image needed.
       var image_id = this.image_id++;  // For access from callback.
@@ -255,13 +340,100 @@ class FullImageMandelbrotViewer {
           viewer.updateImage();
         }
       }
-      this.getImage(cb);
+      let image = new Image(this.w, this.h);
+      image.src = this.getImageURL();
+      image.onload = cb;
+      this.requested_image_properties = this.desired_image_properties.copy();
+      console.log(`Image URL: ${image.src}`);
     } else {
       // Current desired image is already loaded. Wait a bit and poll again.
       setTimeout(() => {this.updateImage()}, 50)
     }
   }
+  
+  
+  // Video
+  
+  setRecording(val) {
+    this.recording = val;
+    this.frame_timeout_cnt = 0;
+    if (val) {
+      this.frames = [];
+    }
+  }
 
+  // Start/re-start/stop playback, with or without burning.
+  setPlayback(val, burn) {
+    this.disablePlayback();
+    if (val) {
+      this.startPlayback(burn);
+    }
+  }
+  
+  startPlayback(burn) {
+    this.playback = true;
+    this.burning = burn;
+    this.playback_properties = this.desired_image_properties.copy();
+    $(".playback-only").css("display", "block");
+    // Need to set img height/width? Shouldn't be necessary as it should use image size.
+    this.playback_frame = -1;
+    if (burn) {
+      this.burn_dir = $("#burn-dir").val();
+      // Increment the dir name to avoid accidental overwrites.
+      $("burn-dir").val(this.burn_dir + "_");
+    } else {
+      this.playback_time_zero = new Date();
+    }
+    this.playback_id++;
+    this.updatePlaybackFrame(this.playback_id);
+  }
+  
+  disablePlayback() {
+    if (this.playback) {
+      let pb_els = $(".playback-only");
+      pb_els.css("display", "none");
+    }
+    this.playback = false;
+    this.burning = false;
+  }
+
+  // Request the next playback frame if necessary.
+  updatePlaybackFrame(id) {
+    console.log("updatePlaybackFrame()");
+    if (this.playback && id == this.playback_id) {
+      // This playback is still active.
+      let old_frame = this.playback_frame;
+      if (this.burning) {
+        this.playback_frame++;
+      } else {
+        let now = new Date();
+        this.playback_frame = Math.floor((now - this.playback_time_zero) / this.frame_rate);
+      }
+      if (this.playback_frame > old_frame) {
+        if (this.playback_frame < this.frames.length) {
+          this.playback_properties.positionAs(this.frames[this.playback_frame]);
+          this.playback_properties.settings.updateTimeBasedSettings(this.playback_frame * 1000 / this.frame_rate);
+          let image = new Image(this.playback_properties.width, this.playback_properties.height);
+          image.src = this.getFrameURL(this.burning, this.burn_dir, this.playback_frame, this.playback_frame == 0, this.playback_frame == this.frames.length - 1);
+          image.onload = (evt) => {
+            let src = evt.target.getAttribute("src");
+            $("#playback-img").attr("src", src);
+            // Next frame.
+            this.updatePlaybackFrame(id);
+          };
+        } else {
+          // Done playback.
+          this.disablePlayback();
+          $("#play-recording, #burn-video").attr("state", "off");
+        }
+      } else {
+        // Current frame already loaded. Wait a little and try again.
+        setTimeout(() => {this.updatePlaybackFrame(id);}, 25);
+      }
+    }
+  }
+  
+  
   // An out-of-place utility function.
   
   // Check for the existence and non-nullness of an object path.
