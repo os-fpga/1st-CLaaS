@@ -119,7 +119,7 @@ public:
   
   // Generate the depth array for the image.
   // Generate an image from parameters and depth data.
-  MandelbrotImage * generateDepthArray();
+  virtual MandelbrotImage * generateDepthArray();
   // Convert the depth array into one that has been adjusted for 3-D. This will alter the size of the image
   // according to parameters. Each layer is more distant, centered around the center of the image.
   // It is not necessary to call this explicitly, as it is called by generagePixels(..) based on settings.
@@ -152,10 +152,8 @@ public:
   // Get depth array dimensions. Initially this is the depth array to generate; after 3D-iffication, this is the requested h/w.
   int getDepthArrayWidth()  {return calc_width; }
   int getDepthArrayHeight() {return calc_height;}
-  coord_t wToX(int w) {return x + (w - calc_center_w) * pix_x;}
-  coord_t hToY(int h) {return y + (h - calc_center_h) * pix_y;}
-  coord_t getPixX() {return pix_x;}
-  coord_t getPixY() {return pix_y;}
+  coord_t wToX(int w) {return x + (w - calc_center_w) * calc_pix_size;}
+  coord_t hToY(int h) {return y + (h - calc_center_h) * calc_pix_size;}
   int getMaxDepth() {return max_depth;}
 
 private:
@@ -173,13 +171,20 @@ private:
   int debug_cnt;  // Printed after image generation if non-zero.
 
   // 3-D parameters
-  static const int RESOLUTION_FACTOR_3D;  // Multiply hight/width by this factor for 3D to pad edges (non-integer would require care).
-  static const coord_t SCALE_PER_DEPTH;  // The scale of the 3D object, grows by 1/SCALE_PER_DEPTH with each depth of zoom. Empirical.
-                                         // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
-                                         // increments, so the controlling software should be in sync with this factor.
-  static const coord_t NATURAL_DEPTH;  // Depth from the eye (really, absolute distance in units of first-depth-distance) of the screen.
-  static const coord_t EYE_DEPTH_FIT;  // Distance of structure from eye (and structure size). Specifically, the depth from the eye of the plane-0 circle
-                                       //   when sized to fit the height, or the depth from the eye of the auto-depth.
+  coord_t expansion_factor_3d; // Multiply hight/width by this factor for 3D (slightly different for stereo) to pad edges.
+                               // The real distance at max depth / real distance from eye to screen to account for
+                               // x/y visibility at max depth.
+  coord_t req_pix_per_calc_pix; // The relationship between the pixel size of the 2d 'calc' image and the 3d requested image pixel size at the screen.
+  coord_t scale_per_depth;  // The scale of the 3D object, grows by 1/SCALE_PER_DEPTH with each depth of zoom. Empirical.
+                            // To look deeper as we zoom, go further from 1.0. Note that zooming should be in depth
+                            // increments, so the controlling software should be in sync with this factor.
+  coord_t natural_depth;    // Depth from the eye (really, absolute distance in units of first-depth-distance) of the screen.
+  coord_t eye_depth_fit;    // Distance of structure from eye (and structure size). Specifically, for auto-depth, the depth from the eye of the auto-depth,
+                            //   and without auto-depth, the depth from the eye of the plane-0 circle when sized to fit the height.
+  // Pre-calculated values:
+  coord_t calc_pix_per_req_pix; // Inverse of req_pix_per_calc_pix.
+  coord_t recip_scale_per_depth; // 1 / scale_per_depth.
+  coord_t recip_natural_depth;  // 1 / natural_depth.
 
   // Several color schemes are statically allocated in an array.
   // A color scheme is some number of color_t's indexed by depth % num_colors.
@@ -210,6 +215,7 @@ private:
   bool enable_step;  // True to enable optimization where we step ahead some number of pixels based on differentials.
   bool full_image;   // This is a full image, so decisions can be made with full knowledge (such as darkening and eye depth).
   bool smooth;       // Smooth the image using the approach on wikipedia.
+  bool lighting;     // True if any lighting effects are in use.
   bool textured;     // Use color_arrays. Depth alone is not enough to determine color. Each layer has a texture.
   bool smooth_texture; // A different approach to smoothing. This is less computationally-intensive and has a nice property that it does not change coarse-grained depth.
                        // This means texturing effects based on layer edges will remain consistent.
@@ -231,12 +237,14 @@ private:
   int req_width, req_height;  // The requested width/height.
   int req_eye_offset;  // Requested eye offset in requested-image pixels.
   coord_t x, y;  // Position of the center of the image.
-  coord_t pix_x, pix_y;  // Size of a pixel.
+  coord_t req_pix_size;  // X/Y size of a pixel in requested image.
+  coord_t calc_pix_size; // X/Y size of a pixel in the 'calc' image.
   int max_depth;  // Max number of depths for Mandelbrot calculation. This can be determined dynamically.
   int spec_max_depth; // Max depth until it is non-speculative.
   int brighten;  // An adjustment for darkness, as a delta in darken_start_depth.
   coord_t eye_adjust;  // An adjustment for the depth of the eye.
-  int eye_separation;  // The separation between the eyes in requested image pixels (should be a multiple of 2).
+  int req_eye_separation;  // The separation between the eyes in requested image pixels (should be a multiple of 2).
+  coord_t calc_eye_separation; // Eye separation in 'calc' image pixels.
   bool is_3d;
   bool is_stereo;
   int req_center_w, req_center_h;  // w/h center point (aka vanishing point) of the requested image in pixel coords.
@@ -245,6 +253,7 @@ private:
   bool adjust;  // True if an adjustment is non-zero.
   // Texture effects:
   bool test_texture;  // True to enable test textures.
+  bool use_derivatives;  // Texture based on derivative values.
   bool string_lights;  // True for string lights texture effect.
   bool fanciful_pattern;  // True for "fanciful" (X-gradient scale-4) texture.
   bool shadow_interior; // True for shadowed layers effect.

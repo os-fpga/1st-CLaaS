@@ -10,7 +10,7 @@
   height: 100%;
 }
 
-#imagesContainer {
+.imagesContainer {
   box-sizing: content-box;
   resize: both;
   min-width: 20px;
@@ -24,6 +24,7 @@
   position: relative;
 }
 .viewerContainer {
+  box-sizing: content-box;
   width: 100%;
   height: 100%;
   display: none;
@@ -37,7 +38,7 @@
 }
 .mandelbrotImage {
   pointer-events: none;
-  box-sizing: content-box;
+  box-sizing: border-box;
   position: absolute;
 }
 .imgContainer {
@@ -73,11 +74,11 @@
   color: purple;
   text-decoration: underline;
 }
-.three-d-only, .stereo-only {
+.three-d-only, .stereo-only, div[forTheme] {
   display: none;
 }
 
-#record-button[state="on"], #play-recording[state="on"], #burn-video[state="on"]{
+.btn[state="on"] {
   background-color: red;
 }
 

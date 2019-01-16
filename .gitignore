@@ -2,3 +2,4 @@
 **/webserver/*.pyc
 **/apps/*/out/
 apps/mandelbrot/build/video
+apps/mandelbrot/build/cast

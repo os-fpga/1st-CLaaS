@@ -226,12 +226,12 @@
       <legend>Motion</legend>
 
       <div>
-        <input type="radio" id="motionPosition" name="motion" />
+        <input type="radio" id="motionPosition" name="motion" checked />
         <label for="position" title="Easier controls; instructions below">Position</label>
       </div>
 
       <div>
-        <input type="radio" id="motionVelocity" name="motion" checked />
+        <input type="radio" id="motionVelocity" name="motion" />
         <label for="velocity" title="Continuous motion; instructions below">Velocity</label>
       </div>
       
@@ -306,7 +306,7 @@
         </div>
         <div>
           <input type="checkbox" id="test-flag15" class="flag" name="test-flag15" />
-          <label for="test-flag15" title="For debug">Test Flag 15 - </label>
+          <label for="test-flag15" title="For debug">Test Flag 15 - use derivatives</label>
         </div>
         <div>
           <input type="checkbox" id="test-flag16" class="flag" name="test-flag16" />
@@ -464,11 +464,11 @@
     <h2>Merry Christmas!!!</h2>
     <h4>A tree of a trillion lights.</h4>
   </div>
-  <div id="imagesContainer" class="unselectable">
+  <div id="imagesContainer" class="unselectable imagesContainer">
     <div id="fullImageViewerContainer" class="viewerContainer">
       <div id="eventRecipient"></div>
-      <div id="leftEye" class="mandelbrotImage"></div>
-      <div id="rightEye" class="mandelbrotImage"></div>
+      <div id="leftEye" class="leftEyeImage mandelbrotImage"></div>
+      <div id="rightEye" class="rightEyeImage mandelbrotImage"></div>
     </div>
     <div id="mapContainer" class="viewerContainer">
     </div>
@@ -488,17 +488,26 @@
     <p id="accelerationMotionInstructions" class="motionInstructions">
       Left-click-and-hold on image to move. Mouse position is panning acceleration. Mouse wheel adjusts zoom acceleration. (Made for desktops, not phones.)
     </p>
-    <p class="full-img-only">
+    <div class="full-img-only">
       <a id="downloadImage" class="btn btn-primary imgLink" download>Download Image</a>
       <a id="openImage" class="btn btn-primary imgLink" target="_blank" >Open Image</a>
       <button id="resetImage" class="btn btn-primary">Reset Image</button>
-    </p>
-    <p class="debug-only">
-      <button id="record-button" class="btn btn-primary" state="off">Record</button>
-      <button id="play-recording" class="btn btn-primary" state="off">Play</button>
-      <button id="burn-video" class="btn btn-primary">Burn</button>
-      <input type="text" id="burn-dir" name="dirname" value="video">
-    </p>
+      <p class="debug-only">
+        <button id="record-button" class="btn btn-primary" title="Record flight while flying in 'velocity' mode." state="off">Record</button>
+        <button id="play-recording" class="btn btn-primary" title="Playback the recorded motion." state="off">Play</button>
+        <button id="burn-video" class="btn btn-primary" title="Create a video from the recorded flight based on current image settings.">Burn</button>
+        <input type="text" id="burn-dir" name="dirname" value="video" />
+      </p>
+      <p class="debug-only">
+        <button id="cast-button" class="btn btn-primary" title="Allow others to observe your images, live." state="off">Cast</button>
+        <button id="observe-button" class="btn btn-primary" title="Observe images/flight cast by someone else using a matching name." state="off">Observe</button>
+        <input type="text" id="observe-dir" name="observe-dirname" value="cast" />
+        Size for target device:
+        <button x="640" y="360" class="resolution btn btn-primary" title="Size image appropriately for these devices (640x360)">Samsung Galaxy S3</button>
+        <button id="SG-S3-cardboard" class="btn btn-primary" title="Adjust stereo images for Google Cardboard" state="off">SG-S3 Google Cardboard</button>
+        <br />
+        <button id="go-fullscreen" class="btn btn-primary" title="View the image below in fullscreen (<esc> to exit).">Fullscreen</button>
+    </div>
   </div>
   <div class="full-img-only">
     <div class="stereo-only">
@@ -528,9 +537,14 @@
         </ul>
       </p>
     </div>
-  </div>
-  <div id="playback" class="playback-only">
-    <img id="playback-img" />
+    <div id="playback" class="playback-only">
+      <div id="playbackImagesContainer" class="unselectable imagesContainer">
+        <div id="playbackViewerContainer" class="viewerContainer">
+          <div id="playbackLeftEye" class="leftEyeImage mandelbrotImage"></div>
+          <div id="playbackRightEye" class="rightEyeImage mandelbrotImage"></div>
+        </div>
+      </div>
+    </div>
   </div>
   <p id="debugLog">
   </p>

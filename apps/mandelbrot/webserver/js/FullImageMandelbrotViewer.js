@@ -4,7 +4,18 @@ class FullImageMandelbrotViewer {
   // Construct.
   constructor(host, port, view, motion) {
     
+    this.DEFAULT_IMAGE_GAP = 4;
+    this.DEFAULT_EYE_SEPARATION = 386;
+    this.stereo_image_gap = this.DEFAULT_IMAGE_GAP;  // Pixels of gap between stereo images.
+    this.eye_separation = this.DEFAULT_EYE_SEPARATION;  // Distance between eyes in pixels.
+    this.image_horizontal_padding = 0;   // Used to position images for stereo viewers.
+    this.image_vertical_padding = 0;
     
+    // VR parameters
+    this.VR_SENSITIVITY_FACTOR = 3.0;  // Increase sensitivity of controls in VR viewer to compensate for lense.
+    this.vr = false; // True if configured for viewing in a VR viewer.
+    
+
     // Settings Updates, Motion, and Image Updates
     //
     // Settings are updated by DOM triggers and reflected in desired_image_properties.
@@ -35,9 +46,13 @@ class FullImageMandelbrotViewer {
     this.playback_time_zero = null;
     this.playback_properties = null;  // The properties for playback/burning.
     this.playback_id = 0;  // Incremented for each new playback. The allows lingering playbacks to self-destruct.
-    this.playback_frame = 0;  // The frame being burned.
-    this.burn_dir = "video";
-    this.burning = false;  // True if "burning" a video. this.playback will also be true.
+    this.playback_frame = 0;  // The frame being burned or observed.
+    this.burning = false;    // True if "burning" a video. this.playback will also be true.
+    this.burn_dir = null;    // Dir to which to burn (captured at burn start from DOM).
+    this.observing = false;  // True if "observing".
+    this.observe_dir = null; // Dir from which to observe (captured at observe start from DOM).
+    
+    this.time_str = new Date().getMilliseconds();  // A unique value for the run for URL uniquification.
     
     
     
@@ -71,10 +86,12 @@ class FullImageMandelbrotViewer {
     
     
     // Initialize members.
-    this.base_url = `http://${host}:${port}/img`;
+    this.root_url = `http://${host}:${port}`;
+    this.base_url = `${this.root_url}/img`;
     
     // A reference time.
     this.ref_time = new Date();
+    this.no_cache_cnt = 0;  // A count of the number of no-cached image requests for uniquification.
     
     // The image last requested.
     this.requested_image_properties = null;
@@ -169,7 +186,7 @@ class FullImageMandelbrotViewer {
           this.motion_x += dx;
           this.motion_y += dy;
           if (this.motion === "position") {
-            this.desired_image_properties.panBy(dx, dy);
+            this.panBy(dx, dy);
           }
         }
       })
@@ -198,6 +215,15 @@ class FullImageMandelbrotViewer {
     
   }
   
+  panBy(dx, dy) {
+    if (this.vr) {
+      // Compensate for lense by increasing sensitivity.
+      dx *= this.VR_SENSITIVITY_FACTOR;
+      dy *= this.VR_SENSITIVITY_FACTOR;
+    }
+    this.desired_image_properties.panBy(dx, dy);
+  }
+  
   endDrag() {
     setTimeout (() => {this.dragging = false;}, 0);
   }
@@ -216,7 +242,7 @@ class FullImageMandelbrotViewer {
         this.velocity_y = this.motion_y * - this.VELOCITY_FACTOR;
         this.velocity_z = this.motion_z * this.ZOOM_VELOCITY_FACTOR;
       }
-      this.desired_image_properties.panBy(this.velocity_x, this.velocity_y);
+      this.panBy(this.velocity_x, this.velocity_y);
       this.desired_image_properties.zoomBy(this.velocity_z);
       this.setMotionTimeout();
 
@@ -342,6 +368,11 @@ class FullImageMandelbrotViewer {
       }
       let image = new Image(this.w, this.h);
       image.src = this.getImageURL();
+      // If casting, force no-cache.
+      if (this.casting) {
+        image.src += `?no-cache=${this.time_str}-${this.no_cache_cnt}`;
+        this.no_cache_cnt++;
+      }
       image.onload = cb;
       this.requested_image_properties = this.desired_image_properties.copy();
       console.log(`Image URL: ${image.src}`);
@@ -362,25 +393,20 @@ class FullImageMandelbrotViewer {
     }
   }
 
-  // Start/re-start/stop playback, with or without burning.
-  setPlayback(val, burn) {
-    this.disablePlayback();
-    if (val) {
-      this.startPlayback(burn);
-    }
-  }
-  
-  startPlayback(burn) {
+  startPlayback(burn, observe) {
     this.playback = true;
     this.burning = burn;
+    this.observing = observe;
     this.playback_properties = this.desired_image_properties.copy();
     $(".playback-only").css("display", "block");
     // Need to set img height/width? Shouldn't be necessary as it should use image size.
     this.playback_frame = -1;
     if (burn) {
       this.burn_dir = $("#burn-dir").val();
-      // Increment the dir name to avoid accidental overwrites.
+      // Increment the dir name to avoid accidental overwrites (hacky).
       $("burn-dir").val(this.burn_dir + "_");
+    } else if (observe) {
+      this.observe_dir = $("#observe-dir").val();
     } else {
       this.playback_time_zero = new Date();
     }
@@ -389,12 +415,14 @@ class FullImageMandelbrotViewer {
   }
   
   disablePlayback() {
+    $("#play-recording, #burn-video, #observe-button").attr("state", "off");
     if (this.playback) {
       let pb_els = $(".playback-only");
       pb_els.css("display", "none");
     }
     this.playback = false;
     this.burning = false;
+    this.observing = false;
   }
 
   // Request the next playback frame if necessary.
@@ -403,34 +431,65 @@ class FullImageMandelbrotViewer {
     if (this.playback && id == this.playback_id) {
       // This playback is still active.
       let old_frame = this.playback_frame;
-      if (this.burning) {
-        this.playback_frame++;
+      if (this.burning || this.observing) {
+        this.playback_frame++;  // (not so meaningful for observing, but the "frame" must look new to code below)
       } else {
         let now = new Date();
         this.playback_frame = Math.floor((now - this.playback_time_zero) / this.frame_rate);
       }
       if (this.playback_frame > old_frame) {
-        if (this.playback_frame < this.frames.length) {
-          this.playback_properties.positionAs(this.frames[this.playback_frame]);
-          this.playback_properties.settings.updateTimeBasedSettings(this.playback_frame * 1000 / this.frame_rate);
-          let image = new Image(this.playback_properties.width, this.playback_properties.height);
-          image.src = this.getFrameURL(this.burning, this.burn_dir, this.playback_frame, this.playback_frame == 0, this.playback_frame == this.frames.length - 1);
+        if (this.observing || this.playback_frame < this.frames.length) {
+          let image = new Image();
+          if (this.observing) {
+            image.src = `${this.root_url}/observe_img/${this.observe_dir}?no-cache=${this.time_str}-${this.playback_id}-${this.playback_frame}`;
+          } else {
+            this.playback_properties.positionAs(this.frames[this.playback_frame]);
+            this.playback_properties.settings.updateTimeBasedSettings(this.playback_frame * 1000 / this.frame_rate);
+            image.src = this.getFrameURL(this.burning, this.burn_dir, this.playback_frame, this.playback_frame == 0, this.playback_frame == this.frames.length - 1);
+          }
+          image.onerror = (evt) => {
+            // Errors are returned when image is not changed.
+            // Nothing to update.
+            setTimeout(() => {this.updatePlaybackFrame(id);}, 50);
+          }
           image.onload = (evt) => {
             let src = evt.target.getAttribute("src");
-            $("#playback-img").attr("src", src);
+            $("#playbackLeftEye img").attr("src", src);
+            if (this.desired_image_properties.settings.stereo) {
+              $("#playbackRightEye img").attr("src", src);
+            }
             // Next frame.
             this.updatePlaybackFrame(id);
           };
         } else {
           // Done playback.
           this.disablePlayback();
-          $("#play-recording, #burn-video").attr("state", "off");
         }
       } else {
         // Current frame already loaded. Wait a little and try again.
         setTimeout(() => {this.updatePlaybackFrame(id);}, 25);
       }
     }
+  }
+  
+  
+  // VR settings for various devices.
+  VR_Cardboard_SG_S3() {
+    this.vr = true;
+    this.eye_separation = 475;
+    this.image_vertical_padding = 120;
+    this.image_horizontal_padding = 70;
+    this.stereo_image_gap = 4 + 2 * 130;
+    this.desired_image_properties.scale *= 3.0;  // Image scale will adjust with image hight. Let's adjust to keep more consistent.
+  }
+  
+  VR_off() {
+    this.vr = false;
+    this.eye_separation = this.DEFAULT_EYE_SEPARATION;
+    this.image_vertical_padding = 0;
+    this.image_horizontal_padding = 0;
+    this.stereo_image_gap = this.DEFAULT_IMAGE_GAP;
+    this.desired_image_properties.scale /= 3.0;
   }
   
   

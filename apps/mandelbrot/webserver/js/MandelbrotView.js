@@ -16,12 +16,13 @@ class MandelbrotSettings {
   //   texture: An encoded representation of texture.
   //   edge_style: An encoded representation of the edge style (aka divergence function).
   //   theme: An encoded representation of the pre-defined theme to apply (0 for none).
+  //   cast_tag: Tag/directory to which to "cast" images.
   //   test_flags/vars: Flags/variables (as an array) for testing.
   constructor() {
   }
   
   set(max_depth, renderer, brighten, eye_adjust, var1, var2,
-      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth, colors, texture, edge_style, theme, cycle, test_flags, test_vars, updateTimeBasedSettingsFn) {
+      three_d, stereo, eye_separation, image_separation, darken, smooth, full_image, spot_depth, colors, texture, edge_style, theme, cycle, cast_tag, test_flags, test_vars, updateTimeBasedSettingsFn) {
     this.max_depth = max_depth;
     this.renderer = renderer;
     this.brighten = brighten;
@@ -52,6 +53,7 @@ class MandelbrotSettings {
     this.edge_style = edge_style;
     this.theme = theme;
     this.cycle = cycle; // Time-based value. (Set by updateTimeBasedSettings().)
+    this.cast_tag = cast_tag;
     this.test_flags = test_flags;
     this.test_vars = [];
     for (let i = 0; i < test_vars.length; i++) {
@@ -70,7 +72,7 @@ class MandelbrotSettings {
     return new MandelbrotSettings().set(this.max_depth, this.renderer,
                                         this.brighten, this.eye_adjust, this.var1, this.var2, this.three_d, this.stereo, this.eye_separation,
                                         this.image_separation, this.darken, this.smooth, this.full_image, this.spot_depth, this.colors, this.texture,
-                                        this.edge_style, this.theme, this.cycle, this.test_flags, this.test_vars, this.updateTimeBasedSettingsFn);
+                                        this.edge_style, this.theme, this.cycle, this.cast_tag, this.test_flags, this.test_vars, this.updateTimeBasedSettingsFn);
   }
   
   equals(settings2) {
@@ -100,6 +102,7 @@ class MandelbrotSettings {
            this.edge_style == settings2.edge_style &&
            this.theme == settings2.theme &&
            this.cycle == settings2.cycle &&
+           this.cast_tag === settings2.cast_tag &&  // (Not necessary to assert settings change when casting is disabled, but we do.)
            test_vars_match;
   }
   
@@ -107,7 +110,7 @@ class MandelbrotSettings {
   getImageURLQueryArgs() {
     return this.mapQueryArgs() +
            "&three_d=" + this.three_d + "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
-           "&eye_adjust=" + this.eye_adjust + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth) + (this.cycle ? `&cycle=${this.cycle}` : "");
+           "&eye_adjust=" + this.eye_adjust + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth) + (this.cycle ? `&cycle=${this.cycle}` : "") + (this.cast_tag ? `&cast=${this.cast_tag}` : "");
   }
   
   mapQueryArgs() {

@@ -1,5 +1,12 @@
 class demo {
 
+// Generic methods:
+
+getRequestFullscreenFn() {
+  let root = document.documentElement;
+  return root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
+}
+
 // Methods to get parameter values from GUI.
 
 // Get renderer from GUI as "python", "cpp", or "fpga".
@@ -158,10 +165,10 @@ settingsChanged() {
   this.settings.set(
          this.getMaxDepth(), this.getRenderer(), this.getBrighten(), this.getEyeAdjust(),
          this.getVar1(), this.getVar2(), this.get3d(), this.getStereo(),
-         this.EYE_SEPARATION, // distance between eyes in pixels
-         this.getWidth() + this.STEREO_IMAGE_GAP, // distance between images in pixel
-         //this.getStereo() ? parseInt((IMAGE_SEPARATION - EYE_SEPARATION) / 2.0) : 0,
-         //this.getStereo() ? EYE_SEPARATION / 2.0 * pix_x,
+         this.viewer ? this.viewer.eye_separation : 0, // distance between eyes in pixels
+         this.getWidth() + (this.viewer ? this.viewer.stereo_image_gap : 0), // distance between images in pixel
+         //this.getStereo() ? parseInt((IMAGE_SEPARATION - eye_separation) / 2.0) : 0,
+         //this.getStereo() ? eye_separation / 2.0 * pix_x,
          this.getDarken(), this.getSmooth(),
          !this.getTiled(),
          -1,  // spot_depth (no spot)
@@ -170,6 +177,7 @@ settingsChanged() {
          this.getEdgeStyle(),
          this.getTheme(),
          0,  // cycle
+         this.cast_tag,  // (captured value, not straight from DOM)
          test_flags,
          test_vars,
          this.getUpdateTimeBasedSettingsFn()
@@ -183,6 +191,7 @@ settingsChanged() {
 }
 
 sizeFullViewer() {
+    let viewer = this.viewer;
     let c = $("#imagesContainer");
     let c_w = c.width();
     let w = c_w; // Assuming not stereo.
@@ -197,24 +206,28 @@ sizeFullViewer() {
     $("#eventRecipient").width(w);
     $("#eventRecipient").height(h);
     
-    $("#rightEye").css("display", this.getStereo() ? "inline" : "none");
+    $(".rightEyeImage").css("display", this.getStereo() ? "inline" : "none");
     if (this.getStereo()) {
       // Do not allow the eye to be outside of the image in x/y as this will not render properly.
-      let min_c_w = this.EYE_SEPARATION + 2;
+      let min_c_w = viewer.eye_separation + 2;
       if (c_w < min_c_w) {
         c_w = min_c_w;
-        c.width(c_w);
+        $("#imagesContainer").width(c_w);
       }
-      w = (c_w - this.STEREO_IMAGE_GAP) / 2;
+      w = (c_w - viewer.stereo_image_gap) / 2 - viewer.image_horizontal_padding;
+      h -= viewer.image_vertical_padding * 2;
+      
+      // Position right eye image.
+      $(".leftEyeImage").css("left", 6 + viewer.image_horizontal_padding);
+      $(".mandelbrotImage").css("top", 6 + viewer.image_vertical_padding);
+      $(".rightEyeImage").css("left", 6 + viewer.image_horizontal_padding + w + viewer.stereo_image_gap);
+      $(".rightEyeImage").children().children().css("left", -w);  // Hide left-eye image contents in double-image.
     }
     w = Math.floor(w / 2) * 2;  // use multiples of two so center is a whole number.
     h = Math.floor(h / 2) * 2;
     let imgs = $(".mandelbrotImage");
     imgs.width(w);
     imgs.height(h);
-    // Position right eye image.
-    imgs.eq(1).css("left", w + this.STEREO_IMAGE_GAP + imgs.eq(0).position().left);
-    imgs.eq(1).children().children().css("left", -w);
 }
 
 resized() {
@@ -231,9 +244,9 @@ destroyViewer() {
   if (this.viewer) {
     this.viewer.destroy();
     this.viewer = null;
-    $("#leftEye").html("");
-    $("#rightEye").html("");
-    $("#fullImageViewerContainer").css("display", "none");
+    $(".leftEyeImage").html("");
+    $(".rightEyeImage").html("");
+    $(".viewerContainer").css("display", "none");
   }
   if (this.map) {
     this.map = null;
@@ -287,24 +300,28 @@ openMap() {
 
 openFullViewer() {
   // Open full image viewer
-  $("#fullImageViewerContainer").css("display", "inline");
+  $(".viewerContainer").css("display", "block");
 
   // Empty the target div to remove any prior Map and add content for full-image viewer.
-  $("#leftEye" ).html(`<div class="imgContainer"><img></div>`);
-  $("#rightEye").html(`<div class="imgContainer"><img></div>`);
+  $(".leftEyeImage" ).html(`<div class="imgContainer"><img></div>`);
+  $(".rightEyeImage").html(`<div class="imgContainer"><img></div>`);
 
-  this.sizeFullViewer();
   // The image as it *should* currently be displayed.
+  this.sizeFullViewer();
   this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView(), this.getMotion());
+}
+
+setDimensions(w, h) {
+  let c = $(".imagesContainer");
+  c.width(w);
+  c.height(h);
+  this.sizeFullViewer();
 }
 
 constructor() {
   
   // Constants
-  
-  this.STEREO_IMAGE_GAP = 4;  // Pixels of gap between stereo images.
-  this.EYE_SEPARATION = 386;  // Distance between eyes in pixels.
-  
+    
   window.debug = 0;  // 0/1 to disable/enable in-browser debug messages.
   
   
@@ -314,6 +331,9 @@ constructor() {
   this.map = null;  // The open map, or null.
   this.map_source = null; // The 'source' of the map.
   this.viewer = null;  // The open FullImageMandelbrotViewer, or null.
+  
+  this.cast_tag = null; // Tag/directory to which to cast (captured when casting is enabled.)
+  
   
   // Event handling
   
@@ -347,7 +367,7 @@ constructor() {
     // Update visibility based on modes.
     $(".three-d-only").css("display", this.get3d() ? "block" : "none");
     $(".stereo-only").css("display", this.getStereo() ? "block" : "none");
-    $("#imagesContainer").css("min-width", this.getStereo() ? `${this.EYE_SEPARATION + 2}px` : "20px");
+    $("#imagesContainer").css("min-width", this.getStereo() ? `${this.viewer.eye_separation + 2}px` : "20px");
   });
   $("#texture input").change((evt) => {
     //this.settingsChanged();
@@ -402,16 +422,61 @@ constructor() {
       }
     }
   })
-  $("#play-recording, #burn-video").click((evt) => {
-    let burn = evt.target.id == "burn-video";
+  $("#cast-button").click((evt) => {
     if (this.viewer) {
       if (evt.target.getAttribute("state") === "off") {
+        this.cast_tag = $("#observe-dir").val();
         evt.target.setAttribute("state", "on");
-        this.viewer.setPlayback(true, burn);
       } else {
+        this.cast_tag = null;
         evt.target.setAttribute("state", "off");
-        this.viewer.setPlayback(false, burn);
       }
+    }
+    this.settingsChanged();
+  })
+  $("#play-recording, #burn-video, #observe-button").click((evt) => {
+    let burn = evt.target.id == "burn-video";
+    let observe = evt.target.id == "observe-button";
+    if (this.viewer) {
+      let orig_state = evt.target.getAttribute("state");
+      // Disable playback in case it is enabled.
+      this.viewer.disablePlayback();
+      
+      if (orig_state === "off") {
+        // Enable this button and its playback behavior.
+        evt.target.setAttribute("state", "on");
+        this.viewer.startPlayback(burn, observe);
+      }
+    }
+  })
+  $(".resolution").click((evt) => {
+    if (this.viewer) {
+      this.setDimensions(parseInt(evt.target.getAttribute("x")), parseInt(evt.target.getAttribute("y")));
+    }
+  })
+  $("#SG-S3-cardboard").click((evt) => {
+    // TODO: Written to work for the first click only. No undo.
+    // Set stereo.
+    if (!this.getStereo()) {
+      $("#stereo").click();
+    }
+    if (this.viewer) {
+      if (evt.target.getAttribute("state") === "off") {
+        this.viewer.VR_Cardboard_SG_S3();
+        this.setDimensions(640, 360);
+        this.settingsChanged();
+        evt.target.setAttribute("state", "on");
+      } else {
+        this.viewer.VR_off();
+        this.resized();
+        evt.target.setAttribute("state", "off");
+      }
+    }
+  })
+  $("#go-fullscreen").click((evt) => {
+    if (this.viewer) {
+      let fs = this.getRequestFullscreenFn();
+      fs.call($("#playbackImagesContainer")[0]);
     }
   })
   new ResizeObserver(entries => {
