@@ -291,6 +291,10 @@ After the kernel has been designed in Makerchip we retrieved the Verilog files b
 The content of these files has to be copied and pasted inside of the file "mandelbrot_example_adder.sv" found in the "fpga/imports" folder.
 
 
+# Related Technologies
+
+  - [Fletcher](https://github.com/johanpel/fletcher) might make a good foundation for this framework.
+
 # To Do
 
   - Figure out how to generate .xo.

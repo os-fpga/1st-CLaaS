@@ -2,11 +2,16 @@
 
 # This script starts the host application built for sw or hw.
 # TODO: This is a big hack. The webserver should open the socket and start the host and tear down
-#       the socket and host when it's done/killed.
+#       the socket and host when it's done/killed. (Though consider how gdb can be run within editor where the editor must execute the host command.)
 
 # Usage:
 #   ./launch hw path/to/host path/to/awsxclbin
 #   ./launch sw
+# Debug Usage:
+#   ../out/sw/host &  # from within debugger
+#   ps aux | grep ../out/sw/host
+#   launch --h <pid> sw # OR
+#   launch --h none sw     # to not kill host on exit ("none" is anything that isn't a whole number)
 
 # Must be launched from its own directory.
 
@@ -15,7 +20,7 @@
 
 
 usage () {
-    echo "Usage: launch [-p #] (sw | hw path/to/host_app path/to/mandelbrot.awsxclbin)"
+    echo "Usage: launch [-p #] [-h host-pid] (sw | hw path/to/host_app path/to/mandelbrot.awsxclbin)"
     exit 1
 }
 
@@ -24,19 +29,24 @@ usage () {
 # Defaults
 
 PORT="8888"
-
+HOST_PID=""
 
 
 # Read command line options
 
-while getopts "p:" opt
+while getopts "p:h:" opt
   do
-    case "${opt}"
-      in
-        p) PORT=${OPTARG};;
+    case "${opt}" in
+      p) PORT=${OPTARG};;
+      h) HOST_PID=${OPTARG};;
     esac
   done
 shift $((OPTIND -1))
+
+if [[ $HOST_PID =~ ^[0-9]+$ ]];
+then
+  HOST_PID=""
+fi
 
 TYPE="$1"
 HOST="$2"
@@ -64,24 +74,30 @@ fail () {
 # Launch web server and host application.
 launch () {
   # Launch host app.
-  if [[ $TYPE = "sw" ]];
+  if [[ $HOST_PID == "" ]]
+    # Host application launched externally (probably via gdb).
   then
-      ../out/$TYPE/host &
-      # For debug: valgrind --leak-check=yes ../out/$TYPE/host &
-      #            sleep 2
-  else
-      # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG.
-      # Other runtime env settings needed by the host app should be setup after this setup.sh step.                                                                                                             
-      sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; $HOST $AWSXCLBIN mandelbrot" &
+    if [[ $TYPE = "sw" ]];
+    then
+        #echo "launching host sw"
+        ../out/$TYPE/host &
+        # For debug: valgrind --leak-check=yes ../out/$TYPE/host &
+        #            sleep 2
+    else
+        # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG.
+        # Other runtime env settings needed by the host app should be setup after this setup.sh step.                                                                                                             
+        sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; $HOST $AWSXCLBIN mandelbrot" &
+    fi
+    export HOST_PID=$!
   fi
-  export HOST_PID=$!
 
   # Make sure we have tornado.
-  pip -q install tornado
+  #pip -q install tornado
   
   # Launch web server.
   if [[ $TYPE = "sw" ]];
   then
+      #echo "launching server sw"
       python ../webserver/mandelbrot_server.py --port=${PORT} &
   else
       sudo python ../webserver/mandelbrot_server.py --port=${PORT} &
@@ -95,7 +111,10 @@ teardown () {
   echo "Killing web server and host application."
   if [[ $TYPE = "sw" ]];
   then
-    kill $HOST_PID
+    if [[ $HOST_PID != "" ]]
+    then
+      kill $HOST_PID
+    fi
     kill $SERVER_PID
     #rm SOCKET
   else

@@ -1,0 +1,3 @@
+"apps/mandelbrot/out/sw/host_debug":
+	path: "apps/mandelbrot/out/sw/host_debug"
+	cwd: "apps/mandelbrot/build"

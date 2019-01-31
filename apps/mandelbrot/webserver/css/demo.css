@@ -40,6 +40,8 @@
   pointer-events: none;
   box-sizing: border-box;
   position: absolute;
+  width: 256px;
+  height: 256px;
 }
 .imgContainer {
   pointer-events: none;

@@ -1,3 +1,6 @@
+#ifndef MANDELBROT_H
+#define MANDELBROT_H
+
 #include <stdio.h>
 #include <cstdlib>
 #include <limits.h>
@@ -7,11 +10,13 @@
 #include <string>
 #include <time.h>
 #include <cmath>
+#include <ieee754.h>
 #include "lodepng.h"
 
 using namespace std;
 
 
+// TODO: Use this.
 class Color {
 
 private:
@@ -84,8 +89,8 @@ public:
  *
  */
 class MandelbrotImage {
-public:
-  typedef long double coord_t;
+protected:
+  typedef double coord_t;
   
   // TODO: replace w/ Color.
   typedef union {
@@ -97,8 +102,8 @@ public:
   // Constructors (with optional arguments for some settings)
   //
   
-  MandelbrotImage(double *params, bool fpga);
-  ~MandelbrotImage();
+  MandelbrotImage(double *params, bool fpga_param);
+  virtual ~MandelbrotImage();
   
   
   //
@@ -119,7 +124,8 @@ public:
   
   // Generate the depth array for the image.
   // Generate an image from parameters and depth data.
-  virtual MandelbrotImage * generateDepthArray();
+  MandelbrotImage * generateMandelbrot();
+  virtual void generateMandelbrotGuts();  // The guts of generateMandelbrot().
   // Convert the depth array into one that has been adjusted for 3-D. This will alter the size of the image
   // according to parameters. Each layer is more distant, centered around the center of the image.
   // It is not necessary to call this explicitly, as it is called by generagePixels(..) based on settings.
@@ -137,7 +143,7 @@ public:
   // The depths array can be:
   //   - provided as an argument
   //   - have been produced already
-  //   - be generated automatically if necessary, internal to this method (via generateDepthArray())
+  //   - be generated automatically if necessary, internal to this method (via generateMandelbrot())
   MandelbrotImage * generatePixels(int *data = NULL);
   
   
@@ -156,7 +162,7 @@ public:
   coord_t hToY(int h) {return y + (h - calc_center_h) * calc_pix_size;}
   int getMaxDepth() {return max_depth;}
 
-private:
+protected:
   friend int main(int argc, char const *argv[]); // Contains functionality that should be moved here.
   
   // Types
@@ -201,6 +207,12 @@ private:
   bool electrify;
   int color_shift;
   
+  coord_t divergent_radius;
+  coord_t divergent_radius_sq;
+  
+
+  
+  bool fpga;  // True if depths are to be determined by FPGA.
   int auto_depth;   // Heuristically-determined depth of view computed during depth array calculation.
   unsigned char auto_depth_frac;  // Fractional portion of auto_depth.
   bool auto_dive;   // Enable eye movement based on auto_depth (vs. scaling based on zoom).
@@ -268,7 +280,7 @@ private:
   bool need_derivatives; // True if this image calculation needs to compute derivatives.
   int calc_width, calc_height;  // Size of the depth_array to compute. These may differ from req_width/height for 3d and for FPGA with width restrictions.
                                 // Updated for 3D-iffied depth array.
-  int calc_center_w, calc_center_h;  // Center (vanishing) point in the computed depth_array.
+  int calc_center_w, calc_center_h;  // Center point in the computed depth_array.
   coord_t eye_depth;  // Depth of the eye.
   
   color_t inf_color;  // Color at infinity.
@@ -346,3 +358,5 @@ private:
   }
 
 };
+
+#endif

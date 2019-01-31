@@ -152,6 +152,10 @@ ifeq ($(TARGET), sw)
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
+# Host for debug.
+$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
+	mkdir -p $(DEST_DIR)
+	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 else
 $(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
@@ -189,6 +193,7 @@ endif
 # Phony targets for intermediate results
 .PHONY: host xo xclbin awsxclbin afi
 host: $(DEST_DIR)/$(HOST_EXE)
+host_debug: $(DEST_DIR)/$(HOST_EXE)_debug
 xo: $(DEST_DIR)/$(KERNEL_EXE).xo
 xclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).awsxclbin

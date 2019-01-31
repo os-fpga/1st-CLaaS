@@ -191,43 +191,22 @@ settingsChanged() {
 }
 
 sizeFullViewer() {
-    let viewer = this.viewer;
-    let c = $("#imagesContainer");
-    let c_w = c.width();
-    let w = c_w; // Assuming not stereo.
-    let h = c.height();
-    
-    $("#img-width").text(w);
-    $("#img-height").text(h);
-    
-    // For some reason 100% h/w isn't working in child?
-    //c.children().width(w);
-    //c.children().height(h);
-    $("#eventRecipient").width(w);
-    $("#eventRecipient").height(h);
-    
-    $(".rightEyeImage").css("display", this.getStereo() ? "inline" : "none");
-    if (this.getStereo()) {
-      // Do not allow the eye to be outside of the image in x/y as this will not render properly.
-      let min_c_w = viewer.eye_separation + 2;
-      if (c_w < min_c_w) {
-        c_w = min_c_w;
-        $("#imagesContainer").width(c_w);
-      }
-      w = (c_w - viewer.stereo_image_gap) / 2 - viewer.image_horizontal_padding;
-      h -= viewer.image_vertical_padding * 2;
-      
-      // Position right eye image.
-      $(".leftEyeImage").css("left", 6 + viewer.image_horizontal_padding);
-      $(".mandelbrotImage").css("top", 6 + viewer.image_vertical_padding);
-      $(".rightEyeImage").css("left", 6 + viewer.image_horizontal_padding + w + viewer.stereo_image_gap);
-      $(".rightEyeImage").children().children().css("left", -w);  // Hide left-eye image contents in double-image.
-    }
-    w = Math.floor(w / 2) * 2;  // use multiples of two so center is a whole number.
-    h = Math.floor(h / 2) * 2;
-    let imgs = $(".mandelbrotImage");
-    imgs.width(w);
-    imgs.height(h);
+  let c = $("#imagesContainer");
+  let w = c.width();
+  let h = c.height();
+  
+  $("#img-width").text(w);
+  $("#img-height").text(h);
+  
+  // For some reason 100% h/w isn't working in child?
+  //c.children().width(w);
+  //c.children().height(h);
+  $("#eventRecipient").width(w);
+  $("#eventRecipient").height(h);
+  
+  if (this.viewer) {
+    this.viewer.sizeViewer(c, this.getStereo());
+  }
 }
 
 resized() {
@@ -306,8 +285,6 @@ openFullViewer() {
   $(".leftEyeImage" ).html(`<div class="imgContainer"><img></div>`);
   $(".rightEyeImage").html(`<div class="imgContainer"><img></div>`);
 
-  // The image as it *should* currently be displayed.
-  this.sizeFullViewer();
   this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView(), this.getMotion());
 }
 

@@ -267,31 +267,32 @@ int main(int argc, char const *argv[])
             dynamic_array array_struct;
 
             array_struct = handle_write_data(sock);
-#ifdef OPENCL
-            bool fpga = true;
-#else
-            bool fpga = false;
-#endif
+            bool fpga_req = true;
             if (array_struct.data[6] < 0) {
               // Depth argument is negative. This is our indication that we must render in C++. TODO: Ick!
               array_struct.data[6] = - array_struct.data[6];
-              fpga = false;
+              fpga_req = false;
             }
             // Or, newer, only slightly less icky flag
             if ((array_struct.data_size >= 16) && (((int)(array_struct.data[16])) & (1 << 1))) {
-              fpga = false;
+              fpga_req = false;
             }
 #ifdef OPENCL
-            // Don't go bigger than allocated sizes.
-            if (((int)(array_struct.data[4])) > COLS) {
-              array_struct.data[4] = (double)COLS;  // (COLS should be a multiple of 16.)
+            if (fpga_req) {
+              // Don't go bigger than allocated sizes.
+              if (((int)(array_struct.data[4])) > COLS) {
+                array_struct.data[4] = (double)COLS;  // (COLS should be a multiple of 16.)
+              }
+              if (((int)(array_struct.data[5])) > ROWS) {
+                array_struct.data[5] = (double)ROWS;
+              }
             }
-            if (((int)(array_struct.data[5])) > ROWS) {
-              array_struct.data[5] = (double)ROWS;
-            }
+            bool fpga = fpga_req;
+#else
+            bool fpga = false;
 #endif
-                
-            MandelbrotImage mb_img(array_struct.data, fpga);
+            MandelbrotImage * mb_img_p;
+            mb_img_p = new MandelbrotImage(array_struct.data, fpga);
             // Free memory for array_struct.
             free(array_struct.data);
 
@@ -301,15 +302,15 @@ int main(int argc, char const *argv[])
               input_struct input;
 
               // Determine autodepth by generating a coarse-grained image for the auto-depth bounding box.
-              if (mb_img.auto_dive || mb_img.auto_darken) {
-                mb_img.setAutoDepthBounds();
+              if (mb_img_p->auto_dive || mb_img_p->auto_darken) {
+                mb_img_p->setAutoDepthBounds();
                 input.width = 16;
                 input.height = 8;
-                input.coordinates[0] = mb_img.wToX(mb_img.calc_center_w - mb_img.auto_depth_w);
-                input.coordinates[1] = mb_img.hToY(mb_img.calc_center_h - mb_img.auto_depth_h);
-                input.coordinates[2] = mb_img.getPixX() * mb_img.auto_depth_w * 2 / (input.width - 1);
-                input.coordinates[3] = mb_img.getPixY() * mb_img.auto_depth_h * 2 / (input.height - 1);
-                input.max_depth = (long)(mb_img.getMaxDepth());
+                input.coordinates[0] = mb_img_p->wToX(mb_img_p->calc_center_w - mb_img_p->auto_depth_w);
+                input.coordinates[1] = mb_img_p->hToY(mb_img_p->calc_center_h - mb_img_p->auto_depth_h);
+                input.coordinates[2] = mb_img_p->getPixX() * mb_img_p->auto_depth_w * 2 / (input.width - 1);
+                input.coordinates[3] = mb_img_p->getPixY() * mb_img_p->auto_depth_h * 2 / (input.height - 1);
+                input.max_depth = (long)(mb_img_p->getMaxDepth());
                 
                 // Generate this coarse image on FPGA (allocated by handle_get_image).
                 cl = handle_get_image(sock, &depth_data, &input, cl);
@@ -317,7 +318,7 @@ int main(int argc, char const *argv[])
                 // Scan all depths to determine auto-depth.
                 for (int w = 0; w < input.width; w++) {
                   for (int h = 0; h < input.height; h++) {
-                    mb_img.updateMaxDepth(depth_data[h * input.width + w], (unsigned char)0);
+                    mb_img_p->updateMaxDepth(depth_data[h * input.width + w], (unsigned char)0);
                   }
                 }
                 free(depth_data);
@@ -327,26 +328,27 @@ int main(int argc, char const *argv[])
               
               // Populate depth_data from FPGA.
               // X,Y are center position, and must be passed to FPGA as top left.
-              input.coordinates[0] = mb_img.wToX(0);
-              input.coordinates[1] = mb_img.hToY(0);
-              input.coordinates[2] = mb_img.getPixX();
-              input.coordinates[3] = mb_img.getPixY();
-              input.width  = (long)(mb_img.getDepthArrayWidth());
-              input.height = (long)(mb_img.getDepthArrayHeight());
-              input.max_depth = (long)(mb_img.getMaxDepth());  // may have been changed based on auto-depth.
+              input.coordinates[0] = mb_img_p->wToX(0);
+              input.coordinates[1] = mb_img_p->hToY(0);
+              input.coordinates[2] = mb_img_p->getPixX();
+              input.coordinates[3] = mb_img_p->getPixY();
+              input.width  = (long)(mb_img_p->getDepthArrayWidth());
+              input.height = (long)(mb_img_p->getDepthArrayHeight());
+              input.max_depth = (long)(mb_img_p->getMaxDepth());  // may have been changed based on auto-depth.
 
               cl = handle_get_image(sock, &depth_data, &input, cl);
             }
 #endif
   
-            mb_img.generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL (and given here to mb_img to free), or NULL to generate in C++.
+            mb_img_p->generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL (and given here to mb_img to free), or NULL to generate in C++.
   
             size_t png_size;
             unsigned char *png;
-            png = mb_img.generatePNG(&png_size);
+            png = mb_img_p->generatePNG(&png_size);
 
             // Call the utility function to send data over the socket
             handle_read_data(sock, png, (int)png_size);
+            delete mb_img_p;
           }
           break;
         default:

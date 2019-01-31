@@ -15,6 +15,16 @@ There is no continuous integration testing. Just open it locally and check it ou
 
 Steve holds the button to redeploy your changes. If he forgets, please [let him know](mailto:stevehoover@redwoodeda.com).
 
+### Debug in GDB
+
+To debug using GDB inside Atom.
+  - Use [dbg-gdb Atom plugin](https://atom.io/packages/dbg-gdb)
+  - in `mandelbrot/built`
+    - `make host_debug`
+    - `F5` in Atom (to run `out/sw/host_debug`), and set breakpoints.
+    - `launch -h none sw`
+    - In browser, `localhost:8888`
+
 ### TO DO
 
 General TO DO items are kept here, where as the issue tracker is used for more specific items. Contact [Steve](mailto:stevehoover@redwoodeda.com) for more details if you are interested in working on any of these items.

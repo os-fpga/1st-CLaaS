@@ -267,6 +267,37 @@ class FullImageMandelbrotViewer {
     }
   }
   
+  // Set viewer or playback view based on the size of the container component.
+  sizeViewer(container_el, stereo) {
+    let c = container_el;
+    let c_w = c.width();
+    let w = c_w; // Assuming not stereo.
+    let h = c.height();
+    
+    c.find(".rightEyeImage").css("display", stereo ? "inline" : "none");
+    if (stereo) {
+      // Do not allow the eye to be outside of the image in x/y as this will not render properly.
+      let min_c_w = this.eye_separation + 2;
+      if (c_w < min_c_w) {
+        c_w = min_c_w;
+        c.width(c_w);
+      }
+      w = (c_w - this.stereo_image_gap) / 2 - this.image_horizontal_padding;
+      h -= this.image_vertical_padding * 2;
+      
+      // Position right eye image.
+      c.find(".leftEyeImage").css("left", 6 + this.image_horizontal_padding);
+      c.find(".mandelbrotImage").css("top", 6 + this.image_vertical_padding);
+      c.find(".rightEyeImage").css("left", 6 + this.image_horizontal_padding + w + this.stereo_image_gap);
+      c.find(".rightEyeImage").children().children().css("left", -w);  // Hide left-eye image contents in double-image.
+    }
+    w = Math.floor(w / 2) * 2;  // use multiples of two so center is a whole number.
+    h = Math.floor(h / 2) * 2;
+    let imgs = c.find(".mandelbrotImage");
+    imgs.width(w);
+    imgs.height(h);
+  }
+  
   // Start the spot at depth 0 and increment it to a certain depth as long as the spot_depth has not been reset by another call.
   sendSpot() {
     this.desired_image_properties.settings.spot_depth = -1;
@@ -398,6 +429,11 @@ class FullImageMandelbrotViewer {
     this.burning = burn;
     this.observing = observe;
     this.playback_properties = this.desired_image_properties.copy();
+    let v = $("#imagesContainer");
+    let c = $("#playbackImagesContainer");
+    c.width(v.width());
+    c.height(v.height());
+    this.sizeViewer(c, this.playback_properties.settings.stereo);
     $(".playback-only").css("display", "block");
     // Need to set img height/width? Shouldn't be necessary as it should use image size.
     this.playback_frame = -1;
