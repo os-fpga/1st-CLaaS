@@ -41,9 +41,12 @@ CC=g++
 HOST_DIR=../host
 FRAMEWORK_DIR=../../../framework/host
 
+ADDITIONAL_SRC=$(HOST_DIR)/mandelbrot_main.cpp
+ADDITIONAL_HDRS=
+
 #Software (no FPGA) flags
-SW_SRC=$(FRAMEWORK_DIR)/server_main.c $(HOST_DIR)/lodepng.c $(HOST_DIR)/mandelbrot.c
-SW_HDRS=$(HOST_DIR)/mandelbrot.h
+SW_SRC=$(ADDITIONAL_SRC) $(FRAMEWORK_DIR)/server_main.c $(HOST_DIR)/lodepng.c $(HOST_DIR)/mandelbrot.c
+SW_HDRS=$(ADDITIONAL_HDRS) $(HOST_DIR)/mandelbrot.h
 SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_DIR)
 SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64
 
@@ -209,7 +212,7 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 ifeq ($(TARGET), sw)
 build:  $(BUILD_DIR)/$(HOST_EXE)
 launch: build
-	./launch -p $(PORT) $(TARGET) $(BUILD_DIR)/$(HOST_EXE)
+	./launch -p $(PORT) $(TARGET)
 else
 build:  $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 launch: build

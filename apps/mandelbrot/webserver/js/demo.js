@@ -190,6 +190,7 @@ settingsChanged() {
   }
 }
 
+// Adjust full viewer to its container size.
 sizeFullViewer() {
   let c = $("#imagesContainer");
   let w = c.width();
@@ -285,7 +286,9 @@ openFullViewer() {
   $(".leftEyeImage" ).html(`<div class="imgContainer"><img></div>`);
   $(".rightEyeImage").html(`<div class="imgContainer"><img></div>`);
 
-  this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.newView(), this.getMotion());
+  this.viewer = new FullImageMandelbrotViewer($("#host").val(), $("#port").val(), this.getMotion());
+  this.sizeFullViewer();
+  this.viewer.init(this.newView());
 }
 
 setDimensions(w, h) {
@@ -323,7 +326,10 @@ constructor() {
     }
     
     // Hide/show appropriate options based on renderer.
-    $(".not-python").css("display", this.getRenderer() === "python" ? "none" : "block")
+    $(".not-python").css("display", this.getRenderer() === "python" ? "none" : "block");
+    $(".c-only").css("display", this.getRenderer() === "cpp" ? "block" : "none");
+    $("#imagesContainer").css("max-width",  this.getRenderer() == "python" ? "200px" : this.getRenderer() == "cpp" ? "1280px": "none");
+    $("#imagesContainer").css("max-height", this.getRenderer() == "python" ? "200px" : this.getRenderer() == "cpp" ? "1280px": "none");
     
     if (evt.target.id == "tiled") {
       this.destroyViewer();

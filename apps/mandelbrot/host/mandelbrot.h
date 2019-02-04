@@ -12,6 +12,7 @@
 #include <cmath>
 #include <ieee754.h>
 #include "lodepng.h"
+#include "server_main.h"
 
 using namespace std;
 
@@ -89,7 +90,7 @@ public:
  *
  */
 class MandelbrotImage {
-protected:
+public:
   typedef double coord_t;
   
   // TODO: replace w/ Color.
@@ -107,6 +108,22 @@ protected:
   
   
   //
+  // Produce Image
+  //
+  
+  // Generate a PNG image from the pixel data.
+  // If generatePixels() has not been called, it will be called by this method.
+  unsigned char * generatePNG(size_t *png_size_p);
+  
+  // Generate pixel color data according to the color scheme from a [width][height] array of pixel depths.
+  // The depths array can be:
+  //   - provided as an argument
+  //   - have been produced already
+  //   - be generated automatically if necessary, internal to this method (via generateMandelbrot())
+  MandelbrotImage * generatePixels(int *data = NULL);
+
+protected:
+  //
   // Configuration Methods
   //
   
@@ -116,7 +133,7 @@ protected:
   //   1: construction to destruction (not currently supported)
   //   2: each step
   //   3: (1 & 2) (not currently supported)
-  MandelbrotImage * enableTimer(int level = 2);  
+  MandelbrotImage * enableTimer(int level = 2);
   
   //
   // Compute Methods
@@ -139,21 +156,7 @@ protected:
   //   char_offset: The starting char position to fill (depending on eye).
   void toPixelData(int char_offset, int *depth_array, unsigned char *fractional_depth_array, color_t *color_array);
   
-  // Generate pixel color data according to the color scheme from a [width][height] array of pixel depths.
-  // The depths array can be:
-  //   - provided as an argument
-  //   - have been produced already
-  //   - be generated automatically if necessary, internal to this method (via generateMandelbrot())
-  MandelbrotImage * generatePixels(int *data = NULL);
   
-  
-  //
-  // Produce Image
-  //
-  
-  // Generate a PNG image from the pixel data.
-  // If generatePixels() has not been called, it will be called by this method.
-  unsigned char * generatePNG(size_t *png_size_p);
   
   // Get depth array dimensions. Initially this is the depth array to generate; after 3D-iffication, this is the requested h/w.
   int getDepthArrayWidth()  {return calc_width; }
@@ -224,7 +227,6 @@ protected:
   int spot_depth;  // Depth of the "spot," used to help lock in on the stereo image. (Initially -1, or 0..n, then adjusted to be relative to eye.)
   bool show_spot;  // Show the spot (spot_depth is initially -1).
   
-  bool enable_step;  // True to enable optimization where we step ahead some number of pixels based on differentials.
   bool full_image;   // This is a full image, so decisions can be made with full knowledge (such as darkening and eye depth).
   bool smooth;       // Smooth the image using the approach on wikipedia.
   bool lighting;     // True if any lighting effects are in use.
@@ -311,23 +313,11 @@ protected:
   coord_t getZoomDepth();
   
   void setAutoDepthBounds();
-  int pixelDepth(int w, int h, int & skip, bool need_frac);
+  int pixelDepth(int w, int h, bool need_frac);
   int tryPixelDepth(int w, int h);   // A non-inlined version of pixelDepth.
   void writeDepthArray(int w, int h, int depth);
-  void updateMaxDepth(int new_auto_depth, unsigned char new_auto_depth_frac);
-  color_t depthToColor(int depth, int fractional_depth);
-  
-  void meldWithColor(color_t &color, color_t color2, float amount, bool cap = false);
-
-  void lightenColor(color_t &color);
-  void darkenColor(color_t &color);
-  void lightenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
-  void darkenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
-  void darkenForDepth(color_t &color, int depth, int fractional_depth);
-  void illuminateColor(color_t &color, float * amts);
-  
-  float cartesianToAnglef(float xx, float yy);
-  double cartesianToAngle(double xx, double yy);
+  void updateAutoDepth(int w1, int h1, int w2, int h2, int depth, unsigned char frac);
+  void updateAutoDepth(int new_auto_depth, unsigned char new_auto_depth_frac);
   
   // Used by make3d() to make image for one eye.
   int * makeEye(bool right, unsigned char * &fractional_depth_array_3d, color_t * &color_array);
@@ -346,6 +336,22 @@ protected:
   color_t * allocRainbowColorScheme(int &size);
   coord_t log(coord_t base, coord_t exp);
   
+  
+private:
+  color_t depthToColor(int depth, int fractional_depth);
+  
+  void meldWithColor(color_t &color, color_t color2, float amount, bool cap = false);
+
+  void lightenColor(color_t &color);
+  void darkenColor(color_t &color);
+  void lightenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
+  void darkenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
+  void darkenForDepth(color_t &color, int depth, int fractional_depth);
+  void illuminateColor(color_t &color, float * amts);
+  
+  float cartesianToAnglef(float xx, float yy);
+  double cartesianToAngle(double xx, double yy);
+
   void capColorAmount(float &amount, bool cap) {
     if (cap) {
       if (amount > 1.0L) {
@@ -358,5 +364,38 @@ protected:
   }
 
 };
+
+// Inlined public/protected methods.
+
+// Update auto depth (and spec_max_depth) for a given pixel or rectangle at a given depth.
+inline void MandelbrotImage::updateAutoDepth(int w1, int h1, int w2, int h2, int depth, unsigned char frac) {
+  // Update spec_max_depth. Note, we don't bother to do this if we go sub-pixel, since these are likely deep.
+  if (depth <= auto_depth &&  // This is a course filter. It is checked again.
+      ((w1 <= calc_center_w + auto_depth_w) ||
+       (w2 >= calc_center_w - auto_depth_w)) &&
+      ((h1 <= calc_center_h + auto_depth_h) ||
+       (h2 >= calc_center_h - auto_depth_h))
+     ) {
+    updateAutoDepth(depth, frac);
+  }
+}
+
+
+
+
+
+// ---------------------------------------------------------------------------------------------------------
+class HostMandelbrotApp : public HostApp {
+
+public:
+
+#ifdef OPENCL
+  cl_data_types get_image(cl_data_types cl, int sock);
+#else
+  void get_image(int sock);
+#endif
+  virtual MandelbrotImage * newMandelbrotImage(double *params, bool fpga_req) {return new MandelbrotImage(params, fpga_req);} // Can be extented to utilize a derived type.
+};
+
 
 #endif

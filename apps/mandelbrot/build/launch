@@ -12,6 +12,8 @@
 #   ps aux | grep ../out/sw/host
 #   launch --h <pid> sw # OR
 #   launch --h none sw     # to not kill host on exit ("none" is anything that isn't a whole number)
+# Extra options:
+#   -c compile-command
 
 # Must be launched from its own directory.
 
@@ -25,20 +27,27 @@ usage () {
 }
 
 
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR=`dirname "${SCRIPT_PATH}"`
+cd "$SCRIPT_DIR"
+
 
 # Defaults
 
+SCRIPT_CMD="launch $*"
 PORT="8888"
 HOST_PID=""
+COMPILE_CMD=""
 
 
 # Read command line options
 
-while getopts "p:h:" opt
+while getopts "p:h:c:" opt
   do
     case "${opt}" in
       p) PORT=${OPTARG};;
       h) HOST_PID=${OPTARG};;
+      c) COMPILE_CMD="${OPTARG}";;
     esac
   done
 shift $((OPTIND -1))
@@ -51,6 +60,9 @@ fi
 TYPE="$1"
 HOST="$2"
 AWSXCLBIN="$3"
+
+#echo "$TYPE $HOST $AWSXCLBIN"
+
 if [[ $TYPE = "" ]];
 then
   usage
@@ -63,7 +75,10 @@ then
     fi
 fi
 
-
+if [[ $COMPILE_CMD = "" ]];
+then
+  COMPILE_CMD="make TARGET=$TYPE build"
+fi
 
 fail () {
     echo $1
@@ -143,25 +158,22 @@ finish () {
 upgrade () {
   echo "Upgrade"
   # Return if there are no changes in master.
-  git fetch
+  git pull --recurse-submodules
   OUT=`git status`
   if ! [[ $OUT =~ Your\ branch\ is\ behind ]] ; then
     echo "Up to date with master."
   else
-    echo "Pulling changes from master and re-launching web server."
+    echo "Pulled changes. Re-launching web server."
     
     # Kill children.
     teardown
-    
-    # Pull changes.
-    git pull origin master || fail "Failed to pull changes from master."
 
     # Compile
-    make build || fail "Compilation for Mandelbrot failed."
+    $COMPILE_CMD || fail "Compilation for Mandelbrot failed."
     
     # Re-launch.
     echo "Re-launching web server"
-    launch
+    exec $SCRIPT_CMD
   fi
 }
 

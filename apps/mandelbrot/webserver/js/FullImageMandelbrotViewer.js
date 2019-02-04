@@ -2,7 +2,7 @@
 class FullImageMandelbrotViewer {
   
   // Construct.
-  constructor(host, port, view, motion) {
+  constructor(host, port, motion) {
     
     this.DEFAULT_IMAGE_GAP = 4;
     this.DEFAULT_EYE_SEPARATION = 386;
@@ -109,6 +109,10 @@ class FullImageMandelbrotViewer {
 
     // Each image request is given a unique sequential ID.
     this.image_id = 0;
+  }
+  
+  // Must be called after construction and DOM configuration.
+  init(view) {
 
     this.setView(view);
 

@@ -55,7 +55,7 @@
       <p></p>
       
       <div>
-        <input type="radio" id="python" name="renderer" disabled />
+        <input type="radio" id="python" name="renderer" />
         <label for="python" title="Render images using Python (scripting language) on server">Python</label>
       </div>
       <div>
@@ -63,7 +63,7 @@
         <label for="cpp" title="Render images using C++ on server">C++</label>
       </div>
       <div>
-        <input type="radio" id="fpga" name="renderer" disabled />
+        <input type="radio" id="fpga" name="renderer" />
         <label for="fpga" title="Render using FPGA in datacenter or using optimized algorithm">FPGA/opt</label>
       </div>
 
@@ -89,7 +89,7 @@
       </div>
     </fieldset>
     
-    <fieldset id="theme">
+    <fieldset id="theme" class="c-only">
       <legend>Theme</legend>
     
       <div>
@@ -150,29 +150,31 @@
         <input type="checkbox" id="darken" class="flag" name="darken" checked />
         <label for="darken" title="Darken deeper depths">Darken</label>
       </div>
-      <div>
-        <input type="checkbox" id="smooth" class="flag" name="smooth" checked />
-        <label for="smooth" title="Blend colors">Smooth</label>
-      </div>
-      <div>
-        <input type="checkbox" id="string-lights" class="flag" name="string-lights" />
-        <label for="string-lights" title="Apply lighting effect">String lights</label>
-      </div>
-      <div>
-        <input type="checkbox" id="fanciful" class="flag" name="fanciful" />
-        <label for="fanciful" title="Apply fanciful effect">Fanciful</label>
-      </div>
-      <div>
-        <input type="checkbox" id="shadow" class="flag" name="shadow" />
-        <label for="shadow" title="Apply layer shadow effect">Shadow</label>
-      </div>
-      <div>
-        <input type="checkbox" id="round-edges" class="flag" name="round-edges" />
-        <label for="round-edges" title="Apply rounded edges effect">Rounded edges</label>
+      <div class="c-only">
+        <div>
+          <input type="checkbox" id="smooth" class="flag" name="smooth" />
+          <label for="smooth" title="Blend colors">Smooth</label>
+        </div>
+        <div>
+          <input type="checkbox" id="string-lights" class="flag" name="string-lights" />
+          <label for="string-lights" title="Apply lighting effect">String lights</label>
+        </div>
+        <div>
+          <input type="checkbox" id="fanciful" class="flag" name="fanciful" />
+          <label for="fanciful" title="Apply fanciful effect">Fanciful</label>
+        </div>
+        <div>
+          <input type="checkbox" id="shadow" class="flag" name="shadow" />
+          <label for="shadow" title="Apply layer shadow effect">Shadow</label>
+        </div>
+        <div>
+          <input type="checkbox" id="round-edges" class="flag" name="round-edges" />
+          <label for="round-edges" title="Apply rounded edges effect">Rounded edges</label>
+        </div>
       </div>
     </fieldset>
     
-    <fieldset id="edge" class="not-themed">
+    <fieldset id="edge" class="not-themed c-only">
       <legend>Edge</legend>
       
       <div id="edge-style">
@@ -201,13 +203,15 @@
                min="5" max="100" value="35" />
         
         <div class="not-python">
-          <label for="var1" title="Tweaks the algorithm">Morph 1</label>
-          <input type="range" id="var1" class="var" name="var1"
-                 min="-100" max="100" value="0" />
-                 
-          <label for="var2" title="Tweaks the algorithm">Morph 2</label>
-          <input type="range" id="var2" class="var" name="var2" 
-                 min="-100" max="100" value="0" />
+          <div class="c-only">
+            <label for="var1" title="Tweaks the algorithm">Morph 1</label>
+            <input type="range" id="var1" class="var" name="var1"
+                   min="-100" max="100" value="0" />
+                   
+            <label for="var2" title="Tweaks the algorithm">Morph 2</label>
+            <input type="range" id="var2" class="var" name="var2" 
+                   min="-100" max="100" value="0" />
+          </div>
           
           <div class="darken-only">
             <label for="brighten" title="Adjusts the depth at which darkening begins">Dark/Morph Adjust</label>
@@ -460,10 +464,10 @@
       </fieldset>
     </div>
   </div>
-  <div forTheme="xmas">
+  <div forTheme="xmas"><div class="c-only">
     <h2>Merry Christmas!!!</h2>
     <h4>A tree of a trillion lights.</h4>
-  </div>
+  </div></div>
   <div id="imagesContainer" class="unselectable imagesContainer">
     <div id="fullImageViewerContainer" class="viewerContainer">
       <div id="eventRecipient"></div>
@@ -515,9 +519,9 @@
       <p>
         No special glasses are needed! But it's difficult to trick your mind. Here are some steps to try:
         <ul>
-          <div forTheme="xmas">
-          <li>Leave Xmas mode for your first try.</li>
-          </div>
+          <div forTheme="xmas"><div class="c-only">
+            <li>Leave Xmas mode for your first try.</li>
+          </div></div>
           <li>Create a divider to hold or hang over your monitor so each eye sees only its own image and not the other. Use a piece of cardboard or a
             manilla folder extended from the screen between the images. Be sure that with either eye closed you only see one image. Getting this right
             will make a big difference.</li>

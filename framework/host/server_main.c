@@ -14,110 +14,15 @@
 ** TODO: There's still a lot of image-specific content here. Partition cleanly.
 */
 
-#include <fcntl.h>
-#include <cstdio>
-#include <cstdlib>
-#include <string.h>
-#include <iostream>
-#include <math.h>
-#include <unistd.h>
-#include <assert.h>
-#include <stdbool.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <time.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
-#ifdef OPENCL
-#include <CL/opencl.h>
-#include "kernel.h"
-#endif
-
-#include "lodepng.h"
-#include "protocol.h"
+#include "server_main.h"
 #include "mandelbrot.h"
-
-#define STR_VALUE(arg) #arg
-#define GET_STRING(name) STR_VALUE(name)
-
-#if defined(SDX_PLATFORM) && !defined(TARGET_DEVICE)
-#define TARGET_DEVICE GET_STRING(SDX_PLATFORM)
-#endif
-
-#ifdef KERNEL
-#define KERNEL_NAME GET_STRING(KERNEL)
-#endif
-
-#define SOCKET "SOCKET"
-#define ACK_DATA "ACK_DATA"
-#define ACK_SIZE "ACK_SIZE"
-// #define PORT 8080
-
-#define CHUNK_SIZE 8192
-#define MSG_LENGTH 128
 
 using namespace std;
 using namespace lodepng;
 
-/*
-** Data structure to handle a array of doubles and its size to have a dynamic behaviour
-** TODO: This is messy. At least make it an object with destructor.
-*/
-typedef struct array {
-  double * data;
-  int data_size;
-} dynamic_array;
-
-/* 
-** This function is needed to translate the message coming from 
-** the socket into a number to be given in input to the
-** switch construct to decode the command
-*/
-int get_command(char * command);
-
-/* 
-** Utility function to print errors
-*/
-void perror(const char * error);
-
-/*
-** Utility function to handle the command decode coming from the socket
-** connection with the python webserver
-*/
-#ifdef OPENCL
-cl_data_types init_platform(cl_data_types cl, char * response);
-cl_data_types init_kernel(cl_data_types cl, char * response, const char *xclbin, const char *kernel_name, int memory_size);
-cl_data_types handle_command(int socket, int command, cl_data_types opencl, const char *xclbin, const char *kernel_name, int memory_size);
-#else
-char *image_buffer;
-#endif
-
-/*
-** Utility function to handle the data coming from the socket and sent to the FPGA device
-*/
-dynamic_array handle_write_data(int socket);
-
-/*
-** Utility function to handle the data coming from the FPGA that has to be sent back to the client
-*/
-int handle_read_data(int socket, unsigned char data[], int data_size);
-
-/*
-** Utility function to handle the data coming from the FPGA that has to be sent back to the client
-*/
-int handle_read_data(int socket, int data[], int data_size);
-
-#ifdef OPENCL
-cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl);
-#endif
 
 
-int main(int argc, char const *argv[])
+int HostApp::server_main(int argc, char const *argv[])
 {
 #ifdef OPENCL
 
@@ -177,6 +82,14 @@ int main(int argc, char const *argv[])
     exit(1);
   }
 
+  
+  #ifdef OPENCL
+    // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).                            
+    cl = init_platform(cl, NULL);
+    cl = init_kernel(cl, NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+  #endif
+
+
   int data_array[262144];  // TODO: YIKES!!!
 
   for (unsigned int i = 0; i < sizeof(data_array) / sizeof(int); i++)
@@ -188,13 +101,6 @@ int main(int argc, char const *argv[])
   int err;
   int exit_status;
 
-
-
-#ifdef OPENCL
-  // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).                            
-  cl = init_platform(cl, NULL);
-  cl = init_kernel(cl, NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
-#endif
 
   while (true) {
     if ((sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
@@ -263,92 +169,12 @@ int main(int argc, char const *argv[])
           {  // Provides scope for local variables.
             sprintf(response, "INFO: Get Image");
             send(sock, response, strlen(response), MSG_NOSIGNAL);
-          
-            dynamic_array array_struct;
-
-            array_struct = handle_write_data(sock);
-            bool fpga_req = true;
-            if (array_struct.data[6] < 0) {
-              // Depth argument is negative. This is our indication that we must render in C++. TODO: Ick!
-              array_struct.data[6] = - array_struct.data[6];
-              fpga_req = false;
-            }
-            // Or, newer, only slightly less icky flag
-            if ((array_struct.data_size >= 16) && (((int)(array_struct.data[16])) & (1 << 1))) {
-              fpga_req = false;
-            }
-#ifdef OPENCL
-            if (fpga_req) {
-              // Don't go bigger than allocated sizes.
-              if (((int)(array_struct.data[4])) > COLS) {
-                array_struct.data[4] = (double)COLS;  // (COLS should be a multiple of 16.)
-              }
-              if (((int)(array_struct.data[5])) > ROWS) {
-                array_struct.data[5] = (double)ROWS;
-              }
-            }
-            bool fpga = fpga_req;
+            
+ #ifdef OPENCL
+           cl = get_image(cl, sock);
 #else
-            bool fpga = false;
+           get_image(sock);
 #endif
-            MandelbrotImage * mb_img_p;
-            mb_img_p = new MandelbrotImage(array_struct.data, fpga);
-            // Free memory for array_struct.
-            free(array_struct.data);
-
-            int * depth_data = NULL;
-#ifdef OPENCL
-            if (fpga) {
-              input_struct input;
-
-              // Determine autodepth by generating a coarse-grained image for the auto-depth bounding box.
-              if (mb_img_p->auto_dive || mb_img_p->auto_darken) {
-                mb_img_p->setAutoDepthBounds();
-                input.width = 16;
-                input.height = 8;
-                input.coordinates[0] = mb_img_p->wToX(mb_img_p->calc_center_w - mb_img_p->auto_depth_w);
-                input.coordinates[1] = mb_img_p->hToY(mb_img_p->calc_center_h - mb_img_p->auto_depth_h);
-                input.coordinates[2] = mb_img_p->getPixX() * mb_img_p->auto_depth_w * 2 / (input.width - 1);
-                input.coordinates[3] = mb_img_p->getPixY() * mb_img_p->auto_depth_h * 2 / (input.height - 1);
-                input.max_depth = (long)(mb_img_p->getMaxDepth());
-                
-                // Generate this coarse image on FPGA (allocated by handle_get_image).
-                cl = handle_get_image(sock, &depth_data, &input, cl);
-                
-                // Scan all depths to determine auto-depth.
-                for (int w = 0; w < input.width; w++) {
-                  for (int h = 0; h < input.height; h++) {
-                    mb_img_p->updateMaxDepth(depth_data[h * input.width + w], (unsigned char)0);
-                  }
-                }
-                free(depth_data);
-              } else {
-                
-              }
-              
-              // Populate depth_data from FPGA.
-              // X,Y are center position, and must be passed to FPGA as top left.
-              input.coordinates[0] = mb_img_p->wToX(0);
-              input.coordinates[1] = mb_img_p->hToY(0);
-              input.coordinates[2] = mb_img_p->getPixX();
-              input.coordinates[3] = mb_img_p->getPixY();
-              input.width  = (long)(mb_img_p->getDepthArrayWidth());
-              input.height = (long)(mb_img_p->getDepthArrayHeight());
-              input.max_depth = (long)(mb_img_p->getMaxDepth());  // may have been changed based on auto-depth.
-
-              cl = handle_get_image(sock, &depth_data, &input, cl);
-            }
-#endif
-  
-            mb_img_p->generatePixels(depth_data);  // Note that depth_array is from FPGA for OpenCL (and given here to mb_img to free), or NULL to generate in C++.
-  
-            size_t png_size;
-            unsigned char *png;
-            png = mb_img_p->generatePNG(&png_size);
-
-            // Call the utility function to send data over the socket
-            handle_read_data(sock, png, (int)png_size);
-            delete mb_img_p;
           }
           break;
         default:
@@ -367,7 +193,7 @@ int main(int argc, char const *argv[])
 }
 
 
-void perror(const char * error) {
+void HostApp::perror(const char * error) {
   printf("%s\n", error);
   exit(EXIT_FAILURE);
 }
@@ -376,7 +202,8 @@ void perror(const char * error) {
 
 // A wrapper around initialize_platform that reports errors.
 // Use NULL response to report errors.
-cl_data_types init_platform(cl_data_types cl, char * response) {
+// TODO: cl_data_types is defined in kernel.h and its members should become members of HostApp, and it should not be passed all over the place.
+cl_data_types HostApp::init_platform(cl_data_types cl, char * response) {
   char rsp[MSG_LENGTH];
   if (response == NULL) {
     response = rsp;
@@ -398,7 +225,7 @@ cl_data_types init_platform(cl_data_types cl, char * response) {
 
 // A wrapper around init_kernel that reports errors.
 // Use NULL response to report errors.                                                                                                                        
-cl_data_types init_kernel(cl_data_types cl, char * response, const char *xclbin, const char *kernel_name, int memory_size) {
+cl_data_types HostApp::init_kernel(cl_data_types cl, char * response, const char *xclbin, const char *kernel_name, int memory_size) {
   char rsp[MSG_LENGTH];
   if (response == NULL) {
     response = rsp;
@@ -422,7 +249,7 @@ cl_data_types init_kernel(cl_data_types cl, char * response, const char *xclbin,
   return cl;
 }
 
-cl_data_types handle_command(int socket, int command, cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
+cl_data_types HostApp::handle_command(int socket, int command, cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
   char response[MSG_LENGTH];
 
   switch (command) {
@@ -462,7 +289,7 @@ cl_data_types handle_command(int socket, int command, cl_data_types cl, const ch
 ** Paramters
 ** socket: reference to the socket channel with the webserver
 */
-dynamic_array handle_write_data(int socket) {
+HostApp::dynamic_array HostApp::handle_write_data(int socket) {
   // Variable definitions
   int data_size, data_read = 0;
   int to_read = CHUNK_SIZE;
@@ -512,7 +339,7 @@ dynamic_array handle_write_data(int socket) {
 ** data: array containing data to be sent. For this function the array is made of bytes
 ** data_size: size of the array that has to be sent
 */
-int handle_read_data(int socket, unsigned char data[], int data_size) {
+int HostApp::handle_read_data(int socket, unsigned char data[], int data_size) {
   int result_send;
   char ack[MSG_LENGTH];
   if(!recv(socket, ack, sizeof(ack), 0))
@@ -536,7 +363,7 @@ int handle_read_data(int socket, unsigned char data[], int data_size) {
 ** data: array containing data to be sent. For this function the array is made of integers
 ** data_size: size of the array that has to be sent
 */
-int handle_read_data(int socket, int data[], int data_size) {
+int HostApp::handle_read_data(int socket, int data[], int data_size) {
   int result_send;
   char ack[MSG_LENGTH];
   if(!recv(socket, ack, sizeof(ack), 0))
@@ -559,9 +386,8 @@ int handle_read_data(int socket, int data[], int data_size) {
 ** Parameters
 ** socket: reference to the socket channel with the webserver
 ** cl: OpenCL datatypes
-** color_scheme: color transition scheme in order to create the PNG image given the computation results
 */
-cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
+cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
   cl = write_kernel_data(cl, input_p, sizeof(input_struct));
 
   // check timing
@@ -590,7 +416,7 @@ cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * i
 /*
 ** This function generates a number corresponding to the command that receives in input as a string
 */
-int get_command(char * command) {
+int HostApp::get_command(char * command) {
   if(!strncmp(command, INIT_PLATFORM, strlen(INIT_PLATFORM)))
     return INIT_PLATFORM_N;
   else if(!strncmp(command, INIT_KERNEL, strlen(INIT_KERNEL)))
