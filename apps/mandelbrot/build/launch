@@ -169,7 +169,7 @@ upgrade () {
     teardown
 
     # Compile
-    $COMPILE_CMD || fail "Compilation for Mandelbrot failed."
+    bash -c "$COMPILE_CMD" || fail "Compilation for Mandelbrot failed."
     
     # Re-launch.
     echo "Re-launching web server"
