@@ -158,13 +158,15 @@ finish () {
 upgrade () {
   echo "Upgrade"
   # Return if there are no changes in master.
-  git pull --recurse-submodules
+  git pull origin master
   OUT=`git status`
   if ! [[ $OUT =~ Your\ branch\ is\ behind ]] ; then
     echo "Up to date with master."
   else
-    echo "Pulled changes. Re-launching web server."
+    echo "Pulled changes. Updating submodules."
+    git submodule update --init --recursive
     
+    echo "Re-launching web server."
     # Kill children.
     teardown
 
