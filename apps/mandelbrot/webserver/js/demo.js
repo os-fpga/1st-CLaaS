@@ -17,32 +17,32 @@ getTiled() {
   return $("#tiled").prop("checked");
 }
 getEyeAdjust() {
-  return $("#eye_adjust").prop("value");
+  return parseInt($("#eye_adjust").prop("value"));
 }
 getBrighten() {
-  return $("#brighten").prop("value");
+  return parseInt($("#brighten").prop("value"));
 }
 getVar1() {
-  return $("#var1").prop("value");
+  return parseInt($("#var1").prop("value"));
 }
 getVar2() {
-  return $("#var2").prop("value");
+  return parseInt($("#var2").prop("value"));
 }
 getMaxDepth() {
-  let d = $("#sqrt_depth").prop("value");
+  let d = parseInt($("#sqrt_depth").prop("value"));
   return d * d;
 }
 get3d() {
-  return ! $("#2d").prop("checked") ? 1 : 0;
+  return ! $("#2d").prop("checked");
 }
 getStereo() {
-  return $("#stereo").prop("checked") ? 1 : 0;
+  return $("#stereo").prop("checked");
 }
 getDarken() {
-  return $("#darken").prop("checked") ? 1 : 0;
+  return $("#darken").prop("checked");
 }
 getSmooth() {
-  return $("#smooth").prop("checked") ? 1 : 0;
+  return $("#smooth").prop("checked");
 }
 getMotion() {
   return $("#motionAcceleration").prop("checked") ? "acceleration" :
@@ -53,19 +53,19 @@ getColorScheme() {
   return parseInt($("[name=color-scheme]:checked").attr("encoding"));
 }
 getColorShift() {
-  return $("#color-shift").prop("value");
+  return parseInt($("#color-shift").prop("value"));
 }
 getStringLights() {
-  return $("#string-lights").prop("checked") ? 1 : 0;
+  return $("#string-lights").prop("checked");
 }
 getFanciful() {
-  return $("#fanciful").prop("checked") ? 1 : 0;
+  return $("#fanciful").prop("checked");
 }
 getShadow() {
-  return $("#shadow").prop("checked") ? 1 : 0;
+  return $("#shadow").prop("checked");
 }
 getRoundEdges() {
-  return $("#round-edges").prop("checked") ? 1 : 0;
+  return $("#round-edges").prop("checked");
 }
 getElectrify() {
   return $("#electrify").prop("checked");
@@ -87,7 +87,7 @@ getTestFlag(num) {
   return ret;
 }
 getTestVar(num) {
-  return $(`#test${num}`).prop("value");
+  return parseInt($(`#test${num}`).prop("value"));
 }
 getTheme() {
   let ret =  parseInt($(".theme:checked").attr("encoding"));

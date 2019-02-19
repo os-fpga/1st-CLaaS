@@ -110,12 +110,15 @@ int HostApp::server_main(int argc, char const *argv[])
     }
 
     while(true) {
+      //cout << "C++ Main loop" << endl;
+      
       if(!(err = recv(sock, msg, sizeof(msg), 0))){
         printf("Error %d: Client disconnected. Exiting.\n", err);
         exit(1);
       }
       
       //cout << "Main loop\n";
+      //cout << "Msg: " << msg << endl;
 
       // Translate message to an integer
       command = get_command(msg);
@@ -138,13 +141,13 @@ int HostApp::server_main(int argc, char const *argv[])
 #ifdef OPENCL
           // Call the OpenCL utility function to send data to the FPGA.
           // We receive extra datums for C++ rendering only that are not sent to the FPGA.
-          cout << "C++ received " << array_struct.data_size << " parameters. Sending 7 to FPGA." << endl;
+          //cout << "C++ received " << array_struct.data_size << " parameters. Sending 7 to FPGA." << endl;
           if (array_struct.data_size < 7) {
             cerr << "Error: C++ received " << array_struct.data_size << " parameters, but needed 7." << endl;
             exit(1);
           }
           cl = write_kernel_data(cl, array_struct.data, 7 * sizeof array_struct.data);  // TODO: Should be sizeof double.
-          cerr << "Received WRITE_DATA_N\n";
+          //cerr << "Received WRITE_DATA_N\n";
 #else
           cerr << "Received unexpected WRITE_DATA_N\n";
           exit(1);
@@ -284,6 +287,35 @@ cl_data_types HostApp::handle_command(int socket, int command, cl_data_types cl,
   return cl;
 }
 #endif
+
+/*
+** Read JSON from client.
+** Return: A new JSON object.
+*/
+json HostApp::read_json(int socket) {
+  uint16_t json_str_len;
+  
+  // Receive size of the JSON string.
+  if(!recv(socket, &json_str_len, sizeof(uint16_t), 0))
+    printf("Data size receive error: Client disconnected\n");
+  json_str_len = ntohs(json_str_len);  // Correct byte order.
+  //cout << "Host receiving JSON string of " << json_str_len << " bytes." << endl;
+  
+  // Receive JSON string.
+  char *str = (char *)malloc(json_str_len + 1);
+  if (!recv(socket, str, json_str_len, 0))
+    printf("Data size receive error (2): Client disconnected\n");
+  // Terminate JSON string
+  str[json_str_len] = '\0';
+
+  //cout << "C++ received JSON: " << str << endl;
+  
+  // Sending ACK to state that data was correctly received
+  send(socket, ACK_DATA, strlen(ACK_DATA), MSG_NOSIGNAL);
+  
+  // Parse JSON.
+  return json::parse(str);
+}
 
 /*
 ** Paramters

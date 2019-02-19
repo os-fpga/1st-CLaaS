@@ -103,7 +103,7 @@ public:
   // Constructors (with optional arguments for some settings)
   //
   
-  MandelbrotImage(double *params, bool fpga_param);
+  MandelbrotImage(json &params);
   virtual ~MandelbrotImage();
   
   
@@ -134,6 +134,28 @@ protected:
   //   2: each step
   //   3: (1 & 2) (not currently supported)
   MandelbrotImage * enableTimer(int level = 2);
+  
+  template <class T>
+  void param(const string name, T &var, const T def) {
+    try {
+      params_json.at(name).get_to(var);
+    } catch (nlohmann::detail::type_error) {
+      cerr << "Param " << name << " has wrong type." << endl;
+      var = def;
+    } catch (nlohmann::detail::out_of_range) {
+      if (verbosity > 1) {
+        cout << "Defaulting param " << name << " = " << def << endl;
+      }
+      var = def;
+    }
+  }
+  
+  template <class T>
+  T param(const string name, const T def) {
+    T var;
+    param(name, var, def);
+    return var;
+  }
   
   //
   // Compute Methods
@@ -207,6 +229,9 @@ protected:
   color_t * active_color_scheme;  // The active one.
   int active_color_scheme_size;   // "
   
+
+  json params_json;  // JSON parameters.
+
   bool electrify;
   int color_shift;
   
@@ -293,6 +318,11 @@ protected:
   bool texture_max;  // Color at max_depth (not possible if darken, as this sets max_depth dynamically). Mainly for debug.
   int half_faded_depth;
   float start_darkening_depth;
+  
+  // Experimental:
+  coord_t x_hist[16], y_hist[16];
+  coord_t exp; // Experimental
+  coord_t exp2; // Experimental too
 
   // Storage structures. These are freed upon destruction.
   int *depth_array;  // Image array of depth integers.
@@ -394,7 +424,7 @@ public:
 #else
   void get_image(int sock);
 #endif
-  virtual MandelbrotImage * newMandelbrotImage(double *params, bool fpga_req) {return new MandelbrotImage(params, fpga_req);} // Can be extented to utilize a derived type.
+  virtual MandelbrotImage * newMandelbrotImage(json &params) {return new MandelbrotImage(params);} // Can be extented to utilize a derived type.
 };
 
 

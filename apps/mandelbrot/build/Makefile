@@ -47,7 +47,7 @@ ADDITIONAL_HDRS=
 #Software (no FPGA) flags
 SW_SRC=$(ADDITIONAL_SRC) $(FRAMEWORK_DIR)/server_main.c $(HOST_DIR)/lodepng.c $(HOST_DIR)/mandelbrot.c
 SW_HDRS=$(ADDITIONAL_HDRS) $(HOST_DIR)/mandelbrot.h
-SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_DIR)
+SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_DIR) -I../../../framework/host/json/include
 SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64
 
 #Host code

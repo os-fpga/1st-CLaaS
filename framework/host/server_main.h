@@ -30,6 +30,9 @@
 #include "lodepng.h"
 #include "protocol.h"
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 #define STR_VALUE(arg) #arg
 #define GET_STRING(name) STR_VALUE(name)
 
@@ -95,6 +98,8 @@ protected:
   char *image_buffer;
   #endif
 
+  json read_json(int socket);
+  
   /*
   ** Utility function to handle the data coming from the socket and sent to the FPGA device
   */

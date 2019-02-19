@@ -1,0 +1,3 @@
+[submodule "framework/host/json"]
+	path = framework/host/json
+	url = https://github.com/nlohmann/json.git

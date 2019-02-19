@@ -45,22 +45,27 @@ inline double fastPow(double a, double b) {
   return u.d;
 }
 
+
 // ===========================================================================================
 // A Mandelbrot image.
 //
 
-
-MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
+MandelbrotImage::MandelbrotImage(json &j) {
+  params_json = j;
   
   // // Print sizeof(stuff)
   //cout << "int: " << sizeof(int) << ", long: " << sizeof(long) << ", long long: " << sizeof(long long) << ", float: " << sizeof(float) << ", double: " << sizeof(double) << ", long double: " << sizeof(long double) << endl;
   
-  fpga = fpga_param;  // Currently we restrict image settings based on whether the FPGA was _requested_ (whether available/used or not).
-  test_flags = (int)(params[23]);
+  fpga = param<string>("renderer", "fpga") == "fpga";  // Currently we restrict image settings based on whether the FPGA was _requested_ (whether available/used or not).
+  param("test_flags", test_flags, 0);
   for (int i = 0; i < 16; i++) {
-    test_vars[i] = (int)(params[24+i]);
+    try {
+      j["test_vars"][i].get_to(test_vars[i]);
+    } catch (nlohmann::detail::exception) {
+      test_vars[i] = 0.0L;
+    } 
   }
-
+  
   verbosity = (int)getTestVar(15, -10.0, 10.0);
   if (verbosity < 0) {verbosity = 0;}
   
@@ -81,7 +86,6 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
   }
   
   enableTimer(0);
-  
     
   depth_array = right_depth_array = NULL;
   fractional_depth_array = right_fractional_depth_array = NULL;
@@ -91,9 +95,12 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
   req_width = req_height = 0;
   calc_width = calc_height = 0;
   x = y = req_pix_size = calc_pix_size = (coord_t)0.0L;
-  is_3d = (params[9] > 0.0L);
-  int modes = (int)(params[16]);  // Bits, lsb first: 0: python(irrelevant here), 1: C++, 2: reserved, 3: optimize1, 4-5: reserved, 6: full-image, ...
-  int colors = (int)(params[17]);
+  param("three_d", is_3d, false);
+  int modes;
+  param("modes", modes, 0); // Bits, lsb first: 0: python(irrelevant here), 1: C++, 2: reserved, 3: optimize1, 4-5: reserved, 6: full-image, ...
+  int colors;
+  param("colors", colors, 0);
+  
   
   // Active color scheme
   active_color_scheme_index = colors & 65535;
@@ -105,18 +112,17 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
   color_shift = ((colors >> 16) & 255) * color_scheme_size[active_color_scheme_index] / 100;  // amount to shift color scheme given as 0-99 (percent) and adjusted for color scheme size.
   full_image = (bool)((modes >> 6) & 1);
   //+int color_scheme = (int)(params[17]);
-  spot_depth = (int)(params[18]);
+  param("spot_depth", spot_depth, -1);
   show_spot = spot_depth >= 0;
-  brighten = (int)(params[13]);
-  eye_adjust = params[14];
+  param("brighten", brighten, 0);
+  param<coord_t>("eye_adjust", eye_adjust, 0.0L);
   int eye_sep_adjust = (int)(getTestVar(14, -500.0f, 500.0f));
-  req_eye_separation = params[15] + eye_sep_adjust;
-  adjustment = params[7] / 100.0L;
-  adjustment2 = params[8] / 100.0L;
+  req_eye_separation = param("eye_sep", 0.0L) + eye_sep_adjust;
+  adjustment = param<coord_t>("var1", 0.0L) / 100.0L;
+  adjustment2 = param<coord_t>("var2", 0.0L) / 100.0L;
   adjust = (adjustment != 0.0L || adjustment2 != 0.0L) && !fpga;
 
-  
-  int texture = fpga ? 0 : (int)(params[19]);
+  int texture = fpga ? 0 : param<int>("texture", 0);
   string_lights = (bool)((texture >> 0) & 1);
   fanciful_pattern = (bool)((texture >> 1) & 1);
   shadow_interior = (bool)((texture >> 2) & 1);
@@ -126,16 +132,15 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
   light_brightness = getTestVar(13, 1.0f, 5.2f);
   
   power_divergence = getTestFlag(6);
-  int edge_style = (fpga || power_divergence) ? 0 : (int)(params[20]);
+  int edge_style = (fpga || power_divergence) ? 0 : param<int>("edge", 0);
   square_divergence = edge_style == 1;
   y_squared_divergence = edge_style == 2;
   normal_divergence = !(power_divergence || square_divergence || y_squared_divergence || ornaments);
-  int theme = fpga ? 0 : (int)(params[21]);
+  int theme = fpga ? 0 : param<int>("theme", 0);
   no_theme = theme == 0;
   xmas_theme = theme == 1;
-  
-  cycle = (int)(params[22]);
-  
+
+  param("cycle", cycle, 0);
   test_texture = getTestFlag(0);
   lighting = string_lights || fanciful_pattern || shadow_interior || round_edges;
   textured = (test_texture || lighting) && !fpga;
@@ -157,7 +162,7 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
   use_derivatives = getTestFlag(15);
   
   // For darkening distant 3D depths.
-  darken = (params[12] > 0.0L);
+  param("darken", darken, false);
   texture_max = !darken && getTestFlag(27);  // Apply texture to max depth. Note that use_next has no effect on max-depth texture, as next_* have not been updated for max_depth.
                                              // Do not darken if debugging max depth, as it could change dynamically.
   half_faded_depth = 30;
@@ -193,18 +198,17 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
   
   assert(! IS_BIG_ENDIAN);
   
-  x = (coord_t)params[0];
-  y = (coord_t)params[1];
-  req_pix_size = (coord_t)params[2];  // (assuming same size x and y, even though both are sent)
-  //pix_y = (coord_t)params[3];
-  req_width  = (int)params[4];
-  req_height = (int)params[5];
+  x = param<coord_t>("x", 0.0L);
+  y = param<coord_t>("y", 0.0L);
+  param<coord_t>("pix_x", req_pix_size, 0.0L);  // (assuming same size x and y, even though both are sent)
+  param("width", req_width, 0);
+  param("height", req_height, 0);
   calc_width  = req_width;   // assuming not 3d and not limited by FPGA restrictions
   calc_height = req_height;  // "
-  spec_max_depth = (int)params[6];
+  param("max_depth", spec_max_depth, 250);
   max_depth = -1000;   // garbage value
-  if (getTestFlag(2)) {spec_max_depth = (int)(sqrt(params[6])) - 4;}
-  req_eye_offset = (int)(params[10]) - (eye_sep_adjust >> 1);
+  if (getTestFlag(2)) {spec_max_depth = sqrt(spec_max_depth) - 4;}
+  req_eye_offset = param<int>("offset_w", 0) - (eye_sep_adjust >> 1);
   is_stereo = is_3d && req_eye_separation > 0;
   req_center_w = req_width  >> 1;  // (adjusted by req_eye_offset for stereo 3D)
   req_center_h = req_height >> 1;
@@ -288,8 +292,7 @@ MandelbrotImage::MandelbrotImage(double *params, bool fpga_param) {
   if (verbosity > 0)
     cout << "Settings: smooth: " << smooth << ", smooth_texture: " << smooth_texture << ", divergence_fn: " << power_divergence << y_squared_divergence << square_divergence << normal_divergence
          << ", string_lights: " << string_lights << "expansion_factor_3d: " << expansion_factor_3d << "req: (" << req_width << ", " << req_height << "), calc: (" << calc_width << ", " << calc_height << ")" << endl;
-};
-
+}
 
 
 MandelbrotImage::~MandelbrotImage() {
@@ -873,12 +876,43 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
               if (round_edges) {
                 float beyond = divergent_radius + (outward - ornament_shrink) / 1.5f * divergent_radius; // Divisor increases rounding.
                 next_effective_radius_sq = beyond * beyond;
-              } 
+              }
             }
           }
         }
       }
-      next_diverges = next_effective_radius_sq > divergent_radius_sq || force_diverge;
+      
+      // Experimental approximations for determining convergence and stopping the search on convergence as well as divergence:
+      // These are interesting and worth enabling.
+      bool conv = false;
+      /*
+      // Look at fixed windows of radius history and compare.
+      x_hist[depth % 16] = xx * xx + yy * yy;
+      // Is there a convergent trend.
+      if (depth > 16) {
+        coord_t diff = 0.0L;
+        for (int i = 0; i < 8; i++) {
+          diff += x_hist[(depth - i - 8) % 16] - x_hist[(depth - i ) % 16];
+        }
+        conv = diff > sqrt(x0 * x0 + y0 * y0);
+      }
+      */
+      /*
+      // Keep two weighted radius histories with different decay. If that slower decay has a larger value, there's convergence.
+      if (depth == 0) {
+        exp = 0.0L;
+        exp2 = 0.0L;
+      } else {
+        exp = 0.95L * exp + 0.05L * (xx * xx + yy * yy);
+        exp2 = 0.98L * exp2 + 0.02L * (xx * xx + yy * yy);
+      }
+      conv = exp < 0.99L * exp2;
+      */
+      next_diverges = next_effective_radius_sq > divergent_radius_sq ||
+                      //next_effective_radius_sq < 0.01 ||  // Creates dots inside (mostly) convergent region.
+                      //(dxx_dx0 * dxx_dx0 + dyy_dx0 * dyy_dx0 < 0.01 && depth > 0) ||  // Creates dots inside (mostly) convergent region. (need_derivatives must be true)
+                      conv ||
+                      force_diverge;
       
       
       // DONE?
@@ -1051,8 +1085,6 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
       bool radial = getTestFlag(1) || smooth_texture;
       float a_granularity = ((float)(1 << (int)getTestVar(5, 0.0, 12.0))) / 64.0f; //fastPow(2.0L, (double)(int)getTestVar(5, -6.0, 6.0));
       float b_granularity = ((float)(1 << (int)getTestVar(6, 0.0, 12.0))) / 64.0f; //fastPow(2.0L, (double)(int)getTestVar(6, -6.0, 6.0));
-      //-bool fine_grained = getTestFlag(8);
-      //-bool coarse_grained = getTestFlag(9);
       bool two_tone = getTestFlag(10);
       bool use_next = getTestFlag(11);
       float a_adj = getTestVar(3, 0.0f, 2.0f);
@@ -1444,7 +1476,7 @@ MandelbrotImage *MandelbrotImage::generateMandelbrot() {
   // initial approximation.
   if (adjust) {
     // Matched to eye depth.
-    adjust_depth = start_darkening_depth;  // Begin adjustment where we begin darkening (both should be around first visible level) //- getZoomDepth() - eye_depth_fit - eye_adjust;
+    adjust_depth = start_darkening_depth;  // Begin adjustment where we begin darkening (both should be around first visible level)
   }
   if (verbosity > 3)
     cout << "adjust: " << adjust << ", adjust_depth: " << adjust_depth << ", auto_depth" << auto_depth << ", adjustment: " << adjustment << ", smooth: " << smooth << flush;
@@ -1711,9 +1743,6 @@ MandelbrotImage::color_t * MandelbrotImage::allocGradientEdgePairColorScheme(int
   
   // Mimic these two edges to form the other four.
   completeRGBShiftedColorScheme(color_scheme, colors_per_part);
-  //-for (int j = 0; j < size; j++) {
-  //-  color_scheme[j].component[2] = (j % 4) * 64 + 32;
-  //-}
   
   return color_scheme;
 }
@@ -1857,17 +1886,22 @@ void HostMandelbrotApp::get_image(int sock) {
 #endif
   dynamic_array array_struct;
 
-  array_struct = handle_write_data(sock);
-  bool fpga_req = true;
-  if (array_struct.data[6] < 0) {
-    // Depth argument is negative. This is our indication that we must render in C++. TODO: Ick!
-    array_struct.data[6] = - array_struct.data[6];
-    fpga_req = false;
-  }
-  // Or, newer, only slightly less icky flag
-  if ((array_struct.data_size >= 16) && (((int)(array_struct.data[16])) & (1 << 1))) {
-    fpga_req = false;
-  }
+  json json_obj = read_json(sock);
+  //cout << "C++ read JSON: " << json_obj << endl;
+  
+  // TODO: Eliminate array_struct.
+
+  array_struct.data_size = 7; // TODO
+  array_struct.data = (double *) malloc(CHUNK_SIZE * 100 /* TODO */);
+  array_struct.data[0] = json_obj["x"];
+  array_struct.data[1] = json_obj["y"];
+  array_struct.data[2] = json_obj["pix_x"];
+  array_struct.data[3] = json_obj["pix_y"];
+  array_struct.data[4] = json_obj["width"];
+  array_struct.data[5] = json_obj["height"];
+  array_struct.data[6] = json_obj["max_depth"];
+  
+  
 #ifdef OPENCL
   if (fpga_req) {
     // Don't go bigger than allocated sizes.
@@ -1879,7 +1913,7 @@ void HostMandelbrotApp::get_image(int sock) {
     }
   }
 #endif
-  MandelbrotImage * mb_img_p = newMandelbrotImage(array_struct.data, fpga_req);
+  MandelbrotImage * mb_img_p = newMandelbrotImage(json_obj);
   
   // Free memory for array_struct.
   free(array_struct.data);
@@ -1934,6 +1968,8 @@ void HostMandelbrotApp::get_image(int sock) {
   unsigned char *png;
   png = mb_img_p->generatePNG(&png_size);
 
+  //cout << "C++ Image Generated" << endl;
+  
   // Call the utility function to send data over the socket
   handle_read_data(sock, png, (int)png_size);
   delete mb_img_p;

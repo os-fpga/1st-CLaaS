@@ -56,7 +56,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     response = {}
     print(message)
     header = msg['type']
-    payload = msg['payload']
+    payload = json.dumps(msg['payload'])
 
     # The request is passed to a request handler which will process the information contained
     # in the message and produce a result
@@ -101,22 +101,11 @@ class FPGAServerApplication(tornado.web.Application):
     def handle_request(self, header, payload, b64=True):
         if self.sock == None:
             response = "No socket"
-        elif header == WRITE_DATA:
-            print "handle_request(WRITE_DATA)"
-            response = write_data_handler(self.sock, False, header, payload)
-        elif header == READ_DATA:
-            print "handle_request(WRITE_DATA)"
-            response = read_data_handler(self.sock, False, header)
-        elif header == GET_IMAGE:
+        else:
             #print "get image:", payload, b64
             response = get_image(self.sock, header, payload, b64)
-        elif header:
-            print "handle_request(%s)" % header
-            response = socket_send_command(self.sock, header)
-        else:
-            response = "The client sent invalid command (%s)" % header
 
-        ret = {'type' : header, 'data': response}
+        ret = {'type': 'user', 'png': response}
         if not b64:
             ret = response
         return ret

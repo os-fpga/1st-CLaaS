@@ -5,6 +5,7 @@ import signal
 import re
 sys.path.append('../../../framework/webserver')
 from server import *
+import unicodedata
 
 
 # TODO: I have no idea how threading works with this server. If requests are processed serially, we have performance issues.
@@ -96,106 +97,35 @@ class ImageHandler(tornado.web.RequestHandler):
     # handles image request via get request 
     def get(self, type, depth=u'1000', tile_z=None, tile_x=None, tile_y=None):
 
-        # Determine who should produce the image from the GET query arg "renderer".
-        renderer = self.get_query_argument("renderer", "fpga")
+        json_str = self.get_query_argument("json", False)
+
+        if (json_str == False):
+            print "Python: No json query argument for ImageHandler"
+            return
         
-        # Extract URL parameters.
-        # TODO: This should all be JSON.
-        if (len(self.get_query_arguments("var1")) > 0):
-            var1 = self.get_query_arguments("var1")[0]
-        else:
-            var1 = "0"
-        if (len(self.get_query_arguments("var2")) > 0):
-            var2 = self.get_query_arguments("var2")[0]
-        else:
-            var2 = "0"
-        if (len(self.get_query_arguments("three_d")) > 0):
-            three_d = self.get_query_arguments("three_d")[0]
-        else:
-            three_d = "0"
-        if (len(self.get_query_arguments("modes")) > 0):
-            modes = self.get_query_arguments("modes")[0]
-        else:
-            modes = "0";
-        if (len(self.get_query_arguments("colors")) > 0):
-            color_scheme = self.get_query_arguments("colors")[0]
-        else:
-            color_scheme = "0";
-        if (len(self.get_query_arguments("offset_w")) > 0):
-            center_offset_w = self.get_query_arguments("offset_w")[0]
-        else:
-            center_offset_w = "0"
-        if (len(self.get_query_arguments("offset_h")) > 0):
-            center_offset_h = self.get_query_arguments("offset_h")[0]
-        else:
-            center_offset_h = "0"
-        if (len(self.get_query_arguments("eye_sep")) > 0):
-            eye_sep = self.get_query_arguments("eye_sep")[0]
-        else:
-            eye_sep = "0"
-        if (len(self.get_query_arguments("darken")) > 0):
-            darken = self.get_query_arguments("darken")[0]
-        else:
-            darken = "0"
-        if (len(self.get_query_arguments("brighten")) > 0):
-            brighten = self.get_query_arguments("brighten")[0]
-        else:
-            brighten = "0"
-        if (len(self.get_query_arguments("eye_adjust")) > 0):
-            eye_adjust = self.get_query_arguments("eye_adjust")[0]
-        else:
-            eye_adjust = "0"
-        if (len(self.get_query_arguments("spot_depth")) > 0):
-            spot_depth = self.get_query_arguments("spot_depth")[0]
-        else:
-            spot_depth = "-1"
-        if (len(self.get_query_arguments("texture")) > 0):
-            texture = self.get_query_arguments("texture")[0]
-        else:
-            texture = "0"
-        if (len(self.get_query_arguments("edge")) > 0):
-            edge_style = self.get_query_arguments("edge")[0]
-        else:
-            edge_style = "0"
-        if (len(self.get_query_arguments("theme")) > 0):
-            theme = self.get_query_arguments("theme")[0]
-        else:
-            theme = "0"
-        if (len(self.get_query_arguments("cycle")) > 0):
-            cycle = self.get_query_arguments("cycle")[0]
-        else:
-            cycle = "0"
-        # For "burning" video:
-        if (len(self.get_query_arguments("burn_dir")) > 0):
-            burn_subdir = self.get_query_arguments("burn_dir")[0]
-        else:
+        json_str = unicodedata.normalize('NFKD', json_str).encode("ascii", "ignore")  # Unicode to str
+        json_obj = json.loads(json_str)
+        
+        try:
+            burn_subdir = json_obj["burn_dir"]
+        except:
             burn_subdir = ""
-        if (len(self.get_query_arguments("burn_frame")) > 0):
-            burn_frame = self.get_query_arguments("burn_frame")[0]
-        else:
-            burn_frame = "NULL"
-        burn_first = (len(self.get_query_arguments("burn_first")) > 0)
-        burn_last  = (len(self.get_query_arguments("burn_last")) > 0)
-        # For "casting":
-        if (len(self.get_query_arguments("cast")) > 0):
-            cast_subdir = self.get_query_arguments("cast")[0]
-        else:
+        try:
+            burn_frame = json_obj["burn_frame"]
+        except:
+            burn_frame = ""
+        try:
+            burn_first = json_obj["burn_first"]
+        except:
+            burn_first = False
+        try:
+            burn_last = json_obj["burn_last"]
+        except:
+            burn_last = False
+        try:
+            cast_subdir = json_obj["cast"]
+        except:
             cast_subdir = ""
-        # For testing:
-        if (len(self.get_query_arguments("test_flags")) > 0):
-            test_flags = self.get_query_arguments("test_flags")[0]
-        else:
-            test_flags = "0"
-        test_vars = []
-        for i in range(16):
-            if (len(self.get_query_arguments("test%i" % i)) > 0):
-                test_vars.append(self.get_query_arguments("test%i" % i)[0])
-            else:
-                test_vars.append("0")
-        #print "Query Args: var1: " + var1 + ", var2: " + var2 + ", 3d: " + three_d + ", modes: " + modes + ", color_scheme" + colors_scheme + ", spot_depth" + spot_depth +
-        #         ", offset_w: " + center_offset_w + ", offset_h: " + center_offset_h + ", eye_sep: " + eye_sep + ", darken: " + darken + ", brighten: " + brighten + ", eye_adjust: " + eye_adjust +
-        #         ", test1: " + test1 + ", test2: " + test2 
-        #print "Type: ", type, ", Renderer: ", renderer
         
         # Determine image parameters from GET parameters
         if type == "tile":
@@ -207,46 +137,24 @@ class ImageHandler(tornado.web.RequestHandler):
             y = -2.0 + (float(tile_y) + 0.5) * tile_size
             pix_x = tile_size / 256.0
             pix_y = pix_x
-            payload = [x, y, pix_x, pix_y, 256, 256, int(depth)]
+            #payload = [x, y, pix_x, pix_y, 256, 256, int(depth)]
+            json_obj["x"] = x
+            json_obj["y"] = y
+            json_obj["pix_x"] = pix_x
+            json_obj["pix_y"] = pix_y
+            json_obj["width"] = 256
+            json_obj["height"] = 256
+            json_obj["max_depth"] = int(depth)
             #print "Payload from web server: %s" % payload
+            json_str = json.dumps(json_obj)
         elif type == "img":
-            payload_str = self.get_query_argument("data", None)
-            try:
-                payload = json.loads(payload_str)
-            except ValueError, e:
-                print "Invalid JSON in '?data=%s' URL parameter." % payload_str
-                # TODO: Return a bad image
-                return
-            #print(payload)
+            dummy = 0
         else:
             print "Unrecognized type arg in ImageHandler.get(..)"
 
-        # Renderer is communicated to C++ as the sign of the depth. Negative for C++.
-        if self.application.sock != None and renderer == "cpp":
-            payload[6] = -payload[6]
-        # Append parameters.
-        payload.append(int(var1))
-        payload.append(int(var2))
-        payload.append(0 if three_d == "0" or type == "tile" else 1)
-        payload.append(int(center_offset_w))
-        payload.append(int(center_offset_h))
-        payload.append(0 if darken == "0" else 1)
-        payload.append(int(brighten))
-        payload.append(int(eye_adjust))
-        payload.append(int(eye_sep))
-        payload.append(int(modes))
-        payload.append(int(color_scheme))
-        payload.append(int(spot_depth))
-        payload.append(int(texture))
-        payload.append(int(edge_style))
-        payload.append(int(theme))
-        payload.append(int(cycle))
-        payload.append(int(test_flags))
-        for i in range(16):
-            payload.append(int(test_vars[i]))
-        img_data = self.application.renderImage(payload, renderer)
-
+        img_data = self.application.renderImage(json_str, json_obj)
         self.write(img_data)
+            
         
         # Burn?
         # Validate dir name.
@@ -264,7 +172,7 @@ class ImageHandler(tornado.web.RequestHandler):
                 except OSError:
                     print "Creation of the directory %s failed" % burn_dir
             # Write file.
-            filepath = burn_dir + "/" + burn_frame + ".png"
+            filepath = burn_dir + "/" + str(burn_frame) + ".png"
             try:
                 file = open(filepath, "w")
                 file.write(img_data)
@@ -293,7 +201,7 @@ class ImageHandler(tornado.web.RequestHandler):
         # Validate dir name.
         ok = self.valid_dirname(cast_subdir)
         if ok:
-            print "Casting: %s" % cast_subdir
+            #print "Casting: %s" % cast_subdir
             # Cast. Steps are:
             #   o Remove old directory if it exists.
             #   o Create new directory.
@@ -365,20 +273,20 @@ class MandelbrotApplication(FPGAServerApplication):
     """
     Get an image from the appropriate renderer (as requested/available).
     """
-    def renderImage(self, payload, renderer):
+    def renderImage(self, settings_str, settings):
         # Create image
-        if self.sock == None or renderer == "python":
+        #print settings
+        if self.sock == None or settings["renderer"] == "python":
             # No socket. Generate image here, in Python.
             outputImg = io.BytesIO()
-            img = Mandelbrot.getImage(payload[4], payload[5], payload[0], payload[1], payload[2], payload[3], payload[6])
+            img = Mandelbrot.getImage(settings["width"], settings["height"], settings["x"], settings["y"], settings["pix_x"], settings["pix_y"], settings["max_depth"])
             img.save(outputImg, "PNG")  # self.write expects an byte type output therefore we convert image into byteIO stream
             img_data = outputImg.getvalue()
         else:
             # Send image parameters over socket.
             #print "Python sending to C++: ", payload
-            img_data = self.handle_request(GET_IMAGE, payload, False)
+            img_data = self.handle_request(GET_IMAGE, settings_str, False)
         return img_data
-
 
 if __name__ == "__main__":
     
@@ -402,8 +310,9 @@ if __name__ == "__main__":
               (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"}),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": dir + "/css"}),
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
+              (r"/(fpgaServer.js)", BasicFileHandler, {"path": dir + "/../../../framework/webserver/js"}),   # TODO: Support this path in framework.
               (r"/redeploy", RedeployHandler),
-              (r'/ws', WSHandler),
+              (r'/ws', WSHandler),   # TODO: Support this path in framework.
               #(r'/hw', GetRequestHandler),
               (r'/(img)', ImageHandler),
               (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),

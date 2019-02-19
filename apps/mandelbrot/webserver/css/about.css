@@ -1,5 +1,5 @@
 #content {
-  background-image: url("/img?data=[-1.0221004461908865,0.37353728027791605,0.000002985021213376194,0.000002985021213376194,1670,1490,2500]&var1=0&var2=0&three_d=0&offset_w=0&offset_h=0&eye_sep=0&darken=1&brighten=0&eye_adjust=0&renderer=cpp&modes=194&colors=3604480");
+  background-image: url("/img?json={%22x%22:-1.0221004461908865,%22y%22:0.37353728027791605,%22pix_x%22:0.000002985021213376194,%22pix_y%22:0.000002985021213376194,%22width%22:1670,%22height%22:1490,%22max_depth%22:2500,%22darken%22:true,%22renderer%22:%22fpga%22,%22colors%22:3604480,%22modes%22:194}");
   background-attachment: fixed;
 }
 #mask {

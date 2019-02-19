@@ -1,6 +1,5 @@
 <!doctype html>
-<!-- REPLACED by index.html -->
-<!-- I'm only keeping this to show how commands can be sent to the webserver -->
+<!-- I'm only keeping this to show how commands can be sent to the webserver via websocket -->
 <html>
   <head>
     <title>WebSockets Hello World</title>
@@ -12,12 +11,15 @@
       }
     </style>
     <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="fpgaServer.js"></script>
     <script>
       
       // height and width of the image
       const ROWS = 512;
       const COLS = 512;
 
+      var server = new fpgaServer();
+      
       // global variables that keep track of the total number of
       // 
       var repetitions = 0;
@@ -48,13 +50,10 @@
         $("#open").click(function(evt) {
           evt.preventDefault();
 
-          var host = $("#host").val();
-          var port = "8888";
-          var uri = "/ws";
+          server.connectTo($("#host").val(), "8888");
  
-          // create websocket instance
-          ws = new WebSocket("ws://" + host + ":" + port + uri);
-          
+          // extract websocket instance (which we shouldn't have to do)
+          ws = server.ws;
 
           // Handle incoming websocket message callback
           ws.onmessage = function(evt) {
@@ -67,22 +66,16 @@
             // Parse the event data in order to extract the response
             var msg = JSON.parse(evt.data);
 
-            // If the message type of the response is GET_IMAGE or READ_DATA update the image
-            if(msg.type == "GET_IMAGE"){
-              $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data);
-              // when the scalefactor reaches a threshold the process terminates
+              $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.png);
+              // when the  reaches a threshold the process terminates
               // for now the hardware can generate stable images with a scale factor
               // not higher than 1000000
-              if(scalefactor < 100000){
+              if(scalefactor < 4){
                 t0 = performance.now();
 
                 send_data(ws, true);
               }
-            } else if(msg.type == "READ_DATA"){
-              $("#mandelbrot").attr("src", 'data:image/png;base64,' + msg.data);
-              if(scalefactor < 100000)
-                send_data(ws, false);
-            }
+            //}
 
           };
  
@@ -110,6 +103,7 @@
  
         // Send websocket message commands to initialize the hardware device
         $("#sendcmd").click(function(evt) {
+            error.error;
             var json_obj = { "type": "INIT_PLATFORM", "payload": null };
             ws.send(JSON.stringify(json_obj));
 
@@ -120,44 +114,8 @@
         // Send websocket message to clean the hardware device once the computations
         // have been completed
         $("#clean").click(function(evt) {
+            error.error;
             var json_obj = { "type": "CLEAN_KERNEL", "payload": null };
-            ws.send(JSON.stringify(json_obj));
-        });
-
-        // This is needed to test the single request for an image
-        // which are WRITE_DATA, START_KERNEL and READ_DATA separetely
-        $("#senddata").click(function(evt) {
-            // x coordinate relative to the center of the requested image
-            xcoord = parseFloat($("#xcoord").val());
-            // y coordinate relative to the center of the requested image
-            ycoord = parseFloat($("#ycoord").val());
-
-            // initial zoom factor (should be >= 1)
-            scalefactor = parseFloat($("#scalefactor").val());
-
-            // rate at which the scalfactor increases
-            zoomrate = parseFloat($("#zoomrate").val());
-
-            // calculation of the size of the pixels given the total width and height
-            // of the image and the scale factor
-            var pix_x = ((4.0/scalefactor) / sizex);
-            var pix_y = ((4.0/scalefactor) / sizex);
-
-            // calculation of the coordinates needed by the hardware starting from the
-            // upper left corner. 
-            var x_min = xcoord - sizex/2 * pix_x;
-            var y_min = ycoord - sizex/2 * pix_y;
-
-            var data = [x_min, y_min, pix_x, pix_y];
-
-            // Series of websocket messages used to request a new image
-            var json_obj = { "type": "WRITE_DATA", "payload": data };
-            ws.send(JSON.stringify(json_obj));
-
-            var json_obj = { "type": "START_KERNEL", "payload": null };
-            ws.send(JSON.stringify(json_obj));
-
-            var json_obj = { "type": "READ_DATA", "payload": null };
             ws.send(JSON.stringify(json_obj));
         });
 
@@ -189,20 +147,21 @@
           var data_array = compute_data_to_send();
           console.log(data_array);
           var json = JSON.stringify(data_array);
-          var img_url = "http://" + host + ":" + port + "/img?type=GET_IMAGE&url=false&data=" + json;
+          var img_url = "http://" + host + ":" + port + "/img?type=GET_IMAGE&url=false&json=" + json;
           $("#mandelbrot").attr("src", img_url);
         });
       });
 
       // Function that sends the data through websockets and increases the scalefactor
-      // authomatically for the next image request
+      // for the next image request
       function send_data(ws, isGetImage) {
           data = compute_data_to_send();
 
           if (isGetImage) {
-            var json_obj = { "type": "GET_IMAGE", "payload": data };
-            ws.send(JSON.stringify(json_obj));
+            server.send("GET_IMAGE", data);
           } else {
+            error.error;
+            /*
             var json_obj = { "type": "WRITE_DATA", "payload": data };
             ws.send(JSON.stringify(json_obj));
 
@@ -213,6 +172,7 @@
 
             var json_obj = { "type": "READ_DATA", "payload": null };
             ws.send(JSON.stringify(json_obj));
+            */
           }
           scalefactor *= 1.0 / 0.92;
       }
@@ -241,7 +201,7 @@
           var x_min = xcoord - sizex/2 * pix_x;
           var y_min = ycoord - sizex/2 * pix_y;
 
-          return [x_min, y_min, pix_x, pix_y, sizex, sizey, depth];
+          return {renderer: "cpp", x: x_min, y: y_min, pix_x: pix_x, pix_y: pix_y, width: sizex, height: sizey, max_depth: depth};
       }
     </script>
   </head>
@@ -255,7 +215,7 @@
     </div>
     <div id="message_details">
         </br></br>
-        <input type="submit" id="sendcmd" value="Init FPGA" />
+        <input type="submit" id="sendcmd" value="Init FPGA" style="display: none" />
     </div>
 
     <div id="send_data">
@@ -267,7 +227,7 @@
         <input type="text" id="ycoord" value="0.5777" /><br />
 
         <label for="scalefactor">Scale factor</label>
-        <input type="text" id="scalefactor" value="200000.0" /><br />
+        <input type="text" id="scalefactor" value="2.0" /><br />
 
         <label for="sizex">Size X: </label>
         <input type="text" id="sizex" value="256" />

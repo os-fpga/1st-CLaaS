@@ -343,23 +343,24 @@ class FullImageMandelbrotViewer {
     return `${this.base_url}${this.desired_image_properties.getImageURLQueryArgs()}`;
   }
   getFrameURL(burn, dir, frame, first, last) {
-    let url = `${this.base_url}${this.playback_properties.getImageURLQueryArgs()}`;
+    let params = {};
     if (burn) {
       if (dir) {
-        url = `${url}&burn_dir=${dir}&burn_frame=${frame}`;
+        params.burn_dir = dir;
+        params.burn_frame = frame;
         if (first) {
-          url = url + "&burn_first=1";
+          params.burn_first = true;
         }
         if (last) {
-          url = url + "&burn_last=1";
+          params.burn_last = true;
         }
         // Avoid caching
-        url = url + `&uniquifier=${this.playback_id}`;
+        params.uniquifier = this.playback_id;
       } else {
         console.log("Refusing to burn video with no name.")
       }
     }
-    return url;
+    return `${this.base_url}${this.playback_properties.getImageURLQueryArgs(params)}`;
   }
   
   /*-

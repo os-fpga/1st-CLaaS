@@ -15,6 +15,7 @@
 
 import struct
 import base64
+import socket
 
 # Socket with host messages defines
 CHUNK_SIZE    = 4096
@@ -75,23 +76,17 @@ def write_data_handler(sock, isGetImage, payload, header=None):
 
   # Prepare payload
   # If message contains invalid data they will not be processed
-  if None in payload:
-    return INVALID_DATA
-  else:
-    data = struct.pack("<%ud" % len(payload), *payload)
-    data_size = struct.pack("I", len(payload))
+  # Send JSON string size to the host.
+  #print "Python sending JSON of length: %i" % len(payload)
+  #print "JSON: ", payload
+  sock.sendall(struct.pack("H", socket.htons(len(payload))))
+  # Send JSON string to the host.
+  sock.sendall(payload)
 
-    # Send data size to the host
-    sock.send(data_size)
-    # Receive ACK
-    sock.recv(MSG_LENGTH)
-    
-    # Send data to the host
-    sock.send(data)
-    # Receive ACK
-    response = sock.recv(MSG_LENGTH)
+  # Receive ACK
+  response = sock.recv(MSG_LENGTH)
 
-    ### Communication with host terminated ###
+  ### Communication with host terminated ###
 
   return response.decode()
 

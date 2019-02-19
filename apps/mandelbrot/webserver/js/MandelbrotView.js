@@ -29,7 +29,7 @@ class MandelbrotSettings {
     this.eye_adjust = eye_adjust;
     this.var1 = var1;
     this.var2 = var2;
-    this.three_d = three_d;
+    this.three_d = three_d && full_image;  // No 3-d if tiled.
     this.darken = darken;
     this.stereo = stereo;
     this.eye_separation = eye_separation;
@@ -107,13 +107,47 @@ class MandelbrotSettings {
   }
   
   
-  getImageURLQueryArgs() {
-    return this.mapQueryArgs() +
-           "&three_d=" + this.three_d + "&offset_w=" + this.center_offset + "&offset_h=" + 0 + "&eye_sep=" + (this.stereo ? this.eye_separation : 0) +
-           "&eye_adjust=" + this.eye_adjust + ((this.spot_depth < 0) ? "" : "&spot_depth=" + this.spot_depth) + (this.cycle ? `&cycle=${this.cycle}` : "") + (this.cast_tag ? `&cast=${this.cast_tag}` : "");
+  // Merge into the JSON object expected in the URL. (There is no need for some of these names to differ.)
+  getJSONObj(json_obj) {
+    return Object.assign(
+      json_obj,
+      this.mapQueryArgsObj(),
+      {
+        three_d: this.three_d,
+        offset_w: this.center_offset,
+        offset_h: 0,
+        eye_sep: (this.stereo ? this.eye_separation : 0),
+        eye_adjust: this.eye_adjust
+      },
+      (this.spot_depth < 0) ? {} : {spot_depth: this.spot_depth},
+      this.cycle ? {cycle: this.cycle} : {},
+      this.cast_tag ? {cast: this.cast_tag} : {}
+    );
+  }
+  
+  mapQueryArgsObj() {
+    let ret = {
+      test_flags: this.test_flags,
+      darken: this.darken,
+      brighten: this.brighten,
+      modes: this.modes,
+      colors: this.colors,
+      texture: this.texture,
+      edge: this.edge_style,
+      var1: this.var1,
+      var2: this.var2,
+      renderer: this.renderer,
+      theme: this.theme,
+      test_vars: this.test_vars
+    };
+    return ret;
   }
   
   mapQueryArgs() {
+    return `json=${JSON.stringify(this.mapQueryArgsObj(), null, 0)}`;
+  }
+  
+  mapQueryArgsOld() {
     let test_args = "&test_flags=" + this.test_flags;
     for (let i = 0; i < this.test_vars.length; i++) {
       test_args += `&test${i}=${this.test_vars[i]}`;
@@ -232,22 +266,19 @@ class MandelbrotView {
     this.zoom_level += zoom_rate * delta_t;
   }
   
-  getImageURLParamsArrayJSON() {
-    return "[" + this.center_x + "," +
-                 this.center_y + "," +
-                 this.pix_size_x + "," +
-                 this.pix_size_y + "," +
-                 this.width + "," +
-                 this.height + "," +
-                 this.settings.max_depth + "]";
-  }
-  getImageURLQueryArgs() {
-    return `?data=${this.getImageURLParamsArrayJSON()}&${this.settings.getImageURLQueryArgs()}`;
-  }
-  
-  getImageURL() {
-    return `${this.base_url}?data=${this.desired_image_properties.getImageURLParamsArrayJSON()}` +
-           `&${this.desired_image_properties.getImageURLQueryArgs()}`;
+  getImageURLQueryArgs(extra_params = {}) {
+    let json_obj = {
+      x: this.center_x,
+      y: this.center_y,
+      pix_x: this.pix_size_x,
+      pix_y: this.pix_size_y,
+      width: this.width,
+      height: this.height,
+      max_depth: this.settings.max_depth
+    }
+    json_obj = this.settings.getJSONObj(Object.assign(extra_params, json_obj));
+    console.log(json_obj);
+    return `?json=${JSON.stringify(json_obj, null, 0)}`;
   }
   
 
