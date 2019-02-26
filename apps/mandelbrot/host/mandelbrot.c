@@ -1915,7 +1915,7 @@ void HostMandelbrotApp::get_image(int sock) {
 
   int * depth_data = NULL;
 #ifdef OPENCL
-  if (fpga) {
+  if (mb_img_p->fpga) {
     cout << "Determining depth by pre-computing small image.";
     input_struct input;
 
@@ -1926,8 +1926,8 @@ void HostMandelbrotApp::get_image(int sock) {
       input.height = 8;
       input.coordinates[0] = mb_img_p->wToX(mb_img_p->calc_center_w - mb_img_p->auto_depth_w);
       input.coordinates[1] = mb_img_p->hToY(mb_img_p->calc_center_h - mb_img_p->auto_depth_h);
-      input.coordinates[2] = mb_img_p->getPixX() * mb_img_p->auto_depth_w * 2 / (input.width - 1);
-      input.coordinates[3] = mb_img_p->getPixY() * mb_img_p->auto_depth_h * 2 / (input.height - 1);
+      input.coordinates[2] = mb_img_p->calc_pix_size * mb_img_p->auto_depth_w * 2 / (input.width - 1);
+      input.coordinates[3] = mb_img_p->calc_pix_size * mb_img_p->auto_depth_h * 2 / (input.height - 1);
       input.max_depth = (long)(mb_img_p->getMaxDepth());
       
       // Generate this coarse image on FPGA (allocated by handle_get_image).
@@ -1949,8 +1949,8 @@ void HostMandelbrotApp::get_image(int sock) {
     // X,Y are center position, and must be passed to FPGA as top left.
     input.coordinates[0] = mb_img_p->wToX(0);
     input.coordinates[1] = mb_img_p->hToY(0);
-    input.coordinates[2] = mb_img_p->getPixX();
-    input.coordinates[3] = mb_img_p->getPixY();
+    input.coordinates[2] = mb_img_p->calc_pix_size;
+    input.coordinates[3] = mb_img_p->calc_pix_size;
     input.width  = (long)(mb_img_p->getDepthArrayWidth());
     input.height = (long)(mb_img_p->getDepthArrayHeight());
     input.max_depth = (long)(mb_img_p->getMaxDepth());  // may have been changed based on auto-depth.
