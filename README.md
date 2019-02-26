@@ -18,8 +18,8 @@ A hardware accelerated web application utilizing this framework consists of:
 
 The WebSocket or REST communication between the Web Application and the FPGA passes through:
   1. The Web Client application, written in JavaScript running in a web browser, transmits JSON (for now), via WebSocket or GET, to the Web Server. The communication is currently simple commands containing:
-      1. type: describes the command that has to be performed by the host application and dispatched to the FPGA;
-      1. data: a data value to be sent to the FPGA.
+      - type: describes the command that has to be performed by the host application and dispatched to the FPGA;
+      - data: a data value to be sent to the FPGA.
   1. The Web Server, a Python web server, echoes commands via UNIX socket to the Host Application.
   1. The Host Application, written in C/C++/OpenCL, transmits the commands to the FPGA Shell through OpenCL calls.
   1. The FPGA Shell, written in Verilog and configured by scripts, communicates between memory and the Custom Kernel via AXI and FIFOs.
@@ -85,9 +85,9 @@ Note that F1 machines are powerful and expensive. Compilations take several hour
 Instructions can be found <a href="https://github.com/aws/aws-fpga/blob/master/SDAccel/README.md#iss" target="_ blank">here</a>.
 
 If you are new to AWS, you might find it to be quite complicated. Here are some specific steps to get you going, though they likely need refinement. Be sure to correct these docs based on your experience.
-  - Create a <a href="https://aws.amazon.com/free/" target="_ blank">free tier account</a> and await approval.
-  - Login to your console. Be sure you are logging in as root, not as an IAM user. (Your account has no "IAM" users until you create them (which is not necessary to get going).)
-  - Now, you'll need access to F1 resources (and possibly the Amazon Machine Image (AMI) for the Build Instance). Unless policies change, you must apply for this. You can try skipping ahead to confirm.
+  1. Create a <a href="https://aws.amazon.com/free/" target="_ blank">free tier account</a> and await approval.
+  1. Login to your console. Be sure you are logging in as root, not as an IAM user. (Your account has no "IAM" users until you create them (which is not necessary to get going).)
+  1. Now, you'll need access to F1 resources (and possibly the Amazon Machine Image (AMI) for the Build Instance). Unless policies change, you must apply for this. You can try skipping ahead to confirm.
     - Under "Support" (upper left) open "Support Center".
     - Create a case.
       - Regarding: "Service Limit Increase".
@@ -124,32 +124,29 @@ More instructions for the Mandelbrot application are [here](https://github.com/a
 # F1 Instance Setup
 
 Now let's provision an F1 Instance.
-  - From the dashboard, click "Launch Instance".
-  - Click "AWS Marketplace" on the left.
-  - Enter "FPGA" in the search box.
-  - "Continue".
-  - Select f1.2xlarge (in "North Virginia").
-  - Click through default options to launch.
-  - (SSH key instructions here)
-  - `chmod 600 ~/.ssh/AWS_<my_machine>.pem`
-  - Click new instance link to find IP address.
-  - You can view your instances from the left panel. Go to your EC2 Dashboard and clicking "Running Instances" or under "Instances", select "Instances". From here, you can, among other things, start and
-  stop your instances ("Actions", "Instance State"). Be sure not to accidentally leave them running!!! You should configure monitoring of your resources, but the options are very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. Be sure your instance transitions to "stopped" state (or Amazon tells me charging stops at "stopping" state).
-
-The AWS F1 instance has to allow TCP connections on port 8888 (or the one you choose to serve the GET or WebSocket requests):
-  1. Go to the EC2 Dashboard.
-  1. On the left, under "Network & Security", click on "Security Group".
-  1. Select the one related to your F1 instance.
-  1. Go to the "Inbound" tab and click on "Edit".
-  1. "Add".
-  1. Select "Custom TCP Rule" as "Type" and insert "8888" as port range.
-  1. Provide "Source" as the IP from which you will launch your client, or leave it as zeros to allow any IP to connect.
-  1. You can set "Description" to "webserver".
-  1. Save
+  1. From the dashboard, click "Launch Instance".
+  1. Note the tabs at the top for the steps to select, configure, and launch our instance.
+  1. You are currently in "Choose AMI"
+    - Click "AWS Marketplace" on the left.
+    - Enter "FPGA" in the search box.
+    - Select "FPGA Developer AMI".
+    - "Continue".
+  1. You are now in "Choose Instance Type". (See tabs and heading at the top).
+    - Select f1.2xlarge (in "North Virginia").
+  1. Default configuration is generally good, but we do need to open up port 8888 (the default development port for the webserver). Jump ahead by clicking the tab "Configure Security Group".
+    - Provide a name for a new security group (e.g. "fpga-webserver-dev") and a description (e.g. "For development using https://github.com/alessandrocomodi/fpga-webserver").
+    - "Add Rule"
+      - For "Type" select "Custom TCP Rule" (should be the default), and and insert "8888" as port range (or open several ports, e.g. "8880-8889").
+      - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
+      - Set "Description", e.g. "development-webserver".
+  1. Click "Review and Launch", be sure you are comfortable with any warnings, review details, and "Launch".
+  1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `~/.ssh/AWS_<my_machine>.pem`. (Be sure to `chmod 400 ~/.ssh/AWS_<my_machine>.pem`.)) "Launch".
+  1. Click new instance link to find IP address.
+  1. You can view your instances from the left panel. Go to your EC2 Dashboard and click "Running Instances" or under "Instances", select "Instances". From here, you can, among other things, start and stop your instances ("Actions", "Instance State"). Be sure not to accidentally leave them running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. Be sure your instance transitions to "stopped" state (or Amazon tells me charging stops at "stopping" state).
 
 Log into your instance:
 ```sh
-ssh -i ~/.ssh/<AWS_my_machine>.pem centos@<ip>`
+ssh -i ~/.ssh/AWS_<my_machine>.pem centos@<ip>`
 ```
 
 Now, configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<user-id>`, so choose a username for yourself, such as your Amazon IAM username, and:
@@ -164,7 +161,12 @@ Use the same user name for all your instances.
 
 # X11 Forwarding
 
-It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick.
+It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick. Maybe:
+```sh
+sudo yum install xorg-x11-xauth
+exit
+ssh -X -i ~/.ssh/AWS_<my_machine>.pem centos@<ip>
+```
 
 
 # Running on FPGA
@@ -190,7 +192,9 @@ You can build on your F1 instance, but building takes a long time, and its cheap
 Provision a build instance as you did the F1 Instance, but use instance type "c4.4xlarge" (as recommended by Amazon, or we have found "c4.2xlarge" to suffice, though it's slower). `ssh` into this instance. It wouldn't hurt to open port 8888 on this instance as well in case you want to test on this instance without the FPGA.
 
 
-# AWS CLI Configuration
+# One-Time Instance Setup
+
+## AWS CLI Configuration
 
 Configure by providing your credentials. These can be found in in the Security Credentials page, which I'm not sure how to navigate to, but here's a <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_ blank">direct link</a>.
 
@@ -200,17 +204,7 @@ Use region: `us-east-1` and output: `json`.
 aws configure
 ```
 
-I believe this is a one-time configuration for the machine.
-
-
-# Building from Source
-
-Now, build both the FPGA image and host application.
-
-
-## FPGA Build
-
-First, clone this GitHub repository and the aws-fpga GitHub repository and source the sdaccel_setup.sh script.
+## Clone Necessary Repos
 
 ```sh
 cd
@@ -218,16 +212,24 @@ git clone https://github.com/alessandrocomodi/fpga-webserver
 git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 ```
 
-Each time you login:
+
+# With Each Login
 
 ```sh
-fpga-webserver/sdaccel_setup
+source fpga-webserver/sdaccel_setup
 ```
 
-Build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
+# Building from Source
+
+Now, build both the FPGA image and host application, transfer them to the F1 instance, and run as follows.
+
+## FPGA Build
+
+On your build instance, build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
 
 ```sh
 cd ~/fpga-webserver/apps/mandelbrot/build
+mkdir ../out
 make build TARGET=hw KERNEL=mandelbrot -j8 > ../out/out.log &
 ```
 
