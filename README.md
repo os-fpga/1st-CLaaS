@@ -108,6 +108,8 @@ sudo apt-get update
 sudo apt-get install make g++ python python-pip python-pil
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
+cd fpga-webserver
+git submodule update --init --recursive
 cd apps/mandelbrot/build
 make launch
 ```
@@ -167,7 +169,7 @@ It's important to be able to run X11 applications on your instance and display t
 
 # Running on FPGA
 
-Prebuilt files are included in the repository. Try to run using those first, so you can see the FPGA in action.
+Prebuilt files are included in the repository. (TODO: No they are not.). Try to run using those first, so you can see the FPGA in action.
 
 ```sh
 cd

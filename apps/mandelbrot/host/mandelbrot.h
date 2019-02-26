@@ -188,7 +188,7 @@ protected:
   int getMaxDepth() {return max_depth;}
 
 protected:
-  friend int main(int argc, char const *argv[]); // Contains functionality that should be moved here.
+  friend class HostMandelbrotApp; // TODO: Contains functionality that should be moved here.
   
   // Types
 

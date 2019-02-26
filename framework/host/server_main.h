@@ -120,7 +120,7 @@ protected:
   #endif
   
 #ifdef OPENCL
-  virtual cl_data_types get_image(cl_data_types cl, int sock) {printf("No defined behavior for get_image()\n");}
+  virtual cl_data_types get_image(cl_data_types cl, int sock) {printf("No defined behavior for get_image()\n"); return cl;}
 #else
   virtual void get_image(int sock) {printf("No defined behavior for get_image()\n");}
 #endif

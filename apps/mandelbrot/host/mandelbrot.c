@@ -1,4 +1,3 @@
-#include "server_main.h"
 #include <math.h>
 #include <cstdlib>
 #include "mandelbrot.h"
@@ -205,6 +204,7 @@ MandelbrotImage::MandelbrotImage(json &j) {
   param("height", req_height, 0);
   calc_width  = req_width;   // assuming not 3d and not limited by FPGA restrictions
   calc_height = req_height;  // "
+
   param("max_depth", spec_max_depth, 250);
   max_depth = -1000;   // garbage value
   if (getTestFlag(2)) {spec_max_depth = sqrt(spec_max_depth) - 4;}
@@ -277,14 +277,20 @@ MandelbrotImage::MandelbrotImage(json &j) {
          /* << ", calc_img_size = (" << calc_width << ", " << calc_height << "), calc_center = (" << calc_center_w << ", " << calc_center_h
          << "), spec_max_depth = " << spec_max_depth */ << ", modes = " << modes << ", full = " << full_image << ". ";
   
-  
-  // TODO: I think there's currently a limitation that width must be a multiple of 16 for the FPGA.
-  //       We will generate an image with width extended to a multiple of 16, where the extended pixels
-  //       should not be displayed (because the redered image for 3D is sized to support the requested size).
+  // FPGA image dimensions are restricted.
+#ifdef OPENCL
   if (fpga) {
+    // FPGA has an upper bound on image size. I don't think this shrinkage will break anything catastrophically, but it's not tested.
+    if (calc_width > COLS) {calc_width = COLS;}
+    if (calc_height > ROWS) {calc_height = ROWS;}
+    
+    // TODO: I think there's currently a limitation that width must be a multiple of 16 for the FPGA.
+    //       We will generate an image with width extended to a multiple of 16, where the extended pixels
+    //       should not be displayed (because the redered image for 3D is sized to support the requested size).
     int multiple = 16;
     calc_width = (calc_width + multiple - 1) / multiple * multiple;  // Round up depth array width to nearest 16.
   }
+#endif
   
   start_darkening_depth = getZoomDepth() - eye_adjust - (coord_t)brighten;   // default assuming no auto-darkening
   
@@ -1902,17 +1908,6 @@ void HostMandelbrotApp::get_image(int sock) {
   array_struct.data[6] = json_obj["max_depth"];
   
   
-#ifdef OPENCL
-  if (fpga_req) {
-    // Don't go bigger than allocated sizes.
-    if (((int)(array_struct.data[4])) > COLS) {
-      array_struct.data[4] = (double)COLS;  // (COLS should be a multiple of 16.)
-    }
-    if (((int)(array_struct.data[5])) > ROWS) {
-      array_struct.data[5] = (double)ROWS;
-    }
-  }
-#endif
   MandelbrotImage * mb_img_p = newMandelbrotImage(json_obj);
   
   // Free memory for array_struct.
@@ -1921,6 +1916,7 @@ void HostMandelbrotApp::get_image(int sock) {
   int * depth_data = NULL;
 #ifdef OPENCL
   if (fpga) {
+    cout << "Determining depth by pre-computing small image.";
     input_struct input;
 
     // Determine autodepth by generating a coarse-grained image for the auto-depth bounding box.
@@ -1935,6 +1931,7 @@ void HostMandelbrotApp::get_image(int sock) {
       input.max_depth = (long)(mb_img_p->getMaxDepth());
       
       // Generate this coarse image on FPGA (allocated by handle_get_image).
+      // TODO: Hmmm... currently depths are modulo 256, so this approach won't work well.
       cl = handle_get_image(sock, &depth_data, &input, cl);
       
       // Scan all depths to determine auto-depth.
