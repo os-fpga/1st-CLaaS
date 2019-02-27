@@ -185,7 +185,7 @@ protected:
   int getDepthArrayHeight() {return calc_height;}
   coord_t wToX(int w) {return x + (w - calc_center_w) * calc_pix_size;}
   coord_t hToY(int h) {return y + (h - calc_center_h) * calc_pix_size;}
-  int getMaxDepth() {return max_depth;}
+  //int getMaxDepth() {return max_depth;}
 
 protected:
   friend class HostMandelbrotApp; // TODO: Contains functionality that should be moved here.

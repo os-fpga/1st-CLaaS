@@ -1930,7 +1930,7 @@ void HostMandelbrotApp::get_image(int sock) {
       input.coordinates[1] = mb_img_p->hToY(mb_img_p->calc_center_h - mb_img_p->auto_depth_h);
       input.coordinates[2] = mb_img_p->calc_pix_size * mb_img_p->auto_depth_w * 2 / (input.width - 1);
       input.coordinates[3] = mb_img_p->calc_pix_size * mb_img_p->auto_depth_h * 2 / (input.height - 1);
-      input.max_depth = (long)(mb_img_p->getMaxDepth());
+      input.max_depth = (long)(mb_img_p->spec_max_depth;
       
       // Generate this coarse image on FPGA (allocated by handle_get_image).
       // TODO: Hmmm... currently depths are modulo 256, so this approach won't work well.
@@ -1955,7 +1955,7 @@ void HostMandelbrotApp::get_image(int sock) {
     input.coordinates[3] = mb_img_p->calc_pix_size;
     input.width  = (long)(mb_img_p->getDepthArrayWidth());
     input.height = (long)(mb_img_p->getDepthArrayHeight());
-    input.max_depth = (long)(mb_img_p->getMaxDepth());  // may have been changed based on auto-depth.
+    input.max_depth = (long)(mb_img_p->spec_max_depth;  // may have been changed based on auto-depth.
 
     cl = handle_get_image(sock, &depth_data, &input, cl);
   }

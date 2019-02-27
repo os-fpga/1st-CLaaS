@@ -69,17 +69,18 @@ class RedeployHandler(tornado.web.RequestHandler):
 
 """
 Handler for .png image GET requests
+Request should contain query arg json={...}.
 Can be:
-  get(self, "tile", tile_z, tile_x, tile_y), based on openlayers API,
-    and (TODO) depth (max iterations) is currently hardcoded
+  get(self, "tile", depth, tile_z, tile_x, tile_y), based on openlayers API. json query arg is optional.
 Or:
   get(self, "img")
-    with GET query argument ?data=[x,y,pix_x,pix_y,img_width,img_height,depth] as a JSON string
-    where: x/y are float top,left mandelbrot coords
-           pix_x/y are float pixel sizes in mandelbrot coords
-           img_width/height are integers (pixels), and
-           depth is the max iteration level as an integer; negative depths will force generation in host app, not FPGA
-In either case, integer query arguments var1, var2, three_d, modes, color_scheme, spot_depth, center_offset_w, center_offset_h, eye_sep, darken, brighten, and eye_adjust, test1/2 can also be provided (used in C rendering only).
+    with GET query json variables:
+       - x/y are float top,left mandelbrot coords
+       - pix_x/y are float pixel sizes in mandelbrot coords
+       - width/height are image width/height in pixels (integers), and
+       - max_depth is the max iteration level as an integer
+           ...
+In either case, integer json query arguments var1, var2, three_d, modes, color_scheme, spot_depth, center_offset_w, center_offset_h, eye_sep, darken, brighten, and eye_adjust, ... can also be provided (used in C rendering only).
 """
 class ImageHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
