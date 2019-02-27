@@ -109,8 +109,14 @@ int HostApp::server_main(int argc, char const *argv[])
       exit(1);
     }
 
+    int loop_cnt = 0;
     while(true) {
       //cout << "C++ Main loop" << endl;
+      loop_cnt++;
+      if (loop_cnt > 10000) {
+        cout << "." << flush;
+        loop_cnt = 0;
+      }
       
       if(!(err = recv(sock, msg, sizeof(msg), 0))){
         printf("Error %d: Client disconnected. Exiting.\n", err);
@@ -182,6 +188,7 @@ int HostApp::server_main(int argc, char const *argv[])
           break;
         default:
 #ifdef OPENCL
+          cout << "Calling handle_command(.., " << command << ", ..)" << endl;
           cl = handle_command(sock, command, cl, xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #else
           char response[MSG_LENGTH];

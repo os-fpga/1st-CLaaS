@@ -280,6 +280,7 @@ MandelbrotImage::MandelbrotImage(json &j) {
   // FPGA image dimensions are restricted.
 #ifdef OPENCL
   if (fpga) {
+    cout << "Adjusting image sizes for FPGA (if needed)." << endl;
     // FPGA has an upper bound on image size. I don't think this shrinkage will break anything catastrophically, but it's not tested.
     if (calc_width > COLS) {calc_width = COLS;}
     if (calc_height > ROWS) {calc_height = ROWS;}
@@ -1887,6 +1888,7 @@ MandelbrotImage::color_t MandelbrotImage::BLACK;
 // TODO: Cleanup (after this is working on FPGA).
 #ifdef OPENCL
 cl_data_types HostMandelbrotApp::get_image(cl_data_types cl, int sock) {
+  cout << "get_image(..)" << endl;
 #else
 void HostMandelbrotApp::get_image(int sock) {
 #endif
@@ -1972,6 +1974,7 @@ void HostMandelbrotApp::get_image(int sock) {
   delete mb_img_p;
 
 #ifdef OPENCL
+  cout << "End get_image(..)" << endl;
   return cl;
 #endif
 }
