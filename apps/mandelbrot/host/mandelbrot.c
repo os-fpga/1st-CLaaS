@@ -1967,9 +1967,9 @@ void HostMandelbrotApp::get_image(int sock) {
     
     // TODO: Cut-n-paste.
     // Max depth is no longer speculative.
-    max_depth = spec_max_depth;
+    mb_img_p->max_depth = mb_img_p->spec_max_depth;
     // Darkening for depth can only be applied once auto-depth is computed (which it now is).
-    darkenDepthArray();
+    mb_img_p->darkenDepthArray();
     
   }
 #endif
