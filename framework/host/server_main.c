@@ -427,7 +427,17 @@ int HostApp::handle_read_data(int socket, int data[], int data_size) {
 ** cl: OpenCL datatypes
 */
 cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
+  cout << "handle_get_image(..) input_struct: [" <<
+          input_struct.coordinates[0] << ", " <<
+          input_struct.coordinates[1] << ", " <<
+          input_struct.coordinates[2] << ", " <<
+          input_struct.coordinates[3] << ", " <<
+          input_struct.width << ", " <<
+          input_struct.height << ", " <<
+          input_struct.max_depth << "]" <<
+          endl;
   cl = write_kernel_data(cl, input_p, sizeof(input_struct));
+  cout << "Wrote kernel." << endl;
 
   // check timing
   struct timespec start, end;
@@ -437,10 +447,12 @@ cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_s
   clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
   cl = start_kernel(cl);
+  cout << "Started kernel." << endl;
 
   *data_array_p = (int *) malloc(input_p->width * input_p->height * sizeof(int));
 
   cl = read_kernel_data(cl, *data_array_p, input_p->width * input_p->height * sizeof(int));
+  cout << "Read kernel data." << endl;
 
   // getting end time
   clock_gettime(CLOCK_MONOTONIC_RAW, &end);

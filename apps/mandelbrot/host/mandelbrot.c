@@ -1918,11 +1918,11 @@ void HostMandelbrotApp::get_image(int sock) {
   int * depth_data = NULL;
 #ifdef OPENCL
   if (mb_img_p->fpga) {
-    cout << "Determining depth by pre-computing small image.";
     input_struct input;
 
     // Determine autodepth by generating a coarse-grained image for the auto-depth bounding box.
     if (mb_img_p->auto_dive || mb_img_p->auto_darken) {
+      cout << "Determining depth by pre-computing small image." << endl;
       mb_img_p->setAutoDepthBounds();
       input.width = 16;
       input.height = 8;
@@ -1944,7 +1944,7 @@ void HostMandelbrotApp::get_image(int sock) {
       }
       free(depth_data);
     } else {
-      
+      cout << "(No auto-depth determination needed for FPGA image.)" << endl;
     }
     
     // Populate depth_data from FPGA.
