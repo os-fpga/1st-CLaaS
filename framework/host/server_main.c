@@ -428,13 +428,13 @@ int HostApp::handle_read_data(int socket, int data[], int data_size) {
 */
 cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
   cout << "handle_get_image(..) input_struct: [" <<
-          input_struct.coordinates[0] << ", " <<
-          input_struct.coordinates[1] << ", " <<
-          input_struct.coordinates[2] << ", " <<
-          input_struct.coordinates[3] << ", " <<
-          input_struct.width << ", " <<
-          input_struct.height << ", " <<
-          input_struct.max_depth << "]" <<
+          input_p.coordinates[0] << ", " <<
+          input_p.coordinates[1] << ", " <<
+          input_p.coordinates[2] << ", " <<
+          input_p.coordinates[3] << ", " <<
+          input_p.width << ", " <<
+          input_p.height << ", " <<
+          input_p.max_depth << "]" <<
           endl;
   cl = write_kernel_data(cl, input_p, sizeof(input_struct));
   cout << "Wrote kernel." << endl;
