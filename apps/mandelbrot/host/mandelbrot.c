@@ -166,8 +166,8 @@ MandelbrotImage::MandelbrotImage(json &j) {
                                              // Do not darken if debugging max depth, as it could change dynamically.
   half_faded_depth = 30;
   
-  auto_dive = full_image;  // (Relevant for 3D/Stereo-3D.)
-  auto_darken = full_image;
+  auto_dive = full_image && is_3d;
+  auto_darken = full_image;  // (Even if we aren't darkening, we use the darken-depth to determing max_depth.)
   
   inf_color = BLACK;
   if (getTestFlag(0)) {inf_color.component[0] = inf_color.component[1] = inf_color.component[2] = 0x80;}  // Use grey for debug so it can be lightened/darkened.
@@ -1898,28 +1898,11 @@ cl_data_types HostMandelbrotApp::get_image(cl_data_types cl, int sock) {
 #else
 void HostMandelbrotApp::get_image(int sock) {
 #endif
-  dynamic_array array_struct;
 
   json json_obj = read_json(sock);
   //cout << "C++ read JSON: " << json_obj << endl;
   
-  // TODO: Eliminate array_struct.
-
-  array_struct.data_size = 7; // TODO
-  array_struct.data = (double *) malloc(CHUNK_SIZE * 100 /* TODO */);
-  array_struct.data[0] = json_obj["x"];
-  array_struct.data[1] = json_obj["y"];
-  array_struct.data[2] = json_obj["pix_x"];
-  array_struct.data[3] = json_obj["pix_y"];
-  array_struct.data[4] = json_obj["width"];
-  array_struct.data[5] = json_obj["height"];
-  array_struct.data[6] = json_obj["max_depth"];
-  
-  
   MandelbrotImage * mb_img_p = newMandelbrotImage(json_obj);
-  
-  // Free memory for array_struct.
-  free(array_struct.data);
 
   int * depth_data = NULL;
 #ifdef OPENCL
