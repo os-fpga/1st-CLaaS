@@ -376,6 +376,7 @@ private:
   void darkenColor(color_t &color);
   void lightenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
   void darkenColor(color_t &color, float inv_amount, int component_mask = 7, bool cap = false);
+  void darkenDepthArray();
   void darkenForDepth(color_t &color, int depth, int fractional_depth);
   void illuminateColor(color_t &color, float * amts);
   

@@ -1494,15 +1494,7 @@ MandelbrotImage *MandelbrotImage::generateMandelbrot() {
   max_depth = spec_max_depth;
   
   // Darkening for depth can only be applied once auto-depth is computed (which it now is).
-  // Darken for depth.
-  if (darken && (color_array != NULL)) {
-    for (int h = 0; h < calc_height; h++) {
-      for (int w = 0; w < calc_width; w++) {
-        int i = h * calc_width + w;
-        darkenForDepth(color_array[i], depth_array[i], smooth ? fractional_depth_array[i] : (unsigned char)0);
-      }
-    }
-  }
+  darkenDepthArray();
   
   if (debug_cnt > 0) {
     cout << "\nDebug cnt: " << debug_cnt << endl;
@@ -1597,6 +1589,20 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
   
   return this;
 };
+
+
+void MandelbrotImage::darkenDepthArray() {
+  // Darken for depth.
+  if (darken && (color_array != NULL)) {
+    for (int h = 0; h < calc_height; h++) {
+      for (int w = 0; w < calc_width; w++) {
+        int i = h * calc_width + w;
+        darkenForDepth(color_array[i], depth_array[i], smooth ? fractional_depth_array[i] : (unsigned char)0);
+      }
+    }
+  }
+}
+
 
 inline void MandelbrotImage::darkenForDepth(color_t &color, int depth, int fractional_depth) {
   if (depth >= max_depth) {
@@ -1920,9 +1926,9 @@ void HostMandelbrotApp::get_image(int sock) {
   if (mb_img_p->fpga) {
     input_struct input;
 
-    // Determine autodepth by generating a coarse-grained image for the auto-depth bounding box.
+    // Determine autodepth by generating a coarse-grained image for the auto-depth bounding box (using current spec_max_depth (max_depth from request)).
     if (mb_img_p->auto_dive || mb_img_p->auto_darken) {
-      cout << "Determining depth by pre-computing small image." << endl;
+      cout << "Determining depth by pre-computing small image (" << mb_img_p->auto_dive << ", " << mb_img_p->auto_darken << ")." << endl;
       mb_img_p->setAutoDepthBounds();
       input.width = 16;
       input.height = 8;
@@ -1958,6 +1964,13 @@ void HostMandelbrotApp::get_image(int sock) {
     input.max_depth = (long)(mb_img_p->spec_max_depth);  // may have been changed based on auto-depth.
 
     cl = handle_get_image(sock, &depth_data, &input, cl);
+    
+    // TODO: Cut-n-paste.
+    // Max depth is no longer speculative.
+    max_depth = spec_max_depth;
+    // Darkening for depth can only be applied once auto-depth is computed (which it now is).
+    darkenDepthArray();
+    
   }
 #endif
 
