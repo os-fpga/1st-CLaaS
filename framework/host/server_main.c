@@ -112,8 +112,8 @@ int HostApp::server_main(int argc, char const *argv[])
   
   #ifdef OPENCL
     // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).                            
-    kernel.init_platform(NULL);
-    kernel.init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+    init_platform(NULL);
+    init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
   #endif
 
 
@@ -212,7 +212,7 @@ int HostApp::server_main(int argc, char const *argv[])
         default:
 #ifdef OPENCL
           cout << "Calling handle_command(.., " << command << ", ..)" << endl;
-          kernel.handle_command(sock, command, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+          handle_command(sock, command, xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #else
           char response[MSG_LENGTH];
           sprintf(response, "INFO: Command [%i] is a no-op with no FPGA", command);
@@ -265,7 +265,7 @@ void HostApp::init_kernel(char * response, const char *xclbin, const char *kerne
     sprintf(response, "Error: first initialize platform");
   } else {
     if(!kernel.initialized) {
-      initialize_kernel(xclbin, kernel_name, memory_size);
+      kernel.initialize_kernel(xclbin, kernel_name, memory_size);
       if (kernel.status)
         sprintf(response, "Error: Could not initialize the kernel");
       else {
@@ -285,12 +285,12 @@ void HostApp::handle_command(int socket, int command, const char *xclbin, const 
   switch (command) {
     // Initialization of the platform
     case INIT_PLATFORM_N:
-      kernel.init_platform(NULL);
+      init_platform(NULL);
       break;
 
     // Initialization of the kernel (loads the fpga program)
     case INIT_KERNEL_N:
-      kernel.init_kernel(NULL, xclbin, kernel_name, memory_size);
+      init_kernel(NULL, xclbin, kernel_name, memory_size);
       break;
 
     // Releasing all OpenCL links to the fpga
@@ -444,7 +444,7 @@ int HostApp::handle_read_data(int socket, int data[], int data_size) {
 ** socket: reference to the socket channel with the webserver
 ** cl: OpenCL datatypes
 */
-cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl) {
+void HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * input_p) {
   cout << "handle_get_image(..) input_struct: [" <<
           input_p->coordinates[0] << ", " <<
           input_p->coordinates[1] << ", " <<

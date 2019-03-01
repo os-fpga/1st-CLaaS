@@ -453,11 +453,7 @@ class HostMandelbrotApp : public HostApp {
 
 public:
 
-#ifdef OPENCL
-  cl_data_types get_image(cl_data_types cl, int sock);
-#else
   void get_image(int sock);
-#endif
   virtual MandelbrotImage * newMandelbrotImage(json &params) {return new MandelbrotImage(params);} // Can be extented to utilize a derived type.
 };
 

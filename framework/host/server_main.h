@@ -123,9 +123,9 @@ protected:
   ** connection with the python webserver
   */
   #ifdef OPENCL
-  cl_data_types init_platform(cl_data_types cl, char * response);
-  cl_data_types init_kernel(cl_data_types cl, char * response, const char *xclbin, const char *kernel_name, int memory_size);
-  cl_data_types handle_command(int socket, int command, cl_data_types opencl, const char *xclbin, const char *kernel_name, int memory_size);
+  void init_platform(char * response);
+  void init_kernel(char * response, const char *xclbin, const char *kernel_name, int memory_size);
+  void handle_command(int socket, int command, const char *xclbin, const char *kernel_name, int memory_size);
   #else
   char *image_buffer;
   #endif
@@ -148,7 +148,7 @@ protected:
   int handle_read_data(int socket, int data[], int data_size);
 
   #ifdef OPENCL
-  cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl);
+  void handle_get_image(int socket, int ** data_array_p, input_struct * input_p);
   #endif
   
   virtual void get_image(int sock) {printf("No defined behavior for get_image()\n");}

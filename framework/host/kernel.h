@@ -56,6 +56,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <CL/opencl.h>
 
+
+/*
+** Definition of the input data structure for the kernel
+** To be modified by the user if he sends different kind of data
+** The following struct is specific to mandelbrot set calculation
+** TODO: Doesn't belong here.
+*/
+typedef struct data_struct {
+  double coordinates[4];
+  long width;
+  long height;
+  long max_depth;
+} input_struct;
+
+
 class Kernel {
 
 public:
@@ -71,19 +86,6 @@ public:
   cl_mem d_a;                         // device memory used for a vector
   int status = 1;
   bool initialized = false;
-
-  /*
-  ** Definition of the input data structure for the kernel
-  ** To be modified by the user if he sends different kind of data
-  ** The following struct is specific to mandelbrot set calculation
-  ** TODO: Doesn't belong here.
-  */
-  typedef struct data_struct {
-    double coordinates[4];
-    long width;
-    long height;
-    long max_depth;
-  } input_struct;
 
   Kernel();
 

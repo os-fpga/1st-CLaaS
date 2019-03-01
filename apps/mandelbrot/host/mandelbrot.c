@@ -1925,12 +1925,7 @@ MandelbrotImage::color_t MandelbrotImage::BLACK;
 
 
 // TODO: Cleanup (after this is working on FPGA).
-#ifdef OPENCL
-cl_data_types HostMandelbrotApp::get_image(cl_data_types cl, int sock) {
-  cout << "get_image(..)" << endl;
-#else
 void HostMandelbrotApp::get_image(int sock) {
-#endif
 
   json json_obj = read_json(sock);
   //cout << "C++ read JSON: " << json_obj << endl;
@@ -1956,7 +1951,7 @@ void HostMandelbrotApp::get_image(int sock) {
       
       // Generate this coarse image on FPGA (allocated by handle_get_image).
       // TODO: Hmmm... currently depths are modulo 256, so this approach won't work well.
-      cl = handle_get_image(sock, &depth_data, &input, cl);
+      handle_get_image(sock, &depth_data, &input);
       
       // Scan all depths to determine auto-depth.
       for (int w = 0; w < input.width; w++) {
@@ -1979,7 +1974,7 @@ void HostMandelbrotApp::get_image(int sock) {
     input.height = (long)(mb_img_p->getDepthArrayHeight());
     input.max_depth = (long)(mb_img_p->spec_max_depth);  // may have been changed based on auto-depth.
 
-    cl = handle_get_image(sock, &depth_data, &input, cl);
+    handle_get_image(sock, &depth_data, &input);
     
     // TODO: Cut-n-paste.
     // Max depth is no longer speculative.
@@ -2001,9 +1996,4 @@ void HostMandelbrotApp::get_image(int sock) {
   // Call the utility function to send data over the socket
   handle_read_data(sock, png, (int)png_size);
   delete mb_img_p;
-
-#ifdef OPENCL
-  cout << "End get_image(..)" << endl;
-  return cl;
-#endif
 }

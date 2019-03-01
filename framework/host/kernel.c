@@ -171,7 +171,7 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
                                       (const unsigned char **) &kernelbinary, &status, &err);
 
   if ((!program) || (err!=CL_SUCCESS)) {
-    perror("Error: Failed to create a compute program binary!\nTest failed\n", cl);
+    perror("Error: Failed to create a compute program binary!\nTest failed\n");
     return;
   }
 
@@ -230,7 +230,7 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
   }
 }
 
-void write_kernel_data(input_struct * input, int data_size) {
+ void Kernel::write_kernel_data(input_struct * input, int data_size) {
   int err;
   err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -251,7 +251,7 @@ void write_kernel_data(input_struct * input, int data_size) {
   }
 }
 
-void start_kernel(){
+void Kernel::start_kernel(){
   int err;
   err = clEnqueueTask(commands, kernel, 0, NULL, NULL);
   if (err) {
@@ -265,7 +265,7 @@ void start_kernel(){
   status = 0;
 }
 
-void read_kernel_data(int h_a_output[], int data_size) {
+void Kernel::read_kernel_data(int h_a_output[], int data_size) {
   int err;
   cl_event readevent;
 
@@ -281,7 +281,7 @@ void read_kernel_data(int h_a_output[], int data_size) {
   clWaitForEvents(1, &readevent);
 }
 
-void clean_kernel(){
+void Kernel::clean_kernel(){
   // This has to be modified by the user if the number (or name) of arguments is different
   clReleaseMemObject(d_a);
   
