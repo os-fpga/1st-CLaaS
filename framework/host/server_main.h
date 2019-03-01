@@ -101,7 +101,7 @@ public:
   } dynamic_array;
 
 #ifdef OPENCL
-  cl_data_types cl;
+  Kernel kernel;
 #endif
   
 protected:
@@ -151,11 +151,7 @@ protected:
   cl_data_types handle_get_image(int socket, int ** data_array_p, input_struct * input_p, cl_data_types cl);
   #endif
   
-#ifdef OPENCL
-  virtual cl_data_types get_image(cl_data_types cl, int sock) {printf("No defined behavior for get_image()\n"); return cl;}
-#else
   virtual void get_image(int sock) {printf("No defined behavior for get_image()\n");}
-#endif
   
 };
 

@@ -57,19 +57,14 @@ using namespace lodepng;
 int HostApp::server_main(int argc, char const *argv[])
 {
 #ifdef OPENCL
-
   if (argc != 3) {
     printf("Usage: %s xclbin kernel_name\n", argv[0]);
     return EXIT_FAILURE;
   }
-
+  
   // Name of the .xclbin binary file and the name of the Kernel passed as arguments
   const char *xclbin = argv[1];
   const char *kernel_name = argv[2];
-
-  // OpenCL data type definition
-  cl_data_types cl;
-  cl.status = 1;
 #endif
 
   // Socket-related variables
@@ -117,8 +112,8 @@ int HostApp::server_main(int argc, char const *argv[])
   
   #ifdef OPENCL
     // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).                            
-    cl = init_platform(cl, NULL);
-    cl = init_kernel(cl, NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+    kernel.init_platform(NULL);
+    kernel.init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));
   #endif
 
 
@@ -184,7 +179,7 @@ int HostApp::server_main(int argc, char const *argv[])
             cerr << "Error: C++ received " << array_struct.data_size << " parameters, but needed 7." << endl;
             exit(1);
           }
-          cl = write_kernel_data(cl, array_struct.data, 7 * sizeof array_struct.data);  // TODO: Should be sizeof double.
+          kernel.write_kernel_data(array_struct.data, 7 * sizeof array_struct.data);  // TODO: Should be sizeof double.
           //cerr << "Received WRITE_DATA_N\n";
 #else
           cerr << "Received unexpected WRITE_DATA_N\n";
@@ -200,7 +195,7 @@ int HostApp::server_main(int argc, char const *argv[])
           
 #ifdef OPENCL
           // Read data coming from the Kernel and save them in data_array
-          cl = read_kernel_data(cl, data_array, sizeof(data_array));
+          kernel.read_kernel_data(data_array, sizeof(data_array));
 #endif
 
           // Call the utility function to send data over the socket
@@ -211,17 +206,13 @@ int HostApp::server_main(int argc, char const *argv[])
             sprintf(response, "INFO: Get Image");
             send(sock, response, strlen(response), MSG_NOSIGNAL);
             
- #ifdef OPENCL
-           cl = get_image(cl, sock);
-#else
-           get_image(sock);
-#endif
+            get_image(sock);
           }
           break;
         default:
 #ifdef OPENCL
           cout << "Calling handle_command(.., " << command << ", ..)" << endl;
-          cl = handle_command(sock, command, cl, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+          kernel.handle_command(sock, command, xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #else
           char response[MSG_LENGTH];
           sprintf(response, "INFO: Command [%i] is a no-op with no FPGA", command);
@@ -244,15 +235,14 @@ void HostApp::perror(const char * error) {
 
 // A wrapper around initialize_platform that reports errors.
 // Use NULL response to report errors.
-// TODO: cl_data_types is defined in kernel.h and its members should become members of HostApp, and it should not be passed all over the place.
-cl_data_types HostApp::init_platform(cl_data_types cl, char * response) {
+void HostApp::init_platform(char * response) {
   char rsp[MSG_LENGTH];
   if (response == NULL) {
     response = rsp;
   }
-  if(!cl.initialized) {
-    cl = initialize_platform();
-    if (cl.status)
+  if(!kernel.initialized) {
+    kernel.initialize_platform();
+    if (kernel.status)
       sprintf(response, "Error: could not initialize platform");
     else
       sprintf(response, "INFO: platform initialized");
@@ -262,58 +252,56 @@ cl_data_types HostApp::init_platform(cl_data_types cl, char * response) {
   if (response == rsp) {
     printf("%s\n", response);
   }
-  return cl;
 }
 
 // A wrapper around init_kernel that reports errors.
 // Use NULL response to report errors.                                                                                                                        
-cl_data_types HostApp::init_kernel(cl_data_types cl, char * response, const char *xclbin, const char *kernel_name, int memory_size) {
+void HostApp::init_kernel(char * response, const char *xclbin, const char *kernel_name, int memory_size) {
   char rsp[MSG_LENGTH];
   if (response == NULL) {
     response = rsp;
   }
-  if(cl.status){
+  if (kernel.status){
     sprintf(response, "Error: first initialize platform");
   } else {
-    if(!cl.initialized) {
-      cl = initialize_kernel(cl, xclbin, kernel_name, memory_size);
-      if (cl.status)
+    if(!kernel.initialized) {
+      initialize_kernel(xclbin, kernel_name, memory_size);
+      if (kernel.status)
         sprintf(response, "Error: Could not initialize the kernel");
       else {
         sprintf(response, "INFO: kernel initialized");
-        cl.initialized = true;
+        kernel.initialized = true;
       }
     }
   }
   if (response == rsp) {
     printf("%s\n", response);
   }
-  return cl;
 }
 
-cl_data_types HostApp::handle_command(int socket, int command, cl_data_types cl, const char *xclbin, const char *kernel_name, int memory_size) {
+void HostApp::handle_command(int socket, int command, const char *xclbin, const char *kernel_name, int memory_size) {
   char response[MSG_LENGTH];
 
   switch (command) {
     // Initialization of the platform
     case INIT_PLATFORM_N:
-      cl = init_platform(cl, NULL);
+      kernel.init_platform(NULL);
       break;
 
     // Initialization of the kernel (loads the fpga program)
     case INIT_KERNEL_N:
-      cl = init_kernel(cl, NULL, xclbin, kernel_name, memory_size);
+      kernel.init_kernel(NULL, xclbin, kernel_name, memory_size);
       break;
 
     // Releasing all OpenCL links to the fpga
     case CLEAN_KERNEL_N:
-      cl = clean_kernel(cl);
+      kernel.clean_kernel();
       sprintf(response, "INFO: Kernel cleaned");
       break;
 
     // Start Kernel computation
     case START_KERNEL_N:
-      cl = start_kernel(cl);
+      kernel.start_kernel();
       sprintf(response, "INFO: Started computation");
       break;
     default:
@@ -322,8 +310,6 @@ cl_data_types HostApp::handle_command(int socket, int command, cl_data_types cl,
   }
   
   send(socket, response, strlen(response), MSG_NOSIGNAL);
-
-  return cl;
 }
 #endif
 
@@ -468,7 +454,7 @@ cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_s
           input_p->height << ", " <<
           input_p->max_depth << "]" <<
           endl;
-  cl = write_kernel_data(cl, input_p, sizeof(input_struct));
+  kernel.write_kernel_data(input_p, sizeof(input_struct));
   cout << "Wrote kernel." << endl;
 
   // check timing
@@ -478,12 +464,12 @@ cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_s
   // getting start time
   clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
-  cl = start_kernel(cl);
+  kernel.start_kernel();
   cout << "Started kernel." << endl;
 
   *data_array_p = (int *) malloc(input_p->width * input_p->height * sizeof(int));
 
-  cl = read_kernel_data(cl, *data_array_p, input_p->width * input_p->height * sizeof(int));
+  kernel.read_kernel_data(*data_array_p, input_p->width * input_p->height * sizeof(int));
   cout << "Read kernel data." << endl;
 
   // getting end time
@@ -491,7 +477,6 @@ cl_data_types HostApp::handle_get_image(int socket, int ** data_array_p, input_s
   delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
 
   printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
-  return cl;
 }
 #endif
 

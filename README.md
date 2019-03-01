@@ -161,7 +161,8 @@ Use the same user name for all your instances.
 
 # X11 Forwarding
 
-It's important to be able to run X11 applications on your instance and display them on your machine. Unfortunately I got a `DISPLAY not set` message when first trying `ssh -X`. I was able to get this to work with help from <a href="https://forums.aws.amazon.com/thread.jspa?messageID=574740" target="_ blank">this post</a> though I'm not sure exactly what did the trick. Maybe:
+It is important to be able to run X11 applications on your instance and display them on your machine. You will probably get a `DISPLAY not set` message when first trying X forwarding with `ssh -X` and running an X application. I was able to fix this with:
+
 ```sh
 sudo yum install xorg-x11-xauth
 exit
@@ -176,7 +177,9 @@ Prebuilt files are included in the repository. (TODO: No they are not.). Try to 
 ```sh
 cd
 git clone https://github.com/alessandrocomodi/fpga-webserver
-cd ~/fpga-webserver/apps/mandelbrot/build
+cd fpga-webserver
+git submodule update --init --recursive
+cd apps/mandelbrot/build
 make PREBUILT=true TARGET=hw KERNEL=mandelbrot launch
 ```
 
@@ -208,8 +211,10 @@ aws configure
 
 ```sh
 cd
-git clone https://github.com/alessandrocomodi/fpga-webserver
 git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
+git clone https://github.com/alessandrocomodi/fpga-webserver
+cd fpga-webserver
+git submodule update --init --recursive
 ```
 
 
