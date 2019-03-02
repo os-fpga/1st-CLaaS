@@ -109,7 +109,7 @@ sudo apt-get install make g++ python python-pip python-pil
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
-git submodule update --init --recursive
+git submodule update --init --recursive  # or ./init
 cd apps/mandelbrot/build
 make launch
 ```
@@ -178,7 +178,7 @@ Prebuilt files are included in the repository. (TODO: No they are not.). Try to 
 cd
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
-git submodule update --init --recursive
+git submodule update --init --recursive  # or ./init
 cd apps/mandelbrot/build
 make PREBUILT=true TARGET=hw KERNEL=mandelbrot launch
 ```
@@ -214,7 +214,7 @@ cd
 git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
-git submodule update --init --recursive
+git submodule update --init --recursive  # or ./init
 ```
 
 
