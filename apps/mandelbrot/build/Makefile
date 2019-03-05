@@ -25,7 +25,7 @@ $(DEST_DIR)/rtl_kernel_wiz.tcl: $(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.p
 # Creating the rtl kernel wizard project.
 # kernel.xml acts as a representative for all produced files.
 $(DEST_DIR)/$(KERNEL_NAME)/imports/kernel.xml: $(DEST_DIR)/rtl_kernel_wiz.tcl
-	vivado -mode batch -nojournal -nolog -notrace -source $(DEST_DIR)/rtl_kernel_wiz.tcl -tclargs $(KERNEL_NAME) $(DEST_DIR)/$(KERNEL_NAME)_hw
+	vivado -mode batch -nojournal -nolog -notrace -source $(DEST_DIR)/rtl_kernel_wiz.tcl -tclargs $(KERNEL_NAME) $(DEST_DIR)
 
 .PHONY: shell
 shell: $(DEST_DIR)/$(KERNEL_NAME)/imports/kernel.xml
@@ -37,8 +37,7 @@ shell: $(DEST_DIR)/$(KERNEL_NAME)/imports/kernel.xml
 
 $(DEST_DIR)/$(KERNEL_EXE).xo:
 	mkdir -p $(DEST_DIR)
-	#$(XOCC) --platform $(PLATFORM) --target $(TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
-	# TODO: How do we generate the .xo?
-	cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
+	$(XOCC) --platform $(PLATFORM) --target $(TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
+	#cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
 endif
 
