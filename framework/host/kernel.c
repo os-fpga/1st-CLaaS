@@ -169,6 +169,7 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
   // Create the compute program from offline
   program = clCreateProgramWithBinary(context, 1, &device_id, &n0,
                                       (const unsigned char **) &kernelbinary, &status, &err);
+  // TODO: Looks like kernelbinary is never deallocated. What's the right behavior, here?
 
   if ((!program) || (err!=CL_SUCCESS)) {
     perror("Error: Failed to create a compute program binary!\nTest failed\n");
@@ -251,7 +252,7 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
   }
 }
 
-void Kernel::start_kernel(){
+void Kernel::start_kernel() {
   int err;
   err = clEnqueueTask(commands, kernel, 0, NULL, NULL);
   if (err) {
@@ -281,7 +282,7 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
   clWaitForEvents(1, &readevent);
 }
 
-void Kernel::clean_kernel(){
+void Kernel::clean_kernel() {
   // This has to be modified by the user if the number (or name) of arguments is different
   clReleaseMemObject(d_a);
   

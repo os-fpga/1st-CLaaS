@@ -36,15 +36,16 @@ def json_to_tcl_config (string):
   append += "CONFIG.KERNEL_NAME {$kernelName} CONFIG.KERNEL_VENDOR {$kernelVendor}] \[get_ips $kernelName]\"\n"
   return append
 
-if len(sys.argv) > 1:
+if len(sys.argv) > 2:
   config_file = sys.argv[1]
+  fn = sys.argv[2]
 else:
-  print "Usage: insert json file with kernel configuration"
+  print "Usage: ", __file__, " <config-file> <output-file>"
   sys.exit(0)
 
-lib_dir_path = os.environ['LIB_DIR']
+#lib_dir_path = os.environ['LIB_DIR']
+#fn = lib_dir_path + "/src/tcl/rtl_kernel_wiz.tcl"
 
-fn = lib_dir_path + "/src/tcl/rtl_kernel_wiz.tcl"
 fh = open(fn, "w")
 
 
