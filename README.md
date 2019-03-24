@@ -163,11 +163,10 @@ Use the same user name for all your instances.
   1. From the dashboard, click "Launch Instance".
   1. Note the tabs at the top for the steps to select, configure, and launch our instance.
   1. You are currently in "Choose AMI".
-  
-    - Click "AWS Marketplace" on the left.
-    - Enter "FPGA" in the search box.
-    - Select "FPGA Developer AMI".
-    - "Continue".
+  - Click "AWS Marketplace" on the left.
+  - Enter "FPGA" in the search box.
+  - Select "FPGA Developer AMI".
+  - "Continue".
     
   1. You are now in "Choose Instance Type". (See tabs and heading at the top).
     - Select f1.2xlarge (in "North Virginia").
