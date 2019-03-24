@@ -167,11 +167,9 @@ Use the same user name for all your instances.
     1. Enter "FPGA" in the search box.
     1. Select "FPGA Developer AMI".
     1. "Continue".
-    
   1. You are now in "Choose Instance Type". (See tabs and heading at the top).
     1. Select f1.2xlarge (in "North Virginia").
   1. Default configuration is generally good, but we do need to open up a few ports. We'll open 8888 as the default development port for the webserver. And, we'll open a port for remote desktops. Jump ahead by clicking the tab "Configure Security Group".
-
     1. Provide a name for a new security group (e.g. "fpga-webserver-dev") and a description (e.g. "For development using https://github.com/alessandrocomodi/fpga-webserver").
     1. For webserver:
       1. "Add Rule"
@@ -186,7 +184,6 @@ Use the same user name for all your instances.
       1. "Add Rule"
       1. For "Type" select "Custom TCP Rule", and enter "5901-5910" as port range.
       1. Enter "Source" and "Description" appropriately.
-      
   1. Click "Review and Launch", be sure you are comfortable with any warnings, review details, and "Launch".
   1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `<AWS key pairs.pem>`. (Be sure to `chmod 400 ~<AWS key pairs.pem>`.)) "Launch".
   1. Click new instance link to find IP address.
