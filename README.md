@@ -97,7 +97,7 @@ If you are new to AWS, you might find it to be quite complicated. Here are some 
       - Use Case Description: Something like, "Development of hardware-accelerated web applications using this framework (https://github.com/alessandrocomodi/fpga-webserver)"
       - Wait ~2 business days :(
 
-        
+
 # Running Mandelbrot Locally
 
 While you wait for F1 access, you can play around with the Mandelbrot example without hardware acceleration.
@@ -291,13 +291,49 @@ chmod +x launch ../out/*/*/host # execute privs lost in transfer
 As you did locally, you can access `http://<IP>:8888/index.html`. Now you can utilize the FPGA to generate images.
 
 
-# Makerchip and TL-Verilog
+# Development Using this Framework
+
+## Makerchip and TL-Verilog
 
 The Mandelbrot set accelerator has been developed in the [Makerchip](https://makerchip.com/) IDE using the TL-Verilog language extension.
 You can copy into Makerchip, or use this link to
 [open the design in makerchip](http://www.makerchip.com/sandbox?code_url=https:%2F%2Fraw.githubusercontent.com%2Falessandrocomodi%2Ffpga-webserver%2Fmaster%2Fapps%2Fmandelbrot%2Ffpga%2Fmandelbrot.tlv).
 After the kernel has been designed in Makerchip we retrieved the Verilog files by clicking on "E" -> "Open Results" in the Editor tab. From the new browser tab the files that host the Verilog code are called "top.sv" and "top_gen.sv".
 The content of these files has to be copied and pasted inside of the file "mandelbrot_example_adder.sv" found in the "fpga/imports" folder.
+
+
+# Development of this Framework
+
+These are WIP notes:
+
+## SDAccel
+
+This is how I was able to generate an RTL kernel in SDAccel manually and run hardware emulation. This is scripted as part of the build process, but not with the ability to run in SDAccel. These are notes to help figure that out.
+
+ - `cd ~/fpga-webserver`
+ - `source sdaccel_setup`
+ - `sdx`
+ - `echo $AWS_FPGA_REPO_DIR` (You will need to know this path.)
+ - On Welcome screen "Add Custon Platform".
+   - Add "$AWS_FPGA_REPO_DIR/SDAccel/aws_platform/xilinx_aws-vu9p-f1_?ddr-xpr-2pr_4_0".
+ - "New SDxProject": name it, select only platform, accept linux on x86 and OpenCL runtime, and "Empty Application". "Finish".
+ - Menu "Xilinx", "Create RTL Kernel".
+   - name it; 2 clocks (independent kernel clock)
+   - default scalars (or change them)
+   - default AXI master (Global Memory) options (or change them)
+   - wait for Vivado
+ - In Vivado:
+   - "Generate RTL Kernel"
+   - wait
+   - Close
+ - Back in SDAccel:
+   - in projects.sdx:
+     - Add binary container under "Hardware Functions" by selecting the yellow add box thing. You will get "binary_container_1".
+     - Select "Emulation-HW"
+  - Menu "Run", "Run Configuration"
+    - Tab "Main", "Kernel Debug", Check "Use RTL waveform...", and check "Launch live waveform".
+    - Tab "Arguments", check "Automatically add binary container(s) to arguments"
+    - Click "Run" (or "Apply" and click green circle w/ play arrow).
 
 
 # Related Technologies
@@ -322,4 +358,3 @@ The content of these files has to be copied and pasted inside of the file "mande
   - no pre-built files in apps/mandelbrot/prebuilt
   - still need to initialize FPGA w/ client.html?
   - failing w/ "ERROR: Failed to load xclbin" (sdx_imports/main.c). Solved by stopping & starting F1 Instance (not by rebooting).
-

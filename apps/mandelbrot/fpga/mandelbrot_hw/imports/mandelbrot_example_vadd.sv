@@ -232,7 +232,7 @@ else begin : gen_async_rd_fifo
 end
 endgenerate
 
-assign rd_fifo_tready = ~wr_fifo_prog_full;
+assign rd_fifo_tready = ~wr_fifo_prog_full;  // FIX_ME
 
 mandelbrot_example_pipeline #(
   .C_DEPTH        ( 1 ),
@@ -242,7 +242,7 @@ inst_rd_fifo_valid_pipeline[C_M_AXI_NUM_THREADS-1:0] (
   .aclk   ( kernel_clk                             ) ,
   .areset ( kernel_rst                             ) ,
   .aclken ( 1'b1                                   ) ,
-  .din    ( ~rd_fifo_tvalid_n & ~wr_fifo_prog_full ) ,
+  .din    ( ~rd_fifo_tvalid_n & ~wr_fifo_prog_full ) ,  // FIX_ME
   .dout   ( rd_fifo_tvalid                         )
 );
 
@@ -405,4 +405,3 @@ assign ap_done = write_done;
 
 endmodule : mandelbrot_example_vadd
 `default_nettype wire
-
