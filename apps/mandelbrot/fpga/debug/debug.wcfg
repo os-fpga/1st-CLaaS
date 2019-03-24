@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="mandelbrot_exdes_tb_basic_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="axi_vip_v1_0_1_pkg" />
+            <top_module name="glbl" />
+            <top_module name="mandelbrot_exdes_tb_basic" />
+            <top_module name="std" />
+            <top_module name="xil_common_vip_v1_0_0_pkg" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="27737226fs"></ZoomStartTime>
+      <ZoomEndTime time="582481752fs"></ZoomEndTime>
+      <Cursor1Time time="334001000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="245"></NameColumnWidth>
+      <ValueColumnWidth column_width="60"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="79" />
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/ap_clk">
+      <obj_property name="ElementShortName">ap_clk</obj_property>
+      <obj_property name="ObjectShortName">ap_clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/ap_rst_n">
+      <obj_property name="ElementShortName">ap_rst_n</obj_property>
+      <obj_property name="ObjectShortName">ap_rst_n</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/ap_clk_2">
+      <obj_property name="ElementShortName">ap_clk_2</obj_property>
+      <obj_property name="ObjectShortName">ap_clk_2</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/ap_rst_n_2">
+      <obj_property name="ElementShortName">ap_rst_n_2</obj_property>
+      <obj_property name="ObjectShortName">ap_rst_n_2</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awvalid">
+      <obj_property name="ElementShortName">m00_axi_awvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awready">
+      <obj_property name="ElementShortName">m00_axi_awready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awaddr">
+      <obj_property name="ElementShortName">m00_axi_awaddr[63:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awaddr[63:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awid">
+      <obj_property name="ElementShortName">m00_axi_awid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awlen">
+      <obj_property name="ElementShortName">m00_axi_awlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awsize">
+      <obj_property name="ElementShortName">m00_axi_awsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awsize[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awburst">
+      <obj_property name="ElementShortName">m00_axi_awburst[1:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awburst[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_awcache">
+      <obj_property name="ElementShortName">m00_axi_awcache[3:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_awcache[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_wvalid">
+      <obj_property name="ElementShortName">m00_axi_wvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_wvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_wready">
+      <obj_property name="ElementShortName">m00_axi_wready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_wready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_wdata">
+      <obj_property name="ElementShortName">m00_axi_wdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_wdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_wstrb">
+      <obj_property name="ElementShortName">m00_axi_wstrb[63:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_wstrb[63:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_wlast">
+      <obj_property name="ElementShortName">m00_axi_wlast[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_wlast[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_bvalid">
+      <obj_property name="ElementShortName">m00_axi_bvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_bvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_bready">
+      <obj_property name="ElementShortName">m00_axi_bready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_bready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_bid">
+      <obj_property name="ElementShortName">m00_axi_bid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_bid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_arvalid">
+      <obj_property name="ElementShortName">m00_axi_arvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_arvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_arready">
+      <obj_property name="ElementShortName">m00_axi_arready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_arready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_araddr">
+      <obj_property name="ElementShortName">m00_axi_araddr[63:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_araddr[63:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_arid">
+      <obj_property name="ElementShortName">m00_axi_arid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_arid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_arlen">
+      <obj_property name="ElementShortName">m00_axi_arlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_arlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_arsize">
+      <obj_property name="ElementShortName">m00_axi_arsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_arsize[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_arburst">
+      <obj_property name="ElementShortName">m00_axi_arburst[1:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_arburst[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_arcache">
+      <obj_property name="ElementShortName">m00_axi_arcache[3:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_arcache[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_rvalid">
+      <obj_property name="ElementShortName">m00_axi_rvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_rvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_rready">
+      <obj_property name="ElementShortName">m00_axi_rready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_rready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_rdata">
+      <obj_property name="ElementShortName">m00_axi_rdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_rdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_rlast">
+      <obj_property name="ElementShortName">m00_axi_rlast[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_rlast[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/m00_axi_rid">
+      <obj_property name="ElementShortName">m00_axi_rid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m00_axi_rid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_awvalid">
+      <obj_property name="ElementShortName">s_axi_control_awvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_awvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_awready">
+      <obj_property name="ElementShortName">s_axi_control_awready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_awready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_awaddr">
+      <obj_property name="ElementShortName">s_axi_control_awaddr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_awaddr[11:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_wvalid">
+      <obj_property name="ElementShortName">s_axi_control_wvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_wvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_wready">
+      <obj_property name="ElementShortName">s_axi_control_wready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_wready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_wdata">
+      <obj_property name="ElementShortName">s_axi_control_wdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_wdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_wstrb">
+      <obj_property name="ElementShortName">s_axi_control_wstrb[3:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_wstrb[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_arvalid">
+      <obj_property name="ElementShortName">s_axi_control_arvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_arvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_arready">
+      <obj_property name="ElementShortName">s_axi_control_arready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_arready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_araddr">
+      <obj_property name="ElementShortName">s_axi_control_araddr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_araddr[11:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_rvalid">
+      <obj_property name="ElementShortName">s_axi_control_rvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_rvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_rready">
+      <obj_property name="ElementShortName">s_axi_control_rready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_rready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_rdata">
+      <obj_property name="ElementShortName">s_axi_control_rdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_rdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_rresp">
+      <obj_property name="ElementShortName">s_axi_control_rresp[1:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_rresp[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_bvalid">
+      <obj_property name="ElementShortName">s_axi_control_bvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_bvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_bready">
+      <obj_property name="ElementShortName">s_axi_control_bready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_bready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/s_axi_control_bresp">
+      <obj_property name="ElementShortName">s_axi_control_bresp[1:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_control_bresp[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/rd_value">
+      <obj_property name="ElementShortName">rd_value[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_value[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/C_S_AXI_CONTROL_ADDR_WIDTH">
+      <obj_property name="ElementShortName">C_S_AXI_CONTROL_ADDR_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">C_S_AXI_CONTROL_ADDR_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/C_S_AXI_CONTROL_DATA_WIDTH">
+      <obj_property name="ElementShortName">C_S_AXI_CONTROL_DATA_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">C_S_AXI_CONTROL_DATA_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/C_M00_AXI_NUM_THREADS">
+      <obj_property name="ElementShortName">C_M00_AXI_NUM_THREADS[31:0]</obj_property>
+      <obj_property name="ObjectShortName">C_M00_AXI_NUM_THREADS[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/C_M00_AXI_ID_WIDTH">
+      <obj_property name="ElementShortName">C_M00_AXI_ID_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">C_M00_AXI_ID_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/C_M00_AXI_ADDR_WIDTH">
+      <obj_property name="ElementShortName">C_M00_AXI_ADDR_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">C_M00_AXI_ADDR_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/C_M00_AXI_DATA_WIDTH">
+      <obj_property name="ElementShortName">C_M00_AXI_DATA_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">C_M00_AXI_DATA_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/LP_CLK_PERIOD_PS">
+      <obj_property name="ElementShortName">LP_CLK_PERIOD_PS[31:0]</obj_property>
+      <obj_property name="ObjectShortName">LP_CLK_PERIOD_PS[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/LP_CLK2_PERIOD_PS">
+      <obj_property name="ElementShortName">LP_CLK2_PERIOD_PS[31:0]</obj_property>
+      <obj_property name="ObjectShortName">LP_CLK2_PERIOD_PS[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /full">
+      <obj_property name="ElementShortName">full</obj_property>
+      <obj_property name="ObjectShortName">full</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /prog_full">
+      <obj_property name="ElementShortName">prog_full</obj_property>
+      <obj_property name="ObjectShortName">prog_full</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /empty">
+      <obj_property name="ElementShortName">empty</obj_property>
+      <obj_property name="ObjectShortName">empty</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /prog_empty">
+      <obj_property name="ElementShortName">prog_empty</obj_property>
+      <obj_property name="ObjectShortName">prog_empty</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /rd_data_count">
+      <obj_property name="ElementShortName">rd_data_count[5:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_data_count[5:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /wr_en">
+      <obj_property name="ElementShortName">wr_en</obj_property>
+      <obj_property name="ObjectShortName">wr_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /rd_en">
+      <obj_property name="ElementShortName">rd_en</obj_property>
+      <obj_property name="ObjectShortName">rd_en</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /wr_data_count">
+      <obj_property name="ElementShortName">wr_data_count[5:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_data_count[5:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /din">
+      <obj_property name="ElementShortName">din[511:0]</obj_property>
+      <obj_property name="ObjectShortName">din[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\gen_async_wr_fifo.inst_wr_xpm_fifo_sync[0] /dout">
+      <obj_property name="ElementShortName">dout[511:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\inst_adder[0] /aclk">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\inst_adder[0] /areset">
+      <obj_property name="ElementShortName">areset</obj_property>
+      <obj_property name="ObjectShortName">areset</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\inst_adder[0] /m_tdata">
+      <obj_property name="ElementShortName">m_tdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">m_tdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\inst_adder[0] /m_tvalid">
+      <obj_property name="ElementShortName">m_tvalid</obj_property>
+      <obj_property name="ObjectShortName">m_tvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\inst_adder[0] /s_tdata">
+      <obj_property name="ElementShortName">s_tdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">s_tdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/\inst_adder[0] /s_tvalid">
+      <obj_property name="ElementShortName">s_tvalid</obj_property>
+      <obj_property name="ObjectShortName">s_tvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/rd_fifo_tvalid">
+      <obj_property name="ElementShortName">rd_fifo_tvalid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_tvalid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/rd_fifo_tdata">
+      <obj_property name="ElementShortName">rd_fifo_tdata[0:0][511:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_tdata[0:0][511:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/rd_fifo_tready">
+      <obj_property name="ElementShortName">rd_fifo_tready[0:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_tready[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/mandelbrot_exdes_tb_basic/inst_dut/inst_example/inst_example_vadd_m00_axi/rd_fifo_tvalid_n">
+      <obj_property name="ElementShortName">rd_fifo_tvalid_n[0:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_tvalid_n[0:0]</obj_property>
+   </wvobject>
+</wave_config>

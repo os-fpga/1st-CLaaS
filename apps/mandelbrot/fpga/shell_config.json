@@ -1,6 +1,9 @@
 {
   "clocks" : 2,
   "args" : [
+      {
+        "id" : "ctrl_length"
+      }
     ],
 
   "master" : [

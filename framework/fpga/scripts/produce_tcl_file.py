@@ -11,7 +11,7 @@ import json
 
 def json_to_tcl_config (string):
   append = "set cmd \"set_property -dict \[list "
-  try: 
+  try:
     json_file = open(string)
   except:
     print "ERROR: file " + string + " does not exist"
@@ -53,7 +53,7 @@ fh = open(fn, "w")
 
 
 string = ('# This file has been automatically produced by the python script\n'
-          '#\n' 
+          '#\n'
           '# This tcl file produces a rtl_kernel_wizard\n'
           '# Usage:  insert the name of the kernel and the workspace where to create the project.\n'
           '#         According to the different configurations (Master ports and arguments) the\n'
