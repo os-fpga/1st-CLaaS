@@ -1,7 +1,9 @@
 #
-# This file produces the script that will be used to generate the RTL kernel project
-# The JSON file that contains the configuration of the kernel interface is needed
+# This ugly script uses a JSON configuration file to produce shell logic within which the user's FPGA kernel is instantiated.
+# It produces a TCL script that provide parameters to the Xilinx kernel wizard.
 #
+# There seems to be no documentation of the JSON format. It corresponds to the CONFIG arguments of the Xilinx wizard.
+
 
 import os
 import sys

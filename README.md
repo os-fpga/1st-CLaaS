@@ -12,11 +12,13 @@ While the layer is intended to be generic, in its current form, this repo contai
 # Project description
 
 A hardware accelerated web application utilizing this framework consists of:
+
   - Web Client: a web application, or any other agent communicating with the accelerated server via web protocols.
   - Web Server: a web server written in Python
   - Host Application: the host application written in C/C++/OpenCL which interfaces with the hardware.
 
 The WebSocket or REST communication between the Web Application and the FPGA passes through:
+
   1. The Web Client application, written in JavaScript running in a web browser, transmits JSON (for now), via WebSocket or GET, to the Web Server. The communication is currently simple commands containing:
       - type: describes the command that has to be performed by the host application and dispatched to the FPGA;
       - data: a data value to be sent to the FPGA.
@@ -70,6 +72,7 @@ The WebSocket or REST communication between the Web Application and the FPGA pas
 Setup for AWS F1 and building from scratch is a very lengthy process. Optional instructions are provided to get the Mandelbrot application up and running on a local Linux machine without FPGA acceleration. Furthermore, to run with FPGA acceleration, prebuilt images are provided to initially bypass the lengthy builds.
 
 As a preview of the complete process, to get up and running from source code with FPGA acceleration, you will need to:
+
   - Get an AWS account with access to F1 instances. This is a lengthy process requiring a few days to get approval from Amazon.
   - Launch a "Build Instance" on which to compile the OpenCL, Verilog, and Transaction-Level Verilog source code into an FPGA image.
   - Launch an "F1 Server Instance" on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Build Instance.
@@ -82,9 +85,14 @@ Note that F1 machines are powerful and expensive. Compilations take several hour
 
 # AWS Account Setup with F1 Access
 
-Instructions can be found <a href="https://github.com/aws/aws-fpga/blob/master/SDAccel/README.md#iss" target="_ blank">here</a>.
+Finally, I found some good instructions from Xilinx. The instructions I came up with are below, but you should be able instead to follow the "Prerequisites" instructions <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">here</a>.
+
+## Previous instructions
+
+(These can be deleted once the Xilinx instructions are confirmed to serve the same purpose.)
 
 If you are new to AWS, you might find it to be quite complicated. Here are some specific steps to get you going, though they likely need refinement. Be sure to correct these docs based on your experience.
+
   1. Create a <a href="https://aws.amazon.com/free/" target="_ blank">free tier account</a> and await approval.
   1. Login to your console. Be sure you are logging in as root, not as an IAM user. (Your account has no "IAM" users until you create them (which is not necessary to get going).)
   1. Now, you'll need access to F1 resources (and possibly the Amazon Machine Image (AMI) for the Build Instance). Unless policies change, you must apply for this. You can try skipping ahead to confirm.
@@ -123,7 +131,35 @@ More instructions for the Mandelbrot application are [here](https://github.com/a
 
 # F1 Instance Setup
 
-Now let's provision an F1 Instance.
+Now let's provision an F1 Instance. Again, I came up instructions below, but you should be able to use the "Create, configure, and test an AWS F1 instance" instructions from Xilinx, <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">here</a>.
+
+You will want to open one or more additional ports for the Web Server. From the "Running Instances" page (via EC2 Dashboard), scroll right and select the security group for your instance. Under "Inbound":
+
+  - "Add Rule"
+  - For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
+  - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
+  - Set "Description", e.g. "development-webserver".
+
+Note that you should already have a port open for RDP. (I am using VNC, so I also opened custom TCP ports 5901-5910.)
+
+Log into your instance:
+```sh
+ssh -i <AWS key pairs.pem> centos@<ip>`
+```
+
+Now, configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<unique-username>`, so choose a username for yourself, such as your Amazon IAM username, and:
+
+```sh
+echo 'export S3_USER=<unique-username>' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Use the same user name for all your instances.
+
+## Previous instructions
+
+(These can be deleted once the Xilinx process is confirmed to cover all of this.)
+
   1. From the dashboard, click "Launch Instance".
   1. Note the tabs at the top for the steps to select, configure, and launch our instance.
   1. You are currently in "Choose AMI"
@@ -133,23 +169,32 @@ Now let's provision an F1 Instance.
     - "Continue".
   1. You are now in "Choose Instance Type". (See tabs and heading at the top).
     - Select f1.2xlarge (in "North Virginia").
-  1. Default configuration is generally good, but we do need to open up port 8888 (the default development port for the webserver). Jump ahead by clicking the tab "Configure Security Group".
+  1. Default configuration is generally good, but we do need to open up a few ports. We'll open 8888 as the default development port for the webserver. And, we'll open a port for remote desktops. Jump ahead by clicking the tab "Configure Security Group".
     - Provide a name for a new security group (e.g. "fpga-webserver-dev") and a description (e.g. "For development using https://github.com/alessandrocomodi/fpga-webserver").
-    - "Add Rule"
-      - For "Type" select "Custom TCP Rule" (should be the default), and and insert "8888" as port range (or open several ports, e.g. "8880-8889").
+    - For webserver:
+      - "Add Rule"
+      - For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
       - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
       - Set "Description", e.g. "development-webserver".
+    - For RDP (Remote Desktop Protocol):
+      - "Add Rule"
+      - For "Type" select "RDP"
+      - Enter "Source" and "Description" appropriately.
+    - For VNC (Virtual Network Computing):
+      - "Add Rule"
+      - For "Type" select "Custom TCP Rule", and enter "5901-5910" as port range.
+      - Enter "Source" and "Description" appropriately.
   1. Click "Review and Launch", be sure you are comfortable with any warnings, review details, and "Launch".
-  1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `~/.ssh/AWS_<my_machine>.pem`. (Be sure to `chmod 400 ~/.ssh/AWS_<my_machine>.pem`.)) "Launch".
+  1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `<AWS key pairs.pem>`. (Be sure to `chmod 400 ~<AWS key pairs.pem>`.)) "Launch".
   1. Click new instance link to find IP address.
   1. You can view your instances from the left panel. Go to your EC2 Dashboard and click "Running Instances" or under "Instances", select "Instances". From here, you can, among other things, start and stop your instances ("Actions", "Instance State"). Be sure not to accidentally leave them running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. Be sure your instance transitions to "stopped" state (or Amazon tells me charging stops at "stopping" state).
 
 Log into your instance:
 ```sh
-ssh -i ~/.ssh/AWS_<my_machine>.pem centos@<ip>`
+ssh -i <AWS key pairs.pem> centos@<ip>`
 ```
 
-Now, configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<user-id>`, so choose a username for yourself, such as your Amazon IAM username, and:
+Now, configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<unique-username>`, so choose a username for yourself, such as your Amazon IAM username, and:
 
 ```sh
 echo 'export S3_USER=<unique-username>' >> ~/.bashrc
@@ -159,16 +204,100 @@ source ~/.bashrc
 Use the same user name for all your instances.
 
 
-# X11 Forwarding
+# Remote Work Environment
+
+## X11 Forwarding
 
 It is important to be able to run X11 applications on your instance and display them on your machine. You will probably get a `DISPLAY not set` message when first trying X forwarding with `ssh -X` and running an X application. I was able to fix this with:
 
 ```sh
-sudo yum install xorg-x11-xauth
+sudo yum install xorg-x11-xauth  # On EC2 instance. Then log out and back in.
 exit
-ssh -X -i ~/.ssh/AWS_<my_machine>.pem centos@<ip>
+ssh -X -i <AWS key pairs.pem> centos@<ip>
 ```
 
+## Remote Desktop
+
+(Delete this section once the Xilinx RDP setup instructions are validated. Maybe keep TigerVNC & Xfce instructions for linux users as it might run faster?)
+
+It is also important to be able to run a remote desktop. Remote desktop protocols are generally faster than X11. This is less important for the F1 Instance than it is for the Build Instance, where you will be debugging your design, so you might choose to skip these instructions until you provision the Build Instance.
+
+I first tried following an [AWS tutorial from Reinvent 2017](https://github.com/awslabs/aws-fpga-app-notes/tree/master/reInvent17_Developer_Workshop) that used RDP, but I was unsuccessful. (Note, that participants were provided a custom AMI to start from.)
+
+### VNC from Linux Client
+
+After much struggling, I was able to get VNC working with the Xfce desktop environment. Here are some notes, though I may have picked
+up some necessary dependencies from my earlier attempts that are missing here.
+
+```sh
+sudo yum install tigervnc-server
+vncpasswd  # Provide password for VNC desktop (and, optionally, a different password for view-only access)
+```
+
+```sh
+sudo yum install -y epel-release
+sudo yum groupinstall -y "Xfce"
+```
+(I do not think a reboot is necessary.)
+
+Edit ~/.vnc/xstartup to contain:
+
+```sh
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+/etc/X11/xinit/xinitrc
+[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
+[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
+vncconfig -iconic &
+#xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+startxfce4 &
+```
+
+The VNC Server can be started with:
+
+```sh
+vncserver  # Optionally -geometry XXXXxYYYY.
+```
+
+The output of this command indicates a log file. You should take a look. I got a number of warnings, but they did not appear to be fatal.
+
+And kill with:
+```sh
+vncserver -kill :1
+```
+
+Any number of clients can be connected to this server while it is running. Closing the client connection does not terminate the server.
+
+From my Ubuntu client, I connected using Remmina. In Remmina, select `VNC`, enter `<EC2-IP>:1`, and "Connect!". Or define a connection using "New" and fill in "Name", "Protocol": "VNC", "Server": "<IP>", "User name", "Password", and click "Connect".
+
+
+### RDP Desktop
+
+In case it helps to debug issues, or in case you need to connect from Windows, this is what I did following the Reinvent 2017 instructions (without success):
+
+In place of:
+```sh
+source <(curl -s https://s3.amazonaws.com/aws-ec2-f1-reinvent-17/setup_script/setup_reinvent.sh)
+```
+
+I extracted the following commands:
+```sh
+sudo yum install -y kernel-devel # Needed to re-build ENA driver
+sudo yum groupinstall -y "Server with GUI"
+sudo systemctl set-default graphical.target
+
+sudo yum -y install epel-release
+sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
+sudo yum install -y xrdp tigervnc-server
+sudo yum install -y chromium
+sudo systemctl start xrdp
+sudo systemctl enable xrdp
+sudo systemctl disable firewalld  # Probably non-existent
+sudo systemctl stop firewalld     #  "
+```
+
+And I attepted to connect using Remmina from my Ubuntu machine without success.
 
 # Running on FPGA
 
@@ -192,7 +321,7 @@ When you are done, _`ctrl-C`_, `exit`, and stop your instance.
 
 You can build on your F1 instance, but building takes a long time, and its cheaper to build on a machine that does not have the FPGA.
 
-Provision a build instance as you did the F1 Instance, but use instance type "c4.4xlarge" (as recommended by Amazon, or we have found "c4.2xlarge" to suffice, though it's slower). `ssh` into this instance. It wouldn't hurt to open port 8888 on this instance as well in case you want to test on this instance without the FPGA.
+Provision a Build Instance as you did the F1 Instance, but use instance type "c4.4xlarge" (as recommended by Amazon, or we have found "c4.2xlarge" to suffice, though it's slower). `ssh` into this instance. It wouldn't hurt to open port 8888 on this instance as well in case you want to test on this instance without the FPGA.
 
 
 # One-Time Instance Setup
@@ -230,7 +359,7 @@ Now, build both the FPGA image and host application, transfer them to the F1 ins
 
 ## FPGA Build
 
-On your build instance, build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
+On your Build Instance, build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
 
 ```sh
 cd ~/fpga-webserver/apps/mandelbrot/build

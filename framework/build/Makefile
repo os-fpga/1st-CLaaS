@@ -171,8 +171,20 @@ endif
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(DEST_DIR)/$(KERNEL_EXE).xo
 	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_EXE).xo $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
-# Create AFI. Creation is asynchronous on S3 and uses non-descript timestamped names, so it's hard to know
-# when they are ready, where to find them, and when you can delete (ugh).
+# From: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md
+# The AFI creation process that started in the background is not instantaneous. You must make sure that the process completes successfully before it is able to run on the F1 instance.
+# Note the values of the AFI IDs by opening the <timestamp>_afi_id.txt file:
+# cat *.afi_id.txt
+# Use the describe-fpga-images API to check the status AFI generation process.
+# aws ec2 describe-fpga-images --fpga-image-ids <AFI ID>
+# When AFI creation completes successfully, the output should contain:
+#  ...
+#  "State": {
+#     "Code": "available"
+#  },
+#  ...
+# Wait until the AFI becomes available before proceeding to execute the application on the F1 instance.
+# It's rediculous that there is not automation here. TODO.
 $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
@@ -182,7 +194,7 @@ $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
 ifneq ($(TARGET), sw)
 .PHONY: push
-# Push the entire contents of the app directory for running on F1. (SDAccel tarball should already in S3.)
+# Push the entire contents of the app directory for running on F1. (SDAccel tarball should already be in S3.)
 # Previous transfer contents are deleted.
 push: build
 	aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/
