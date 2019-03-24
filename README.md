@@ -163,29 +163,29 @@ Use the same user name for all your instances.
   1. From the dashboard, click "Launch Instance".
   1. Note the tabs at the top for the steps to select, configure, and launch our instance.
   1. You are currently in "Choose AMI".
-  - Click "AWS Marketplace" on the left.
-  - Enter "FPGA" in the search box.
-  - Select "FPGA Developer AMI".
-  - "Continue".
+    1. Click "AWS Marketplace" on the left.
+    1. Enter "FPGA" in the search box.
+    1. Select "FPGA Developer AMI".
+    1. "Continue".
     
   1. You are now in "Choose Instance Type". (See tabs and heading at the top).
-    - Select f1.2xlarge (in "North Virginia").
+    1. Select f1.2xlarge (in "North Virginia").
   1. Default configuration is generally good, but we do need to open up a few ports. We'll open 8888 as the default development port for the webserver. And, we'll open a port for remote desktops. Jump ahead by clicking the tab "Configure Security Group".
 
-    - Provide a name for a new security group (e.g. "fpga-webserver-dev") and a description (e.g. "For development using https://github.com/alessandrocomodi/fpga-webserver").
-    - For webserver:
-      - "Add Rule"
-      - For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
-      - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
-      - Set "Description", e.g. "development-webserver".
-    - For RDP (Remote Desktop Protocol):
-      - "Add Rule"
-      - For "Type" select "RDP"
-      - Enter "Source" and "Description" appropriately.
-    - For VNC (Virtual Network Computing):
-      - "Add Rule"
-      - For "Type" select "Custom TCP Rule", and enter "5901-5910" as port range.
-      - Enter "Source" and "Description" appropriately.
+    1. Provide a name for a new security group (e.g. "fpga-webserver-dev") and a description (e.g. "For development using https://github.com/alessandrocomodi/fpga-webserver").
+    1. For webserver:
+      1. "Add Rule"
+      1. For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
+      1. Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
+      1. Set "Description", e.g. "development-webserver".
+    1. For RDP (Remote Desktop Protocol):
+      1. "Add Rule"
+      1. For "Type" select "RDP"
+      1. Enter "Source" and "Description" appropriately.
+    1. For VNC (Virtual Network Computing):
+      1. "Add Rule"
+      1. For "Type" select "Custom TCP Rule", and enter "5901-5910" as port range.
+      1. Enter "Source" and "Description" appropriately.
       
   1. Click "Review and Launch", be sure you are comfortable with any warnings, review details, and "Launch".
   1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `<AWS key pairs.pem>`. (Be sure to `chmod 400 ~<AWS key pairs.pem>`.)) "Launch".
@@ -387,6 +387,7 @@ All development is done on the Build Instance. The F1 Instance is just used to r
 ## Push
 
 You can transfer your app directory to run on the FPGA using the `push` Make target (which runs an `aws s3 sync` command) and by explicitly running an `aws s3 sync` command to pull. Though the whole directory is copied, the files of importance are:
+
   - the python webserver (including client content) (everything in `fpga-webserver/apps/mandelbrot/webserver`)
   - the host application (built via intermediate Make target `host`)
   - the `.awsxclbin` (AFI) image (which references `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/`)
