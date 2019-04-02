@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# 
+# OBSOLETE. DELETE ME
+
+
+#
 # Script that authomatically generates a new RTL project to insert a custom HDL kernel
 # The user has to modify the generated files in order to fit the HDL kernel inside of the
 # communication infrastracture (AXI Master)
