@@ -120,7 +120,7 @@ public:
   /*
   ** Write data onto the board or device memory that will be consumed by the Kernel
   ** h_a_input: array containing data to be written on the device memory
-  ** data_size: size of the data array
+  ** data_size: size of the data array in bytes
   */
   void write_kernel_data(double h_a_input[], int data_size);
 

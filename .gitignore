@@ -3,3 +3,6 @@
 **/apps/*/out/
 apps/mandelbrot/build/video
 apps/mandelbrot/build/cast
+
+# Used by scripts to remember the active F1 instance IP address.
+.ec2_ip

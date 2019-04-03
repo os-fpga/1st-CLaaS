@@ -2,7 +2,8 @@
 
 This project provides a communication layer between web applications and Cloud FPGA accelerators in order to enhance the performance of compute-intensive tasks. Further documentation for this project, including the project vision, can be found in this [Google Drive Folder](https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing). This project utilizes Amazon AWS F1 instances and the corresponding Xilinx tools (Vivado, SDAccel).
 
-This repository contains the generic framework as well as sample applications that utilize the framework.
+Hardware-accelerated applications can be developed in forks of this repository. This repository contains all that is needed, including the generic framework and sample applications that utilize the framework. It contains contents for local development as well as for building FPGA images on the remote F1 machine, so it is to be cloned locally and remotely and edited both places.
+
 
 # Status
 
@@ -129,34 +130,27 @@ You can also open `http://localhost:8888/client.html`. Click "Open", click "Init
 More instructions for the Mandelbrot application are [here](https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot).
 
 
-# F1 Instance Setup
+# Create F1 Instance
 
-Now let's provision an F1 Instance. Again, I came up instructions below, but you should be able to use the "Create, configure, and test an AWS F1 instance" instructions from Xilinx, <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">here</a>.
+Now let's provision an F1 Instance. Again, I came up with the "Previous Instructions" below, but you should be able to use the <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">Create, configure, and test an AWS F1 instance</a> instructions from Xilinx, at least for the "Create" part (section 1), but you might want to use the following modifications:
 
-You will want to open one or more additional ports for the Web Server. From the "Running Instances" page (via EC2 Dashboard), scroll right and select the security group for your instance. Under "Inbound":
+I found the diskspace to be rather limited, so I added 3GB to the attached Elastic Block Storage (EBS) (which persists after instance destruction).
+
+I was unable to connect using RDP.
+I encountered the following issues with this script:
+
+  - Error that `/usr/src/kernels/3.10.0-957.10.1.el7.x86_64` couldn't be found. (I changed the link to point to `/usr/src/kernels/3.10.0-862.11.6.el7.x86_64`.)
+  
+You will want to open one or more additional ports for the Web Server. Either during creation, or from the "Running Instances" page (via EC2 Dashboard), scroll right and select the security group for your instance. Under "Inbound":
 
   - "Add Rule"
   - For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
   - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
   - Set "Description", e.g. "development-webserver".
 
-Note that you should already have a port open for RDP. (I am using VNC, so I also opened custom TCP ports 5901-5910.)
+Note that you should already have opened a port open for RDP. (I am using VNC, so I also opened custom TCP ports 5901-5910.)
 
-Log into your instance:
-```sh
-ssh -i <AWS key pairs.pem> centos@<ip>`
-```
-
-Now, configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<unique-username>`, so choose a username for yourself, such as your Amazon IAM username, and:
-
-```sh
-echo 'export S3_USER=<unique-username>' >> ~/.bashrc
-source ~/.bashrc
-```
-
-Use the same user name for all your instances.
-
-## Previous instructions
+## Previous instructions to create instance
 
 (These can be deleted once the Xilinx process is confirmed to cover all of this.)
 
@@ -185,23 +179,9 @@ Use the same user name for all your instances.
       1. For "Type" select "Custom TCP Rule", and enter "5901-5910" as port range.
       1. Enter "Source" and "Description" appropriately.
   1. Click "Review and Launch", be sure you are comfortable with any warnings, review details, and "Launch".
-  1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `<AWS key pairs.pem>`. (Be sure to `chmod 400 ~<AWS key pairs.pem>`.)) "Launch".
+  1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `<AWS key pairs.pem>`. (Be sure to `chmod 400 <AWS key pairs.pem>`.)) "Launch".
   1. Click new instance link to find IP address.
-  1. You can view your instances from the left panel. Go to your EC2 Dashboard and click "Running Instances" or under "Instances", select "Instances". From here, you can, among other things, start and stop your instances ("Actions", "Instance State"). Be sure not to accidentally leave them running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. Be sure your instance transitions to "stopped" state (or Amazon tells me charging stops at "stopping" state).
-
-Log into your instance:
-```sh
-ssh -i <AWS key pairs.pem> centos@<ip>`
-```
-
-Now, configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<unique-username>`, so choose a username for yourself, such as your Amazon IAM username, and:
-
-```sh
-echo 'export S3_USER=<unique-username>' >> ~/.bashrc
-source ~/.bashrc
-```
-
-Use the same user name for all your instances.
+  1. You can view your instances from the left panel. Go to your EC2 Dashboard and click "Running Instances" or under "Instances", select "Instances". From here, you can, among other things, start and stop your instances ("Actions", "Instance State"). You can also name your instance, which would be a good thing to do now by clicking the pencil icon. Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. Be sure your instance transitions to "stopped" state (or Amazon tells me charging stops at "stopping" state).
 
 
 # Remote Work Environment
@@ -226,8 +206,7 @@ I first tried following an [AWS tutorial from Reinvent 2017](https://github.com/
 
 ### VNC from Linux Client
 
-After much struggling, I was able to get VNC working with the Xfce desktop environment. Here are some notes, though I may have picked
-up some necessary dependencies from my earlier attempts that are missing here.
+After much struggling, I was able to get VNC working with the Xfce desktop environment.
 
 ```sh
 sudo yum install tigervnc-server
@@ -235,7 +214,7 @@ vncpasswd  # Provide password for VNC desktop (and, optionally, a different pass
 ```
 
 ```sh
-sudo yum install -y epel-release
+sudo yum install -y epel-release  # (should already be installed)
 sudo yum groupinstall -y "Xfce"
 ```
 (I do not think a reboot is necessary.)
@@ -254,13 +233,19 @@ vncconfig -iconic &
 startxfce4 &
 ```
 
+And make it executable:
+
+```sh
+chmod +x ~/.vnc/xstartup
+```
+
 The VNC Server can be started with:
 
 ```sh
 vncserver  # Optionally -geometry XXXXxYYYY.
 ```
 
-The output of this command indicates a log file. You should take a look. I got a number of warnings, but they did not appear to be fatal.
+The output of this command indicates a log file. You should take a look. I got a number of warnings and a DBus permission error, but they did not appear to be fatal.
 
 And kill with:
 ```sh
@@ -271,6 +256,19 @@ Any number of clients can be connected to this server while it is running. Closi
 
 From my Ubuntu client, I connected using Remmina. In Remmina, select `VNC`, enter `<EC2-IP>:1`, and "Connect!". Or define a connection using "New" and fill in "Name", "Protocol": "VNC", "Server": "<IP>", "User name", "Password", and click "Connect".
 
+Or, to use the command line, I defined:
+
+```sh
+alias vnc_ec2="vncviewer $1 passwd=<home>/.vnc/passwd"
+```
+
+and use this as:
+
+```sh
+vnc_ec2 <IP>:1
+```
+
+(I forget how I created the `.vnc/passwd` file.)
 
 ### RDP Desktop
 
@@ -326,6 +324,32 @@ Provision a Build Instance as you did the F1 Instance, but use instance type "c4
 
 # One-Time Instance Setup
 
+Log into your instance:
+
+```sh
+ssh -i <AWS key pairs.pem> centos@<ip>`
+```
+
+## S3 Storage
+
+Configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<unique-username>`, so choose a username for yourself, such as your Amazon IAM username, and:
+
+```sh
+echo 'export S3_USER=<unique-username>' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Use the same user name for all your instances.
+
+## Workdisk
+
+Because disk space is limited, unlike other instructions online, I chose to use the ESB disk for my work:
+
+```sh
+ln -s /home/centos/src/project_data workdisk
+cd ~/workdisk
+```
+
 ## AWS CLI Configuration
 
 Configure by providing your credentials. These can be found in in the Security Credentials page, which I'm not sure how to navigate to, but here's a <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_ blank">direct link</a>.
@@ -336,10 +360,22 @@ Use region: `us-east-1` and output: `json`.
 aws configure
 ```
 
+## SSH keys
+
+If you happen to be using private git repositories or need passwordless authentication from your instance for any other reason, you may need to generate ssh access keys for your instance.
+
+```sh
+ssh-keygen -o -t rsa -b 4096 -C "<machine-identifying comment>"
+sudo yum install xclip
+xclip -sel clip < ~/.ssh/id_rsa.pub
+```
+
+And paste this SSH key into the settings of your other account (e.g. gitlab).
+
 ## Clone Necessary Repos
 
 ```sh
-cd
+cd ~/workdisk
 git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
@@ -357,12 +393,20 @@ source fpga-webserver/sdaccel_setup
 
 Now, build both the FPGA image and host application, transfer them to the F1 instance, and run as follows.
 
+## Check Version
+
+These instructions were last debugged with SDx v2018.2. Check to see what you are in for:
+
+```sh
+sdx -version
+```
+
 ## FPGA Build
 
 On your Build Instance, build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
 
 ```sh
-cd ~/fpga-webserver/apps/mandelbrot/build
+cd ~/workdisk/fpga-webserver/apps/mandelbrot/build
 mkdir ../out
 make build TARGET=hw KERNEL=mandelbrot -j8 > ../out/out.log &
 ```
@@ -391,7 +435,7 @@ You can transfer your app directory to run on the FPGA using the `push` Make tar
   - `launch` script in `fpga-webserver/apps/mandelbrot/build`
 
 ```sh
-cd ~/fpga-webserver/apps/mandelbrot/build
+cd ~/workdisk/fpga-webserver/apps/mandelbrot/build
 make push TARGET=hw KERNEL=mandelbrot &
 ```
 
@@ -440,15 +484,17 @@ These are WIP notes:
 
 This is how I was able to generate an RTL kernel in SDAccel manually and run hardware emulation. This is scripted as part of the build process, but not with the ability to run in SDAccel. These are notes to help figure that out.
 
- - `cd ~/fpga-webserver`
+ - `cd ~/workdisk/fpga-webserver`
  - `source sdaccel_setup`
  - `sdx`
- - `echo $AWS_FPGA_REPO_DIR` (You will need to know this path.)
+ - `echo $AWS_PLATFORM` (You will need to know this path.)
  - On Welcome screen "Add Custon Platform".
-   - Add "$AWS_FPGA_REPO_DIR/SDAccel/aws_platform/xilinx_aws-vu9p-f1_?ddr-xpr-2pr_4_0".
- - "New SDxProject": name it, select only platform, accept linux on x86 and OpenCL runtime, and "Empty Application". "Finish".
+   - Add (+) `$AWS_PLATFORM/..` .
+ - "New SDxProject":
+   - Application.
+   - name it, select only platform, accept linux on x86 and OpenCL runtime, and "Empty Application". "Finish".
  - Menu "Xilinx", "Create RTL Kernel".
-   - name it; 2 clocks (independent kernel clock)
+   - name it; 2 clocks (independent kernel clock); 1 reset?
    - default scalars (or change them)
    - default AXI master (Global Memory) options (or change them)
    - wait for Vivado
@@ -458,7 +504,7 @@ This is how I was able to generate an RTL kernel in SDAccel manually and run har
    - Close
  - Back in SDAccel:
    - in projects.sdx:
-     - Add binary container under "Hardware Functions" by selecting the yellow add box thing. You will get "binary_container_1".
+     - Add binary container under "Hardware Functions" by clicking the lightning bolt icon. There should be only one function identified as the target for the kernel. Click "OK". You will get "binary_container_1".
      - Select "Emulation-HW"
   - Menu "Run", "Run Configuration"
     - Tab "Main", "Kernel Debug", Check "Use RTL waveform...", and check "Launch live waveform".
@@ -488,3 +534,7 @@ This is how I was able to generate an RTL kernel in SDAccel manually and run har
   - no pre-built files in apps/mandelbrot/prebuilt
   - still need to initialize FPGA w/ client.html?
   - failing w/ "ERROR: Failed to load xclbin" (sdx_imports/main.c). Solved by stopping & starting F1 Instance (not by rebooting).
+
+
+
+temp_pwd_416

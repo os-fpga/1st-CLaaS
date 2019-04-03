@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Connect to EC2 machine, launch vncserver, connect to it, and shut it down once closed.
+# Usage: vnc_ec2 [-g XxY] [<ip>]
+#   -g: geometry as in -geometry arg of vncserver
+#   <ip>: IP address of EC2 instance. If given, it is recorded in .ec2_ip file and can be omitted in future invocations to use the same EC2 instance.
+# Assumptions:
+#   - There must be a private key file ~/.ssh/id_rsa.pem with a corresponding public key on the EC2 instance.
+#   - VNC server :7 is used. Any existing :7 server will be killed (if permissions permit). Port 5907 must be open to the EC2 machine.
+#   - vncserver must be installed on EC2 instance.
+#   - vncviewer must be installed locally.
+#   - vnc password must be provided locally in ~/.vnc/passwd
+
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR=`dirname "${SCRIPT_PATH}"`
+
+
+
+# Args
+
+GEOMETRY=""
+KILL=false
+while getopts "g:k" opt
+  do
+    case "${opt}" in
+      g) GEOMETRY=" -geometry ${OPTARG}";;
+      k) KILL=true;;
+    esac
+  done
+shift $((OPTIND -1))
+
+IP="$1"
+shift
+
+
+
+# IP address
+
+if [ "$IP" = "" ]; then
+  IP_GIVEN=false
+  # Load IP from .ec2_ip
+  IP=`cat "$SCRIPT_DIR/.ec2_ip"`
+else
+  IP_GIVEN=true
+fi
+
+# Validate IP
+if ! [[ "$IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: IP address '$IP' is malformed. Bye."
+  exit 1
+fi
+
+if [[ $IP_GIVEN = true ]]; then
+  # Write IP to .ec2_ip
+  echo $IP > "$SCRIPT_DIR/.ec2_ip"
+fi
+
+
+
+# Kill
+
+if [ "$KILL" = true ]; then
+  ssh -i /home/steve/.ssh/id_rsa.pem centos@$IP 'vncserver -kill :7'
+  exit
+fi
+
+
+
+# Do it
+
+# ssh into EC2 instance
+echo "Starting new VNC server on :7 (unless already running)."
+echo "Kill using \"$0 -k.\""
+ssh -i /home/steve/.ssh/id_rsa.pem centos@$IP "vncserver$GEOMETRY :7"
+
+# open local VNC viewer
+vncviewer $IP:7 passwd=~/.vnc/passwd &
