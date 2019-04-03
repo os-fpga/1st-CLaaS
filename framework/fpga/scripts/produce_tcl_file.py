@@ -52,12 +52,13 @@ fh = open(fn, "w")
 
 
 
-string = ('# This file has been automatically produced by the python script\n'
+string = ('# This file has been produced by:' + sys.argv[0] + '\n'
           '#\n'
-          '# This tcl file produces a rtl_kernel_wizard\n'
-          '# Usage:  insert the name of the kernel and the workspace where to create the project.\n'
-          '#         According to the different configurations (Master ports and arguments) the\n'
-          '#         produced verilog files and the host program will change\n'
+          '# This tcl script produces User Logic (UL) using the rtl_kernel_wizard,\n'
+          '# configured according to JSON configuration parameters reflected in this file.\n'
+          '# It is sourced through an invocation of Vivado, with -tclargs of:\n'
+          '#   $1: the name of the kernel\n'
+          '#   $2: the directory in which to create the project\n'
           '\n'
           '# Configuration variables\n'
           'set kernelName [lindex $argv 0]\n'

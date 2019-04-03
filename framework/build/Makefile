@@ -177,6 +177,7 @@ ifneq ($(TARGET), sw)
 # Actually, I think it would be better to include TARGET in the build target, eg: sw_host, hw_host, etc. (As it is there is
 # redundant building for different targets).
 
+VIVADO_VERSION_MESSAGE=Note: Kernel construction assumes Vivado v2018.2
 
 # Create tcl script for the kernel configuration
 $(DEST_DIR)/rtl_kernel_wiz.tcl: $(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py $(HW_SHELL_CONFIG_JSON)
@@ -192,6 +193,7 @@ USER_KERNEL_ADDED_FILE=$(DEST_DIR)/$(KERNEL_NAME)_ex/kernel_added.flag
 # Creating the rtl kernel wizard project.
 # kernel.xml acts as a representative for all produced files.
 $(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
+	@echo $(VIVADO_VERSION_MESSAGE)
 	vivado -mode batch -nojournal -nolog -notrace -source "$(DEST_DIR)/rtl_kernel_wiz.tcl" -tclargs $(KERNEL_NAME) "$(DEST_DIR)"
 
 # Incorporate the user's kernel into the project.
@@ -205,6 +207,7 @@ $(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
 IMPORTS_DIR=$(DEST_DIR)/$(KERNEL_NAME)_ex/imports
 VADD_SV=$(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
 $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
+	@echo $(VIVADO_VERSION_MESSAGE)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
 	# Add user's kernel source code to project.
 	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr"
@@ -213,7 +216,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 	mv $(VADD_SV).hacked $(VADD_SV)
 	rm -f "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.sv" "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_pipeline.sv"
 	# Hacked Xilinx template project without errors.
-	# Signify successful completion for Make.
+	@# Signify successful completion for Make.
 	touch "$(USER_KERNEL_ADDED_FILE)"
 
 # Moving the Makefile necessary for Hardware emulation and build into the sdx_imports directory
@@ -225,11 +228,17 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 #	$(XOCC) --platform $(PLATFORM) --target $(TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
 #	#cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
 
+# Package the project as an .xo.
+#+$(XO_FILE): $(USER_KERNEL_ADDED_FILE)
 $(XO_FILE): $(SHELL_REP)
-	vivado -mode batch -source "$(DEST_DIR)/mandelbrot_ex/imports/package_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr"
+	@echo $(VIVADO_VERSION_MESSAGE)
+	NEWLINE=$$'\n'; \
+	DEST_DIR=`realpath $(DEST_DIR)`; \
+	echo "source $(DEST_DIR)/mandelbrot_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/mandelbrot xilinx kernel mandelbrot$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/mandelbrot.xo -kernel_name mandelbrot -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/mandelbrot -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/mandelbrot_ex/package_source_kernel.tcl
+	vivado -mode batch -source "$(DEST_DIR)/mandelbrot_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr"
 
 edit_kernel: $(USER_KERNEL_ADDED_FILE)
-	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr"
+	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr" &
 
 .PHONY: shell xo edit_kernel
 shell: $(SHELL_REP)
