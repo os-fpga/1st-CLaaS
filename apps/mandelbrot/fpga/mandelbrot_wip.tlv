@@ -86,10 +86,10 @@
 		mandelbrot_kernel dut (
          .clk(clk),
          .reset(long_reset),
-         .in_blocked(),  // Assumed not blocked.
+         .in_ready(),  // Assumed not blocked.
          .in_avail(s_tvalid),
          .in_data(s_tdata),
-         .out_blocked(1'b0),  // Never block output.
+         .out_ready(1'b1),  // Never block output.
          .out_avail(m_tvalid),
          .out_data(m_tdata)
       );
@@ -106,11 +106,11 @@
      input wire                       clk,
      input wire                       reset,
 
-     output wire                      in_blocked,
+     output wire                      in_ready,
      input wire                       in_avail,
      input wire  [C_DATA_WIDTH-1:0]   in_data,
 
-     input wire                       out_blocked,
+     input wire                       out_ready,
      output wire                      out_avail,
      output wire [C_DATA_WIDTH-1:0]   out_data
 
@@ -159,8 +159,8 @@
          $reset = *reset;
       @-1
 
-         *in_blocked = >>1$frame_active;  // One frame at a time. Must be a one-cycle loop.
-         $valid_config_data_in = *in_avail && ! *in_blocked;
+         *in_ready = ! >>1$frame_active;  // One frame at a time. Must be a one-cycle loop.
+         $valid_config_data_in = *in_avail && *in_ready;
          {$config_data_bogus[63:0],
           $config_max_depth[63:0],
           $config_img_size_y[63:0],
@@ -316,7 +316,7 @@
          //$all_pix_done_pulse = $all_pix_done & ! >>1$all_pix_done;
          *out_data = /pe[*]$depth_out;
          *out_avail = $all_pix_done;
-         $out_valid = *out_avail && ! *out_blocked;
+         $out_valid = *out_avail && *out_ready;
          $done_pixels = $out_valid;
          $done_frame = $done_pixels && /pe[*]$wrap_h & /pe[*]$wrap_v;
 

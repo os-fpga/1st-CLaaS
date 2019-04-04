@@ -1,2 +1,0 @@
-open_project mandelbrot_ex
-source imports/package_kernel.tcl

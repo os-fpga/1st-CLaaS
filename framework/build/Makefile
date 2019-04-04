@@ -204,6 +204,8 @@ $(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
 #   We need backpressure between rd_fifo and kernel and kernel and wr_fifo.
 #   The sed commands apply the changes.
 # Creates a kernel_added.flag file to signify completion.
+# TODO: How do we create the SDAccel workspace and project? Makefile or in repo or via instructions?
+# TODO: How do we configure the Vivado SDAccel project, including low-optimizations. Makefile or in repo or via instructions?
 IMPORTS_DIR=$(DEST_DIR)/$(KERNEL_NAME)_ex/imports
 VADD_SV=$(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
 $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
@@ -214,7 +216,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 	# Replace the adder example code with the user's kernel (including inner shell logic).
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
 	mv $(VADD_SV).hacked $(VADD_SV)
-	rm -f "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.sv" "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_pipeline.sv"
+	rm "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.v"
 	# Hacked Xilinx template project without errors.
 	@# Signify successful completion for Make.
 	touch "$(USER_KERNEL_ADDED_FILE)"
@@ -229,8 +231,8 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 #	#cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
 
 # Package the project as an .xo.
-#+$(XO_FILE): $(USER_KERNEL_ADDED_FILE)
-$(XO_FILE): $(SHELL_REP)
+# (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
+$(XO_FILE): project
 	@echo $(VIVADO_VERSION_MESSAGE)
 	NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
@@ -240,9 +242,10 @@ $(XO_FILE): $(SHELL_REP)
 edit_kernel: $(USER_KERNEL_ADDED_FILE)
 	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr" &
 
-.PHONY: shell xo edit_kernel
+.PHONY: shell xo project edit_kernel
 shell: $(SHELL_REP)
 xo: $(XO_FILE)
+project: $(USER_KERNEL_ADDED_FILE)
 
 
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
@@ -263,7 +266,9 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 #  },
 #  ...
 # Wait until the AFI becomes available before proceeding to execute the application on the F1 instance.
-# It's rediculous that there is not automation here. TODO.
+# It's rediculous that there is not automation here. Or is there...
+# TODO: Wait for AFI build to complete.
+#       In create_sdaccel_afi.sh, use create-fpga-image --wait
 $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
@@ -300,8 +305,6 @@ launch: build
 else
 build:  $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 launch: build
-	# TODO: Wait for AFI build to complete.
-	#       In create_sdaccel_afi.sh, use create-fpga-image --wait
 	./launch -p $(PORT) $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 endif
 

@@ -1,0 +1,199 @@
+#!/bin/bash
+
+# This script can be used by the application to start the host application built for sw or hw.
+# It MUST be invoked from the application's build directory.
+#
+# TODO: This is a big hack. The webserver should open the socket and start the host and tear down
+#       the socket and host when it's done/killed. (Though consider how gdb can be run within editor where the editor must execute the host command.)
+
+# Usage:
+#   ./launch -k <kernel_name> [-c <compile-command>] [-o <opencl-host-app-args>] [-p <python-webserver-args>] <hw/sw> <path/to/host> <path/to/awsxclbin>
+# Usage Cases (without optional args):
+#   ./launch -k <kernel_name> hw <path/to/host> <path/to/awsxclbin>
+#   ./launch -k <kernel_name> sw
+# Debug Usage Cases (without optional args):
+#   ../out/sw/host &  # from within debugger
+#   ps aux | grep ../out/sw/host
+#   launch -h <pid> sw   # OR
+#   launch -h none sw    # to not kill host on exit ("none" is anything that isn't a whole number)
+# Optional args:
+#   -c <compile-command>: The compile command used to rebuilt when upgraded.
+#   -o <opencl-host-app-args>: A string of additional arguments to pass the OpenCL host application.
+#   -p <python-webserver-args>: A string of additional arguments to pass the Python webserver application.
+
+# Must be launched from its own directory.
+
+# TODO: Make a function to wrap commands in sudo.
+
+
+usage () {
+    echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-o opencl-host-app-args] [-p python-webserver-args] (sw | hw path/to/host_app path/to/${KERNEL}.awsxclbin)"
+    exit 1
+}
+
+
+# Defaults
+
+SCRIPT_CMD="launch $*"
+PORT="8888"
+HOST_PID=""
+COMPILE_CMD=""
+KERNEL=""
+HOST_ARGS=""
+SERVER_ARGS=""
+
+
+# Read command line options
+
+while getopts "p:h:c:k:o:p:" opt
+  do
+    case "${opt}" in
+      p) PORT=${OPTARG};;
+      h) HOST_PID=${OPTARG};;
+      c) COMPILE_CMD="${OPTARG}";;
+      k) KERNEL="${OPTARG}";;
+      o) HOST_ARGS="${OPTARG}";;
+      p) SERVER_ARGS="${OPTARG}";;
+    esac
+  done
+shift $((OPTIND -1))
+
+if [[ $HOST_PID =~ ^[0-9]+$ ]];
+then
+  HOST_PID=""
+fi
+
+TYPE="$1"
+HOST="$2"
+AWSXCLBIN="$3"
+
+#echo "$TYPE $HOST $AWSXCLBIN"
+
+if [[ $TYPE = "" ]] || [[ $KERNEL = "" ]];
+then
+  usage
+fi
+if [[ $TYPE = "hw" ]];
+then
+    if [[ $HOST = "" ]] && [[ $AWSXCLBIN = "" ]];
+    then
+      usage
+    fi
+fi
+
+if [[ $COMPILE_CMD = "" ]];
+then
+  COMPILE_CMD="make TARGET=$TYPE build"
+fi
+
+fail () {
+    echo $1
+    exit 1
+}
+
+
+# Launch web server and host application.
+launch () {
+  # Launch host app.
+  if [[ $HOST_PID == "" ]]
+    # Host application launched externally (probably via gdb).
+  then
+    if [[ $TYPE = "sw" ]];
+    then
+        #echo "launching host sw"
+        ../out/$TYPE/host &
+        # For debug: valgrind --leak-check=yes ../out/$TYPE/host &
+        #            sleep 2
+    else
+        # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG.
+        # Other runtime env settings needed by the host app should be setup after this setup.sh step.
+        # TODO: ${KERNEL} arg should be hardcoded in host application.                                                                                                             
+        sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; $HOST $AWSXCLBIN $KERNEL $HOST_ARGS" &
+    fi
+    export HOST_PID=$!
+  fi
+
+  # Make sure we have tornado.
+  #pip -q install tornado
+  
+  # Launch web server.
+  if [[ $TYPE = "sw" ]];
+  then
+      #echo "launching server sw"
+      python ../webserver/${kernel}_server.py --port=${PORT} $SERVER_ARGS &
+  else
+      sudo python ../webserver/${kernel}_server.py --port=${PORT} $SERVER_ARGS &
+  fi
+  export SERVER_PID=$!
+}
+
+# Tear down.
+teardown () {
+  # Kill child processes
+  echo "Killing web server and host application."
+  if [[ $TYPE = "sw" ]];
+  then
+    if [[ $HOST_PID != "" ]]
+    then
+      kill $HOST_PID
+    fi
+    kill $SERVER_PID
+    #rm SOCKET
+  else
+    # Processes are invoked through sudo and bash and don't seem to be killed with their parent.                                                               
+    HOST_PID2=`ps --ppid $HOST_PID -o pid=`
+    HOST_PID3=`ps --ppid $HOST_PID -o pid=`
+    SERVER_PID2=`ps --ppid $SERVER_PID -o pid=`
+    echo "Killing PIDs: $HOST_PID2 $HOST_PID3 $SERVER_PID2"
+    ps --pid $HOST_PID2 --pid $HOST_PID3 --pid $SERVER_PID2
+    sudo kill -9 $HOST_PID2
+    sudo kill -9 $HOST_PID3
+    sudo kill -9 $SERVER_PID2
+  fi
+}
+
+# Kill signal handler.
+finish () {
+  echo "finish()"
+  teardown
+  echo "Killed host app and web server"
+  DONE=1
+}
+
+
+# SIGUSR1 signal invokes this to pull the latest repository and re-launch.
+upgrade () {
+  echo "Upgrade"
+  # Return if there are no changes in master.
+  git pull origin master
+  OUT=`git status`
+  if ! [[ $OUT =~ Your\ branch\ is\ behind ]] ; then
+    echo "Up to date with master."
+  else
+    echo "Pulled changes. Updating submodules."
+    git submodule update --init --recursive
+    
+    echo "Re-launching web server."
+    # Kill children.
+    teardown
+
+    # Compile
+    bash -c "$COMPILE_CMD" || fail "Compilation for Mandelbrot failed."
+    
+    # Re-launch.
+    echo "Re-launching web server"
+    exec $SCRIPT_CMD
+  fi
+}
+
+launch
+
+trap finish SIGINT SIGQUIT SIGABRT SIGKILL SIGPIPE SIGTERM
+trap upgrade SIGUSR1
+
+DONE=0
+while [ $DONE -le 0 ] ; do
+  sleep 2
+done
+
+echo "[launch script] Done."
