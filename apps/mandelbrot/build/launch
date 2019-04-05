@@ -4,4 +4,4 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_DIR=`dirname "${SCRIPT_PATH}"`
 cd "$SCRIPT_DIR"
 
-../../../framework/build/launch -k "mandelbrot" $*
+../../../framework/build/launch -k "mandelbrot" -w 'python ../webserver/mandelbrot_server.py --port=<<PORT>>' $*

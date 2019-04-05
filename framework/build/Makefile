@@ -42,14 +42,16 @@ HOST_DIR=../host
 FRAMEWORK_DIR=../../../framework
 FRAMEWORK_HOST_DIR=$(FRAMEWORK_DIR)/host
 
-ADDITIONAL_SRC ?=
-ADDITIONAL_HDRS ?=
+PROJ_C_SRC ?=
+PROJ_C_HDRS ?=
+PROJ_SW_CFLAGS ?=
+PROJ_SW_LFLAGS ?=
 
 #Software (no FPGA) flags
 SW_SRC=$(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
-SW_HDRS=$(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(ADDITIONAL_HDRS) $(PROJ_C_HDRS)
-SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../../../framework/host/json/include
-SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64
+SW_HDRS=$(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS)
+SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../../../framework/host/json/include $(PROJ_SW_CFLAGS)
+SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64 $(PROJ_SW_LFLAGS)
 
 #Host code
 HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
@@ -212,7 +214,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 	@echo $(VIVADO_VERSION_MESSAGE)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
 	# Add user's kernel source code to project.
-	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr"
+	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr"
 	# Replace the adder example code with the user's kernel (including inner shell logic).
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
 	mv $(VADD_SV).hacked $(VADD_SV)
@@ -233,14 +235,17 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 # Package the project as an .xo.
 # (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
 $(XO_FILE): project
-	@echo $(VIVADO_VERSION_MESSAGE)
-	NEWLINE=$$'\n'; \
+	$(info $(VIVADO_VERSION_MESSAGE))
+	$(info "-----------------")
+	$(info "Packaging project")
+	$(info "-----------------")
+	@NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
-	echo "source $(DEST_DIR)/mandelbrot_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/mandelbrot xilinx kernel mandelbrot$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/mandelbrot.xo -kernel_name mandelbrot -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/mandelbrot -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/mandelbrot_ex/package_source_kernel.tcl
-	vivado -mode batch -source "$(DEST_DIR)/mandelbrot_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr"
+	echo "source $(DEST_DIR)/${KERNEL_NAME}_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} xilinx kernel ${KERNEL_NAME}$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/${KERNEL_NAME}.xo -kernel_name ${KERNEL_NAME} -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl
+	vivado -mode batch -source "$(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr"
 
 edit_kernel: $(USER_KERNEL_ADDED_FILE)
-	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/mandelbrot_ex.xpr" &
+	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr" &
 
 .PHONY: shell xo project edit_kernel
 shell: $(SHELL_REP)
@@ -251,7 +256,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link --Oquick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # From: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md
 # The AFI creation process that started in the background is not instantaneous. You must make sure that the process completes successfully before it is able to run on the F1 instance.
@@ -272,7 +277,7 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 $(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
-	cp $(BUILD_DIR)/$(KERNEL_EXE).xclbin $(DEST_DIR)
+	# For prebuilt....TODO need to rework....  cp $(BUILD_DIR)/$(KERNEL_EXE).xclbin $(DEST_DIR)
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
 
 .PHONY: push
@@ -283,27 +288,36 @@ push: build
 endif
 
 # Phony targets for intermediate results
-.PHONY: host xo xclbin awsxclbin afi
+.PHONY: host xo xclbin emulation build launch
 host: $(DEST_DIR)/$(HOST_EXE)
 host_debug: $(DEST_DIR)/$(HOST_EXE)_debug
 #xo: $(DEST_DIR)/$(KERNEL_EXE).xo
 xclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
-awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
-afi: awsxclbin
 
-.PHONY: emulation
+ifeq ($(TARGET), hw_emu)
+HOST_XCLBIN=$(DEST_DIR)/$(KERNEL_EXE).xclbin
+endif
+ifeq ($(TARGET), hw)
+HOST_XCLBIN=$(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+# HW targets
+.PHONY: awsxclbin afi
+awsxclbin: $(HOST_XCLBIN)
+afi: awsxclbin
+endif
+
+# TODO: Need sdx_project and sdx_workspace targets to build SDx workspace/project configured to work w/ the host application.
+
+# TODO: This must have been from Alessandro, and emulation has never been launched from the makefile since.
 emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emcondigutil for emulation purposes)
 
-.PHONY: build
-.PHONY: launch
 ifeq ($(TARGET), sw)
 build:  $(BUILD_DIR)/$(HOST_EXE)
 launch: build
 	./launch -p $(PORT) $(TARGET)
 else
-build:  $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+build:  $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 launch: build
 	./launch -p $(PORT) $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
 endif

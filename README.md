@@ -10,7 +10,7 @@ This project provides the communication layer that enables web applications or d
 
 This repository contains all that is needed to develop a hardware-accelerated web application, including the generic framework and sample applications that utilize the framework. It contains contents for local development as well as for building FPGA images on the remote F1 machine, so it is to be cloned locally and remotely and edited both places.
 
-Hardware-accelerated applications can be developed in forks of this repository. 
+Hardware-accelerated applications can be developed in forks of this repository.
 
 # Status
 
@@ -121,7 +121,8 @@ While you wait for F1 access, you can play around with the Mandelbrot example wi
 On a Ubuntu 16.04 machine:
 ```sh
 sudo apt-get update
-sudo apt-get install make g++ python python-pip python-pil
+sudo apt-get install make g++ python python-pip python-pil python-tornado
+# On centos: sudo yum install make g++ python python-pip python-pillow python-tornado (unconfirmed)
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
@@ -143,11 +144,18 @@ Now let's provision an F1 Instance. Again, I came up with the "Previous Instruct
 
 I found the diskspace to be rather limited, so I added 3GB to the attached Elastic Block Storage (EBS) (which persists after instance destruction).
 
-I was unable to connect using RDP.
-I encountered the following issues with this script:
+I was unable to connect using RDP. Update: After doing the following fix to resolve access problems from Windows 7, Linux access also seems to be fixed. Clean this up and inform Xilinx after more testing.
+
+```sh
+sudo cp /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # create a backup
+sudo sed -i s/security_layer=negotiate/security_layer=rdp/ /etc/xrdp/xrdp.ini  # change "security_layer"
+sudo diff /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # just to see that something changed
+```
+
+I encountered the following issues with this script: (What script? The one CURLed here: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client ??? )
 
   - Error that `/usr/src/kernels/3.10.0-957.10.1.el7.x86_64` couldn't be found. (I changed the link to point to `/usr/src/kernels/3.10.0-862.11.6.el7.x86_64`.)
-  
+
 You will want to open one or more additional ports for the Web Server. Either during creation, or from the "Running Instances" page (via EC2 Dashboard), scroll right and select the security group for your instance. Under "Inbound":
 
   - "Add Rule"
@@ -541,4 +549,3 @@ This is how I was able to generate an RTL kernel in SDAccel manually and run har
   - no pre-built files in apps/mandelbrot/prebuilt
   - still need to initialize FPGA w/ client.html?
   - failing w/ "ERROR: Failed to load xclbin" (sdx_imports/main.c). Solved by stopping & starting F1 Instance (not by rebooting).
-

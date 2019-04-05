@@ -74,7 +74,7 @@ class Mandelbrot():
         raise ValueError
     #self.img = Image.fromarray(img_array, 'RGB')
     return image
- 
+
   @staticmethod
   def getPixelDepth(x, y, max_iteration):
     x0 = x
@@ -86,11 +86,11 @@ class Mandelbrot():
       x = xtemp
       iteration += 1
     return iteration
-  
+
   @staticmethod
   def depthToPixel(depth):
     return ((depth * 16) % 256, 0, 0)
-    
+
 """
 Handler for /redeploy GET requests. These signal SIGUSR1 in the parent (launch script) process, which triggers
 a pull of the latest git repo and teardown and re-launch of this web server and the host application.
@@ -123,12 +123,12 @@ class ImageHandler(tornado.web.RequestHandler):
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         self.set_header("Connection", "keep-alive")
         self.set_header("Content-Type", "image/png")
-        
+
     @staticmethod
     def valid_dirname(dir):
         return re.match("^\w+$", dir)
 
-    # handles image request via get request 
+    # handles image request via get request
     def get(self, type, depth=u'1000', tile_z=None, tile_x=None, tile_y=None):
 
         json_str = self.get_query_argument("json", False)
@@ -136,10 +136,10 @@ class ImageHandler(tornado.web.RequestHandler):
         if (json_str == False):
             print "Python: No json query argument for ImageHandler"
             return
-        
+
         json_str = unicodedata.normalize('NFKD', json_str).encode("ascii", "ignore")  # Unicode to str
         json_obj = json.loads(json_str)
-        
+
         try:
             burn_subdir = json_obj["burn_dir"]
         except:
@@ -160,11 +160,11 @@ class ImageHandler(tornado.web.RequestHandler):
             cast_subdir = json_obj["cast"]
         except:
             cast_subdir = ""
-        
+
         # Determine image parameters from GET parameters
         if type == "tile":
             #print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s" % (tile_z, tile_x, tile_y, depth, var1, var2)
-        
+
             # map parameters to those expected by FPGA, producing 'payload'.
             tile_size = 4.0 / 2.0 ** float(tile_z)    # size of tile x/y in Mandelbrot coords
             x = -2.0 + (float(tile_x) + 0.5) * tile_size
@@ -188,8 +188,8 @@ class ImageHandler(tornado.web.RequestHandler):
 
         img_data = self.application.renderImage(json_str, json_obj)
         self.write(img_data)
-            
-        
+
+
         # Burn?
         # Validate dir name.
         ok = self.valid_dirname(burn_subdir)
@@ -230,7 +230,7 @@ class ImageHandler(tornado.web.RequestHandler):
                         sys.stderr.write("Failed to convert images to video.")
             except IOError:
                 print "Failed to write file %s" % filepath
-                
+
         # Cast?
         # Validate dir name.
         ok = self.valid_dirname(cast_subdir)
@@ -262,7 +262,7 @@ For now, requests are processed serially, so we return whatever we have. This is
 reasonable behavior where observers queue up a single request for each image.
 """
 class ObserveImageHandler(ImageHandler):
-    
+
     """
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -272,7 +272,7 @@ class ObserveImageHandler(ImageHandler):
         self.set_header("Content-Type", "image/png")
         self.set_header("Cache-Control", "no-cache")  # (Doesn't do the trick.)
     """
-    
+
     """
     Get the current or next image produced by a different client. Next if this client has already requested the current one.
     tag: A string shared by producing and consuming clients to identify the image series (also the directory name, as with burning video).
@@ -289,10 +289,10 @@ class ObserveImageHandler(ImageHandler):
             client_flag_filename = "cast/" + tag + "/ip-" + remote_ip
             if os.path.isfile(client_flag_filename):
                 return
-            
+
             # Create flag file.
             open(client_flag_filename, 'w').close()
-            
+
             filepath = "cast/" + tag + "/img.png"
             with open(filepath, 'rb') as f:
                 while 1:
@@ -323,9 +323,9 @@ class MandelbrotApplication(FPGAServerApplication):
         return img_data
 
 if __name__ == "__main__":
-    
+
     # Command-line options
-    
+
     port = 8888
     try:
         opts, remaining = getopt.getopt(sys.argv[1:], "", ["port="])
@@ -335,22 +335,18 @@ if __name__ == "__main__":
     for opt, arg in opts:
         if opt == '--port':
             port = int(arg)
-    
+
     # Webserver
-    
+
     dir = os.path.dirname(__file__)
     application = MandelbrotApplication(
-            [ (r"/()", BasicFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
-              (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"}),
-              (r"/css/(.*\.css)", BasicFileHandler, {"path": dir + "/css"}),
-              (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
-              (r"/(fpgaServer.js)", BasicFileHandler, {"path": dir + "/../../../framework/webserver/js"}),   # TODO: Support this path in framework.
-              (r"/redeploy", RedeployHandler),
-              (r'/ws', WSHandler),   # TODO: Support this path in framework.
-              #(r'/hw', GetRequestHandler),
-              (r'/(img)', ImageHandler),
-              (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
-              (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
-            ], 
+            FPGAServerApplication.defaultContentRoutes().extend(
+                [ (r"/redeploy", RedeployHandler),
+                  (r'/ws', WSHandler),   # TODO: Support this path in framework.
+                  #(r'/hw', GetRequestHandler),
+                  (r'/(img)', ImageHandler),
+                  (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
+                  (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
+                ]),
             port
         )

@@ -32,9 +32,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 #
-# This is the main python webserver which accepts WebSocket connections as well as 
+# This is the main python webserver which accepts WebSocket connections as well as
 # Get requests from a client on port 8888.
-# 
+#
 # The process is single threaded and all the requests are served synchronously and in order.
 #
 # The web server interfaces with the host application through a UNIX socket communication
@@ -72,7 +72,7 @@ READ_DATA     = "READ_DATA"
 GET_IMAGE     = "GET_IMAGE"
 
 
-# A simple override of 
+# A simple override of
 class BasicFileHandler(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
         self.set_header("Cache-control", "no-cache")
@@ -114,8 +114,22 @@ class FPGAServerApplication(tornado.web.Application):
         myIP = socket.gethostbyname(socket.gethostname())
         print '*** Websocket Server Started at %s***:%i' % (myIP, port)
 
+    # Return an array containing default routes.
+    # Args:
+    #   dir: Application's webserver directory containing /html, /js, /css directories.
+    @staticmethod
+    def defaultContentRoutes(dir):
+        mydir = os.path.dirname(__file__)
+        return [
+              (r"/()", BasicFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
+              (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"}),
+              (r"/css/(.*\.css)", BasicFileHandler, {"path": dir + "/css"}),
+              (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
+              (r"/(fpgaServer.js)", BasicFileHandler, {"path": mydir + "/js"})
+            ]
 
-    ### Function that creates a socket communication with the Host application
+
+    # Create socket communication with the Host application
     @staticmethod
     def getSocket():
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -141,8 +155,8 @@ class FPGAServerApplication(tornado.web.Application):
         if not b64:
             ret = response
         return ret
-    
-    
+
+
     def __init__(self, handlers, port):
         self.initSocket(port)
         super(FPGAServerApplication, self).__init__(handlers)
@@ -150,5 +164,3 @@ class FPGAServerApplication(tornado.web.Application):
         server.listen(port)
         # Starting webserver
         tornado.ioloop.IOLoop.instance().start()
-
-

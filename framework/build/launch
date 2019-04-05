@@ -7,7 +7,7 @@
 #       the socket and host when it's done/killed. (Though consider how gdb can be run within editor where the editor must execute the host command.)
 
 # Usage:
-#   ./launch -k <kernel_name> [-c <compile-command>] [-o <opencl-host-app-args>] [-p <python-webserver-args>] <hw/sw> <path/to/host> <path/to/awsxclbin>
+#   ./launch -k <kernel_name> [-c <compile-command>] [-o <opencl-host-app-args>] [-w <pwebserver-command>] <hw/sw> <path/to/host> <path/to/awsxclbin>
 # Usage Cases (without optional args):
 #   ./launch -k <kernel_name> hw <path/to/host> <path/to/awsxclbin>
 #   ./launch -k <kernel_name> sw
@@ -17,17 +17,20 @@
 #   launch -h <pid> sw   # OR
 #   launch -h none sw    # to not kill host on exit ("none" is anything that isn't a whole number)
 # Optional args:
+#   -p <port>: The port number on which to launch. 8888 by default.
 #   -c <compile-command>: The compile command used to rebuilt when upgraded.
 #   -o <opencl-host-app-args>: A string of additional arguments to pass the OpenCL host application.
-#   -p <python-webserver-args>: A string of additional arguments to pass the Python webserver application.
+#   -w <python-webserver-command>: The command to launch the webserver. '<<PORT>>' will be substituted with the port number.
 
-# Must be launched from its own directory.
+# Must be launched from the projects 'build' directory because:
+#   o The host executable path is assumed to be "../out".
+#   o If -w is not specified or the project utilizes default routing, the default web content paths are "../webserver/*".
 
 # TODO: Make a function to wrap commands in sudo.
 
 
 usage () {
-    echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-o opencl-host-app-args] [-p python-webserver-args] (sw | hw path/to/host_app path/to/${KERNEL}.awsxclbin)"
+    echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-o opencl-host-app-args] [-w webserver-args] (sw | hw path/to/host_app path/to/${KERNEL}.awsxclbin)"
     exit 1
 }
 
@@ -40,7 +43,7 @@ HOST_PID=""
 COMPILE_CMD=""
 KERNEL=""
 HOST_ARGS=""
-SERVER_ARGS=""
+LAUNCH_WEBSERVER_CMD='python ../../../framework/webserver/default_server.py --port=<<PORT>>'
 
 
 # Read command line options
@@ -53,7 +56,6 @@ while getopts "p:h:c:k:o:p:" opt
       c) COMPILE_CMD="${OPTARG}";;
       k) KERNEL="${OPTARG}";;
       o) HOST_ARGS="${OPTARG}";;
-      p) SERVER_ARGS="${OPTARG}";;
     esac
   done
 shift $((OPTIND -1))
@@ -101,30 +103,35 @@ launch () {
     if [[ $TYPE = "sw" ]];
     then
         #echo "launching host sw"
-        ../out/$TYPE/host &
+        ../out/$TYPE/host $HOST_ARGS &
         # For debug: valgrind --leak-check=yes ../out/$TYPE/host &
         #            sleep 2
     else
         # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG.
         # Other runtime env settings needed by the host app should be setup after this setup.sh step.
-        # TODO: ${KERNEL} arg should be hardcoded in host application.                                                                                                             
-        sudo -- sh -c "source /opt/Xilinx/SDx/2017.1.rte.4ddr/setup.sh ; $HOST $AWSXCLBIN $KERNEL $HOST_ARGS" &
+        # TODO: ${KERNEL} arg should be hardcoded in host application.
+        sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST $AWSXCLBIN $KERNEL $HOST_ARGS" &
     fi
     export HOST_PID=$!
   fi
 
-  # Make sure we have tornado.
+  # Make sure we have tornado. (Too slow.)
   #pip -q install tornado
-  
+
+
   # Launch web server.
+
+  # Substitute <<PORT>>.
+  CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
+  # Launch.
   if [[ $TYPE = "sw" ]];
   then
-      #echo "launching server sw"
-      python ../webserver/${kernel}_server.py --port=${PORT} $SERVER_ARGS &
+    $CMD &
   else
-      sudo python ../webserver/${kernel}_server.py --port=${PORT} $SERVER_ARGS &
+    sudo $CMD &
   fi
   export SERVER_PID=$!
+
 }
 
 # Tear down.
@@ -140,7 +147,7 @@ teardown () {
     kill $SERVER_PID
     #rm SOCKET
   else
-    # Processes are invoked through sudo and bash and don't seem to be killed with their parent.                                                               
+    # Processes are invoked through sudo and bash and don't seem to be killed with their parent.
     HOST_PID2=`ps --ppid $HOST_PID -o pid=`
     HOST_PID3=`ps --ppid $HOST_PID -o pid=`
     SERVER_PID2=`ps --ppid $SERVER_PID -o pid=`
@@ -172,14 +179,14 @@ upgrade () {
   else
     echo "Pulled changes. Updating submodules."
     git submodule update --init --recursive
-    
+
     echo "Re-launching web server."
     # Kill children.
     teardown
 
     # Compile
     bash -c "$COMPILE_CMD" || fail "Compilation for Mandelbrot failed."
-    
+
     # Re-launch.
     echo "Re-launching web server"
     exec $SCRIPT_CMD
