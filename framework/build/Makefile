@@ -234,7 +234,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 
 # Package the project as an .xo.
 # (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
-$(XO_FILE): project
+$(XO_FILE): $(USER_KERNEL_ADDED_FILE)
 	$(info $(VIVADO_VERSION_MESSAGE))
 	$(info "-----------------")
 	$(info "Packaging project")
@@ -256,7 +256,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link --Oquick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # From: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md
 # The AFI creation process that started in the background is not instantaneous. You must make sure that the process completes successfully before it is able to run on the F1 instance.
@@ -312,22 +312,24 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 	export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emcondigutil for emulation purposes)
 
+
 ifeq ($(TARGET), sw)
-build:  $(BUILD_DIR)/$(HOST_EXE)
-launch: build
-	./launch -p $(PORT) $(TARGET)
+HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 else
-build:  $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-launch: build
-	./launch -p $(PORT) $(TARGET) $(BUILD_DIR)/$(HOST_EXE) $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+HOST_CMD=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
+build:  $(HOST_CMD)
+launch: $(HOST_CMD)
+	./launch -p $(PORT) $(TARGET) $(HOST_CMD)
 
 
+ifeq ($(TARGET), hw)
 .PHONY: prebuild
-prebuild: build
+prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
 	cp $(DEST_DIR)/$(HOST_EXE)          $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
 	cp $(DEST_DIR)/$(KERNEL_EXE).xclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).xclbin
+endif
 
 
 .PHONY: debug_prints

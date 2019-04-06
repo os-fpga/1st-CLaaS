@@ -1,36 +1,35 @@
 #!/bin/bash
 
 # This script can be used by the application to start the host application built for sw or hw.
-# It MUST be invoked from the application's build directory.
+# It MUST be invoked from the application's build directory and should generally be invoked via 'make TARGET=xx launch'.
 #
 # TODO: This is a big hack. The webserver should open the socket and start the host and tear down
 #       the socket and host when it's done/killed. (Though consider how gdb can be run within editor where the editor must execute the host command.)
 
 # Usage:
-#   ./launch -k <kernel_name> [-c <compile-command>] [-o <opencl-host-app-args>] [-w <pwebserver-command>] <hw/sw> <path/to/host> <path/to/awsxclbin>
+#   ./launch [-c <compile-command>] [-o <opencl-host-app-args>] [-w <webserver-command>] <hw/sw> [<host-command>]
 # Usage Cases (without optional args):
-#   ./launch -k <kernel_name> hw <path/to/host> <path/to/awsxclbin>
-#   ./launch -k <kernel_name> sw
+#   ./launch hw '<path/to/host> <path/to/awsxclbin>'
+#   ./launch hw_emu '<path/to/host> <path/to/xclbin>'
+#   ./launch sw   # <host-command> defaults to "../out/$TARGET/host"
 # Debug Usage Cases (without optional args):
 #   ../out/sw/host &  # from within debugger
 #   ps aux | grep ../out/sw/host
-#   launch -h <pid> sw   # OR
-#   launch -h none sw    # to not kill host on exit ("none" is anything that isn't a whole number)
+#   launch -h <pid> sw '<host-command>'   # OR
+#   launch -h none sw '<host-command>'    # to not kill host on exit ("none" is anything that isn't a whole number)
 # Optional args:
 #   -p <port>: The port number on which to launch. 8888 by default.
 #   -c <compile-command>: The compile command used to rebuilt when upgraded.
-#   -o <opencl-host-app-args>: A string of additional arguments to pass the OpenCL host application.
 #   -w <python-webserver-command>: The command to launch the webserver. '<<PORT>>' will be substituted with the port number.
 
 # Must be launched from the projects 'build' directory because:
-#   o The host executable path is assumed to be "../out".
 #   o If -w is not specified or the project utilizes default routing, the default web content paths are "../webserver/*".
 
 # TODO: Make a function to wrap commands in sudo.
 
 
 usage () {
-    echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-o opencl-host-app-args] [-w webserver-args] (sw | hw path/to/host_app path/to/${KERNEL}.awsxclbin)"
+    echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-w webserver-args] (sw|hw_emu|hw) host-command"
     exit 1
 }
 
@@ -41,8 +40,6 @@ SCRIPT_CMD="launch $*"
 PORT="8888"
 HOST_PID=""
 COMPILE_CMD=""
-KERNEL=""
-HOST_ARGS=""
 LAUNCH_WEBSERVER_CMD='python ../../../framework/webserver/default_server.py --port=<<PORT>>'
 
 
@@ -54,8 +51,6 @@ while getopts "p:h:c:k:o:p:" opt
       p) PORT=${OPTARG};;
       h) HOST_PID=${OPTARG};;
       c) COMPILE_CMD="${OPTARG}";;
-      k) KERNEL="${OPTARG}";;
-      o) HOST_ARGS="${OPTARG}";;
     esac
   done
 shift $((OPTIND -1))
@@ -67,17 +62,21 @@ fi
 
 TYPE="$1"
 HOST="$2"
-AWSXCLBIN="$3"
 
-#echo "$TYPE $HOST $AWSXCLBIN"
+#echo "$TARGET $HOST"
 
-if [[ $TYPE = "" ]] || [[ $KERNEL = "" ]];
+if [[ $HOST = "" ]];
+then
+  HOST="../out/$TARGET/host"
+fi
+
+if [[ $TARGET = "" ]];
 then
   usage
 fi
-if [[ $TYPE = "hw" ]];
+if [[ $TARGET = "hw" ]];
 then
-    if [[ $HOST = "" ]] && [[ $AWSXCLBIN = "" ]];
+    if [[ $HOST = "" ]];
     then
       usage
     fi
@@ -85,7 +84,7 @@ fi
 
 if [[ $COMPILE_CMD = "" ]];
 then
-  COMPILE_CMD="make TARGET=$TYPE build"
+  COMPILE_CMD="make TARGET=$TARGET build"
 fi
 
 fail () {
@@ -100,17 +99,16 @@ launch () {
   if [[ $HOST_PID == "" ]]
     # Host application launched externally (probably via gdb).
   then
-    if [[ $TYPE = "sw" ]];
+    if [[ $TARGET = "sw" ]];
     then
         #echo "launching host sw"
-        ../out/$TYPE/host $HOST_ARGS &
-        # For debug: valgrind --leak-check=yes ../out/$TYPE/host &
+        $HOST &
+        # For debug: valgrind --leak-check=yes ../out/$TARGET/host &
         #            sleep 2
     else
         # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG.
         # Other runtime env settings needed by the host app should be setup after this setup.sh step.
-        # TODO: ${KERNEL} arg should be hardcoded in host application.
-        sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST $AWSXCLBIN $KERNEL $HOST_ARGS" &
+        sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
     fi
     export HOST_PID=$!
   fi
@@ -124,7 +122,7 @@ launch () {
   # Substitute <<PORT>>.
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
   # Launch.
-  if [[ $TYPE = "sw" ]];
+  if [[ $TARGET = "sw" ]];
   then
     $CMD &
   else
@@ -138,7 +136,7 @@ launch () {
 teardown () {
   # Kill child processes
   echo "Killing web server and host application."
-  if [[ $TYPE = "sw" ]];
+  if [[ $TARGET = "sw" ]];
   then
     if [[ $HOST_PID != "" ]]
     then

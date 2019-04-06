@@ -35,5 +35,5 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char const *argv[])
 {
-  (new HostMandelbrotApp())->server_main(argc, argv);
+  (new HostMandelbrotApp())->server_main(argc, argv, "mandelbrot");
 }

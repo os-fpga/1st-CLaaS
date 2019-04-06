@@ -89,8 +89,8 @@ using json = nlohmann::json;
 class HostApp {
 
 public:
-  int server_main(int argc, char const *argv[]);
-  
+  int server_main(int argc, char const *argv[], const char *kernel_name);
+
   /*
   ** Data structure to handle a array of doubles and its size to have a dynamic behaviour
   ** TODO: This is messy. At least make it an object with destructor.
@@ -103,17 +103,17 @@ public:
 #ifdef OPENCL
   Kernel kernel;
 #endif
-  
+
 protected:
 
-  /* 
-  ** This function is needed to translate the message coming from 
+  /*
+  ** This function is needed to translate the message coming from
   ** the socket into a number to be given in input to the
   ** switch construct to decode the command
   */
   int get_command(char * command);
 
-  /* 
+  /*
   ** Utility function to print errors
   */
   void perror(const char * error);
@@ -131,7 +131,7 @@ protected:
   #endif
 
   json read_json(int socket);
-  
+
   /*
   ** Utility function to handle the data coming from the socket and sent to the FPGA device
   */
@@ -150,9 +150,9 @@ protected:
   #ifdef OPENCL
   void handle_get_image(int socket, int ** data_array_p, input_struct * input_p);
   #endif
-  
+
   virtual void get_image(int sock) {printf("No defined behavior for get_image()\n");}
-  
+
 };
 
 
