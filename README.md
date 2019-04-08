@@ -4,17 +4,15 @@ The availability of FPGAs in the data center/cloud enables very exciting compute
 
 This project provides the communication layer that enables web applications or distributed cloud applications to exchange data with custom hardware logic running on FPGAs in the data center using standard web protocols. Developers need only provide the web application and the hardware kernel and need not worry about how the bits get from one to the other. If desired, modifications can be made to the webserver and/or C++ application through which data passes, but in the simplest scenario, this is not necessary.
 
-...This project currently focuses on utilizing Amazon's F1 FPGA instances. These are very powerful FPGA instances, and having access to this power using a pay-per-use model is compelling. Unfortunately, they are bleeding edge and require significant expertise to utilize. Documentation is limited and often wrong as APIs and infrastructure are evolving. Developers must have a deep understanding of hardware design. They must be familiar with Xilinx tools: Viviado for RTL design and SDAccel to interface the hardware with C++ code using OpenCL. And the AWS platform can be intimidating to a newcomer. To integrate this hardware-accelerated software into a web/cloud application, the C++ must communicate through a webserver with the client.
+This project currently focuses on utilizing Amazon's F1 FPGA instances. These are very powerful FPGA instances, and having access to this power using a pay-per-use model is compelling. Unfortunately, they are bleeding edge and require significant expertise to utilize. In our experience, documentation is often wrong as APIs and infrastructure are evolving. Developers must have a deep understanding of hardware design. They must be familiar with Xilinx tools: Viviado for RTL design and SDAccel to interface the hardware with C++ code using OpenCL. They must understand AXI protocols and manage AXI controllers. And the AWS platform can be intimidating to a newcomer. In addition to hiding most of this complexity, this framework provides the webserver and host application code that hide the implementation of passing data from client to and from the FPGA.
 
-...Further documentation for this project, including the project vision, can be found in this [Google Drive Folder](https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing). This project utilizes Amazon AWS F1 instances and the corresponding Xilinx tools (Vivado, SDAccel).
+Further documentation for the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
 
-This repository contains all that is needed to develop a hardware-accelerated web application, including the generic framework and sample applications that utilize the framework. It contains contents for local development as well as for building FPGA images on the remote F1 machine, so it is to be cloned locally and remotely and edited both places.
-
-Hardware-accelerated applications can be developed in forks of this repository.
+This repository contains all that is needed to develop a hardware-accelerated web application, including the generic framework and sample applications that utilize the framework. It contains contents for local development as well as for building FPGA images on the remote F1 machine, so it is to be cloned locally and remotely with different parts edited on each machine in a fork of this repository.
 
 # Status
 
-...a [Mandelbrot explorer](https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot).
+This repository is a work-in-progress and will continue to evolve over the summer of 2019. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_ blank">FractalValley.net</a>
 
 
 # Project description
