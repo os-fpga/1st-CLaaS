@@ -11,7 +11,7 @@
 # Usage Cases (without optional args):
 #   ./launch hw '<path/to/host> <path/to/awsxclbin>'
 #   ./launch hw_emu '<path/to/host> <path/to/xclbin>'
-#   ./launch sw   # <host-command> defaults to "../out/$TARGET/host"
+#   ./launch sw   # <host-command> defaults to "../out/$TARGET/host" for sw target.
 # Debug Usage Cases (without optional args):
 #   ../out/sw/host &  # from within debugger
 #   ps aux | grep ../out/sw/host
@@ -65,7 +65,7 @@ HOST="$2"
 
 #echo "$TARGET $HOST"
 
-if [[ $HOST = "" ]];
+if [[ $TARGET = "sw" ]] && [[ $HOST = "" ]];
 then
   HOST="../out/$TARGET/host"
 fi
@@ -106,8 +106,6 @@ launch () {
         # For debug: valgrind --leak-check=yes ../out/$TARGET/host &
         #            sleep 2
     else
-        # Below, use 2017.1.rte.1ddr or 2017.1.rte.4ddr_debug when using AWS_PLATFORM_1DDR or AWS_PLATFORM_4DDR_DEBUG.
-        # Other runtime env settings needed by the host app should be setup after this setup.sh step.
         sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
     fi
     export HOST_PID=$!

@@ -57,8 +57,8 @@ using namespace lodepng;
 int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
 {
 #ifdef OPENCL
-  if (argc != 3) {
-    printf("Usage: %s xclbin kernel_name\n", argv[0]);
+  if (argc != 2) {
+    printf("Usage: %s xclbin\n", argv[0]);
     return EXIT_FAILURE;
   }
 

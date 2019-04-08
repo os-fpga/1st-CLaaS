@@ -48,7 +48,7 @@ PROJ_SW_CFLAGS ?=
 PROJ_SW_LFLAGS ?=
 
 #Software (no FPGA) flags
-SW_SRC=$(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
+SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
 SW_HDRS=$(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS)
 SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../../../framework/host/json/include $(PROJ_SW_CFLAGS)
 SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64 $(PROJ_SW_LFLAGS)
@@ -56,6 +56,8 @@ SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64 $(PROJ_SW_LFLAGS)
 #Host code
 HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
+# TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
+#       What's the emconfigutil command (for configuring the platform for hw_emu?)
 HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_SDX}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
@@ -310,17 +312,22 @@ endif
 # TODO: This must have been from Alessandro, and emulation has never been launched from the makefile since.
 emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
 	export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
-	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emcondigutil for emulation purposes)
+	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emconfigutil for emulation purposes)
 
 
 ifeq ($(TARGET), sw)
 HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
-else
+endif
+ifeq ($(TARGET), hw_emu)
+HOST_CMD=export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+endif
+ifeq ($(TARGET), hw)
 HOST_CMD=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
-build:  $(HOST_CMD)
-launch: $(HOST_CMD)
-	./launch -p $(PORT) $(TARGET) $(HOST_CMD)
+
+build:  $(HOST_CMD)  # (one or two dependencies)
+launch: $(HOST_CMD)  # (one or two dependencies)
+	./launch -p $(PORT) $(TARGET) '$(HOST_CMD)'
 
 
 ifeq ($(TARGET), hw)
