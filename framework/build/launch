@@ -92,7 +92,7 @@ then
   HOST_PID=""
 fi
 
-TYPE="$1"
+TARGET="$1"
 HOST="$2"
 
 #echo "$TARGET $HOST"
