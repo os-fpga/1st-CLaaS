@@ -347,17 +347,20 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 
 
 ifeq ($(TARGET), sw)
+BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
 HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif
 ifeq ($(TARGET), hw_emu)
+BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 HOST_CMD=export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 ifeq ($(TARGET), hw)
+BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 HOST_CMD=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 
-build:  $(HOST_CMD)  # (one or two dependencies)
-launch: $(HOST_CMD)  # (one or two dependencies)
+build:  $(BUILD_TARGETS)
+launch: $(BUILD_TARGETS)
 	./launch -p $(PORT) $(TARGET) '$(HOST_CMD)'
 
 
