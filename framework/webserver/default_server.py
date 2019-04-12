@@ -53,8 +53,7 @@ if __name__ == "__main__":
             port = int(arg)
 
     # Webserver
-    dir = os.getcwd() + "/../webserver"
     application = FPGAServerApplication(
-            FPGAServerApplication.defaultContentRoutes(dir),
+            FPGAServerApplication.defaultContentRoutes(),
             port
         )

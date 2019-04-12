@@ -337,16 +337,16 @@ if __name__ == "__main__":
             port = int(arg)
 
     # Webserver
-
-    dir = os.path.dirname(__file__)
+    routes = FPGAServerApplication.defaultContentRoutes()
+    routes.extend(
+        [ (r"/redeploy", RedeployHandler),
+          (r'/ws', WSHandler),   # TODO: Support this path in framework.
+          #(r'/hw', GetRequestHandler),
+          (r'/(img)', ImageHandler),
+          (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
+          (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
+        ])
     application = MandelbrotApplication(
-            FPGAServerApplication.defaultContentRoutes().extend(
-                [ (r"/redeploy", RedeployHandler),
-                  (r'/ws', WSHandler),   # TODO: Support this path in framework.
-                  #(r'/hw', GetRequestHandler),
-                  (r'/(img)', ImageHandler),
-                  (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
-                  (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
-                ]),
+            routes,
             port
         )

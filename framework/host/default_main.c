@@ -36,7 +36,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "server_main.h"
 
+using namespace std;
+
 int main(int argc, char const *argv[])
 {
+  cout << "Hello from host application.\n";
   (new HostApp())->server_main(argc, argv, KERNEL_NAME);
 }

@@ -152,7 +152,7 @@
       real_to_ext_fixed = {b[63], {1'b1, b[51:53-42]} >> (-(b[62:52] - 1023) + 3 - 1)};
    endfunction;
 
-`include "top_gen.sv"
+`include "mandelbrot_kernel_gen.vh"
 generate //_\TLV
 
    //_|pipe

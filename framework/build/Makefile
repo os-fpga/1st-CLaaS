@@ -1,22 +1,22 @@
 # BSD 3-Clause License
-# 
+#
 # Copyright (c) 2018, alessandrocomodi
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the copyright holder nor the names of its
 #   contributors may be used to endorse or promote products derived from
 #   this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -77,6 +77,7 @@ PROJ_C_SRC ?=
 PROJ_C_HDRS ?=
 PROJ_SW_CFLAGS ?=
 PROJ_SW_LFLAGS ?=
+PROJ_FPGA_EXTRA_SRCS ?=
 
 #Software (no FPGA) flags
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
@@ -89,7 +90,7 @@ HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_SDX}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_SDX}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Name of host executable
@@ -227,7 +228,7 @@ USER_KERNEL_ADDED_FILE=$(DEST_DIR)/$(KERNEL_NAME)_ex/kernel_added.flag
 
 # Creating the rtl kernel wizard project.
 # kernel.xml acts as a representative for all produced files.
-$(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
+$(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl ../fpga/src/$(KERNEL_NAME)_kernel.sv $(PROJ_FPGA_EXTRA_SRCS)
 	@echo $(VIVADO_VERSION_MESSAGE)
 	vivado -mode batch -nojournal -nolog -notrace -source "$(DEST_DIR)/rtl_kernel_wiz.tcl" -tclargs $(KERNEL_NAME) "$(DEST_DIR)"
 
@@ -352,7 +353,7 @@ HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif
 ifeq ($(TARGET), hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD=export XCL_EMULATION_MODE=$(TARGET) && /opt/Xilinx/SDx/2018.2.op2258646/bin/emconfigutil --od . --nd 1  --platform $(PLATFORM) && $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 ifeq ($(TARGET), hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)

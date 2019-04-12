@@ -114,11 +114,10 @@ class FPGAServerApplication(tornado.web.Application):
         myIP = socket.gethostbyname(socket.gethostname())
         print '*** Websocket Server Started at %s***:%i' % (myIP, port)
 
-    # Return an array containing default routes.
-    # Args:
-    #   dir: Application's webserver directory containing /html, /js, /css directories.
+    # Return an array containing default routes into ../webserver/{html,css,js}
     @staticmethod
-    def defaultContentRoutes(dir):
+    def defaultContentRoutes():
+        dir = os.getcwd() + "/../webserver"
         mydir = os.path.dirname(__file__)
         return [
               (r"/()", BasicFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
