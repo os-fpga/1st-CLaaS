@@ -11,7 +11,23 @@
    /* verilator lint_on WIDTH */
    /* verilator lint_off REALCVT */  // !!! SandPiper DEBUGSIGS BUG.
 
+
+   // M4_PE_CNT engines compute pixel depths (in reading order) for a given image.
+   // Image width must be a multiple of M4_PE_CNT or things could break.
+   // PEs start at the same time.
+   // Each may finish at different times, but all wait for the last to complete.
+   // For each pixel calculation for each PE, computation proceeds through:
+   //   o an "init" cycle where values are initialized based on pixel parameters
+   //   o any number of "calc" cycles
+   //   o a "done" cycle ("done_pulse")
+   //   o any number of "wait" cycles ("done" but not "done_pulse")
+   //   o (repeat)
+   // Kernel has one active frame at a time, from the acceptance of config data to the transmission of the last data out.
+
+
+
    // Parameters:
+
 
    // Number of replicated Processing Elements
    
@@ -70,15 +86,17 @@
 		logic [511:0] m_tdata;
 
 		assign s_tvalid = cyc_cnt == 10;
+      
+      
 		assign s_tdata = {
          					64'b0,
-         					64'd128,
-         					64'd4,
-         					64'd16,
-                        2'b0, {7{1'b1}}, 1'b0, {2{1'b1}}, 52'b0,
-         					2'b0, {7{1'b1}}, 1'b0, {2{1'b1}}, 52'b0,
-         					{2{1'b1}}, 62'b0,
-         					{2{1'b1}}, 62'b0
+         					64'd128,  // depth
+         					64'd32,    // img v size
+         					64'd32,    // img h size
+                        2'b0, {7{1'b1}}, 1'b0, {2{1'b1}}, 52'b0,  // pix_size_y
+         					2'b0, {7{1'b1}}, 1'b0, {2{1'b1}}, 52'b0,  // pix_size_x
+         					{2{1'b1}}, 62'b0,  // y
+         					{2{1'b1}}, 62'b0   // x
 							  };
       logic long_reset;
       assign long_reset = cyc_cnt < 32'h8;
@@ -94,7 +112,7 @@
          .out_data(m_tdata)
       );
 		// Assert these to end simulation (before Makerchip cycle limit).
-      assign passed = !clk || dut.frame_done || cyc_cnt > 500;
+      assign passed = !clk || dut.frame_done || cyc_cnt > 2000;
       assign failed = !clk || 1'b0;
    endmodule
 
@@ -156,12 +174,19 @@
 generate //_\TLV
 
    //_|pipe
+      
+      // SV<->TLV for incoming data interface.
       //_@-2
          assign PIPE_reset_n2 = reset;
       //_@-1
-
-         assign in_ready = ! PIPE_frame_active_a0;  // One frame at a time. Must be a one-cycle loop.
-         assign PIPE_valid_config_data_in_n1 = in_avail && in_ready;
+         assign in_ready = PIPE_in_ready_n1;
+         assign PIPE_in_avail_n1 = in_avail;
+         assign PIPE_in_data_n1[C_DATA_WIDTH-1:0] = in_data;
+         
+      
+      //_@-1
+         assign PIPE_in_ready_n1 = ! PIPE_frame_active_a0;  // One frame at a time. Must be a one-cycle loop.
+         assign PIPE_valid_config_data_in_n1 = PIPE_in_avail_n1 && PIPE_in_ready_n1;
          assign {PIPE_config_data_bogus_n1[63:0],
           PIPE_config_max_depth_n1[63:0],
           PIPE_config_img_size_y_n1[63:0],
@@ -169,13 +194,12 @@ generate //_\TLV
           PIPE_config_data_pix_y_n1[63:0],
           PIPE_config_data_pix_x_n1[63:0],
           PIPE_config_data_min_y_n1[63:0],
-          PIPE_config_data_min_x_n1[63:0]} = in_data;
+          PIPE_config_data_min_x_n1[63:0]} = PIPE_in_data_n1;
 
          `BOGUS_USE(PIPE_config_data_bogus_n1)
       //_@0
-         // Pulse for a new frame.
-         assign PIPE_start_frame_a0 = PIPE_valid_config_data_in_a0;
-         // Logic has one active frame at a time.
+         // Pulse for first calc of a new frame.
+         assign PIPE_start_frame_a0 = PIPE_valid_config_data_in_a0;  // Note, can assert only once the hardware is idle.
          assign PIPE_frame_active_a0 = PIPE_reset_a0 ? 1'b0 :
                          PIPE_start_frame_a0 ? 1'b1 :
                          PIPE_done_frame_a5 ? 0'b0 :  // (Falling edge alignment is arbitrary to meet timing.)
@@ -201,14 +225,33 @@ generate //_\TLV
 
          assign PIPE_max_depth_a0[31:0] = PIPE_reset_a0 ? '0 : PIPE_valid_config_data_in_a0 ? PIPE_config_max_depth_a0[31:0] : PIPE_max_depth_a1[31:0];
 
-         // Initialization of new pixels
+         // Pulse for first valid calc cycle of new pixels.
          assign PIPE_init_pixels_a0 = PIPE_reset_a0 ? 1'b0 :
                                  (PIPE_start_frame_a0 || (PIPE_done_pixels_a4 && ! PIPE_done_frame_a4));
 
-      for (pe = 0; pe <= 3; pe++) begin : L1_PIPE_Pe //_/pe
+      for (pe = 0; pe <= 15; pe++) begin : L1_PIPE_Pe //_/pe
          //_@0
             // Reset signal
             assign PIPE_Pe_reset_a0[pe] = PIPE_reset_a0;
+
+            assign PIPE_Pe_init_pix_a0[pe] = PIPE_init_pixels_a0;
+            
+            // Assign next iteration values. Reset and last of frame resets values.
+            assign PIPE_Pe_depth_a0[pe][15:0] =
+               PIPE_Pe_reset_a0[pe]       ? '0      :
+               PIPE_Pe_init_pix_a0[pe]    ? '0      :
+                              PIPE_Pe_depth_a1[pe] + 1;
+            assign PIPE_Pe_pix_h_a0[pe][31:0] =
+               PIPE_Pe_reset_a0[pe]            ? pe :
+               PIPE_start_frame_a0 ? pe :
+               PIPE_Pe_init_pix_a0[pe]         ? PIPE_Pe_last_h_a1[pe] ? pe :
+                                                      PIPE_Pe_pix_h_a1[pe] + 16 :
+                                   PIPE_Pe_pix_h_a1[pe];
+            assign PIPE_Pe_pix_v_a0[pe][31:0] =
+               PIPE_Pe_reset_a0[pe]                          ? '0 :
+               (PIPE_Pe_init_pix_a0[pe] && PIPE_Pe_last_h_a1[pe]) ? PIPE_Pe_last_v_a1[pe] ? '0 :
+                                                                    PIPE_Pe_pix_v_a1[pe] + 1 :
+                                                 PIPE_Pe_pix_v_a1[pe];
 
          //_@1
             //
@@ -218,25 +261,8 @@ generate //_\TLV
 
             // Cycle over pixels (vertical (outermost) and horizontal) and depth (innermost).
             // When each wraps, increment the next.
-            assign PIPE_Pe_wrap_h_a1[pe] = PIPE_Pe_pix_h_a1[pe] >= PIPE_size_x_a1 - 4;
-            assign PIPE_Pe_wrap_v_a1[pe] = PIPE_Pe_pix_v_a1[pe] == PIPE_size_y_a1 - 1;
-            assign PIPE_Pe_init_pix_a1[pe] = PIPE_init_pixels_a1;
-
-            // Assign next iteration values. Reset and last of frame resets values.
-            assign PIPE_Pe_depth_a0[pe][15:0] =
-               PIPE_Pe_reset_a1[pe]       ? '0      :
-               PIPE_Pe_init_pix_a1[pe]    ? '0      :
-                              PIPE_Pe_depth_a1[pe] + 1;
-            assign PIPE_Pe_pix_h_a0[pe][31:0] =
-               PIPE_Pe_reset_a1[pe]       ? pe :
-               PIPE_Pe_init_pix_a1[pe]    ? PIPE_Pe_wrap_h_a1[pe] ? pe :
-                                        PIPE_Pe_pix_h_a1[pe] + 4 :
-                              PIPE_Pe_pix_h_a1[pe];
-            assign PIPE_Pe_pix_v_a0[pe][31:0] =
-               PIPE_Pe_reset_a1[pe]                    ? '0 :
-               (PIPE_Pe_init_pix_a1[pe] && PIPE_Pe_wrap_h_a1[pe])    ? PIPE_Pe_wrap_v_a1[pe] ? '0 :
-                                                     PIPE_Pe_pix_v_a1[pe] + 1 :
-                                           PIPE_Pe_pix_v_a1[pe];
+            assign PIPE_Pe_last_h_a1[pe] = PIPE_Pe_pix_h_a1[pe] >= PIPE_size_x_a1 - 16;  // TODO: If size_x is not a multiple of M4_PE_CNT, things will go awry!
+            assign PIPE_Pe_last_v_a1[pe] = PIPE_Pe_pix_v_a1[pe] == PIPE_size_y_a1 - 1;
 
             //
             // Map pixels to x,y coords
@@ -245,16 +271,14 @@ generate //_\TLV
 
          //_@2
             // The coordinates of the pixel we are working on.
-            //**real $xx;
             // $xx = $init_pix ? $MinX + $PixX * $PixH : $RETAIN;  (in fixed-point)
             assign PIPE_Pe_xx_mul_a2[pe][2:-39] =
                (PIPE_pix_x_a2[2:-39] * `ZX(PIPE_Pe_pix_h_a2[pe], 42));
             assign PIPE_Pe_xx_a2[pe][3:-29] =
                PIPE_Pe_init_pix_a2[pe] ? fixed_add(PIPE_min_x_a2[3:-29],
-                                 {1'b0, PIPE_Pe_xx_mul_a2[pe][2:-29]},
-                                 1'b0)
-                     : PIPE_Pe_xx_a3[pe];
-            //**real $yy;
+                                     {1'b0, PIPE_Pe_xx_mul_a2[pe][2:-29]},
+                                     1'b0)
+                         : PIPE_Pe_xx_a3[pe];
             // $yy = $init_pix ? $MinY + $PixY * $PixV : $RETAIN;  (in fixed-point)
             assign PIPE_Pe_yy_mul_a2[pe][2:-39] =
                (PIPE_pix_y_a2[2:-39] * `ZX(PIPE_Pe_pix_v_a2[pe], 42));
@@ -262,7 +286,7 @@ generate //_\TLV
                PIPE_Pe_init_pix_a2[pe] ? fixed_add(PIPE_min_y_a2[3:-29],
                                      {1'b0, PIPE_Pe_yy_mul_a2[pe][2:-29]},
                                      1'b0)
-                     : PIPE_Pe_yy_a3[pe];
+                         : PIPE_Pe_yy_a3[pe];
 
          //_@3
             //
@@ -281,18 +305,17 @@ generate //_\TLV
             assign PIPE_Pe_bb_sq_a3[pe][3:-29] = fixed_mul(PIPE_Pe_bb_a3[pe], PIPE_Pe_bb_a3[pe]);
             assign PIPE_Pe_aa_sq_plus_bb_sq_a3[pe][3:-29] = fixed_add(PIPE_Pe_aa_sq_a3[pe], PIPE_Pe_bb_sq_a3[pe], 1'b0);
             // Assert from $init_pix through $done_pix:
-            assign PIPE_Pe_calc_valid_a3[pe] = PIPE_Pe_reset_a3[pe]    ? 1'b0 :
-                          PIPE_Pe_init_pix_a3[pe] ? 1'b1 :
+            assign PIPE_Pe_calc_valid_a3[pe] = PIPE_Pe_reset_a3[pe]             ? 1'b0 :
+                          PIPE_Pe_init_pix_a4[pe] ? 1'b1 :
                           PIPE_Pe_done_pix_a4[pe] ? 1'b0 :
-                                      PIPE_Pe_calc_valid_a4[pe];
+                                               PIPE_Pe_calc_valid_a4[pe];
             assign PIPE_Pe_done_pix_a3[pe] =
                 PIPE_Pe_reset_a3[pe] ? 1'b0 :
                 PIPE_out_valid_a4 ? 1'b0 :
                 PIPE_Pe_done_pix_a4[pe]       ? 1'b1 : // Hold value until sent (|pipe$out_valid). Must be a 1-iteration loop preventing back-to-back $out_valid.
                                            PIPE_Pe_calc_valid_a3[pe] && (
                                               // a*a + b*b
-                                              ((PIPE_Pe_aa_sq_plus_bb_sq_a3[pe][3] == 1'b0) &&
-                                               (PIPE_Pe_aa_sq_plus_bb_sq_a3[pe][2:-29] >= real_to_fixed({1'b0, 1'b1, 9'b0, 1'b1, 52'b0}))
+                                              ({1'b0, PIPE_Pe_aa_sq_plus_bb_sq_a3[pe][2:-29]} >= real_to_fixed({1'b0, 1'b1, 9'b0, 1'b1, 52'b0})
                                               ) ||
                                               // This term catches some overflow cases w/ the multiply and allows fewer int bits to be used.
                                               // |a| >= 2.0 || |b| >= 2.0
@@ -314,16 +337,25 @@ generate //_\TLV
             assign PIPE_Pe_depth_out_a3[pe][7:0] = PIPE_Pe_done_pix_pulse_a3[pe] ? PIPE_Pe_depth_a3[pe][7:0] : PIPE_Pe_depth_out_a4[pe][7:0];
       end
       //_@4
-         assign PIPE_all_pix_done_a4 = PIPE_reset_a4 ? '0 : & PIPE_Pe_done_pix_a4;
+         assign PIPE_all_pix_done_a4 = PIPE_reset_a4 ? '0 : & PIPE_Pe_done_pix_a4 && out_ready;
          //$all_pix_done_pulse = $all_pix_done & ! >>1$all_pix_done;
-         assign out_data = PIPE_Pe_depth_out_a4;
-         assign out_avail = PIPE_all_pix_done_a4;
-         assign PIPE_out_valid_a4 = out_avail && out_ready;
+         assign PIPE_out_data_a4[C_DATA_WIDTH-1:0] = PIPE_Pe_depth_out_a4;
+         assign PIPE_out_avail_a4 = PIPE_all_pix_done_a4;
+         assign PIPE_out_valid_a4 = PIPE_out_avail_a4 && PIPE_out_ready_a4;
          assign PIPE_done_pixels_a4 = PIPE_out_valid_a4;
-         assign PIPE_done_frame_a4 = PIPE_done_pixels_a4 && PIPE_Pe_wrap_h_a4 & PIPE_Pe_wrap_v_a4;
-
-         assign frame_done = PIPE_done_frame_a4; // For testbench.
+         assign PIPE_done_frame_a4 = PIPE_done_pixels_a4 && PIPE_Pe_last_h_a4 & PIPE_Pe_last_v_a4;
+      
+      // SV<->TLV for outgoing data interface.
+      //_@4
+         assign out_data = PIPE_out_data_a4;
+         assign out_avail = PIPE_out_avail_a4;
+         assign PIPE_out_ready_a4 = out_ready;
+      
+      // Testbench control.
+      //_@10
+         assign frame_done = PIPE_done_frame_a10;
 endgenerate
+         
 
 //_\SV
    endmodule
