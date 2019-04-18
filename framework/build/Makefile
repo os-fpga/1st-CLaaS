@@ -353,7 +353,7 @@ HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif
 ifeq ($(TARGET), hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(TARGET) && /opt/Xilinx/SDx/2018.2.op2258646/bin/emconfigutil --od . --nd 1  --platform $(PLATFORM) && $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD=export XCL_EMULATION_MODE=$(TARGET) && /opt/Xilinx/SDx/2018.2.op2258646/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 ifeq ($(TARGET), hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
