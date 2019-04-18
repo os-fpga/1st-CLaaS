@@ -305,14 +305,15 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 #  },
 #  ...
 # Wait until the AFI becomes available before proceeding to execute the application on the F1 instance.
-# It's rediculous that there is not automation here. Or is there...
+# It's rediculous that there is no automation here. Or is there...
 # TODO: Wait for AFI build to complete.
 #       In create_sdaccel_afi.sh, use create-fpga-image --wait
-$(DEST_DIR)/$(KERNEL_EXE).awsxclbin: $(BUILD_DIR)/$(KERNEL_EXE).xclbin
+ifneq ($(PREBUILT), true)
+$(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
-	# For prebuilt....TODO need to rework....  cp $(BUILD_DIR)/$(KERNEL_EXE).xclbin $(DEST_DIR)
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
+endif
 
 .PHONY: push
 # Push the entire contents of the app directory for running on F1. (SDAccel tarball should already be in S3.)
@@ -332,7 +333,7 @@ ifeq ($(TARGET), hw_emu)
 HOST_XCLBIN=$(DEST_DIR)/$(KERNEL_EXE).xclbin
 endif
 ifeq ($(TARGET), hw)
-HOST_XCLBIN=$(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+HOST_XCLBIN=$(BUILD_DIR)/$(KERNEL_EXE).awsxclbin
 # HW targets
 .PHONY: awsxclbin afi
 awsxclbin: $(HOST_XCLBIN)
@@ -369,8 +370,8 @@ ifeq ($(TARGET), hw)
 .PHONY: prebuild
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
-	cp $(DEST_DIR)/$(HOST_EXE)          $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
-	cp $(DEST_DIR)/$(KERNEL_EXE).xclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).xclbin
+	cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
+	cp $(DEST_DIR)/$(KERNEL_EXE).awsxclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).awsxclbin
 endif
 
 
