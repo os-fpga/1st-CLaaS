@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*
 **
 ** This is the library that holds all the functions that perform the
-** communication with the FPGA device. 
+** communication with the FPGA device.
 **
 ** The functions are described in the header file.
 **
@@ -141,7 +141,7 @@ void Kernel::initialize_platform() {
 
   // Creation a command commands
   commands = clCreateCommandQueue(context, device_id, 0, &err);
-  if (!commands) { 
+  if (!commands) {
     perror("Error: Failed to create a command commands!\nTest failed\n");
     return;
   }
@@ -199,12 +199,12 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
 
   // Create the input and output arrays in device memory for our calculation
   //
-  // This must be modified by the user if the number (or name) of the arguments is different from this 
+  // This must be modified by the user if the number (or name) of the arguments is different from this
   // application
   //
   d_a = clCreateBuffer(context,  CL_MEM_READ_WRITE,  sizeof(int) * memory_size, NULL, NULL);
 
-  if (!(d_a)) { 
+  if (!(d_a)) {
     perror("Error: Failed to allocate device memory!\nTest failed\n");
     return;
   }
@@ -213,6 +213,8 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
 }
 
 void Kernel::write_kernel_data(double h_a_input[], int data_size){
+  perror("Oh! I thought write_kernel_data(double h_a_input[], int data_size) this was unused.\n");
+
   int err;
   err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, data_size, h_a_input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -231,7 +233,7 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
   }
 }
 
- void Kernel::write_kernel_data(input_struct * input, int data_size) {
+void Kernel::write_kernel_data(input_struct * input, int data_size) {
   int err;
   err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -241,9 +243,9 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
 
   // Set the arguments of the kernel. This must be modified by the user depending on the number (or name)
   // of the arguments
-  err = 0;  
-  uint d_ctrl_length = (uint)(input->width * input->height) / 16;
-  err |= clSetKernelArg(kernel, 0, sizeof(uint), &d_ctrl_length);
+  err = 0;
+  uint d_ctrl_length = (uint)(input->width * input->height) / 16;  // Used?
+  err |= clSetKernelArg(kernel, 0, sizeof(uint), &d_ctrl_length);  // Used?
   err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_a);
 
   if (err != CL_SUCCESS) {
@@ -271,7 +273,7 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
   cl_event readevent;
 
   clFinish(commands);
-  
+
   err = clEnqueueReadBuffer(commands, d_a, CL_TRUE, 0, data_size, h_a_output, 0, NULL, &readevent);
 
   if (err != CL_SUCCESS) {
@@ -285,7 +287,7 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
 void Kernel::clean_kernel() {
   // This has to be modified by the user if the number (or name) of arguments is different
   clReleaseMemObject(d_a);
-  
+
   clReleaseProgram(program);
   clReleaseKernel(kernel);
   clReleaseCommandQueue(commands);
