@@ -28,7 +28,6 @@
 
    // Parameters:
 
-
    // Number of replicated Processing Elements
    m4_define_hier(M4_PE, 16)
 
@@ -236,7 +235,7 @@
             $init_pix = |pipe$init_pixels;
             
             // Assign next iteration values. Reset and last of frame resets values.
-            $depth[15:0] =
+            $depth[31:0] =
                $reset       ? '0      :
                $init_pix    ? '0      :
                               >>M4_ITER$depth + 1;
@@ -333,7 +332,7 @@
             <<M4_ITER$bb[M4_FIXED_RANGE] = $init_pix ? $yy : fixed_add($aa_times_bb_times_2, $yy, 1'b0);
 
             $done_pix_pulse = $done_pix & ! >>M4_ITER$done_pix;
-            $depth_out[7:0] = $done_pix_pulse ? $depth[7:0] : $RETAIN;
+            $depth_out[31:0] = $done_pix_pulse ? $depth : $RETAIN;
       @4
          $all_pix_done = $reset ? '0 : & /pe[*]$done_pix && *out_ready;
          //$all_pix_done_pulse = $all_pix_done & ! >>1$all_pix_done;
