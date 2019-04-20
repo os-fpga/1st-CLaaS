@@ -8,6 +8,8 @@ This project currently focuses on utilizing Amazon's F1 FPGA instances. These ar
 
 Further documentation for the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
 
+Here's a short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a>  at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
+
 This repository contains all that is needed to develop a hardware-accelerated web application, including the generic framework and sample applications that utilize the framework. It contains contents for local development as well as for building FPGA images on the remote F1 machine, so it is to be cloned locally and remotely with different parts edited on each machine in a fork of this repository.
 
 # Status

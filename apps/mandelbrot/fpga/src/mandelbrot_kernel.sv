@@ -28,7 +28,6 @@
 
    // Parameters:
 
-
    // Number of replicated Processing Elements
    
 
@@ -237,7 +236,7 @@ generate //_\TLV
             assign PIPE_Pe_init_pix_a0[pe] = PIPE_init_pixels_a0;
             
             // Assign next iteration values. Reset and last of frame resets values.
-            assign PIPE_Pe_depth_a0[pe][15:0] =
+            assign PIPE_Pe_depth_a0[pe][31:0] =
                PIPE_Pe_reset_a0[pe]       ? '0      :
                PIPE_Pe_init_pix_a0[pe]    ? '0      :
                               PIPE_Pe_depth_a1[pe] + 1;
@@ -334,7 +333,7 @@ generate //_\TLV
             assign PIPE_Pe_bb_a2[pe][3:-29] = PIPE_Pe_init_pix_a3[pe] ? PIPE_Pe_yy_a3[pe] : fixed_add(PIPE_Pe_aa_times_bb_times_2_a3[pe], PIPE_Pe_yy_a3[pe], 1'b0);
 
             assign PIPE_Pe_done_pix_pulse_a3[pe] = PIPE_Pe_done_pix_a3[pe] & ! PIPE_Pe_done_pix_a4[pe];
-            assign PIPE_Pe_depth_out_a3[pe][7:0] = PIPE_Pe_done_pix_pulse_a3[pe] ? PIPE_Pe_depth_a3[pe][7:0] : PIPE_Pe_depth_out_a4[pe][7:0];
+            assign PIPE_Pe_depth_out_a3[pe][31:0] = PIPE_Pe_done_pix_pulse_a3[pe] ? PIPE_Pe_depth_a3[pe] : PIPE_Pe_depth_out_a4[pe][31:0];
       end
       //_@4
          assign PIPE_all_pix_done_a4 = PIPE_reset_a4 ? '0 : & PIPE_Pe_done_pix_a4 && out_ready;
