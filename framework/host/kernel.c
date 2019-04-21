@@ -213,6 +213,8 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
 }
 
 void Kernel::write_kernel_data(double h_a_input[], int data_size){
+  perror("Oh! I thought write_kernel_data(double h_a_input[], int data_size) this was unused.\n");
+
   int err;
   err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, data_size, h_a_input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -231,7 +233,7 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
   }
 }
 
- void Kernel::write_kernel_data(input_struct * input, int data_size) {
+void Kernel::write_kernel_data(input_struct * input, int data_size) {
   int err;
   err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -242,8 +244,8 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
   // Set the arguments of the kernel. This must be modified by the user depending on the number (or name)
   // of the arguments
   err = 0;
-  uint d_ctrl_length = (uint)(input->width * input->height) / 16;
-  err |= clSetKernelArg(kernel, 0, sizeof(uint), &d_ctrl_length);
+  uint d_ctrl_length = (uint)(input->width * input->height) / 16;  // Used?
+  err |= clSetKernelArg(kernel, 0, sizeof(uint), &d_ctrl_length);  // Used?
   err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_a);
 
   if (err != CL_SUCCESS) {
@@ -272,11 +274,14 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
 
   clFinish(commands);
 
+<<<<<<< HEAD
 
   for (int i = 0; i < data_size / (int)sizeof(int); i++) {
     h_a_output[i] = i;
   }
 
+=======
+>>>>>>> 186a8d23e7595968c3600ee6831d53c8b6bb2b5a
   err = clEnqueueReadBuffer(commands, d_a, CL_TRUE, 0, data_size, h_a_output, 0, NULL, &readevent);
 
   if (err != CL_SUCCESS) {

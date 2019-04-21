@@ -557,6 +557,12 @@
       // populate host and port fields
       $("#host").attr("value", location.hostname);
       $("#port").attr("value", location.port);
+      
+      let agent = navigator.userAgent;
+      if (agent.search("Chrome") < 0) {
+        window.alert("This site is built for Chrome only. All bets are off.");
+      }
+      
       new demo();
     })
   </script>

@@ -172,14 +172,14 @@ logic PIPE_Pe_calc_valid_a3 [15:0],
       PIPE_Pe_calc_valid_a4 [15:0];
 
 // For |pipe/pe$depth.
-logic [15:0] PIPE_Pe_depth_a0 [15:0],
+logic [31:0] PIPE_Pe_depth_a0 [15:0],
              PIPE_Pe_depth_a1 [15:0],
              PIPE_Pe_depth_a2 [15:0],
              PIPE_Pe_depth_a3 [15:0];
 
 // For |pipe/pe$depth_out.
-logic [15:0] [7:0] PIPE_Pe_depth_out_a3,
-                   PIPE_Pe_depth_out_a4;
+logic [15:0] [31:0] PIPE_Pe_depth_out_a3,
+                    PIPE_Pe_depth_out_a4;
 
 // For |pipe/pe$done_pix.
 logic [15:0] PIPE_Pe_done_pix_a3,
@@ -330,12 +330,12 @@ generate
          always_ff @(posedge clk) PIPE_Pe_calc_valid_a4[pe] <= PIPE_Pe_calc_valid_a3[pe];
 
          // For $depth.
-         always_ff @(posedge clk) PIPE_Pe_depth_a1[pe][15:0] <= PIPE_Pe_depth_a0[pe][15:0];
-         always_ff @(posedge clk) PIPE_Pe_depth_a2[pe][15:0] <= PIPE_Pe_depth_a1[pe][15:0];
-         always_ff @(posedge clk) PIPE_Pe_depth_a3[pe][15:0] <= PIPE_Pe_depth_a2[pe][15:0];
+         always_ff @(posedge clk) PIPE_Pe_depth_a1[pe][31:0] <= PIPE_Pe_depth_a0[pe][31:0];
+         always_ff @(posedge clk) PIPE_Pe_depth_a2[pe][31:0] <= PIPE_Pe_depth_a1[pe][31:0];
+         always_ff @(posedge clk) PIPE_Pe_depth_a3[pe][31:0] <= PIPE_Pe_depth_a2[pe][31:0];
 
          // For $depth_out.
-         always_ff @(posedge clk) PIPE_Pe_depth_out_a4[pe][7:0] <= PIPE_Pe_depth_out_a3[pe][7:0];
+         always_ff @(posedge clk) PIPE_Pe_depth_out_a4[pe][31:0] <= PIPE_Pe_depth_out_a3[pe][31:0];
 
          // For $done_pix.
          always_ff @(posedge clk) PIPE_Pe_done_pix_a4[pe] <= PIPE_Pe_done_pix_a3[pe];
