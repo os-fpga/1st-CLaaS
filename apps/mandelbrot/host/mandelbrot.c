@@ -84,10 +84,10 @@ inline double fastPow(double a, double b) {
 
 MandelbrotImage::MandelbrotImage(json &j) {
   params_json = j;
-  
+
   // // Print sizeof(stuff)
   //cout << "int: " << sizeof(int) << ", long: " << sizeof(long) << ", long long: " << sizeof(long long) << ", float: " << sizeof(float) << ", double: " << sizeof(double) << ", long double: " << sizeof(long double) << endl;
-  
+
   fpga = param<string>("renderer", "fpga") == "fpga";  // Currently we restrict image settings based on whether the FPGA was _requested_ (whether available/used or not).
   param("test_flags", test_flags, 0);
   for (int i = 0; i < 16; i++) {
@@ -95,12 +95,12 @@ MandelbrotImage::MandelbrotImage(json &j) {
       j["test_vars"][i].get_to(test_vars[i]);
     } catch (nlohmann::detail::exception) {
       test_vars[i] = 0.0L;
-    } 
+    }
   }
-  
+
   verbosity = (int)getTestVar(15, -10.0, 10.0);
   if (verbosity < 0) {verbosity = 0;}
-  
+
   // "Static" init (hack). (We waited till verbosity was extracted to do this, just in case it's needed.)
   if (!static_init_done) {
     // Allocate color schemes (never deallocated).
@@ -113,12 +113,12 @@ MandelbrotImage::MandelbrotImage(json &j) {
     color_scheme[2] = allocGradientDiagonalColorScheme(color_scheme_size[2], 8);
     color_scheme[3] = allocRainbowColorScheme(color_scheme_size[3]);
     static_init_done = true;
-    
+
     BLACK.component[0] = BLACK.component[1] = BLACK.component[2] = (unsigned char)0;
   }
-  
+
   enableTimer(0);
-    
+
   depth_array = right_depth_array = NULL;
   fractional_depth_array = right_fractional_depth_array = NULL;
   color_array = right_color_array = NULL;
@@ -132,14 +132,14 @@ MandelbrotImage::MandelbrotImage(json &j) {
   param("modes", modes, 0); // Bits, lsb first: 0: python(irrelevant here), 1: C++, 2: reserved, 3: optimize1, 4-5: reserved, 6: full-image, ...
   int colors;
   param("colors", colors, 0);
-  
-  
+
+
   // Active color scheme
   active_color_scheme_index = colors & 65535;
   if (active_color_scheme_index >= num_color_schemes) {active_color_scheme_index = 0;}
   active_color_scheme = color_scheme[active_color_scheme_index];
   active_color_scheme_size = color_scheme_size[active_color_scheme_index];
-  
+
   electrify = (bool)((colors >> 25) & 1);
   color_shift = ((colors >> 16) & 255) * color_scheme_size[active_color_scheme_index] / 100;  // amount to shift color scheme given as 0-99 (percent) and adjusted for color scheme size.
   full_image = (bool)((modes >> 6) & 1);
@@ -159,10 +159,10 @@ MandelbrotImage::MandelbrotImage(json &j) {
   fanciful_pattern = (bool)((texture >> 1) & 1);
   shadow_interior = (bool)((texture >> 2) & 1);
   round_edges   = (bool)((texture >> 3) & 1);
-  
+
   ornaments = getTestFlag(22);
   light_brightness = getTestVar(13, 1.0f, 5.2f);
-  
+
   power_divergence = getTestFlag(6);
   int edge_style = (fpga || power_divergence) ? 0 : param<int>("edge", 0);
   square_divergence = edge_style == 1;
@@ -192,20 +192,20 @@ MandelbrotImage::MandelbrotImage(json &j) {
   }
   cutouts = false; // for now; for most textures it's not possible to determine the texture in the shadow of an upper layer from depth alone
   use_derivatives = getTestFlag(15);
-  
+
   // For darkening distant 3D depths.
   param("darken", darken, false);
   texture_max = !darken && getTestFlag(27);  // Apply texture to max depth. Note that use_next has no effect on max-depth texture, as next_* have not been updated for max_depth.
                                              // Do not darken if debugging max depth, as it could change dynamically.
   half_faded_depth = 30;
-  
+
   auto_dive = full_image && is_3d;
   auto_darken = full_image;  // (Even if we aren't darkening, we use the darken-depth to determing max_depth.)
-  
+
   inf_color = BLACK;
   if (getTestFlag(0)) {inf_color.component[0] = inf_color.component[1] = inf_color.component[2] = 0x80;}  // Use grey for debug so it can be lightened/darkened.
 
-  
+
   // Apply theme overrides.
   if (!no_theme) {
     if (xmas_theme) {
@@ -227,9 +227,9 @@ MandelbrotImage::MandelbrotImage(json &j) {
 
   need_derivatives = adjust || use_derivatives;
 
-  
+
   assert(! IS_BIG_ENDIAN);
-  
+
   x = param<coord_t>("x", 0.0L);
   y = param<coord_t>("y", 0.0L);
   param<coord_t>("pix_x", req_pix_size, 0.0L);  // (assuming same size x and y, even though both are sent)
@@ -245,19 +245,19 @@ MandelbrotImage::MandelbrotImage(json &j) {
   is_stereo = is_3d && req_eye_separation > 0;
   req_center_w = req_width  >> 1;  // (adjusted by req_eye_offset for stereo 3D)
   req_center_h = req_height >> 1;
-  
+
   coord_t divergent_radius_coarse = getTestVar(0, -8.0L, 8.0L);
   divergent_radius = ((smooth || (string_lights && ! fanciful_pattern)) ? 32.0L : 2.0L) * ((divergent_radius_coarse == 0.0L) ? 1.0L : fastPow(2.0L, divergent_radius_coarse)) * getTestVar(1, -1.0, 3.0L);
                                             // Greater values take longer to compute but reduce layer transitions for smoothing.
   divergent_radius_sq = divergent_radius * divergent_radius;
-  
+
 
   // For 3D images, we compute larger 2D images for sufficient resolution of the 3D image at all depths.
   // Close depths will require finer pixel x/y size, and far depths require coarser pixels. We must account for the
   // entire range with a single choice of pixel size and x/y expanse.
   req_pix_per_calc_pix = calc_pix_per_req_pix = scale_per_depth = recip_scale_per_depth = eye_depth_fit = natural_depth = expansion_factor_3d = 0.0L;
   calc_pix_size = req_pix_size;
-  
+
   if (is_3d) {
     req_pix_per_calc_pix = 1.0L;
     scale_per_depth = 0.9487L;
@@ -267,21 +267,21 @@ MandelbrotImage::MandelbrotImage(json &j) {
     // Modify parameters for VR viewer.
     if (is_stereo && (req_width < ((int)req_eye_separation + req_eye_offset * 2 - 10))) {
       // We're creating images for a VR viewer. TODO: Above, we use the fact that there is a gap between images as an indicator of a VR viewer. This should be explicit.
-      // Use eye close to screen, keeping structure the same. This means the resulting 3D image shrinks. 
+      // Use eye close to screen, keeping structure the same. This means the resulting 3D image shrinks.
       natural_depth /= 3.0L;
       req_pix_per_calc_pix = 3.0L;
-      
+
       // Seems to be good to push the structure back a bit.
       eye_adjust += 20.0L;
       brighten -= 20;
     }
-    
+
     expansion_factor_3d = (1.0L / (1.0L - scale_per_depth)) / natural_depth;
          // Determines how much extra h/w needs to be calculation to account for shrinking at greater depth.
          // This equals distance from eye to most-distant visible depth / distance from eye to screen.
          // Distance at each depth is a geometric series, so the distance of max depth (approximated as infinite depth) is given by
          // SUM(scale_per_depth ^ n) = 1/(1-scale_per_depth).
-    
+
     if (is_stereo) {
       // A single 3d image covers both eyes. For width, trace line of sight for inner and outer eye image edge (symmetric for each eye).
       coord_t calc_width_inner = (coord_t)(req_center_w - req_eye_offset) * expansion_factor_3d * 2.0L - (coord_t)req_eye_separation;  // (not yet reflective of req_pix_per_calc_pix)
@@ -292,8 +292,8 @@ MandelbrotImage::MandelbrotImage(json &j) {
       calc_width = (int)((coord_t)req_width * expansion_factor_3d / req_pix_per_calc_pix) + 1;  // (essentially +1 is round up)
     }
     calc_height = (int)((coord_t)req_height * expansion_factor_3d / req_pix_per_calc_pix) + 1;  // (essentially +1 is round up)
-    
-    req_pix_size *= req_pix_per_calc_pix;  // Client scales image based on height, but we should adjust this to be sized 
+
+    req_pix_size *= req_pix_per_calc_pix;  // Client scales image based on height, but we should adjust this to be sized
     calc_pix_size = req_pix_size * req_pix_per_calc_pix;
     calc_eye_separation = (coord_t)req_eye_separation / req_pix_per_calc_pix;
   }
@@ -301,15 +301,15 @@ MandelbrotImage::MandelbrotImage(json &j) {
   calc_pix_per_req_pix = 1.0L / req_pix_per_calc_pix;
   recip_scale_per_depth = 1.0L / scale_per_depth;
   recip_natural_depth = 1.0L / natural_depth;
-  
+
   calc_center_w = (calc_width  >> 1);
   calc_center_h = (calc_height >> 1);
-  
+
   if (verbosity > 3)
     cout << "New image: center coords = (" << x << ", " << y << "), req_pix_size = " << req_pix_size
          /* << ", calc_img_size = (" << calc_width << ", " << calc_height << "), calc_center = (" << calc_center_w << ", " << calc_center_h
          << "), spec_max_depth = " << spec_max_depth */ << ", modes = " << modes << ", full = " << full_image << ". ";
-  
+
   // FPGA image dimensions are restricted.
 #ifdef OPENCL
   if (fpga) {
@@ -317,7 +317,7 @@ MandelbrotImage::MandelbrotImage(json &j) {
     // FPGA has an upper bound on image size. I don't think this shrinkage will break anything catastrophically, but it's not tested.
     if (calc_width > COLS) {calc_width = COLS;}
     if (calc_height > ROWS) {calc_height = ROWS;}
-    
+
     // TODO: I think there's currently a limitation that width must be a multiple of 16 for the FPGA.
     //       We will generate an image with width extended to a multiple of 16, where the extended pixels
     //       should not be displayed (because the redered image for 3D is sized to support the requested size).
@@ -325,10 +325,10 @@ MandelbrotImage::MandelbrotImage(json &j) {
     calc_width = (calc_width + multiple - 1) / multiple * multiple;  // Round up depth array width to nearest 16.
   }
 #endif
-  
+
   start_darkening_depth = getZoomDepth() - eye_adjust - (coord_t)brighten;   // default assuming no auto-darkening
-  
-  
+
+
   if (verbosity > 0)
     cout << "Settings: smooth: " << smooth << ", smooth_texture: " << smooth_texture << ", divergence_fn: " << power_divergence << y_squared_divergence << square_divergence << normal_divergence
          << ", string_lights: " << string_lights << "expansion_factor_3d: " << expansion_factor_3d << "req: (" << req_width << ", " << req_height << "), calc: (" << calc_width << ", " << calc_height << ")" << endl;
@@ -495,7 +495,7 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
   // darkening begins if darkening is enabled. Adjustments to scale_per_depth, eye depth, and
   // darkening constant could be provided as user inputs, but currently are not. The shape of
   // each plane is given by the depth data array of the Mandelbrot set already computed.
-  
+
   // Assumptions:
   //   o pix_size reflect a whole number of depths of zoom. (TODO: Not currently the case, but it looks okay anyway.)
   int direction = right ? -1 : 1;  // Invert calculations for the right eye.
@@ -507,7 +507,7 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
     center_w_2d -= (coord_t)direction * (calc_eye_separation / 2.0L);  // Center is where the eye is.
     center_w_3d +=  (coord_t)(direction * req_eye_offset);
   }
-  
+
   int *depth_array_3d = (int *)malloc(req_width * req_height * sizeof(int));
   if (smooth) {
     fractional_depth_array_3d = (unsigned char *)malloc(req_width * req_height * sizeof(unsigned char));
@@ -515,11 +515,11 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
   if (textured) {
     color_array_3d = (color_t *)malloc(req_width * req_height * sizeof(color_t));
   }
-  
+
   // Iterate the depths in front of the eye, so begin with the first depth plane in front of the eye.
   int first_depth = ((int)(eye_depth + 1000.0L + 0.01L)) - 1000 + 1;
      // Round up (+1000.0 used to ensure positive value for (int); +0.01 to avoid depth w/ infinite pix_size; +1 to round up, not down).
-  
+
   //coord_t max_multiplier = 0.0;
   for (int h_3d = 0; h_3d < req_height; h_3d++) {
     coord_t h_from_center_3d = (coord_t)h_3d - center_h_3d;
@@ -540,7 +540,7 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
           }
         }
         */
-        
+
         coord_t tmp_mult = depth_expansion_factor * calc_pix_per_req_pix;
         w_2d = round(center_w_2d + w_from_center_3d * tmp_mult);
         h_2d = round(center_h_2d + h_from_center_3d * tmp_mult);
@@ -553,7 +553,7 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
           }
         } else {
           // Normal case. Break if we are at depth in 2d image.
-          
+
           // But, first handle the spot.
           if (show_spot && depth == spot_depth) {
             int spot_w = w_2d - calc_center_w;
@@ -563,7 +563,7 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
               break;
             }
           }
-          
+
           // Now, break if we're at depth.
           int d = depth_array[h_2d * calc_width + w_2d];
           if (depth >= d) {
@@ -573,7 +573,7 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
             }
           }
         }
-        
+
         // Next
         depth++;
         //depth_from_eye++;
@@ -640,7 +640,7 @@ int * MandelbrotImage::makeEye(bool right, unsigned char * &fractional_depth_arr
 
 MandelbrotImage * MandelbrotImage::make3d() {
   startTimer();
-  
+
   eye_depth = (auto_dive ? (coord_t)(((auto_depth << 8) + auto_depth_frac)) / 256.0L : getZoomDepth()) - eye_depth_fit - eye_adjust;
   if (verbosity > 3)
     cout << "Eye depth: " << eye_depth << ". ";
@@ -648,7 +648,7 @@ MandelbrotImage * MandelbrotImage::make3d() {
   if (show_spot) {
     spot_depth = (int)eye_depth + natural_depth + spot_depth;  // somewhere in front of the screen (because its not adjusted for changing separation of depths)
   }
-  
+
   // Compute new 3D-iffied depth array(s) from depth_array.
   unsigned char *fractional_depth_array_3d;
   color_t *color_array_3d;
@@ -656,7 +656,7 @@ MandelbrotImage * MandelbrotImage::make3d() {
   if (is_stereo) {
     right_depth_array = makeEye(true, right_fractional_depth_array, right_color_array);  // (freed upon destruction)
   }
-  
+
   // Replace depth_array w/ 3d depth array, and update calc_width/height to reflect new depth_array.
   free(depth_array);
   depth_array = depth_array_3d;
@@ -673,7 +673,7 @@ MandelbrotImage * MandelbrotImage::make3d() {
   }
 
   stopTimer("make3d()");
-  
+
   return this;
 };
 
@@ -736,24 +736,24 @@ inline bool MandelbrotImage::isCenter(int w, int h) {
 // Used by generateMandelbrot.
 // TODO: Math would be a little simpler if divergent_radius was always 2.0, and x0 & y0 were scaled down instead.
 inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
-  
+
   // Initialization.
-  
+
   bool high_risk_coastline = false;  // Flag that coastline calculation is bad. This is okay as long as the point is inside the set (max_depth).
   bool coastline_flipped = false;  // For debugging coastline.
-  
+
   coord_t xx = 0.0;
   coord_t yy = 0.0;
 
   int depth = 0;
   int frac = 0;   // Fractional depth
-  
+
   // X0, Y0
-  
+
   coord_t next_xx = wToX(w);
   coord_t next_yy = hToY(h);
-  
-  
+
+
   if (false) {
     // For debug:
     // This generates a square at depth 0.
@@ -762,9 +762,9 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
     depth = inside ? 0 : spec_max_depth;
     frac = 0;
   } else {
-    
+
     // Configuration of depth calculation.
-    
+
     // For ornaments:
     bool random_ornaments = false;
     float ornament_probability = 1.0f;
@@ -781,16 +781,16 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
       dim_factor = 0.0f; // > 0.0f, < 1.0f
     }
     bool coastline_needed = test_texture || random_ornaments || random_lights;
-    
+
 
     coord_t scaled_adjustment  = adjustment  * (req_width + req_height) * req_pix_size * 0.06;
     coord_t scaled_adjustment2 = adjustment2 * (req_width + req_height) * req_pix_size * 0.06;
 
-    
+
     bool ornament_pixel = false;  // Assert if this pixel is an ornament.
     bool force_diverge = false;  // For special decoration, like ornaments, detected during divergence calculation. Force divergence and provide color.
     color_t color;  // Pixel color.
-    
+
     // Radial inversion and Xmas settings.
     if (getTestFlag(23) || xmas_theme) {
       if (xmas_theme) {
@@ -824,11 +824,11 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
       next_xx = r * sin(a * M_PI);
       next_yy = r * cos(a * M_PI);
     }
-    
 
-    
-    
-    
+
+
+
+
     // These track the impact of a delta_x/y applied to layer 0 on subsequent depths.
     // This has a few uses:
     //  - Adjustments: It is used for applying x/y adjustments, where the adjustment is applied beginning at a (non-discrete) depth
@@ -841,7 +841,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
     //    diverged at this level or are max-depth and do not diverge.
     //  - Auto darkening: This provides a reasonable indication of level of detail. Darkening is applied after this process,
     //    so we can auto-generate a darkening depth through this process.
-    
+
     // TODO: Through observation: dxx_dx0 == dyy_dy0 and dxx_dy0 == -dyy_dx0. Optimize code for this.
     coord_t dxx_dx0 = 0.0L;
     coord_t dxx_dy0 = 0.0L;
@@ -851,12 +851,12 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
     coord_t next_dxx_dy0 = 0.0L;
     coord_t next_dyy_dx0 = 0.0L;
     coord_t next_dyy_dy0 = 1.0L;
-    
+
     coord_t radius_sq = divergent_radius_sq;
     coord_t next_radius_sq;
     coord_t effective_radius_sq = radius_sq;
     coord_t next_effective_radius_sq;
-    
+
     // Each depth doubles the number of times with which the angle cycles going along the border. This value is a reflection of that cycle, though it is not perfect.
     // It can be used for macroscopic patterning.
     unsigned long coastline = 0uL;
@@ -921,7 +921,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           }
         }
       }
-      
+
       // Experimental approximations for determining convergence and stopping the search on convergence as well as divergence:
       // These are interesting and worth enabling.
       bool conv = false;
@@ -953,14 +953,14 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
                       //(dxx_dx0 * dxx_dx0 + dyy_dx0 * dyy_dx0 < 0.01 && depth > 0) ||  // Creates dots inside (mostly) convergent region. (need_derivatives must be true)
                       conv ||
                       force_diverge;
-      
-      
+
+
       // DONE?
       if (next_diverges || (depth >= spec_max_depth)) {break;}
       // -----------------------------------------------------------------------------------
-      
-      
-      
+
+
+
       if (coastline_needed) {
         // Coastline location
         // Coastline doubles every depth and stays roughly consistent with splitting the previous depth's locations in half, but not perfectly.
@@ -971,14 +971,14 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
         // Coastline is zero at 3:00 (yy == 0, xx > 0) and increases clockwise.
         // Next coastline
         // Correction for last coastline component of this coastline.
-        
+
         if (depth > 0) {  // Depth 0 is a full coastline w/ zero bits - no update.
           // Next coastline.
-          
+
           // Update LSB based on prediction from current.
           next_coastline = (coastline << 1) + ((yy < 0.0L) ? 1L : 0L);
           next_coastline_mask = (coastline_mask << 1) | 1L;
-          
+
           bool odd_quadrant = (yy < 0.0f) ^ (xx < 0.0f);
           bool next_odd_half = next_yy < 0.0f;
           // Odd quadrant aligns roughly with next odd half.
@@ -1003,14 +1003,14 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           }
         }
       }
-    
-    
-    
+
+
+
       // Update to next
       //
-      
+
       depth += 1;
-      
+
       if (coastline_needed) {
         coastline = next_coastline;
         coastline_mask = next_coastline_mask;
@@ -1030,9 +1030,9 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
         dyy_dx0 = next_dyy_dx0;
         dyy_dy0 = next_dyy_dy0;
       }
-      
-      
-      
+
+
+
       // Delta sensitivity (x/y dirivatives w.r.t. top-level).
       if (need_derivatives) {
         // Derivatives for this depth.
@@ -1043,7 +1043,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
         next_dyy_dy0 = 2.0L * (xx * dyy_dy0 + yy * dxx_dy0) + 1.0L;  // TODO: Redundant (== next_dxx_dx0)
         assert((next_dxx_dx0 == next_dyy_dy0) && (next_dxx_dy0 == -next_dyy_dx0));  // TODO: Optimize based on this.
       }
-      
+
       // Mandelbrot equations:
       next_xx = (xx * xx) - (yy * yy) + x0 * getTestVar(9, 0.0f, 2.0f);  // TODO: Optimize by calculating squares only once.
       next_yy = 2.0L * (xx * yy) + y0 * getTestVar(10, 0.0f, 2.0f);
@@ -1073,13 +1073,13 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
       }
       */
     } while (true);
-    
+
     // Done pixel.
     // next_* reflect divergent level. * (not next_) reflect last non-divergent level.
-    
-    
+
+
     // For smoothing, compute fractional depth. Use computation from https://en.wikipedia.org/wiki/Mandelbrot_set.
-    
+
     if (fractional_depth_array != NULL || trying) {
       if (depth < spec_max_depth) {
         coord_t log_zn = std::log(getTestFlag(13) ? next_radius_sq : next_effective_radius_sq) / 2.0L;
@@ -1111,15 +1111,15 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
         fractional_depth_array[h * calc_width + w] = (unsigned char)frac;
       }
     }
-    
+
     // Provide texture (color of "pixel").
     if (color_array != NULL) {
-      
+
       // Characterize coloring/shading.
-      
+
       // Note: Some of this computation could be done once for the image, not for every pixel, but there's deep computation per pixel anyway.
       // Note: Smooth is generally false, so frac is generally 0, but some textures might overlay on a smoothed scheme (that's not a smooth_texture).
-      
+
       bool smooth_map = ! getTestFlag(7);
       bool no_color_scheme = getTestFlag(12);
       bool radial = getTestFlag(1) || smooth_texture;
@@ -1146,7 +1146,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
       bool illuminate_surface = false;
       float surface_illumination[3]; // by component
       float light_probability = getTestVar(11, 0.0, 1.0);
-      
+
       bool color_coastline = getTestFlag(25);
       bool color_coastline_loop = getTestFlag(26);
       bool force_pixel = false;    // Force color to force_color without any shading effects (for debug).
@@ -1160,12 +1160,12 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           coastline_msbs = coastline << (((int)sizeof(long) * 8 + 1) - depth);
         }
       }
-      
+
       if (local_string_lights) {
         fade += 0.85f;
         ambient_illumination = 0.5;
       }
-      
+
       if (fanciful_pattern) {
         radial = false;
         a_gradient = false;
@@ -1176,7 +1176,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
         invert_radius = false;
         local_test_texture = true;
       }
-      
+
       if (!no_theme) {
         if (xmas_theme) {
           fade = 0.0;
@@ -1184,8 +1184,8 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           ambient_illumination = 0.85f;
         }
       }
-      
-      
+
+
       // Color/shade.
 
       // Start with non-textured color(s) (unless force_diverge, which already determined color).
@@ -1198,7 +1198,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           color = depthToColor(depth, frac);
         }
       }
-      
+
       if (coastline_angle_needed) {
         coastline_angle = (float)(coastline_msbs >> (unsigned long)((sizeof(long) * 8) - 16)) / (float)0x10000;  // 0.0..1.0
         if (coastline_fractional_angle_needed) {
@@ -1229,7 +1229,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           force_pixel = true;
         }
       }
-      
+
       if (texture_max || (depth < spec_max_depth)) {
         float inward = 1.0; // From 0.0 at inner edge to 1.0 at outer edge.
         if (smooth_texture) {
@@ -1239,7 +1239,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           inward = (1.0f - r_norm) / (next_r_norm - r_norm);
           meldWithColor(color, deeper_color, sawtooth_smoothing ? 1.0 - inward : inward);
         }
-        
+
         color_t light_color = color;
         if (fade > 0.0f) {
           color_t grey;
@@ -1254,7 +1254,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
             from_no_dark *= 3.0;
             ambient_illumination *= 1.0 - from_no_dark * from_no_dark;
           }
-          
+
         }
         if (local_test_texture &&
             !(xmas_theme && (ornament_pixel || ((depth + color_shift) % 6 == 0)))) {  // For Xmas, only texture the tree (no ornaments or ribbons).
@@ -1288,7 +1288,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
             y *= factor;
             r_sq = x * x + y * y;
           }
-          
+
           // A/B are coordinates based in some way on x/y or next_x/y.
           if (radial) {
             // Use radial coords.
@@ -1309,14 +1309,14 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
             a = x / divergent_radius;  // -1.0..1.0
             b = y / divergent_radius;  // -1.0..1.0
           }
-          
+
           // Based on a/b, provide texture.
-          
+
           // Texture based on a & b. Either darken for a < 0.0 and lighten for b < 0.0, or
           // smooth scale from saturated at zero upward to color and unsaturated at zero downward to color.
           int a_component_mask = two_tone ? 4 : 7;
           int b_component_mask = two_tone ? 1 : 7;
-          
+
           float scaled_a = (a + a_adj) * a_granularity;
           float scaled_b = (b + b_adj) * b_granularity;
           if (!cycle_texture) {
@@ -1331,7 +1331,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
               scaled_b = 0.0f;
             }
           }
-        
+
           float a_inv_amt = smooth_map ? scaled_a / 2.0f - floor(scaled_a / 2.0f) : ((int)scaled_a % 2 == 0) ? 0.75f : 1.0f;
           float b_inv_amt = smooth_map ? scaled_b / 2.0f - floor(scaled_b / 2.0f) : ((int)scaled_b % 2 == 0) ? 0.75f : 1.0f;
           if (a_gradient) {lightenColor(color, a_inv_amt, a_component_mask);}
@@ -1343,7 +1343,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
             force_color.component[0] = 255; force_color.component[1] = 255; force_color.component[2] = 255;
           }
           */
-        
+
           if (false) { // dark for big radius values
             float big_bound = 0.9f;
             bool big = a > big_bound;
@@ -1354,7 +1354,7 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
         }
         if (local_string_lights || getTestFlag(24)) {
           // String lights.
-          
+
           // Decide which light to use for this pixel or none.
           float diag_dist = ((float)xx + (float)yy) / divergent_radius / 2.0f;
           bool even_light = diag_dist > 0.0f;  // Each coastline position has two lights.
@@ -1400,9 +1400,9 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
           //...
         }
       }
-      
+
       // Apply illumination and colored illumination to surface and shadow to rounded edge.
-      
+
       // Shadow the outer edge using a parabolic (of parabolic segment) drop just before edge.
       // Apply ambient and surface illumination.
       if (lighting) {
@@ -1424,12 +1424,12 @@ inline int MandelbrotImage::pixelDepth(int w, int h, bool trying) {
     }
 
   }
-  
+
   // Darken heuristic
   // If this pixel is within the rectangle used to determine auto-depth, see if we found the lowest depth yet, and if
   // we did, update spec_max_depth to reflect it to save time in the future.
   updateAutoDepth(w, h, w, h, depth, frac);
-  
+
   return depth;
 }
 
@@ -1459,7 +1459,7 @@ void MandelbrotImage::setAutoDepthBounds() {
   //   Stereo 3-D: Auto-depth (darkening) and screen depth) at depth touching rectangle between eyes in width and 3/4 requested height.
   auto_depth_w = is_stereo ? req_eye_separation / 2 :   // Align the eye with auto-depth (screen depth)
                  is_3d     ? (req_width * 3 / 4) / 2 :  // 3/4-scaled center rectangle touches auto-depth (screen depth)
-                             (req_width * 2 / 3) / 2;   // 2/3-scaled center rectangle touches auto-depth. 
+                             (req_width * 2 / 3) / 2;   // 2/3-scaled center rectangle touches auto-depth.
   auto_depth_h = is_stereo ? (req_height * 3 / 4) / 2 :
                  is_3d     ? (req_height * 3 / 4) / 2 :
                              (req_height * 2 / 3) / 2;
@@ -1473,7 +1473,7 @@ void MandelbrotImage::setAutoDepthBounds() {
 MandelbrotImage *MandelbrotImage::generateMandelbrot() {
   startTimer();
   debug_cnt = 0;
-  
+
   // Since auto_depth can be used to determine darkening which determines spec_max_depth, we don't know max_depth
   // before we need it. To address this, we determine an initial conservative value for auto_depth to use here
   // by trying the four corners of the rectangle within which we look for depth. Likely these will find the
@@ -1498,8 +1498,8 @@ MandelbrotImage *MandelbrotImage::generateMandelbrot() {
     tryPixelDepth(calc_center_w + auto_depth_w, calc_center_h + auto_depth_h);
     adjust = real_adjust;
   }
-  
-  
+
+
   // Allocate arrays to be filled by pixelDepth().
   if (!textured || is_3d || darken || fpga) {
     depth_array = (int *)malloc(calc_width * calc_height * sizeof(int));
@@ -1510,8 +1510,8 @@ MandelbrotImage *MandelbrotImage::generateMandelbrot() {
   if (textured) {
     color_array = (color_t *)malloc(calc_width * calc_height * sizeof(color_t));
   }
-  
-  
+
+
   // Apply adjustments based on auto_depth, but adjustments must be applied as depths are computed, so we use this
   // initial approximation.
   if (adjust) {
@@ -1522,13 +1522,13 @@ MandelbrotImage *MandelbrotImage::generateMandelbrot() {
     cout << "adjust: " << adjust << ", adjust_depth: " << adjust_depth << ", auto_depth" << auto_depth << ", adjustment: " << adjustment << ", smooth: " << smooth << flush;
 
   generateMandelbrotGuts();
-  
+
   // Max depth is no longer speculative.
   max_depth = spec_max_depth;
-  
+
   // Darkening for depth can only be applied once auto-depth is computed (which it now is).
   darkenDepthArray();
-  
+
   if (debug_cnt > 0) {
     cout << "\nDebug cnt: " << debug_cnt << endl;
   }
@@ -1545,7 +1545,7 @@ void MandelbrotImage::generateMandelbrotGuts() {
       writeDepthArray(w, h, depth);  // TODO: Move back into pixelDepth.
     }
   }
-  
+
   if (verbosity > 3)
     cout << ", auto_depth: " << auto_depth << ", brighten: " << brighten << ". ";
 }
@@ -1582,12 +1582,12 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
   if (is_3d) {
     make3d();
   }
-  
+
   startTimer();
 
   if (verbosity > 3)
     cout << "start_darkening_depth: " << start_darkening_depth << ", zoom_depth: " << getZoomDepth() << ", max_depth: " << max_depth << ". ";
-  
+
   /*
   // To avoid byte writes, we pack bytes.
   ...
@@ -1597,7 +1597,7 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
   for (int h = 0; h < height; h++) {
     // Handle left-over bytes.
     for (int w = 0; w < calc_width && byte_ind < sizeof(int); w++, byte_ind++) {
-      int_data &= 
+      int_data &=
     }
     for (int w = --; w < calc_width; w++) {
       if (by)
@@ -1616,10 +1616,10 @@ MandelbrotImage *MandelbrotImage::generatePixels(int *data) {
   }
 
   stopTimer("generatePixels()");
-  
+
   if (verbosity > 3)
     cout << endl;
-  
+
   return this;
 };
 
@@ -1695,7 +1695,7 @@ inline MandelbrotImage::color_t MandelbrotImage::depthToColor(int depth, int fra
 }
 
 void MandelbrotImage::toPixelData(int char_offset, int *depth_array, unsigned char *fractional_depth_array, color_t *color_array) {
-  
+
   int j = 0;
   int i = 0;  // Char position within pixel_array.
 
@@ -1716,7 +1716,7 @@ void MandelbrotImage::toPixelData(int char_offset, int *depth_array, unsigned ch
       for(int k = 0; k < 3; k++) {
         pixel_data[i+k+char_offset] = color.component[k];
       }
-      
+
       j++;
       i += 3;
     }
@@ -1733,9 +1733,9 @@ unsigned char *MandelbrotImage::generatePNG(size_t *png_size_p) {
   if (pixel_data == NULL) {
     generatePixels();
   }
-  
+
   startTimer();
-  
+
   // Generate the png image
   unsigned error = lodepng_encode24(&png, png_size_p, pixel_data, req_width * (is_stereo ? 2 : 1), req_height);
   if(error) perror("\nERROR (mandelbrot.c): Error in generating png");
@@ -1773,7 +1773,7 @@ MandelbrotImage::color_t * MandelbrotImage::allocGradientEdgePairColorScheme(int
   int colors_per_part = edge_increments * 2 /* edges */ + 1 /* Extra fencepost-color for R,G,B corners */;
   size = colors_per_part * 3;  // 3 parts.
   color_t * color_scheme = (color_t *) malloc(sizeof(color_t) * size);
-  
+
   // Create two edges (including three corner points).
   for (int i = 0; i < edge_increments; i++) {
     color_scheme[i].component[0] = 255;
@@ -1786,10 +1786,10 @@ MandelbrotImage::color_t * MandelbrotImage::allocGradientEdgePairColorScheme(int
   color_scheme[edge_increments * 2].component[0] = 0;
   color_scheme[edge_increments * 2].component[1] = 255;
   color_scheme[edge_increments * 2].component[2] = 0;
-  
+
   // Mimic these two edges to form the other four.
   completeRGBShiftedColorScheme(color_scheme, colors_per_part);
-  
+
   return color_scheme;
 }
 
@@ -1806,7 +1806,7 @@ MandelbrotImage::color_t * MandelbrotImage::allocGradientDiagonalColorScheme(int
   int colors_per_part = increments + 1 /* Extra for fenceposting corner-to-corner */;
   size = colors_per_part * 6;  // 6 diagonals.
   color_t * color_scheme = (color_t *) malloc(sizeof(color_t) * size);
-  
+
   // Create two diagonals.
   for (int i = 0; i < colors_per_part; i++) {
     int going_up = i * 255 / increments;
@@ -1818,10 +1818,10 @@ MandelbrotImage::color_t * MandelbrotImage::allocGradientDiagonalColorScheme(int
     color_scheme[i + colors_per_part].component[1] = 0;
     color_scheme[i + colors_per_part].component[2] = going_down;
   }
-  
+
   // Mimic these two edges to form the other four.
   completeRGBShiftedColorScheme(color_scheme, colors_per_part * 2);
-  
+
   return color_scheme;
 }
 
@@ -1835,7 +1835,7 @@ MandelbrotImage::color_t * MandelbrotImage::allocRainbowColorScheme(int &size) {
     color_scheme[i*2].component[(i + 2) % 3] = 0;
     color_scheme[i*2+1].component[(i + 0) % 3] = 255;
     color_scheme[i*2+1].component[(i + 1) % 3] = 255;
-    color_scheme[i*2+1].component[(i + 2) % 3] = 0; 
+    color_scheme[i*2+1].component[(i + 2) % 3] = 0;
   }
   return color_scheme;
 }
@@ -1860,7 +1860,7 @@ MandelbrotImage::color_t * MandelbrotImage::allocGradientsColorScheme(int &size,
       color.component[component] += 256 / increments;
     }
   }
-  
+
   return color_scheme;
 };
 
@@ -1872,13 +1872,13 @@ MandelbrotImage::color_t * MandelbrotImage::allocGradientsColorScheme(int &size,
 MandelbrotImage::color_t * MandelbrotImage::allocRandomColorScheme(int &size, int num_colors) {
   size = num_colors;
   color_t * color_scheme = (color_t *) malloc(sizeof(color_t) * size);
-  
+
   for (int c = 0; c < size; c++) {
     for (int component = 0; component < 3; component++) {
       color_scheme[c].component[component] = (unsigned char)rand();
     }
   }
-  
+
   return color_scheme;
 };
 
@@ -1929,7 +1929,7 @@ void HostMandelbrotApp::get_image(int sock) {
 
   json json_obj = read_json(sock);
   //cout << "C++ read JSON: " << json_obj << endl;
-  
+
   MandelbrotImage * mb_img_p = newMandelbrotImage(json_obj);
 
   int * depth_data = NULL;
@@ -1948,11 +1948,11 @@ void HostMandelbrotApp::get_image(int sock) {
       input.coordinates[2] = mb_img_p->calc_pix_size * mb_img_p->auto_depth_w * 2 / (input.width - 1);
       input.coordinates[3] = mb_img_p->calc_pix_size * mb_img_p->auto_depth_h * 2 / (input.height - 1);
       input.max_depth = (long)(mb_img_p->spec_max_depth);
-      
+
       // Generate this coarse image on FPGA (allocated by handle_get_image).
       // TODO: Hmmm... currently depths are modulo 256, so this approach won't work well.
       handle_get_image(sock, &depth_data, &input);
-      
+
       // Scan all depths to determine auto-depth.
       for (int w = 0; w < input.width; w++) {
         for (int h = 0; h < input.height; h++) {
@@ -1963,7 +1963,7 @@ void HostMandelbrotApp::get_image(int sock) {
     } else {
       cout << "(No auto-depth determination needed for FPGA image.)" << endl;
     }
-    
+
     // Populate depth_data from FPGA.
     // X,Y are center position, and must be passed to FPGA as top left.
     input.coordinates[0] = mb_img_p->wToX(0);
@@ -1975,13 +1975,13 @@ void HostMandelbrotApp::get_image(int sock) {
     input.max_depth = (long)(mb_img_p->spec_max_depth);  // may have been changed based on auto-depth.
 
     handle_get_image(sock, &depth_data, &input);
-    
+
     // TODO: Cut-n-paste.
     // Max depth is no longer speculative.
     mb_img_p->max_depth = mb_img_p->spec_max_depth;
     // Darkening for depth can only be applied once auto-depth is computed (which it now is).
     mb_img_p->darkenDepthArray();
-    
+
   }
 #endif
 
@@ -1992,7 +1992,7 @@ void HostMandelbrotApp::get_image(int sock) {
   png = mb_img_p->generatePNG(&png_size);
 
   //cout << "C++ Image Generated" << endl;
-  
+
   // Call the utility function to send data over the socket
   handle_read_data(sock, png, (int)png_size);
   delete mb_img_p;
