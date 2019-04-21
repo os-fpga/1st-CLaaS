@@ -140,6 +140,7 @@ launch () {
         #            sleep 2
     else
         sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
+        sleep 10  # Give a little time for the platform to init. TODO: Do better.
     fi
     export HOST_PID=$!
   fi

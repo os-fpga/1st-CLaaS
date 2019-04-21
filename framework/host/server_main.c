@@ -466,10 +466,12 @@ void HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * i
   kernel.start_kernel();
   cout << "Started kernel." << endl;
 
-  *data_array_p = (int *) malloc(input_p->width * input_p->height * sizeof(int));
+  int data_bytes = input_p->width * input_p->height * (int)sizeof(int);
+  *data_array_p = (int *) malloc(data_bytes);
 
-  kernel.read_kernel_data(*data_array_p, input_p->width * input_p->height * sizeof(int));
-  cout << "Read kernel data." << endl;
+  cout << "Reading kernel data (" << data_bytes << " bytes)." << endl;
+  kernel.read_kernel_data(*data_array_p, data_bytes);
+  cout << "Read kernel data (" << data_bytes << " bytes)." << endl;
 
   // getting end time
   clock_gettime(CLOCK_MONOTONIC_RAW, &end);
