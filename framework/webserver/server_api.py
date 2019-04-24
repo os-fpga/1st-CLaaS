@@ -54,17 +54,52 @@ import traceback
 
 # Socket with host messages defines
 CHUNK_SIZE    = 4096
-#-MSG_LENGTH    = 128
-#-ACK           = "\x00"
 
-# Error Messages
-INVALID_DATA  = "The client sent invalid data"
+class Socket():
 
-def sock_send_string(sock, tag, str):
-    #print "Python: sending", len(str), "-byte", tag
-    sock_send(sock, tag + " size", struct.pack("I", socket.htonl(len(str))))  # pack bytes of len properly
-    sock_send(sock, tag, str.encode())
+    # Socket with host defines
+    SOCKET        = "SOCKET"
+    
+    # Connect on construction.
+    def __init__(self, port):
+        # Opening socket with host
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        server_address = (self.SOCKET)
+        try:
+            self.sock.connect(server_address)
+        except socket.error, e:
+            self.sock = None
+            print "Couldn't connect to host application via socket."
 
+        # Setting IP
+        myIP = socket.gethostbyname(socket.gethostname())
+        print '*** Websocket Server Started at %s***:%i' % (myIP, port)
+
+
+    def send_string(self, tag, str):
+        #print "Python: sending", len(str), "-byte", tag
+        self.send(tag + " size", struct.pack("I", socket.htonl(len(str))))  # pack bytes of len properly
+        self.send(tag, str.encode())
+
+
+    ### Send/receive over socket and report.
+    def send(self, tag, data):
+        print "Python: Sending", len(data), "-byte", tag, "over socket:", data
+        try:
+            # To do. Be more graceful about large packets by using sock.send (once multithreading is gracefully supported).
+            self.sock.sendall(data)
+        except socket.error:
+            print "sock.send failed with socket.error."
+            traceback.print_stack()
+    def recv(self, tag, size):
+        print "Python: Receiving", size, "bytes of", tag, "from socket"
+        ret = None
+        try:
+            ret = self.sock.recv(size)
+        except socket.error:
+            print "sock.recv failed."
+            traceback.print_stack()
+        return ret
 
 ### This function requests an image from the host
 ### Parameters:
@@ -76,30 +111,11 @@ def get_image(sock, header, payload, b64=True):
   
   # Handshake with host application
   #print "Header: ", header
-  sock_send_string(sock, "command", header)
-  sock_send_string(sock, "image params", payload)
+  sock.send_string("command", header)
+  sock.send_string("image params", payload)
 
   image = read_data_handler(sock, None, b64)
   return image
-
-### Send/receive over socket and report.
-def sock_send(sock, tag, data):
-    print "Python: Sending", len(data), "-byte", tag, "over socket:", data
-    try:
-        # To do. Be more graceful about large packets by using sock.send (once multithreading is gracefully supported).
-        sock.sendall(data)
-    except socket.error:
-        print "sock.send failed with socket.error."
-        traceback.print_stack()
-def sock_recv(sock, tag, size):
-    print "Python: Receiving", size, "bytes of", tag, "from socket"
-    ret = None
-    try:
-        ret = sock.recv(size)
-    except socket.error:
-        print "sock.recv failed."
-        traceback.print_stack()
-    return ret
 
 ### This function reads data from the FPGA memory
 ### Parameters:
@@ -111,7 +127,7 @@ def sock_recv(sock, tag, size):
 ###                   (else return binary string) (default=True)
 def read_data_handler(sock, header=None, b64=True):
   # Receive integer data size from host
-  response = sock_recv(sock, "size", 4)
+  response = sock.recv("size", 4)
   
   # Decode data size 
   (size,) = struct.unpack("I", response)
@@ -122,7 +138,7 @@ def read_data_handler(sock, header=None, b64=True):
   data = b''
   while len(data) < size:
     to_read = size - len(data)
-    data += sock_recv(sock, "chunk", CHUNK_SIZE if to_read > CHUNK_SIZE else to_read)
+    data += sock.recv("chunk", CHUNK_SIZE if to_read > CHUNK_SIZE else to_read)
 
   #byte_array = struct.unpack("<%uB" % size, data)
   if b64:

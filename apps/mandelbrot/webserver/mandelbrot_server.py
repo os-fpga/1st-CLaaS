@@ -310,7 +310,7 @@ class MandelbrotApplication(FPGAServerApplication):
     def renderImage(self, settings_str, settings):
         # Create image
         #print settings
-        if self.sock == None or settings["renderer"] == "python":
+        if self.socket == None or settings["renderer"] == "python":
             # No socket. Generate image here, in Python.
             outputImg = io.BytesIO()
             img = Mandelbrot.getImage(settings["width"], settings["height"], settings["x"], settings["y"], settings["pix_x"], settings["pix_y"], settings["max_depth"])

@@ -63,8 +63,6 @@ from socket import error as socket_error
 from server_api import *
 
 
-# Socket with host defines
-SOCKET        = "SOCKET"
 
 ## Communication protocol defines
 #WRITE_DATA    = "WRITE_DATA"
@@ -106,14 +104,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
 # This class can be overridden to provide application-specific behavior.
 class FPGAServerApplication(tornado.web.Application):
-    def initSocket(self, port):
-        # Opening socket with host
-        self.sock = self.__class__.getSocket()
-
-        # Setting IP
-        myIP = socket.gethostbyname(socket.gethostname())
-        print '*** Websocket Server Started at %s***:%i' % (myIP, port)
-
+    
     # Return an array containing default routes into ../webserver/{html,css,js}
     @staticmethod
     def defaultContentRoutes():
@@ -130,27 +121,14 @@ class FPGAServerApplication(tornado.web.Application):
         return routes
 
 
-    # Create socket communication with the Host application
-    @staticmethod
-    def getSocket():
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        server_address = (SOCKET)
-        try:
-            sock.connect(server_address)
-        except socket.error, e:
-            sock = None
-            print "Couldn't connect to host application via socket."
-
-        return sock
-        
     ### This function dispatches the request based on the header information
     # TODO: Cleanup the API. These commands and handshakes aren't necessary. Just send parameters and return image.
     def handle_request(self, header, payload, b64=True):
-        if self.sock == None:
+        if self.socket == None:
             response = "No socket"
         else:
             #print "get image:", payload, b64
-            response = get_image(self.sock, header, payload, b64)
+            response = get_image(self.socket, header, payload, b64)
 
         ret = {'type': 'user', 'png': response}
         if not b64:
@@ -159,7 +137,7 @@ class FPGAServerApplication(tornado.web.Application):
 
 
     def __init__(self, handlers, port):
-        self.initSocket(port)
+        self.socket = Socket(port)
         super(FPGAServerApplication, self).__init__(handlers)
         server = tornado.httpserver.HTTPServer(self)
         server.listen(port)
