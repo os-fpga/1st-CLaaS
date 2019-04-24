@@ -46,6 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ** TODO: There's still a lot of image-specific content here. Partition cleanly.
 */
 
+
 #include "server_main.h"
 #include "mandelbrot.h"
 
@@ -67,7 +68,7 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
 #endif
 
   // Socket-related variables
-  int server_fd, sock;
+  int server_fd;
   struct sockaddr_un address;
   int opt = 1;
   int addrlen = sizeof(address);
@@ -80,7 +81,7 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   ************************/
 
   // Creating socket file descriptor
-  if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == 0) {
+  if ((server_fd = ::socket(AF_UNIX, SOCK_STREAM, 0)) == 0) {
     perror("Socket failed");
     exit(1);
   }
@@ -116,21 +117,13 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   #endif
 
 
-  int data_array[262144];  // TODO: YIKES!!!
-
-  for (unsigned int i = 0; i < sizeof(data_array) / sizeof(int); i++)
-    data_array[i] = 0;
-
-  char msg[MSG_LENGTH];
-
   int command;
-  int err;
   int exit_status;
 
 
   while (true) {
-    if ((sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-      printf("%d\n", sock);
+    if ((socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+      printf("%d\n", socket);
       perror("SOCKET: Accept Failure");
       exit(1);
     }
@@ -144,78 +137,26 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
         loop_cnt = 0;
       }
 
-      if(!(err = recv(sock, msg, sizeof(msg), 0))){
-        printf("Error %d: Client disconnected. Exiting.\n", err);
-        exit(1);
-      }
+      string msg = socket_recv_string("command");
 
-      //cout << "Main loop\n";
-      //cout << "Msg: " << msg << endl;
+      //cout << "Main loop" << "Msg: " << msg << endl;
 
       // Translate message to an integer
-      command = get_command(msg);
-
-      // Dynamic array on which data coming from the client will be saved
-      dynamic_array array_struct;
-      char response[MSG_LENGTH];
+      command = get_command(msg.c_str());
 
       //cout << "Got message (" << command << ")\n";
 
       switch( command ) {
-        case WRITE_DATA_N:
-          cout << "INFO: WRITE DATA (isn't this obsolete?)" << endl;
-          sprintf(response, "INFO: Write Data");
-          send(sock, response, strlen(response), MSG_NOSIGNAL);
-
-          // Filling the data structure with data coming from the client with the use of the handle_write_data utility function
-          array_struct = handle_write_data(sock);
-
-#ifdef OPENCL
-          // Call the OpenCL utility function to send data to the FPGA.
-          // We receive extra datums for C++ rendering only that are not sent to the FPGA.
-          //cout << "C++ received " << array_struct.data_size << " parameters. Sending 7 to FPGA." << endl;
-          if (array_struct.data_size < 7) {
-            cerr << "Error: C++ received " << array_struct.data_size << " parameters, but needed 7." << endl;
-            exit(1);
-          }
-          kernel.write_kernel_data(array_struct.data, 7 * sizeof array_struct.data);  // TODO: Should be sizeof double.
-          //cerr << "Received WRITE_DATA_N\n";
-#else
-          cerr << "Received unexpected WRITE_DATA_N\n";
-          exit(1);
-#endif
-          // Free the resources in the data structure
-          free(array_struct.data);
-          break;
-        case READ_DATA_N:
-          cout << "INFO: READ DATA (isn't this obsolete?)" << endl;
-          sprintf(response, "INFO: Read Data");
-          send(sock, response, strlen(response), MSG_NOSIGNAL);
-
-#ifdef OPENCL
-          // Read data coming from the Kernel and save them in data_array
-          kernel.read_kernel_data(data_array, sizeof(data_array));
-#endif
-
-          // Call the utility function to send data over the socket
-          handle_read_data(sock, data_array, sizeof(data_array));
-          break;
         case GET_IMAGE_N:
           {  // Provides scope for local variables.
-            sprintf(response, "INFO: Get Image");
-            send(sock, response, strlen(response), MSG_NOSIGNAL);
 
-            get_image(sock);
+            get_image();
           }
           break;
         default:
-#ifdef OPENCL
           cout << "Calling handle_command(.., " << command << ", ..)" << endl;
-          handle_command(sock, command, xclbin, kernel_name, COLS * ROWS * sizeof(int));
-#else
-          char response[MSG_LENGTH];
-          sprintf(response, "INFO: Command [%i] is a no-op with no FPGA", command);
-          send(sock, response, strlen(response), MSG_NOSIGNAL);
+#ifdef OPENCL
+          handle_command(command, xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #endif
       }
     }
@@ -226,10 +167,74 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
 
 
 void HostApp::perror(const char * error) {
-  printf("%s\n", error);
+  cerr_line() << error << endl;
+  cerr << "\texiting with status" << EXIT_FAILURE << "." << endl;
   exit(EXIT_FAILURE);
 }
 
+void HostApp::socket_send(const char * tag, const void *buf, uint32_t len, bool send_size) {
+  if (verbosity > 5 && tag != NULL) {cout_line() << "Sending " << len << "-byte \"" << tag << (send_size ? " with size" : "") << "\" to socket" << "." << endl;}
+  if (send_size) {
+    uint32_t len_data = htonl(len);
+    socket_send(NULL, &len_data, 4, false);
+  }
+  if (send(socket, buf, len, MSG_NOSIGNAL) != (int)len) {
+    cerr_line() << "Socket send error for \"" << tag << "\"." << endl;
+    exit(1);
+  }
+  if (verbosity > 7 && tag != NULL) {cout_line() << "Sent " << len << "-byte \"" << tag << "\" to socket." << endl;}
+}
+
+void HostApp::socket_send(const char * tag, string s) {
+  string size_tag(tag);
+  size_tag += " size";
+  socket_send(size_tag.c_str(), s.c_str(), s.length(), true);
+}
+
+void HostApp::socket_send(const char * tag, json j) {
+  string size_tag(tag);
+  size_tag += " size";
+  socket_send(size_tag.c_str(), j.dump());
+}
+
+void HostApp::socket_recv(const char * tag, void *buf, size_t len) {
+  if (verbosity > 5) {cout_line() << "Receiving " << len << "-byte \"" << tag << "\" from socket." << endl;}
+  if (recv(socket, buf, len, 0) != (int)len) {
+    cerr << "C++ Host socket receive error for \"" << tag << "\"." << endl;
+  }
+  if (verbosity > 7) {cout_line() << "Received " << len << "-byte \"" << tag << "\" from socket." << endl;}
+}
+
+uint32_t HostApp::socket_recv_size(const char * tag) {
+  string size_tag(tag);
+  size_tag += " size";
+  uint32_t ret;
+  socket_recv(size_tag.c_str(), &ret, (uint32_t)4);
+  return ntohl(ret);
+}
+
+char * HostApp::socket_recv_c_string(const char * tag) {
+  uint32_t len = socket_recv_size(tag);
+  char * s = (char *)malloc(len + 1);
+  socket_recv(tag, s, len);
+  s[len] = '\0';
+  cout_line() << "Received string: " << s << endl;
+  return s;
+}
+
+string HostApp::socket_recv_string(const char * tag) {
+  char * s = socket_recv_c_string(tag);
+  string str(s);  // (copy can be expensive)
+  free(s);
+  return str;
+}
+
+json HostApp::socket_recv_json(const char * tag) {
+  char * c_str = socket_recv_c_string(tag);
+  json ret = json::parse(c_str);
+  free(c_str);
+  return ret;
+}
 #ifdef OPENCL
 
 // A wrapper around initialize_platform that reports errors.
@@ -278,7 +283,8 @@ void HostApp::init_kernel(char * response, const char *xclbin, const char *kerne
   }
 }
 
-void HostApp::handle_command(int socket, int command, const char *xclbin, const char *kernel_name, int memory_size) {
+void HostApp::handle_command(int command, const char *xclbin, const char *kernel_name, int memory_size) {
+  cout_line << "OBSOLETE handle_command(...)" << endl;
   char response[MSG_LENGTH];
 
   switch (command) {
@@ -307,45 +313,17 @@ void HostApp::handle_command(int socket, int command, const char *xclbin, const 
       sprintf(response, "Command not recognized");
       break;
   }
-
-  send(socket, response, strlen(response), MSG_NOSIGNAL);
+  cout_line << "Handling command: " << response << endl;
 }
 #endif
 
 /*
-** Read JSON from client.
-** Return: A new JSON object.
-*/
-json HostApp::read_json(int socket) {
-  uint16_t json_str_len;
-
-  // Receive size of the JSON string.
-  if(!recv(socket, &json_str_len, sizeof(uint16_t), 0))
-    printf("Data size receive error: Client disconnected\n");
-  json_str_len = ntohs(json_str_len);  // Correct byte order.
-  //cout << "Host receiving JSON string of " << json_str_len << " bytes." << endl;
-
-  // Receive JSON string.
-  char *str = (char *)malloc(json_str_len + 1);
-  if (!recv(socket, str, json_str_len, 0))
-    printf("Data size receive error (2): Client disconnected\n");
-  // Terminate JSON string
-  str[json_str_len] = '\0';
-
-  //cout << "C++ received JSON: " << str << endl;
-
-  // Sending ACK to state that data was correctly received
-  send(socket, ACK_DATA, strlen(ACK_DATA), MSG_NOSIGNAL);
-
-  // Parse JSON.
-  return json::parse(str);
-}
-
-/*
 ** Paramters
 ** socket: reference to the socket channel with the webserver
+** TODO: Not used
+** TODO: Only works when size aligns w/ sizeof double.
 */
-HostApp::dynamic_array HostApp::handle_write_data(int socket) {
+HostApp::dynamic_array HostApp::handle_write_data() {
   // Variable definitions
   int data_size, data_read = 0;
   int to_read = CHUNK_SIZE;
@@ -353,11 +331,10 @@ HostApp::dynamic_array HostApp::handle_write_data(int socket) {
   double * data_chunks;
 
   // Receive size of the data that will be transmitted by the webserver
-  if(!recv(socket, &data_size, sizeof(data_size), 0))
-    printf("Data size receive error: Client disconnected\n");
+  socket_recv("Size", &data_size, sizeof(data_size));
 
-  // Sending ACK to webserver to synchronize
-  send(socket, ACK_SIZE, strlen(ACK_SIZE), MSG_NOSIGNAL);
+  //-// Sending ACK to webserver to synchronize
+  //-send(socket, ACK_SIZE, strlen(ACK_SIZE), MSG_NOSIGNAL);
 
   // Prepare to receive the data allocating space in the memory
   array_struct.data_size = data_size;
@@ -372,9 +349,8 @@ HostApp::dynamic_array HostApp::handle_write_data(int socket) {
                 data_size - (data_read - to_read) :
                 CHUNK_SIZE;
 
-    if(!recv(socket, data_chunks, to_read * sizeof *data_chunks, 0))
-      printf("Data receive error: Client disconnected\n");
-
+    socket_recv("chunk", data_chunks, to_read * sizeof *data_chunks);
+    
     // Fill the data array incrementally with the chuncks of data
     for (int i = 0; i < to_read; i++)
       array_struct.data[i+(j*CHUNK_SIZE)] = data_chunks[i];
@@ -384,8 +360,8 @@ HostApp::dynamic_array HostApp::handle_write_data(int socket) {
 
   free(data_chunks);
 
-  // Sending ACK to state that data was correctly received
-  send(socket, ACK_DATA, strlen(ACK_DATA), MSG_NOSIGNAL);
+  //-// Sending ACK to state that data was correctly received
+  //-send(socket, ACK_DATA, strlen(ACK_DATA), MSG_NOSIGNAL);
   return array_struct;
 }
 
@@ -395,47 +371,23 @@ HostApp::dynamic_array HostApp::handle_write_data(int socket) {
 ** data: array containing data to be sent. For this function the array is made of bytes
 ** data_size: size of the array that has to be sent
 */
-int HostApp::handle_read_data(int socket, unsigned char data[], int data_size) {
-  int result_send;
-  char ack[MSG_LENGTH];
-  if(!recv(socket, ack, sizeof(ack), 0))
-    printf("Ack receive error: Client disconnected\n");
+int HostApp::handle_read_data(unsigned char data[], int data_size) {
+  //-char ack[MSG_LENGTH];
+  //-if(!recv(ack, sizeof(ack), 0))
+  //-  printf("Ack receive error: Client disconnected\n");
 
-  send(socket, &data_size, sizeof(data_size), MSG_NOSIGNAL);
+  cout << "Sending data_size: " << data_size << endl;
+  uint32_t size_data = htonl(data_size);
+  socket_send("Size", &size_data, 4, false);
 
-  if(!recv(socket, ack, sizeof(ack), 0))
-    printf("Ack receive error: Client disconnected\n");
+  //-if(!recv(ack, sizeof(ack), 0))
+  //-  printf("Ack receive error: Client disconnected\n");
 
-  result_send = send(socket, data, data_size, MSG_NOSIGNAL);
-  if(result_send < 0)
-    perror("Send data failed");
-
-  return 0;
-}
-
-/*
-** Parameters
-** socket: reference to the socket channel with the webserver
-** data: array containing data to be sent. For this function the array is made of integers
-** data_size: size of the array that has to be sent
-*/
-int HostApp::handle_read_data(int socket, int data[], int data_size) {
-  int result_send;
-  char ack[MSG_LENGTH];
-  if(!recv(socket, ack, sizeof(ack), 0))
-    printf("Ack receive error: Client disconnected\n");
-
-  send(socket, &data_size, sizeof(data_size), MSG_NOSIGNAL);
-
-  if(!recv(socket, ack, sizeof(ack), 0))
-    printf("Ack receive error: Client disconnected\n");
-
-  result_send = send(socket, data, data_size, MSG_NOSIGNAL);
-  if(result_send < 0)
-    perror("Send data failed");
+  socket_send("Data", data, data_size, false);
 
   return 0;
 }
+
 
 #ifdef OPENCL
 /*
@@ -443,7 +395,7 @@ int HostApp::handle_read_data(int socket, int data[], int data_size) {
 ** socket: reference to the socket channel with the webserver
 ** cl: OpenCL datatypes
 */
-void HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * input_p) {
+void HostApp::handle_get_image(int ** data_array_p, input_struct * input_p) {
   cout << "handle_get_image(..) input_struct: [" <<
           input_p->coordinates[0] << ", " <<
           input_p->coordinates[1] << ", " <<
@@ -485,7 +437,7 @@ void HostApp::handle_get_image(int socket, int ** data_array_p, input_struct * i
 /*
 ** This function generates a number corresponding to the command that receives in input as a string
 */
-int HostApp::get_command(char * command) {
+int HostApp::get_command(const char * command) {
   if(!strncmp(command, INIT_PLATFORM, strlen(INIT_PLATFORM)))
     return INIT_PLATFORM_N;
   else if(!strncmp(command, INIT_KERNEL, strlen(INIT_KERNEL)))

@@ -453,7 +453,7 @@ class HostMandelbrotApp : public HostApp {
 
 public:
 
-  void get_image(int sock);
+  void get_image();
   virtual MandelbrotImage * newMandelbrotImage(json &params) {return new MandelbrotImage(params);} // Can be extented to utilize a derived type.
 };
 

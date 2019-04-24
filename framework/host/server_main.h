@@ -77,18 +77,22 @@ using json = nlohmann::json;
 #endif
 
 #define SOCKET "SOCKET"
-#define ACK_DATA "ACK_DATA"
-#define ACK_SIZE "ACK_SIZE"
+//-#define ACK_DATA "ACK_DATA"
+//-#define ACK_SIZE "ACK_SIZE"
 // #define PORT 8080
 
 #define CHUNK_SIZE 8192
 #define MSG_LENGTH 128
 
 
+using namespace std;
 
 class HostApp {
 
 public:
+  ostream & cout_line() {return(cout << "C++: ");}
+  ostream & cerr_line() {return(cerr << "C++ Error: ");}
+
   int server_main(int argc, char const *argv[], const char *kernel_name);
 
   /*
@@ -105,18 +109,69 @@ public:
 #endif
 
 protected:
+  const int verbosity = 10; // 0: no debug messages; 10: all debug messages.
+  int socket;  // The ID of the socket connected to the web server.
 
   /*
   ** This function is needed to translate the message coming from
   ** the socket into a number to be given in input to the
   ** switch construct to decode the command
   */
-  int get_command(char * command);
+  int get_command(const char * command);
 
   /*
   ** Utility function to print errors
   */
   void perror(const char * error);
+  
+  
+  // TODO: Move socket methods into their own class.
+  
+  /*
+  ** Send to socket.
+  **  - tag: Identifies the data in debug messages.
+  **  - buf: The data to send.
+  **  - len: The length of the data in bytes.
+  **  - send_size: true to prepend the data with a size, false if the receiver knows the size implicitly.
+  **               Must be received w/ corresponding methods.
+  */
+  void socket_send(const char * tag, const void *buf, uint32_t len, bool send_size);
+  /*
+  ** Send string.
+  **  - tag: Identifies the data in debug messages.
+  **  - string: String to send.
+  */
+  void socket_send(const char * tag, string s);
+  /*
+  ** Send JSON.
+  **  - tag: Identifies the data in debug messages.
+  **  - json: JSON to send.
+  */
+  void socket_send(const char * tag, json j);
+  /*
+  ** Receive from socket.
+  **  - tag: Identifies the data in debug messages.
+  **  - buf: Pointer to the buffer to fill.
+  **  - len: Length of data to receive.
+  */
+  void socket_recv(const char * tag, void *buf, size_t len);
+  /*
+  ** Receive size sent by socket_send(..) with send_size == true.
+  **  - tag: Identifies the data whose size is being read in debug messages. (" size" is appended.)
+  **/
+  uint32_t socket_recv_size(const char * tag);
+  /*
+  ** Receive a malloc'ed C string (which must be free'ed).
+  */
+  char * socket_recv_c_string(const char * tag);
+  /*
+  ** Receive string.
+  */
+  string socket_recv_string(const char * tag);
+  /*
+  ** Receive JSON.
+  */
+  json socket_recv_json(const char * tag);
 
   /*
   ** Utility function to handle the command decode coming from the socket
@@ -125,33 +180,26 @@ protected:
   #ifdef OPENCL
   void init_platform(char * response);
   void init_kernel(char * response, const char *xclbin, const char *kernel_name, int memory_size);
-  void handle_command(int socket, int command, const char *xclbin, const char *kernel_name, int memory_size);
+  void handle_command(int command, const char *xclbin, const char *kernel_name, int memory_size);
   #else
   char *image_buffer;
   #endif
 
-  json read_json(int socket);
-
   /*
   ** Utility function to handle the data coming from the socket and sent to the FPGA device
   */
-  dynamic_array handle_write_data(int socket);
+  dynamic_array handle_write_data();
 
   /*
   ** Utility function to handle the data coming from the FPGA that has to be sent back to the client
   */
-  int handle_read_data(int socket, unsigned char data[], int data_size);
-
-  /*
-  ** Utility function to handle the data coming from the FPGA that has to be sent back to the client
-  */
-  int handle_read_data(int socket, int data[], int data_size);
+  int handle_read_data(unsigned char data[], int data_size);
 
   #ifdef OPENCL
-  void handle_get_image(int socket, int ** data_array_p, input_struct * input_p);
+  void handle_get_image(int ** data_array_p, input_struct * input_p);
   #endif
 
-  virtual void get_image(int sock) {printf("No defined behavior for get_image()\n");}
+  virtual void get_image() {printf("No defined behavior for get_image()\n");}
 
 };
 

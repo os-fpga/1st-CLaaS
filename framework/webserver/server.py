@@ -66,9 +66,9 @@ from server_api import *
 # Socket with host defines
 SOCKET        = "SOCKET"
 
-# Communication protocol defines
-WRITE_DATA    = "WRITE_DATA"
-READ_DATA     = "READ_DATA"
+## Communication protocol defines
+#WRITE_DATA    = "WRITE_DATA"
+#READ_DATA     = "READ_DATA"
 GET_IMAGE     = "GET_IMAGE"
 
 
@@ -119,13 +119,15 @@ class FPGAServerApplication(tornado.web.Application):
     def defaultContentRoutes():
         dir = os.getcwd() + "/../webserver"
         mydir = os.path.dirname(__file__)
-        return [
+        routes = [
               (r"/()", BasicFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
+              (r'/ws', WSHandler),
               (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"}),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": dir + "/css"}),
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
               (r"/(fpgaServer.js)", BasicFileHandler, {"path": mydir + "/js"})
             ]
+        return routes
 
 
     # Create socket communication with the Host application
@@ -140,7 +142,7 @@ class FPGAServerApplication(tornado.web.Application):
             print "Couldn't connect to host application via socket."
 
         return sock
-
+        
     ### This function dispatches the request based on the header information
     # TODO: Cleanup the API. These commands and handshakes aren't necessary. Just send parameters and return image.
     def handle_request(self, header, payload, b64=True):

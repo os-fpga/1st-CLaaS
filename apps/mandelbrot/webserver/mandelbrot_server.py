@@ -340,7 +340,6 @@ if __name__ == "__main__":
     routes = FPGAServerApplication.defaultContentRoutes()
     routes.extend(
         [ (r"/redeploy", RedeployHandler),
-          (r'/ws', WSHandler),   # TODO: Support this path in framework.
           #(r'/hw', GetRequestHandler),
           (r'/(img)', ImageHandler),
           (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),

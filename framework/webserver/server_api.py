@@ -49,28 +49,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import struct
 import base64
 import socket
+import sys
+import traceback
 
 # Socket with host messages defines
 CHUNK_SIZE    = 4096
-MSG_LENGTH    = 128
-ACK           = "\x00"
+#-MSG_LENGTH    = 128
+#-ACK           = "\x00"
 
 # Error Messages
 INVALID_DATA  = "The client sent invalid data"
 
-### This function serves to send general commands to the host application
-### Parameters:
-###   - sock    - socket channel with host
-###   - message - command in byte array format
-def socket_send_command(sock, message):
-    # Send command message to host
-    sock.send(message.encode())
-    # Receive ACK
-    response = sock.recv(MSG_LENGTH)
+def sock_send_string(sock, tag, str):
+    #print "Python: sending", len(str), "-byte", tag
+    sock_send(sock, tag + " size", struct.pack("I", socket.htonl(len(str))))  # pack bytes of len properly
+    sock_send(sock, tag, str.encode())
 
-    return response.decode()
 
-### This function requests an image to the FPGA
+### This function requests an image from the host
 ### Parameters:
 ###   - sock    - socket channel with host
 ###   - header  - command to be sent to the host
@@ -79,49 +75,31 @@ def socket_send_command(sock, message):
 def get_image(sock, header, payload, b64=True):
   
   # Handshake with host application
-  socket_send_command(sock, header)
+  #print "Header: ", header
+  sock_send_string(sock, "command", header)
+  sock_send_string(sock, "image params", payload)
 
-  write_data_handler(sock, True, payload)
-
-  # Synchronization with the host
-  sock.send(ACK.encode())
-
-  image = read_data_handler(sock, True, None, b64)
+  image = read_data_handler(sock, None, b64)
   return image
 
-### This function writes data into the FPGA memory
-### Parameters:
-###   - sock        - socket channel with host
-###   - isGetImage  - boolean value to understand if the request is 
-###                 - performed within the GetImage context
-###   - payload     - data to be written to memory
-###   - header      - command to be sent to host (needed if isGetImage is False)
-def write_data_handler(sock, isGetImage, payload, header=None):
-  if not isGetImage:
-    ###      Handshake      ###
-
-    # Sending message type to host
-    sock.send(header.encode())
-    # Receive ACK
-    sock.recv(MSG_LENGTH)
-  
-    ### Handshake terminated ###
-
-  # Prepare payload
-  # If message contains invalid data they will not be processed
-  # Send JSON string size to the host.
-  #print "Python sending JSON of length: %i" % len(payload)
-  #print "JSON: ", payload
-  sock.sendall(struct.pack("H", socket.htons(len(payload))))
-  # Send JSON string to the host.
-  sock.sendall(payload)
-
-  # Receive ACK
-  response = sock.recv(MSG_LENGTH)
-
-  ### Communication with host terminated ###
-
-  return response.decode()
+### Send/receive over socket and report.
+def sock_send(sock, tag, data):
+    print "Python: Sending", len(data), "-byte", tag, "over socket:", data
+    try:
+        # To do. Be more graceful about large packets by using sock.send (once multithreading is gracefully supported).
+        sock.sendall(data)
+    except socket.error:
+        print "sock.send failed with socket.error."
+        traceback.print_stack()
+def sock_recv(sock, tag, size):
+    print "Python: Receiving", size, "bytes of", tag, "from socket"
+    ret = None
+    try:
+        ret = sock.recv(size)
+    except socket.error:
+        print "sock.recv failed."
+        traceback.print_stack()
+    return ret
 
 ### This function reads data from the FPGA memory
 ### Parameters:
@@ -131,33 +109,20 @@ def write_data_handler(sock, isGetImage, payload, header=None):
 ###   - header      - command to be sent to host (needed if isGetImage is False)
 ###   - b64         - encode a string in base64 and return base64(utf-8) string
 ###                   (else return binary string) (default=True)
-def read_data_handler(sock, isGetImage, header=None, b64=True):
-  if not isGetImage:
-    ###      Handshake      ###
-
-    # Sending message type to host
-    sock.send(header.encode())
-    # Receive response
-    sock.recv(MSG_LENGTH)
-    # Send ACK
-    sock.send(ACK.encode())
-
-    ### Handshake terminated ###
-  
+def read_data_handler(sock, header=None, b64=True):
   # Receive integer data size from host
-  response = sock.recv(4)
+  response = sock_recv(sock, "size", 4)
+  
   # Decode data size 
   (size,) = struct.unpack("I", response)
-
-  # Send ACK
-  sock.send(ACK.encode())
+  size = socket.ntohl(size)
+  print "Size: ", size
 
   ### Receive chunks of data from host ###
   data = b''
   while len(data) < size:
     to_read = size - len(data)
-    data += sock.recv(
-        CHUNK_SIZE if to_read > CHUNK_SIZE else to_read)
+    data += sock_recv(sock, "chunk", CHUNK_SIZE if to_read > CHUNK_SIZE else to_read)
 
   #byte_array = struct.unpack("<%uB" % size, data)
   if b64:
