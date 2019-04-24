@@ -57,6 +57,8 @@ CHUNK_SIZE    = 4096
 
 class Socket():
 
+    VERBOSITY = 0   # 0-10 (quiet-loud)
+
     # Socket with host defines
     SOCKET        = "SOCKET"
     
@@ -84,7 +86,8 @@ class Socket():
 
     ### Send/receive over socket and report.
     def send(self, tag, data):
-        print "Python: Sending", len(data), "-byte", tag, "over socket:", data
+        if self.VERBOSITY > 5:
+            print "Python: Sending", len(data), "-byte", tag, "over socket:", data
         try:
             # To do. Be more graceful about large packets by using sock.send (once multithreading is gracefully supported).
             self.sock.sendall(data)
@@ -92,7 +95,8 @@ class Socket():
             print "sock.send failed with socket.error."
             traceback.print_stack()
     def recv(self, tag, size):
-        print "Python: Receiving", size, "bytes of", tag, "from socket"
+        if self.VERBOSITY > 5:
+            print "Python: Receiving", size, "bytes of", tag, "from socket"
         ret = None
         try:
             ret = self.sock.recv(size)
@@ -132,7 +136,7 @@ def read_data_handler(sock, header=None, b64=True):
   # Decode data size 
   (size,) = struct.unpack("I", response)
   size = socket.ntohl(size)
-  print "Size: ", size
+  #print "Size: ", size
 
   ### Receive chunks of data from host ###
   data = b''

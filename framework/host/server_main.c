@@ -218,7 +218,7 @@ char * HostApp::socket_recv_c_string(const char * tag) {
   char * s = (char *)malloc(len + 1);
   socket_recv(tag, s, len);
   s[len] = '\0';
-  cout_line() << "Received string: " << s << endl;
+  //cout_line() << "Received string: " << s << endl;
   return s;
 }
 
@@ -376,7 +376,7 @@ int HostApp::handle_read_data(unsigned char data[], int data_size) {
   //-if(!recv(ack, sizeof(ack), 0))
   //-  printf("Ack receive error: Client disconnected\n");
 
-  cout << "Sending data_size: " << data_size << endl;
+  //cout << "Sending data_size: " << data_size << endl;
   uint32_t size_data = htonl(data_size);
   socket_send("Size", &size_data, 4, false);
 
