@@ -319,7 +319,7 @@ class MandelbrotApplication(FPGAServerApplication):
         else:
             # Send image parameters over socket.
             #print "Python sending to C++: ", payload
-            img_data = self.handle_request(GET_IMAGE, settings_str, False)
+            img_data = get_image(self.socket, GET_IMAGE, settings_str, False)
         return img_data
 
 if __name__ == "__main__":

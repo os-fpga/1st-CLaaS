@@ -76,6 +76,11 @@ class BasicFileHandler(tornado.web.StaticFileHandler):
         self.set_header("Cache-control", "no-cache")
 
 ### Handler for WebSocket connections
+# Messages on the WebSocket are expected to be JSON of the form:
+# {'type': 'MY_TYPE', 'payload': MY_PAYLOAD}
+# TODO: Change this to send type separately, so the JSON need not be parsed if passed through.
+# The application has a handler method for each type, registered via FPGAServerApplication.registerMessageHandler(type, handler), where
+# 'handler' is a method of the form: json_response = handler(self, payload)
 class WSHandler(tornado.websocket.WebSocketHandler):
   def open(self):
     print('New connection')
@@ -85,13 +90,17 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     msg = json.loads(message)
     response = {}
     print(message)
-    header = msg['type']
+    type = msg['type']
     payload = json.dumps(msg['payload'])
 
     # The request is passed to a request handler which will process the information contained
     # in the message and produce a result
-    result = self.application.handle_request(header, payload)
-
+    #-result = self.application.handle_request(type, payload)
+    try:
+        result = self.application.message_handlers[type](payload)
+    except KeyError:
+        print "Unrecognized message type:", header
+    
     # The result is sent back to the client
     self.write_message(result)
 
@@ -120,26 +129,26 @@ class FPGAServerApplication(tornado.web.Application):
             ]
         return routes
 
-
-    ### This function dispatches the request based on the header information
-    # TODO: Cleanup the API. These commands and handshakes aren't necessary. Just send parameters and return image.
-    def handle_request(self, header, payload, b64=True):
-        if self.socket == None:
-            response = "No socket"
-        else:
-            #print "get image:", payload, b64
-            response = get_image(self.socket, header, payload, b64)
-
-        ret = {'type': 'user', 'png': response}
-        if not b64:
-            ret = response
-        return ret
-
+    
+    # Register a message handler.
+    # 
+    def registerMessageHandler(self, type, handler):
+        self.message_handlers = {type: handler}
+    
+    
+    # Handler for GET_IMAGE.
+    def handleGetImage(self, payload):
+        print "handleGetImage:", payload
+        response = get_image(self.socket, "GET_IMAGE", payload, True)
+        return {'type': 'user', 'png': response}
 
     def __init__(self, handlers, port):
         self.socket = Socket(port)
         super(FPGAServerApplication, self).__init__(handlers)
         server = tornado.httpserver.HTTPServer(self)
         server.listen(port)
+        
+        self.message_handlers = {"GET_IMAGE": self.handleGetImage}
+        
         # Starting webserver
         tornado.ioloop.IOLoop.instance().start()
