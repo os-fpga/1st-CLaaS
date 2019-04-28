@@ -274,14 +274,12 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
 
   clFinish(commands);
 
-<<<<<<< HEAD
-
+  /* Prepopulate buffer for debug
   for (int i = 0; i < data_size / (int)sizeof(int); i++) {
     h_a_output[i] = i;
   }
+  */
 
-=======
->>>>>>> 186a8d23e7595968c3600ee6831d53c8b6bb2b5a
   err = clEnqueueReadBuffer(commands, d_a, CL_TRUE, 0, data_size, h_a_output, 0, NULL, &readevent);
 
   if (err != CL_SUCCESS) {

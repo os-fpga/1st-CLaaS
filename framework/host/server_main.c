@@ -282,7 +282,7 @@ void HostApp::init_kernel(char * response, const char *xclbin, const char *kerne
 }
 
 void HostApp::handle_command(int command, const char *xclbin, const char *kernel_name, int memory_size) {
-  cout_line << "OBSOLETE handle_command(...)" << endl;
+  cout_line() << "OBSOLETE handle_command(...)" << endl;
   char response[MSG_LENGTH];
 
   switch (command) {
@@ -311,7 +311,7 @@ void HostApp::handle_command(int command, const char *xclbin, const char *kernel
       sprintf(response, "Command not recognized");
       break;
   }
-  cout_line << "Handling command: " << response << endl;
+  cout_line() << "Handling command: " << response << endl;
 }
 #endif
 
