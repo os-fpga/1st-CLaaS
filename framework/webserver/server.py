@@ -91,7 +91,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     response = {}
     print(message)
     type = msg['type']
-    payload = json.dumps(msg['payload'])
+    payload = msg['payload']
 
     # The request is passed to a request handler which will process the information contained
     # in the message and produce a result

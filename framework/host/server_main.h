@@ -193,7 +193,7 @@ protected:
   /*
   ** Utility function to handle the data coming from the FPGA that has to be sent back to the client
   */
-  int handle_read_data(unsigned char data[], int data_size);
+  int handle_read_data(const void * data, int data_size);
 
   #ifdef OPENCL
   void handle_get_image(int ** data_array_p, input_struct * input_p);

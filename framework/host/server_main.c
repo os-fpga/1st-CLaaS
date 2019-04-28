@@ -192,9 +192,7 @@ void HostApp::socket_send(const char * tag, string s) {
 }
 
 void HostApp::socket_send(const char * tag, json j) {
-  string size_tag(tag);
-  size_tag += " size";
-  socket_send(size_tag.c_str(), j.dump());
+  socket_send(tag, j.dump());
 }
 
 void HostApp::socket_recv(const char * tag, void *buf, size_t len) {
@@ -371,7 +369,7 @@ HostApp::dynamic_array HostApp::handle_write_data() {
 ** data: array containing data to be sent. For this function the array is made of bytes
 ** data_size: size of the array that has to be sent
 */
-int HostApp::handle_read_data(unsigned char data[], int data_size) {
+int HostApp::handle_read_data(const void * data, int data_size) {
   //-char ack[MSG_LENGTH];
   //-if(!recv(ack, sizeof(ack), 0))
   //-  printf("Ack receive error: Client disconnected\n");
