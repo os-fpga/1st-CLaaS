@@ -133,7 +133,7 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
       //cout << "C++ Main loop" << endl;
       loop_cnt++;
       if (loop_cnt > 10000) {
-        cout << "." << flush;
+        if (verbosity > 5) {cout << "." << flush;}
         loop_cnt = 0;
       }
 
@@ -216,7 +216,7 @@ char * HostApp::socket_recv_c_string(const char * tag) {
   char * s = (char *)malloc(len + 1);
   socket_recv(tag, s, len);
   s[len] = '\0';
-  //cout_line() << "Received string: " << s << endl;
+  if (verbosity > 4) {cout_line() << "Received string: " << s << endl;}
   return s;
 }
 
@@ -394,7 +394,8 @@ int HostApp::handle_read_data(const void * data, int data_size) {
 ** cl: OpenCL datatypes
 */
 void HostApp::handle_get_image(int ** data_array_p, input_struct * input_p) {
-  cout << "handle_get_image(..) input_struct: [" <<
+  if (verbosity > 3) {
+    cout << "handle_get_image(..) input_struct: [" <<
           input_p->coordinates[0] << ", " <<
           input_p->coordinates[1] << ", " <<
           input_p->coordinates[2] << ", " <<
@@ -403,31 +404,34 @@ void HostApp::handle_get_image(int ** data_array_p, input_struct * input_p) {
           input_p->height << ", " <<
           input_p->max_depth << "]" <<
           endl;
+  }
   kernel.write_kernel_data(input_p, sizeof(input_struct));
-  cout << "Wrote kernel." << endl;
+  if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
   // check timing
   struct timespec start, end;
   uint64_t delta_us;
 
   // getting start time
-  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+  if (verbosity > 2) {clock_gettime(CLOCK_MONOTONIC_RAW, &start);}
 
   kernel.start_kernel();
-  cout << "Started kernel." << endl;
+  if (verbosity > 2) {cout << "Started kernel." << endl;}
 
   int data_bytes = input_p->width * input_p->height * (int)sizeof(int);
   *data_array_p = (int *) malloc(data_bytes);
 
-  cout << "Reading kernel data (" << data_bytes << " bytes)." << endl;
+  if (verbosity > 2) {cout << "Reading kernel data (" << data_bytes << " bytes)." << endl;}
   kernel.read_kernel_data(*data_array_p, data_bytes);
-  cout << "Read kernel data (" << data_bytes << " bytes)." << endl;
+  if (verbosity > 3) {cout << "Read kernel data (" << data_bytes << " bytes)." << endl;}
 
-  // getting end time
-  clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-  delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+  if (verbosity > 2) {
+    // getting end time
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
 
-  printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
+    //printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
+  }
 }
 #endif
 

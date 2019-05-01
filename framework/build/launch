@@ -96,7 +96,7 @@ then
   HOST_PID=""
 fi
 
-echo "t: $TARGET h: $HOST p: $PORT"
+#echo "t: $TARGET h: $HOST p: $PORT"
 
 if [[ $TARGET = "sw" ]] && [[ $HOST = "" ]];
 then

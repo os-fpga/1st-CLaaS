@@ -77,7 +77,7 @@ PROJ_C_SRC ?=
 PROJ_C_HDRS ?=
 PROJ_SW_CFLAGS ?=
 PROJ_SW_LFLAGS ?=
-PROJ_FPGA_EXTRA_SRCS ?=
+PROJ_FPGA_EXTRA_SRCS ?=    # Extra verilog source files. (All must be in ../fpga/src to be added properly to project. Clean build required if sources are added.)
 
 #Software (no FPGA) flags
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
@@ -228,7 +228,7 @@ USER_KERNEL_ADDED_FILE=$(DEST_DIR)/$(KERNEL_NAME)_ex/kernel_added.flag
 
 # Creating the rtl kernel wizard project.
 # kernel.xml acts as a representative for all produced files.
-$(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl ../fpga/src/$(KERNEL_NAME)_kernel.sv $(PROJ_FPGA_EXTRA_SRCS)
+$(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
 	@echo $(VIVADO_VERSION_MESSAGE)
 	vivado -mode batch -nojournal -nolog -notrace -source "$(DEST_DIR)/rtl_kernel_wiz.tcl" -tclargs $(KERNEL_NAME) "$(DEST_DIR)"
 
@@ -268,11 +268,12 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 
 # Package the project as an .xo.
 # (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
-$(XO_FILE): $(USER_KERNEL_ADDED_FILE)
+$(XO_FILE): $(USER_KERNEL_ADDED_FILE) ../fpga/src/$(KERNEL_NAME)_kernel.sv $(PROJ_FPGA_EXTRA_SRCS)
 	$(info $(VIVADO_VERSION_MESSAGE))
 	$(info "-----------------")
 	$(info "Packaging project")
 	$(info "-----------------")
+	rm $(XO_FILE)  # Seems to be necessary for some reason.
 	@NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
 	echo "source $(DEST_DIR)/${KERNEL_NAME}_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} xilinx kernel ${KERNEL_NAME}$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/${KERNEL_NAME}.xo -kernel_name ${KERNEL_NAME} -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl

@@ -33,11 +33,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 #
-# The following file contains a set of functions that 
-# allow the communication with the host application   
+# The following file contains a set of functions that
+# allow the communication with the host application
 # through a UNIX socket.
 #
-# They are intended to be as general as possible. For the 
+# They are intended to be as general as possible. For the
 # sake of this example though we have specialized the python
 # server in order to request specific images of the Mandelbrot
 # set.
@@ -124,7 +124,7 @@ def get_image(sock, header, payload, b64=True):
 ### This function reads data from the FPGA memory
 ### Parameters:
 ###   - sock        - socket channel with host
-###   - isGetImage  - boolean value to understand if the request is 
+###   - isGetImage  - boolean value to understand if the request is
 ###                 - performed within the GetImage context
 ###   - header      - command to be sent to host (needed if isGetImage is False)
 ###   - b64         - encode a string in base64 and return base64(utf-8) string
@@ -133,7 +133,7 @@ def read_data_handler(sock, header=None, b64=True):
   # Receive integer data size from host
   response = sock.recv("size", 4)
   
-  # Decode data size 
+  # Decode data size
   (size,) = struct.unpack("I", response)
   size = socket.ntohl(size)
   #print "Size: ", size

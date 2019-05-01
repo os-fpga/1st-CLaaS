@@ -55,7 +55,7 @@ def json_to_tcl_config (string):
     print "ERROR: wrong json format"
     sys.exit(0)
 
-  append += "CONFIG.NUM_CLOCKS {" + str(json_data['clocks']) + "} "
+  append += "CONFIG.NUM_CLOCKS {" + str(json_data['clocks']) + "} CONFIG.NUM_RESETS {1} "
 
   append += "CONFIG.NUM_INPUT_ARGS {" + str(len(json_data['args'])) + "} "
   for index in range(len(json_data['args'])):
