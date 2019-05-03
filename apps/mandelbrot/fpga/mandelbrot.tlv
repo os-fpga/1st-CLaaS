@@ -217,7 +217,7 @@
          $pix_x[M4_FIXED_EXT_RANGE] = $reset ? '0 : $valid_config_data_in ? real_to_ext_fixed($config_data_pix_x) : $RETAIN;
          $pix_y[M4_FIXED_EXT_RANGE] = $reset ? '0 : $valid_config_data_in ? real_to_ext_fixed($config_data_pix_y) : $RETAIN;
 
-         // The size of the image is dynamic
+         // The size of the image. (M4_FIXED_RANGE???)
          $size_x[M4_FIXED_RANGE] = $reset ? '0 : $valid_config_data_in ? $config_img_size_x[31:0] : $RETAIN;
          $size_y[M4_FIXED_RANGE] = $reset ? '0 : $valid_config_data_in ? $config_img_size_y[31:0] : $RETAIN;
 

@@ -32,41 +32,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 **
-** This header file contains the definition of the protocol used 
-** to synchronize and understand the various commands that are sent
-** to the host application.
+** The main application that is needed to communicate with the hardware and the
+** python server.
+**
+** It accepts socket communications to transmit data and commands.
+** The access to the hardware resources is possible through the use of a library
+** "kernel.c" which contains all the functions that are needed to utilize the FPGA device.
+**
+** There is a set of functions that handle the communication through the socket.
 **
 ** Author: Alessandro Comodi, Politecnico di Milano
 **
+** TODO: There's still a lot of image-specific content here. Partition cleanly.
 */
 
-#ifndef PROTOCOL_H
-#define PROTOCOL_H
+// THIS CODE NOT YET ENABLED
+ERROR
 
-// Types of commands
-// TODO: Rethink protocol.
-#define INIT_PLATFORM "INIT_PLATFORM"
-#define INIT_KERNEL   "INIT_KERNEL"
-#define START_KERNEL  "START_KERNEL"
-#define WRITE_DATA    "WRITE_DATA"
-#define READ_DATA     "READ_DATA"
-#define CLEAN_KERNEL  "CLEAN_KERNEL"
-#define CLOSE_CONN    "CLOSE_CONN"
-#define GET_IMAGE     "GET_IMAGE"
-#define DATA_MSG      "DATA_MSG"  // Generic data message containing JSON array of 16-entry arrays of unsigned integer (32-bit) data to be sent to FPGA.
+#ifndef VADD_H
+#define VADD_H
+
+#include <string>
+#include <time.h>
+
+#include "server_main.h"
+
+using namespace std;
 
 
-#define INIT_PLATFORM_N   1
-#define INIT_KERNEL_N     2
-#define START_KERNEL_N    3
-#define WRITE_DATA_N      4
-#define READ_DATA_N       5
-#define CLEAN_KERNEL_N    6
-#define GET_IMAGE_N       7
-#define DATA_MSG_N        8
 
-// Types of messages
-#define DATA_MSG "DATA_MSG"
-#define COMMAND_MSG "COMMAND_MSG"
+// ---------------------------------------------------------------------------------------------------------
+class HostVAddApp : public HostApp {
+
+public:
+  // Without OpenCL, define fake vadd kernel behavior for testing the client.
+  // Othersize, default passthrough behavior is fine.
+  void fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer);
+};
+
 
 #endif

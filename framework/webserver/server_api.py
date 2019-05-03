@@ -57,7 +57,7 @@ CHUNK_SIZE    = 4096
 
 class Socket():
 
-    VERBOSITY = 0   # 0-10 (quiet-loud)
+    VERBOSITY = 10   # 0-10 (quiet-loud)
 
     # Socket with host defines
     SOCKET        = "SOCKET"

@@ -273,7 +273,7 @@ $(XO_FILE): $(USER_KERNEL_ADDED_FILE) ../fpga/src/$(KERNEL_NAME)_kernel.sv $(PRO
 	$(info "-----------------")
 	$(info "Packaging project")
 	$(info "-----------------")
-	rm $(XO_FILE)  # Seems to be necessary for some reason.
+	-rm $(XO_FILE) 2>/dev/null || true  # Seems to be necessary for some reason.
 	@NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
 	echo "source $(DEST_DIR)/${KERNEL_NAME}_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} xilinx kernel ${KERNEL_NAME}$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/${KERNEL_NAME}.xo -kernel_name ${KERNEL_NAME} -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl

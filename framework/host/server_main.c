@@ -117,10 +117,6 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   #endif
 
 
-  int command;
-  int exit_status;
-
-
   while (true) {
     if ((socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
       printf("%d\n", socket);
@@ -137,34 +133,131 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
         loop_cnt = 0;
       }
 
-      string msg = socket_recv_string("command");
-
-      //cout << "Main loop" << "Msg: " << msg << endl;
-
-      // Translate message to an integer
-      command = get_command(msg.c_str());
-
-      //cout << "Got message (" << command << ")\n";
-
-      switch( command ) {
-        case GET_IMAGE_N:
-          {  // Provides scope for local variables.
-
-            get_image();
-          }
-          break;
-        default:
-          cout << "Calling handle_command(.., " << command << ", ..)" << endl;
-#ifdef OPENCL
-          handle_command(command, xclbin, kernel_name, COLS * ROWS * sizeof(int));
-#endif
-      }
+      processTraffic();
     }
   }
-
-  return exit_status;
+  
+  return 0;
 }
 
+void HostApp::processTraffic() {
+  int command;
+  
+  string msg = socket_recv_string("command");
+
+  //cout << "Main loop" << "Msg: " << msg << endl;
+
+  // Translate message to an integer
+  command = get_command(msg.c_str());
+
+  //cout << "Got message (" << command << ")\n";
+
+  // check timing
+  struct timespec start, end;
+  
+  // getting start time
+  if (verbosity > 2) {clock_gettime(CLOCK_MONOTONIC_RAW, &start);}
+
+  switch( command ) {
+    case GET_IMAGE_N:
+      {  // Provides scope for local variables.
+
+        get_image();
+      }
+      break;
+    case DATA_MSG_N:
+      {  // Provides scope for local variables.
+        // Get JSON data.
+        json data_json = socket_recv_json("DATA");
+        try {
+          const int DATA_WIDTH_UINT32 = DATA_WIDTH_BYTES / 4;
+          // Allocate in/out data buffers.
+          size_t size = data_json["size"];
+          size_t resp_size = data_json["resp_size"];
+          uint32_t * int_data_p = (uint32_t *)malloc(size * DATA_WIDTH_BYTES);
+          uint32_t * int_resp_data_p = (uint32_t *)malloc(resp_size * DATA_WIDTH_BYTES); {
+            // With these data arrays...
+            
+            cout_line() << "Extracting data from JSON structure." << endl;
+            // Populate from JSON.
+            for (unsigned int d = 0; d < size; d++) {
+              for (int i = 0; i < DATA_WIDTH_UINT32; i++) {
+                int_data_p[i] = data_json["data"][d][i];
+                cout_line() << "Set int " << i << " to " << int_data_p[i] << endl;
+              }
+            }
+            cout_line() << "Done extracting data." << endl;
+            
+            // Send data to FPGA, or do fake FPGA processing.
+#ifdef OPEN_CL
+            // Process in FPGA.
+            kernel.write_kernel_data(int_data_p, size * DATA_WIDTH_BYTES);
+            if (verbosity > 2) {cout << "Wrote kernel." << endl;}
+
+            kernel.start_kernel();
+            if (verbosity > 2) {cout << "Started kernel." << endl;}
+
+            if (verbosity > 2) {cout << "Reading kernel data (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
+            kernel.read_kernel_data(*data_resp_data_p, resp_size * DATA_WIDTH_BYTES);
+            if (verbosity > 3) {cout << "Read kernel data (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
+#else
+            // Fake the kernel.
+            fakeKernel(size * DATA_WIDTH_BYTES, int_data_p, resp_size * DATA_WIDTH_BYTES, int_resp_data_p);
+#endif
+
+            // Convert data to JSON.
+            string s("");
+            //s += "{\"size\":";
+            //s += to_string(resp_size);
+            //s += ",\"data\":";
+            s += "[";
+            for (unsigned int d = 0; d < resp_size; d++) {
+              if (d > 0) {s += ",";}
+              s += "[";
+              for (int i = 0; i < DATA_WIDTH_UINT32; i++) {
+                if (i > 0) {s += ",";}
+                s += to_string(int_resp_data_p[d * DATA_WIDTH_UINT32 + i]);
+              }
+              s += "]";
+            }
+            s += "]";
+            //s += "}";
+            
+            // Respond.
+            cout_line() << "Responding with: " << s << endl;
+            socket_send("DATA response", s);
+
+          } free(int_resp_data_p); free(int_data_p);
+        } catch (nlohmann::detail::exception) {
+          cerr_line() << "Unable to process DATA message." << endl;
+          exit(1);
+        }
+      }
+      break;
+    default:
+      cout << "Calling handle_command(.., " << command << ", ..)" << endl;
+#ifdef OPENCL
+      handle_command(command, xclbin, kernel_name, COLS * ROWS * sizeof(int));
+#endif
+  }
+
+  if (verbosity > 2) {
+    // getting end time
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+
+    uint64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+    printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
+  }
+}
+
+// Default fake server is an echo server.
+void HostApp::fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer) {
+  if (bytes_out != bytes_in) {
+    cerr_line() << "Default Echo server expects bytes_out (" << bytes_out << ") == bytes_in (" << bytes_in << "). Exiting." << endl;
+    exit(1);
+  }
+  memcpy(out_buffer, in_buffer, bytes_in);
+}
 
 void HostApp::perror(const char * error) {
   cerr_line() << error << endl;
@@ -454,6 +547,8 @@ int HostApp::get_command(const char * command) {
     return CLEAN_KERNEL_N;
   else if(!strncmp(command, GET_IMAGE, strlen(GET_IMAGE)))
     return GET_IMAGE_N;
+  else if(!strncmp(command, DATA_MSG, strlen(DATA_MSG)))
+    return DATA_MSG_N;
   else
     return -1;
 }
