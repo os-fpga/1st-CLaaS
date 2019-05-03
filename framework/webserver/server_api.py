@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # set.
 #
 # Author: Alessandro Comodi, Politecnico di Milano
-# 
+#
 """
 
 import struct
@@ -57,11 +57,11 @@ CHUNK_SIZE    = 4096
 
 class Socket():
 
-    VERBOSITY = 0   # 0-10 (quiet-loud)
+    VERBOSITY = 10   # 0-10 (quiet-loud)
 
     # Socket with host defines
     SOCKET        = "SOCKET"
-    
+
     # Connect on construction.
     def __init__(self, port):
         # Opening socket with host
@@ -112,7 +112,7 @@ class Socket():
 ###   - payload - data for the image calculation
 ###   - b64  - to be eliminated
 def get_image(sock, header, payload, b64=True):
-  
+
   # Handshake with host application
   #print "Header: ", header
   sock.send_string("command", header)
@@ -132,7 +132,7 @@ def get_image(sock, header, payload, b64=True):
 def read_data_handler(sock, header=None, b64=True):
   # Receive integer data size from host
   response = sock.recv("size", 4)
-  
+
   # Decode data size
   (size,) = struct.unpack("I", response)
   size = socket.ntohl(size)

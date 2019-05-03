@@ -109,7 +109,7 @@ public:
 #endif
 
 protected:
-  const int verbosity = 0; // 0: no debug messages; 10: all debug messages.
+  const int verbosity = 10; // 0: no debug messages; 10: all debug messages.
   int socket;  // The ID of the socket connected to the web server.
 
   /*
@@ -123,10 +123,10 @@ protected:
   ** Utility function to print errors
   */
   void perror(const char * error);
-  
-  
+
+
   // TODO: Move socket methods into their own class.
-  
+
   /*
   ** Send to socket.
   **  - tag: Identifies the data in debug messages.

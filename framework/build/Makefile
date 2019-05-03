@@ -48,6 +48,7 @@
 #     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
 #     KERNEL: the name for the fpga model
 #     PREBUILT=[true] or default to false behavior. True to use the prebuilt files in the repository, rather than building.
+#     WAVES=[true] or default to false behavior. True to generate waveforms. (xocc )
 #     S3_BUCKET=bucket_name: provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
 #     S3_LOGS_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
 #     S3_DCP_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
@@ -273,7 +274,7 @@ $(XO_FILE): $(USER_KERNEL_ADDED_FILE) ../fpga/src/$(KERNEL_NAME)_kernel.sv $(PRO
 	$(info "-----------------")
 	$(info "Packaging project")
 	$(info "-----------------")
-	rm $(XO_FILE)  # Seems to be necessary for some reason.
+	-rm $(XO_FILE) 2>/dev/null || true  # Seems to be necessary for some reason.
 	@NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
 	echo "source $(DEST_DIR)/${KERNEL_NAME}_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} xilinx kernel ${KERNEL_NAME}$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/${KERNEL_NAME}.xo -kernel_name ${KERNEL_NAME} -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl
