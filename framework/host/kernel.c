@@ -202,9 +202,12 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
   // This must be modified by the user if the number (or name) of the arguments is different from this
   // application
   //
-  d_a = clCreateBuffer(context,  CL_MEM_READ_WRITE,  sizeof(int) * memory_size, NULL, NULL);
+  read_mem  = clCreateBuffer(context, CL_MEM_READ_WRITE,  sizeof(int) * memory_size, NULL, NULL);
+  write_mem = read_mem;
+  //read_mem  = clCreateBuffer(context, CL_MEM_READ_ONLY ,  sizeof(int) * memory_size, NULL, NULL);
+  //write_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY,  sizeof(int) * memory_size, NULL, NULL);
 
-  if (!(d_a)) {
+  if (!(write_mem) || !(read_mem)) {
     perror("Error: Failed to allocate device memory!\nTest failed\n");
     return;
   }
@@ -213,10 +216,10 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
 }
 
 void Kernel::write_kernel_data(double h_a_input[], int data_size){
-  perror("Oh! I thought write_kernel_data(double h_a_input[], int data_size) this was unused.\n");
+  perror("Oh! I thought write_kernel_data(double h_a_input[], int data_size) was unused.\n");
 
   int err;
-  err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, data_size, h_a_input, 0, NULL, NULL);
+  err = clEnqueueWriteBuffer(commands, read_mem, CL_TRUE, 0, data_size, h_a_input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
     perror("Error: Failed to write to source array h_a_input!\nTest failed\n");
     return;
@@ -225,7 +228,30 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
   // Set the arguments of the kernel. This must be modified by the user depending on the number (or name)
   // of the arguments
   err = 0;
-  err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_a);
+  err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &read_mem);
+  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &write_mem);
+
+  if (err != CL_SUCCESS) {
+    perror("Error: Failed to set kernel arguments!\nTest failed\n");
+    return;
+  }
+}
+
+// TODO: Experimental WIP
+void Kernel::writeKernelData(void * input, int data_size) {
+  int err;
+  err = clEnqueueWriteBuffer(commands, read_mem, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
+  if (err != CL_SUCCESS) {
+    perror("Error: Failed to write to source array h_a_input!\nTest failed\n");
+    return;
+  }
+
+  // Set the arguments of the kernel. This must be modified by the user depending on the number (or name)
+  // of the arguments
+  err = 0;
+  err |= clSetKernelArg(kernel, 0, sizeof(uint), &data_size);
+  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &read_mem);
+  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &write_mem);
 
   if (err != CL_SUCCESS) {
     perror("Error: Failed to set kernel arguments!\nTest failed\n");
@@ -235,7 +261,7 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
 
 void Kernel::write_kernel_data(input_struct * input, int data_size) {
   int err;
-  err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
+  err = clEnqueueWriteBuffer(commands, read_mem, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
     perror("Error: Failed to write to source array h_a_input!\nTest failed\n");
     return;
@@ -244,9 +270,10 @@ void Kernel::write_kernel_data(input_struct * input, int data_size) {
   // Set the arguments of the kernel. This must be modified by the user depending on the number (or name)
   // of the arguments
   err = 0;
-  uint d_ctrl_length = (uint)(input->width * input->height) / 16;  // Used?
+  uint d_ctrl_length = (uint)(input->width * input->height) / 16;  // Used? Chunks vs. bytes!
   err |= clSetKernelArg(kernel, 0, sizeof(uint), &d_ctrl_length);  // Used?
-  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_a);
+  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &read_mem);
+  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &write_mem);
 
   if (err != CL_SUCCESS) {
     perror("Error: Failed to set kernel arguments!\nTest failed\n");
@@ -279,8 +306,9 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
     h_a_output[i] = i;
   }
   */
+  err |= clSetKernelArg(kernel, 0, sizeof(uint), &data_size);
 
-  err = clEnqueueReadBuffer(commands, d_a, CL_TRUE, 0, data_size, h_a_output, 0, NULL, &readevent);
+  err = clEnqueueReadBuffer(commands, write_mem, CL_TRUE, 0, data_size, h_a_output, 0, NULL, &readevent);
 
   if (err != CL_SUCCESS) {
     perror("Error: Failed to read output array h_a_output!\nTest failed\n");
@@ -292,7 +320,8 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
 
 void Kernel::clean_kernel() {
   // This has to be modified by the user if the number (or name) of arguments is different
-  clReleaseMemObject(d_a);
+  clReleaseMemObject(read_mem);
+  clReleaseMemObject(write_mem);
 
   clReleaseProgram(program);
   clReleaseKernel(kernel);

@@ -83,7 +83,8 @@ public:
   cl_command_queue commands;          // compute command queue
   cl_program program;                 // compute programs
   cl_kernel kernel;                   // compute kernel
-  cl_mem d_a;                         // device memory used for a vector
+  cl_mem read_mem;                    // device memory read by kernel
+  cl_mem write_mem;                   // device memory written by kernel
   int status = 1;
   bool initialized = false;
 
@@ -123,7 +124,7 @@ public:
   ** data_size: size of the data array in bytes
   */
   void write_kernel_data(double h_a_input[], int data_size);
-
+  void writeKernelData(void * input, int data_size);
   void write_kernel_data(input_struct * input, int data_size);
 
   /*

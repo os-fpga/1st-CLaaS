@@ -95,6 +95,9 @@ public:
 
   int server_main(int argc, char const *argv[], const char *kernel_name);
 
+  // Main method for processing traffic from/to the client.
+  void processTraffic();
+
   /*
   ** Data structure to handle a array of doubles and its size to have a dynamic behaviour
   ** TODO: This is messy. At least make it an object with destructor.
@@ -108,8 +111,11 @@ public:
   Kernel kernel;
 #endif
 
+  static const int DATA_WIDTH_BYTES = 64;
+  static const int DATA_WIDTH_BITS = DATA_WIDTH_BYTES * 8;  // 512 bits
+  static const int verbosity = 10; // 0: no debug messages; 10: all debug messages.
+
 protected:
-  const int verbosity = 10; // 0: no debug messages; 10: all debug messages.
   int socket;  // The ID of the socket connected to the web server.
 
   /*
@@ -184,6 +190,8 @@ protected:
   #else
   char *image_buffer;
   #endif
+
+  virtual void fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer);
 
   /*
   ** Utility function to handle the data coming from the socket and sent to the FPGA device

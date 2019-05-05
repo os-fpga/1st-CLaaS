@@ -10,7 +10,10 @@
       {
         "port" : [
             {
-              "id" : "a"
+              "id" : "read_mem"
+            },
+            {
+              "id" : "write_mem"
             }
           ]
       }

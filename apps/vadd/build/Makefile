@@ -8,7 +8,7 @@ KERNEL=vadd
 PROJ_C_SRC=$(FRAMEWORK_HOST_DIR)/default_main.c ../../mandelbrot/host/lodepng.c
 PROJ_C_HDRS=
 PROJ_C_HDRS=../../mandelbrot/host/lodepng.h
-PROJ_SW_CFLAGS=-I../../mandelbrot/host '-DKERNEL_NAME="$(KERNEL)"'
+PROJ_SW_CFLAGS=-I../../mandelbrot/host
 ##########
 
 HW_SHELL_CONFIG_JSON=../../../framework/fpga/default_shell_config.json

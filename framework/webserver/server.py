@@ -89,7 +89,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
   def on_message(self, message):
     msg = json.loads(message)
     response = {}
-    print(message)
+    print "Python: ws.on_message:", message
     type = msg['type']
     payload = msg['payload']
 
@@ -97,11 +97,12 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     # in the message and produce a result
     #-result = self.application.handle_request(type, payload)
     try:
-        result = self.application.message_handlers[type](payload)
+        result = self.application.message_handlers[type](payload, type)
     except KeyError:
         print "Unrecognized message type:", header
     
     # The result is sent back to the client
+    print "Python: Responding with:", result
     self.write_message(result)
 
   def on_close(self):
@@ -120,12 +121,14 @@ class FPGAServerApplication(tornado.web.Application):
         dir = os.getcwd() + "/../webserver"
         mydir = os.path.dirname(__file__)
         routes = [
+              (r"/framework/js/(.*)", BasicFileHandler, {"path": mydir + "/js"}),
+              (r"/framework/css/(.*)", BasicFileHandler, {"path": mydir + "/css"}),
+              (r"/framework/(.*\.html)", BasicFileHandler, {"path": mydir + "/html"}),
               (r"/()", BasicFileHandler, {"path": dir + "/html", "default_filename": "index.html"}),
               (r'/ws', WSHandler),
-              (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"}),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": dir + "/css"}),
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
-              (r"/(fpgaServer.js)", BasicFileHandler, {"path": mydir + "/js"})
+              (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"})
             ]
         return routes
 
@@ -137,10 +140,17 @@ class FPGAServerApplication(tornado.web.Application):
     
     
     # Handler for GET_IMAGE.
-    def handleGetImage(self, payload):
+    def handleGetImage(self, payload, type):
         print "handleGetImage:", payload
         response = get_image(self.socket, "GET_IMAGE", payload, True)
         return {'type': 'user', 'png': response}
+        
+    def handleDataMsg(self, data, type):
+        self.socket.send_string("command", type)
+        self.socket.send_string("data", data)
+        data = read_data_handler(self.socket, None, False)
+        return data
+
 
     def __init__(self, handlers, port):
         self.socket = Socket(port)
@@ -148,7 +158,8 @@ class FPGAServerApplication(tornado.web.Application):
         server = tornado.httpserver.HTTPServer(self)
         server.listen(port)
         
-        self.message_handlers = {"GET_IMAGE": self.handleGetImage}
+        self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
+        self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
         
         # Starting webserver
         tornado.ioloop.IOLoop.instance().start()

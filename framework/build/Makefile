@@ -179,7 +179,7 @@ endif
 ifdef DEST_DIR  # just to be safe
 .PHONY: clean
 clean:
-	rm -rf $(DEST_DIR)
+	sudo rm -rf $(DEST_DIR)
 endif
 # TODO: Add more-selective clean targets.
 
@@ -248,11 +248,15 @@ VADD_SV=$(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
 $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 	@echo $(VIVADO_VERSION_MESSAGE)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
-	# Add user's kernel source code to project.
+	@# Add user's kernel source code to project.
 	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr"
-	# Replace the adder example code with the user's kernel (including inner shell logic).
+	@# Replace the adder example code with the user's kernel (including inner shell logic).
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
 	mv $(VADD_SV).hacked $(VADD_SV)
+	@# Also make the following edit to hook up ctrl_length arg (which must be specified in <shell-config>.json).
+	@grep 'LP_DEFAULT_LENGTH_IN_BYTES;' $(IMPORTS_DIR)/vadd_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
+	sed -i 's/=\s*LP_DEFAULT_LENGTH_IN_BYTES;/; assign ctrl_xfer_size_in_bytes = ctrl_length;/' $(IMPORTS_DIR)/vadd_example.sv
+	@# Remove unused vadd example file.
 	rm "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.v"
 	# Hacked Xilinx template project without errors.
 	@# Signify successful completion for Make.
@@ -274,7 +278,7 @@ $(XO_FILE): $(USER_KERNEL_ADDED_FILE) ../fpga/src/$(KERNEL_NAME)_kernel.sv $(PRO
 	$(info "-----------------")
 	$(info "Packaging project")
 	$(info "-----------------")
-	-rm $(XO_FILE) 2>/dev/null || true  # Seems to be necessary for some reason.
+	-rm $(XO_FILE) 2> /dev/null || true  # Seems to be necessary to remove the old .xo file for some reason.
 	@NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
 	echo "source $(DEST_DIR)/${KERNEL_NAME}_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} xilinx kernel ${KERNEL_NAME}$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/${KERNEL_NAME}.xo -kernel_name ${KERNEL_NAME} -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl
