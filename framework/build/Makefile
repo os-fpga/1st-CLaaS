@@ -52,6 +52,7 @@
 #     S3_BUCKET=bucket_name: provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
 #     S3_LOGS_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
 #     S3_DCP_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
+#     VALGRIND=[true] or default to false behavior. True to use Valgrind to identify memory leaks in the host application.
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
@@ -254,8 +255,11 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
 	mv $(VADD_SV).hacked $(VADD_SV)
 	@# Also make the following edit to hook up ctrl_length arg (which must be specified in <shell-config>.json).
-	@grep 'LP_DEFAULT_LENGTH_IN_BYTES;' $(IMPORTS_DIR)/vadd_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
-	sed -i 's/=\s*LP_DEFAULT_LENGTH_IN_BYTES;/; assign ctrl_xfer_size_in_bytes = ctrl_length;/' $(IMPORTS_DIR)/vadd_example.sv
+	#@grep 'LP_DEFAULT_LENGTH_IN_BYTES;' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
+	#sed -i 's/=\s*LP_DEFAULT_LENGTH_IN_BYTES;/; assign ctrl_xfer_size_in_bytes = ctrl_length;/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
+	@# And stitch args through hierarchy.
+	@grep '( *ctrl_xfer_size_in_bytes *),' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
+	sed -i 's/( *ctrl_xfer_size_in_bytes *),/(ctrl_length), .resp_addr_offset (write_mem), .resp_xfer_size_in_bytes (resp_length),/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
 	@# Remove unused vadd example file.
 	rm "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.v"
 	# Hacked Xilinx template project without errors.
@@ -354,17 +358,24 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emconfigutil for emulation purposes)
 
 
+
+ifeq ($(VALGRIND), true)
+VALGRIND_PREFIX=valgrind --leak-check=yes
+else
+VALGRIND_PREFIX=
+endif
+
 ifeq ($(TARGET), sw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
 HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif
 ifeq ($(TARGET), hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(TARGET) && /opt/Xilinx/SDx/2018.2.op2258646/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD= export XCL_EMULATION_MODE=$(TARGET) && /opt/Xilinx/SDx/2018.2.op2258646/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 ifeq ($(TARGET), hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD=$(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 
 build:  $(BUILD_TARGETS)

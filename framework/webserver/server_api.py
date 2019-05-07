@@ -50,6 +50,7 @@ import struct
 import base64
 import socket
 import sys
+import time
 import traceback
 
 # Socket with host messages defines
@@ -67,11 +68,20 @@ class Socket():
         # Opening socket with host
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server_address = (self.SOCKET)
-        try:
-            self.sock.connect(server_address)
-        except socket.error, e:
-            self.sock = None
-            print "Couldn't connect to host application via socket."
+
+        connected = False
+        cnt = 0
+        while not connected:
+            try:
+                self.sock.connect(server_address)
+                connected = True
+            except socket.error, e:
+                if cnt > 10:
+                  print "Giving up."
+                  sys.exit(1)
+                print "Couldn't connect to host application via socket. Waiting..."
+                time.sleep(3)
+                cnt = cnt + 1
 
         # Setting IP
         myIP = socket.gethostbyname(socket.gethostname())

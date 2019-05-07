@@ -136,11 +136,9 @@ launch () {
     then
         #echo "launching host sw"
         $HOST &
-        # For debug: valgrind --leak-check=yes ../out/$TARGET/host &
-        #            sleep 2
     else
         sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
-        sleep 10  # Give a little time for the platform to init. TODO: Do better.
+        #sleep 10  # Give a little time for the platform to init. TODO: Do better.
     fi
     export HOST_PID=$!
   fi

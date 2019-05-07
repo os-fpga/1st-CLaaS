@@ -124,7 +124,7 @@ public:
   ** data_size: size of the data array in bytes
   */
   void write_kernel_data(double h_a_input[], int data_size);
-  void writeKernelData(void * input, int data_size);
+  void writeKernelData(void * input, int data_size, int resp_data_size);
   void write_kernel_data(input_struct * input, int data_size);
 
   /*

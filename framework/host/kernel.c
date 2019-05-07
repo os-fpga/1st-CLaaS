@@ -53,6 +53,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "kernel.h"
 #include <CL/opencl.h>
 
+#include "server_main.h"
+
 
 Kernel::Kernel() {
 }
@@ -202,10 +204,10 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
   // This must be modified by the user if the number (or name) of the arguments is different from this
   // application
   //
-  read_mem  = clCreateBuffer(context, CL_MEM_READ_WRITE,  sizeof(int) * memory_size, NULL, NULL);
-  write_mem = read_mem;
-  //read_mem  = clCreateBuffer(context, CL_MEM_READ_ONLY ,  sizeof(int) * memory_size, NULL, NULL);
-  //write_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY,  sizeof(int) * memory_size, NULL, NULL);
+  //read_mem  = clCreateBuffer(context, CL_MEM_READ_WRITE,  sizeof(int) * memory_size, NULL, NULL);
+  //write_mem = read_mem;
+  read_mem  = clCreateBuffer(context, CL_MEM_READ_ONLY ,  sizeof(int) * memory_size, NULL, NULL);  // TODO: Fix memory_size.
+  write_mem = clCreateBuffer(context, CL_MEM_WRITE_ONLY,  sizeof(int) * memory_size, NULL, NULL);
 
   if (!(write_mem) || !(read_mem)) {
     perror("Error: Failed to allocate device memory!\nTest failed\n");
@@ -238,7 +240,7 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
 }
 
 // TODO: Experimental WIP
-void Kernel::writeKernelData(void * input, int data_size) {
+void Kernel::writeKernelData(void * input, int data_size, int resp_data_size) {
   int err;
   err = clEnqueueWriteBuffer(commands, read_mem, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -250,8 +252,9 @@ void Kernel::writeKernelData(void * input, int data_size) {
   // of the arguments
   err = 0;
   err |= clSetKernelArg(kernel, 0, sizeof(uint), &data_size);
-  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &read_mem);
-  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &write_mem);
+  err |= clSetKernelArg(kernel, 1, sizeof(uint), &resp_data_size);
+  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &read_mem);
+  err |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &write_mem);
 
   if (err != CL_SUCCESS) {
     perror("Error: Failed to set kernel arguments!\nTest failed\n");
@@ -270,10 +273,13 @@ void Kernel::write_kernel_data(input_struct * input, int data_size) {
   // Set the arguments of the kernel. This must be modified by the user depending on the number (or name)
   // of the arguments
   err = 0;
-  uint d_ctrl_length = (uint)(input->width * input->height) / 16;  // Used? Chunks vs. bytes!
-  err |= clSetKernelArg(kernel, 0, sizeof(uint), &d_ctrl_length);  // Used?
-  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &read_mem);
-  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &write_mem);
+  uint resp_length = (uint)(input->width * input->height) / 16 * HostApp::DATA_WIDTH_BYTES;
+  cout << "C++: (" << input->width << "x" << input->height << "), resp_length = " << resp_length << endl;
+  //perror("C++: UNTESTED write_kernel_data\n");
+  err |= clSetKernelArg(kernel, 0, sizeof(uint), &data_size);
+  err |= clSetKernelArg(kernel, 1, sizeof(uint), &resp_length);
+  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &read_mem);
+  err |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &write_mem);
 
   if (err != CL_SUCCESS) {
     perror("Error: Failed to set kernel arguments!\nTest failed\n");

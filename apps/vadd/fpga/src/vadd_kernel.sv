@@ -12,7 +12,9 @@ module vadd_kernel #(
 
     input wire                       out_ready,
     output wire                      out_avail,
-    output wire [C_DATA_WIDTH-1:0]   out_data
+    output wire [C_DATA_WIDTH-1:0]   out_data,
+    input wire [31:0]            ctrl_xfer_size_in_bytes,
+    input wire [31:0]            resp_xfer_size_in_bytes
 );
 
 logic [7:0] debug_sigs;
@@ -46,6 +48,8 @@ generate
    assign out_data[i*32 +: 32] =
        !(out_ready && out_avail) ? {4{8'h0F}} :  // Dont-care output - use a specific recognizable pattern.
        (i == 2)                  ? {mismatch || sticky_mismatch, data_cnt[14:0], {2{debug_sigs}}} :   // Info for debug.
+       (i == 3)                  ? ctrl_xfer_size_in_bytes :
+       (i == 4)                  ? resp_xfer_size_in_bytes :
                                    data[i*32 +: 32] - 1;  // Valid output.
  end
 endgenerate

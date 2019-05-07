@@ -20,11 +20,19 @@ my $kernel = $ARGV[0];
 my $status = 0;  # Return status.
 
 # To keep track of replacements.
+my $interface_additions = 0;  # Incremented when the interface substitutions are made.
+my $axi_wr_master_subst1 = 0;  # Incremented when the 1st AXI write master substitution is made.
+my $axi_wr_master_subst2 = 0;  # Incremented when the 2nd AXI write master substitution is made.
 my $block_repl = 0;    # Lines deleted from block of code.
 while (my $line = <STDIN>) {
 	# TODO: Should we reduce wr_fifo depth?
   # TODO: Could expose FIFO depth to user kernel (for now, we keep the interface simple and leave it to the kernel to provide it's own output FIFO if necessary).
 
+  # Add lines to the module interface.
+	if ($line =~ /ctrl_xfer_size_in_bytes,$/) {
+		$line .= " input wire [C_M_AXI_ADDR_WIDTH-1:0] resp_addr_offset, input wire [C_XFER_SIZE_WIDTH-1:0] resp_xfer_size_in_bytes,";
+		$interface_additions++;
+	}
 
 	# Replace the following block of code:
   #    // Adder is combinatorial
@@ -115,14 +123,37 @@ CODE_BLOCK
     $line =~ s/\buser_kernel\b/$kernel_module_name/g;
   }
 
+
+  # Replace args for AXI write master. The kernel is generated doing reads and writes to the same memory. This memory becomes the read memory,
+	# and we replace the write memory.
+	if ($block_repl &&    # The AXI write master appears in the code after the kernel instantiation, whereas read appears before.
+      $line =~ s/\(\s*ctrl_addr_offset\s*\)/\( resp_addr_offset \)/
+		 ) {
+		$axi_wr_master_subst1++;
+	}
+	if ($block_repl &&
+      $line =~ s/\(\s*ctrl_xfer_size_in_bytes\s*\)/\( resp_xfer_size_in_bytes \)/
+		 ) {
+		$axi_wr_master_subst2++;
+	}
+
+
   print $line;
 }
 
 
 # Make sure the proper replacements were performed.
 
+if ($interface_additions != 1) {
+	print STDERR "Error: $0 failed to add to interface definition exactly once. Added $interface_additions times.\n";
+  $status = 1;
+}
 if ($block_repl > 24 || $block_repl < 12) {
   print STDERR "Error: $0 failed to replace about 26 lines of adder core module instantiation. Replaced $block_repl.\n";
+  $status = 1;
+}
+if ($axi_wr_master_subst1 != 1 || $axi_wr_master_subst2 != 1) {
+  print STDERR "Error: $0 failed to replace AXI write master inputs correctly. (Debug: $axi_wr_master_subst1 != 1 || $axi_wr_master_subst2 != 1)\n";
   $status = 1;
 }
 

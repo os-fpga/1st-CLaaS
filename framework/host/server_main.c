@@ -200,7 +200,7 @@ void HostApp::processTraffic() {
             // Send data to FPGA, or do fake FPGA processing.
 #ifdef OPENCL
             // Process in FPGA.
-            kernel.writeKernelData((double *)int_data_p, size * DATA_WIDTH_BYTES);
+            kernel.writeKernelData((double *)int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
             if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
             kernel.start_kernel();
@@ -514,7 +514,7 @@ void HostApp::handle_get_image(int ** data_array_p, input_struct * input_p) {
           input_p->max_depth << "]" <<
           endl;
   }
-  kernel.write_kernel_data(input_p, sizeof(input_struct));
+  kernel.write_kernel_data(input_p, DATA_WIDTH_BYTES);  // sizeof(input_struct));  TODO: I used full data width, but the structure is smaller.
   if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
   // check timing
