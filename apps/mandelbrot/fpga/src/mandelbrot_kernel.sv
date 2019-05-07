@@ -193,16 +193,7 @@ generate //_\TLV
           PIPE_config_data_pix_y_n1[63:0],
           PIPE_config_data_pix_x_n1[63:0],
           PIPE_config_data_min_y_n1[63:0],
-          PIPE_config_data_min_x_n1[63:0]} =
-              {64'd0,
-               64'd4,
-               64'd3,
-               64'd16,
-               2'b0, {7{1'b1}}, 1'b0, {2{1'b1}}, 52'b0,
-               2'b0, {7{1'b1}}, 1'b0, {2{1'b1}}, 52'b0,
-               {2{1'b1}}, 62'b0,
-               {2{1'b1}}, 62'b0
-              }; //PIPE_in_data_n1;
+          PIPE_config_data_min_x_n1[63:0]} = PIPE_in_data_n1;
 
          `BOGUS_USE(PIPE_config_data_bogus_n1)
       //_@0
@@ -227,7 +218,7 @@ generate //_\TLV
          assign PIPE_pix_x_a0[3:-39] = PIPE_reset_a0 ? '0 : PIPE_valid_config_data_in_a0 ? real_to_ext_fixed(PIPE_config_data_pix_x_a0) : PIPE_pix_x_a1[3:-39];
          assign PIPE_pix_y_a0[3:-39] = PIPE_reset_a0 ? '0 : PIPE_valid_config_data_in_a0 ? real_to_ext_fixed(PIPE_config_data_pix_y_a0) : PIPE_pix_y_a1[3:-39];
 
-         // The size of the image is dynamic
+         // The size of the image. (M4_FIXED_RANGE???)
          assign PIPE_size_x_a0[3:-29] = PIPE_reset_a0 ? '0 : PIPE_valid_config_data_in_a0 ? PIPE_config_img_size_x_a0[31:0] : PIPE_size_x_a1[3:-29];
          assign PIPE_size_y_a0[3:-29] = PIPE_reset_a0 ? '0 : PIPE_valid_config_data_in_a0 ? PIPE_config_img_size_y_a0[31:0] : PIPE_size_y_a1[3:-29];
 
