@@ -10,11 +10,11 @@ Further documentation for the project vision, can be found in this <a href="http
 
 Here's a short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a>  at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
 
-This repository contains all that is needed to develop a hardware-accelerated web application, including the generic framework and sample applications that utilize the framework. It contains contents for local development as well as for building FPGA images on the remote F1 machine, so it is to be cloned locally and remotely with different parts edited on each machine in a fork of this repository.
+This repository contains all that is needed to develop a hardware-accelerated web application, including the generic framework and sample applications that utilize the framework. It contains content for local development as well as for building FPGA images on the remote F1 machine, so it is to be forked and cloned locally and remotely with different parts edited on each machine.
 
 # Status
 
-This repository is a work-in-progress and will continue to evolve over the summer of 2019. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_ blank">FractalValley.net</a>
+This repository is a work-in-progress. Further development is funded for the summer of 2019 through <a href="https://summerofcode.withgoogle.com/dashboard/project/6298628153409536/overview/" target="_blank">Google Summer of Code</a>. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank">FractalValley.net</a>.
 
 
 # Project description
@@ -81,44 +81,30 @@ Setup for AWS F1 and building from scratch is a very lengthy process. Optional i
 
 As a preview of the complete process, to get up and running from source code with FPGA acceleration, you will need to:
 
-  - Get an AWS account with access to F1 instances. This is a lengthy process requiring a few days to get approval from Amazon.
-  - Launch a "Build Instance" on which to compile the OpenCL, Verilog, and Transaction-Level Verilog source code into an FPGA image.
-  - Launch an "F1 Server Instance" on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Build Instance.
+  - Get an AWS account with access to F1 instances. This requires a day or two to get approval from Amazon.
+  - Launch and configure a "Build Instance" on which to compile the OpenCL, Verilog, and Transaction-Level Verilog source code into an Amazon FPGA Image (AFI).
+  - Launch and configure an "F1 Server Instance" on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Build Instance.
   - Open the Web Application in a local web browser (or host it on a web server) and connect to the running Web Server.
 
-(Keep in mind, there is a far more substantial world of hurt that this infrastructure is saving you.)
+(Keep in mind, dispite the length of these instructions (and the ones they reference) there is a far more substantial world of hurt that this infrastructure is saving you.)
 
-Note that F1 machines are powerful and expensive. Compilations take several hours and require a sizable Build Instance which can cost a few dollars per compilation. F1 machines cost about $1.50/hr, so it is not practical to keep a server up and running for extended periods.
+Note that F1 machines are powerful and expensive. Compilations take several hours and require a sizable Build Instance which can cost a few dollars per compilation. F1 machines cost about $1.65/hr, so it is not practical to keep a server up and running for extended periods for hobby projects.
 
 
 # AWS Account Setup with F1 Access
 
-Finally, I found some good instructions from Xilinx. The instructions I came up with are below, but you should be able instead to follow the "Prerequisites" instructions <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">here</a>.
+There are many similar tutorials on line to get started with F1. Many are flawed or unclear. In our experience Xilinx instructions are generally better than those from AWS. I found the "Prerequisites" instructions of <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">this tutorial</a> to be the best starting point, but before starting, note the following:
 
-## Previous instructions
+  - When choosing a name for your S3 bucket (in step 3 of these instructions), consider who might be sharing this bucket with you. It makes sense to create a separate bucket for each fpga-webserver project you work on. You might share this bucket with your collaborators. The bucket name should reflect your project. You might wish to use the name of your git repository, or the name of your organization, i.e. `fpga-webserver-zcorp`. If you expect to be the sole developer, you can reflect your name (perhaps your AWS username) in the bucket name and avoid the need for a `/<username>` subdirectory.
+  - The subdirectories you will use are: `/<username>` if your username is not reflected in your bucket name, and within that (if created), `/dcp`, `/log`, and `/xfer`.
 
-(These can be deleted once the Xilinx instructions are confirmed to serve the same purpose.)
-
-If you are new to AWS, you might find it to be quite complicated. Here are some specific steps to get you going, though they likely need refinement. Be sure to correct these docs based on your experience.
-
-  1. Create a <a href="https://aws.amazon.com/free/" target="_ blank">free tier account</a> and await approval.
-  1. Login to your console. Be sure you are logging in as root, not as an IAM user. (Your account has no "IAM" users until you create them (which is not necessary to get going).)
-  1. Now, you'll need access to F1 resources (and possibly the Amazon Machine Image (AMI) for the Build Instance). Unless policies change, you must apply for this. You can try skipping ahead to confirm.
-    - Under "Support" (upper left) open "Support Center".
-    - Create a case.
-      - Regarding: "Service Limit Increase".
-      - Limit Type: "EC2 Instances"
-      - Region: "N. Virginia" (and possibly other options)
-      - Primary Instance Type: "f1.2xlarge"
-      - Use Case Description: Something like, "Development of hardware-accelerated web applications using this framework (https://github.com/alessandrocomodi/fpga-webserver)"
-      - Wait ~2 business days :(
-
+Okay, now, <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_ blank">do these prerequisits</a>.
 
 # Running Mandelbrot Locally
 
-While you wait for F1 access, you can play around with the Mandelbrot example without hardware acceleration.
+There is a great deal of setup you can do while you wait for F1 access. First, if you have access to a Ubuntu machine (or care to try your luck with an untested platform or provision a Ubuntu machine via Digital Ocean or similar cloud provider), you can play around with the Mandelbrot example without hardware acceleration.
 
-On a Ubuntu 16.04 machine:
+On a Ubuntu (16.04 in my case) machine:
 ```sh
 sudo apt-get update
 sudo apt-get install make g++ python python-pip python-pil python-tornado
@@ -138,90 +124,93 @@ You can also open `http://localhost:8888/client.html`. Click "Open", click "Init
 More instructions for the Mandelbrot application are [here](https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot).
 
 
-# Create F1 Instance
+# Create Build Instance
 
-Now let's provision an F1 Instance. Again, I came up with the "Previous Instructions" below, but you should be able to use the <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">Create, configure, and test an AWS F1 instance</a> instructions from Xilinx, at least for the "Create" part (section 1), but you might want to use the following modifications:
+Now let's provision a Build Instance. Continue with the next section of the Xilinx tutorial: <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">Create, configure, and test an AWS F1 instance</a>, at least for the "Create" part (section 1), noting a few things first. These instruction configure an F1 machine, but you will first configure a Build Instance without the FPGA (in case you are still waiting for F1 approval). You'll repeat these instructions later for the F1 Instance. As you step through the tabs of the instance creation process in AWS, perform the following additional steps:
 
-I found the diskspace to be rather limited, so I added 3GB to the attached Elastic Block Storage (EBS) (which persists after instance destruction).
+  - In "Step 2. Choose an Instance Type" (Step3 of the tutorial instructions): Since we are creating the build instance first, select "c4.2xlarge" instead of "f1.2xlarge" on your first pass through these instructions.
+  - In "Step 4. Add Storage" (Step 4.2. of the tutorial instructions): I found the default 5GB of Elastic Block Storage to be rather limited for doing anything more than just the tutorial. I would consider 8GB to be a minimum to support development and 12GB to be practical. (For the F1 Instance, assuming you will do most development on the Build Instance, 8GB is probably sufficient.)
+  - In "Step 6. Configure Security Group" (Step 5 of the tutorial instructions): after opening the RDP (Remote Desktop Protocol) port, open additional ports to make the Web Server accessible from outside. Under "Inbound":
 
-I was unable to connect using RDP. Update: After doing the following fix to resolve access problems from Windows 7, Linux access also seems to be fixed. Clean this up and inform Xilinx after more testing.
+    - "Add Rule"
+    - For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
+    - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
+    - Set "Description", e.g. "development-webserver".
+    - For remote desktop, I have had issues with both RDP and VNC. (More on that below.) If you wish to be able to use VNC (from linux), also open up ports 5901-5910.
 
-```sh
-sudo cp /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # create a backup
-sudo sed -i s/security_layer=negotiate/security_layer=rdp/ /etc/xrdp/xrdp.ini  # change "security_layer"
-sudo diff /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # just to see that something changed
-```
+Note that you can also make configuration changes after creating and launching the instance. Instances can be controlled via the EC2 Dashboard under "Resources", "Running Instances". To open new ports, scroll right (if necessary) and select the security group for your instance. You will use the "Running Instances" page frequently to start and stop your instances (by selecting the instance(s) and setting their state via "Actions", "Instance State").
 
-I encountered the following issues with this script: (What script? The one CURLed here: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client ??? )
+You can also name your instance, which would be a good thing to do now by clicking the pencil icon, and entering a name, like `fpga-webserver-run-1`.
 
-  - Error that `/usr/src/kernels/3.10.0-957.10.1.el7.x86_64` couldn't be found. (I changed the link to point to `/usr/src/kernels/3.10.0-862.11.6.el7.x86_64`.)
-
-You will want to open one or more additional ports for the Web Server. Either during creation, or from the "Running Instances" page (via EC2 Dashboard), scroll right and select the security group for your instance. Under "Inbound":
-
-  - "Add Rule"
-  - For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
-  - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
-  - Set "Description", e.g. "development-webserver".
-
-Note that you should already have opened a port open for RDP. (I am using VNC, so I also opened custom TCP ports 5901-5910.)
-
-## Previous instructions to create instance
-
-(These can be deleted once the Xilinx process is confirmed to cover all of this.)
-
-  1. From the dashboard, click "Launch Instance".
-  1. Note the tabs at the top for the steps to select, configure, and launch our instance.
-  1. You are currently in "Choose AMI".
-    1. Click "AWS Marketplace" on the left.
-    1. Enter "FPGA" in the search box.
-    1. Select "FPGA Developer AMI".
-    1. "Continue".
-  1. You are now in "Choose Instance Type". (See tabs and heading at the top).
-    1. Select f1.2xlarge (in "North Virginia").
-  1. Default configuration is generally good, but we do need to open up a few ports. We'll open 8888 as the default development port for the webserver. And, we'll open a port for remote desktops. Jump ahead by clicking the tab "Configure Security Group".
-    1. Provide a name for a new security group (e.g. "fpga-webserver-dev") and a description (e.g. "For development using https://github.com/alessandrocomodi/fpga-webserver").
-    1. For webserver:
-      1. "Add Rule"
-      1. For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
-      1. Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
-      1. Set "Description", e.g. "development-webserver".
-    1. For RDP (Remote Desktop Protocol):
-      1. "Add Rule"
-      1. For "Type" select "RDP"
-      1. Enter "Source" and "Description" appropriately.
-    1. For VNC (Virtual Network Computing):
-      1. "Add Rule"
-      1. For "Type" select "Custom TCP Rule", and enter "5901-5910" as port range.
-      1. Enter "Source" and "Description" appropriately.
-  1. Click "Review and Launch", be sure you are comfortable with any warnings, review details, and "Launch".
-  1. Create/select a key pair for access to your new instance. (You'll need to read up on SSH keys and `ssh-keygen` if you are not familiar. These instructions assume a public key file `<AWS key pairs.pem>`. (Be sure to `chmod 400 <AWS key pairs.pem>`.)) "Launch".
-  1. Click new instance link to find IP address.
-  1. You can view your instances from the left panel. Go to your EC2 Dashboard and click "Running Instances" or under "Instances", select "Instances". From here, you can, among other things, start and stop your instances ("Actions", "Instance State"). You can also name your instance, which would be a good thing to do now by clicking the pencil icon. Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. Be sure your instance transitions to "stopped" state (or Amazon tells me charging stops at "stopping" state).
-
-
-# Remote Work Environment
-
-## X11 Forwarding
-
-It is important to be able to run X11 applications on your instance and display them on your machine. You will probably get a `DISPLAY not set` message when first trying X forwarding with `ssh -X` and running an X application. I was able to fix this with:
-
-```sh
-sudo yum install xorg-x11-xauth  # On EC2 instance. Then log out and back in.
-exit
-ssh -X -i <AWS key pairs.pem> centos@<ip>
-```
+Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. I have found it important to always refresh the page before changing machine state. And, be sure your instance transitions to "stopped" state (or, according to AWS support, charging stops at "stopping" state).
 
 ## Remote Desktop
 
-(Delete this section once the Xilinx RDP setup instructions are validated. Maybe keep TigerVNC & Xfce instructions for linux users as it might run faster?)
+For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 easiest, but it is far too slow to be practical. RDP and VNC required several days to get working. They are usable, but neither has been ideal for me. RDP has a strange issue where dark pixel colors have transparency to windows behind them. With VNC I experienced periodic stalls of several seconds at a time (which may have something to do with my client machine).
 
-It is also important to be able to run a remote desktop. Remote desktop protocols are generally faster than X11. This is less important for the F1 Instance than it is for the Build Instance, where you will be debugging your design, so you might choose to skip these instructions until you provision the Build Instance.
+### X11 Forwarding
 
-I first tried following an [AWS tutorial from Reinvent 2017](https://github.com/awslabs/aws-fpga-app-notes/tree/master/reInvent17_Developer_Workshop) that used RDP, but I was unsuccessful. (Note, that participants were provided a custom AMI to start from.)
+This is easy and stable, so even though it is not a solution for running Xilinx tool long-term, start with X11. You will probably get a `DISPLAY not set` message when first trying X forwarding with `ssh -X` and running an X application. I was able to fix this with:
+
+```sh
+ssh -X -i <AWS key pairs.pem> centos@<ip>
+sudo yum install xeyes -y   # Just a GUI application to test X11.
+xeyes   # You'll probably see a "Display not set" error.
+sudo yum install xorg-x11-xauth
+exit
+ssh -X -i <AWS key pairs.pem> centos@<ip>
+xeyes  # Hopefully, you see some eyes now.
+```
+
+### RDP
+
+For RDP, I followed instructions <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client" target="_blank">here</a> (just Step 2). I encountered the following issues:
+
+  - The `curl`ed script produced an error that `/usr/src/kernels/3.10.0-957.10.1.el7.x86_64` couldn't be found. I changed the link to point to `/usr/src/kernels/3.10.0-862.11.6.el7.x86_64`.
+  
+  - I was unable to connect from Linux and Windows 7 (for which support ends in Jan. 2020, so stop using it). I found the following fix.
+
+  ```sh
+  sudo cp /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # create a backup
+  sudo sed -i s/security_layer=negotiate/security_layer=rdp/ /etc/xrdp/xrdp.ini  # change "security_layer"
+  sudo diff /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # just to see that something changed
+  ```
+
+### RDP Desktop (DELETE ME if the above works)
+
+(I first tried following an [AWS tutorial from Reinvent 2017](https://github.com/awslabs/aws-fpga-app-notes/tree/master/reInvent17_Developer_Workshop) that used RDP, but I was unsuccessful. (Note, that participants were provided a custom AMI to start from.))
+
+In case it helps to debug issues, or in case you need to connect from Windows, this is what I did following the Reinvent 2017 instructions:
+
+In place of:
+```sh
+source <(curl -s https://s3.amazonaws.com/aws-ec2-f1-reinvent-17/setup_script/setup_reinvent.sh)
+```
+
+I extracted the following commands:
+```sh
+sudo yum install -y kernel-devel # Needed to re-build ENA driver
+sudo yum groupinstall -y "Server with GUI"
+sudo systemctl set-default graphical.target
+
+sudo yum -y install epel-release
+sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
+sudo yum install -y xrdp tigervnc-server
+sudo yum install -y chromium
+sudo systemctl start xrdp
+sudo systemctl enable xrdp
+sudo systemctl disable firewalld  # Probably non-existent
+sudo systemctl stop firewalld     #  "
+```
+
+And I attepted to connect using Remmina from my Ubuntu machine without success.
+
 
 ### VNC from Linux Client
 
 After much struggling, I was able to get VNC working with the Xfce desktop environment.
+
+On the EC2 Instance:
 
 ```sh
 sudo yum install tigervnc-server
@@ -269,7 +258,12 @@ vncserver -kill :1
 
 Any number of clients can be connected to this server while it is running. Closing the client connection does not terminate the server.
 
-From my Ubuntu client, I connected using Remmina. In Remmina, select `VNC`, enter `<EC2-IP>:1`, and "Connect!". Or define a connection using "New" and fill in "Name", "Protocol": "VNC", "Server": "<IP>", "User name", "Password", and click "Connect".
+The script `vnc_ec2` (at the top level of the repo) can be used to connect:
+
+```sh
+vnc_ec2 -gXXXXxYYYY <IP>   # where -g is the VNC --geometry argument specifying desktop size.
+```
+
 
 Or, to use the command line, I defined:
 
@@ -283,38 +277,9 @@ and use this as:
 vnc_ec2 <IP>:1
 ```
 
-(I forget how I created the `.vnc/passwd` file.)
-
-### RDP Desktop
-
-In case it helps to debug issues, or in case you need to connect from Windows, this is what I did following the Reinvent 2017 instructions (without success):
-
-In place of:
-```sh
-source <(curl -s https://s3.amazonaws.com/aws-ec2-f1-reinvent-17/setup_script/setup_reinvent.sh)
-```
-
-I extracted the following commands:
-```sh
-sudo yum install -y kernel-devel # Needed to re-build ENA driver
-sudo yum groupinstall -y "Server with GUI"
-sudo systemctl set-default graphical.target
-
-sudo yum -y install epel-release
-sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
-sudo yum install -y xrdp tigervnc-server
-sudo yum install -y chromium
-sudo systemctl start xrdp
-sudo systemctl enable xrdp
-sudo systemctl disable firewalld  # Probably non-existent
-sudo systemctl stop firewalld     #  "
-```
-
-And I attepted to connect using Remmina from my Ubuntu machine without success.
-
 # Running on FPGA
 
-Prebuilt files are included in the repository. (TODO: No they are not.). Try to run using those first, so you can see the FPGA in action.
+Prebuilt files are included in the repository. Try to run using those first, so you can see the FPGA in action.
 
 ```sh
 cd
@@ -330,13 +295,6 @@ Point a web browser at `http://<IP>:8888` and play with the application.
 When you are done, _`ctrl-C`_, `exit`, and stop your instance.
 
 
-# Build Instance Setup
-
-You can build on your F1 instance, but building takes a long time, and its cheaper to build on a machine that does not have the FPGA.
-
-Provision a Build Instance as you did the F1 Instance, but use instance type "c4.4xlarge" (as recommended by Amazon, or we have found "c4.2xlarge" to suffice, though it's slower). `ssh` into this instance. It wouldn't hurt to open port 8888 on this instance as well in case you want to test on this instance without the FPGA.
-
-
 # One-Time Instance Setup
 
 Log into your instance:
@@ -347,14 +305,17 @@ ssh -i <AWS key pairs.pem> centos@<ip>`
 
 ## S3 Storage
 
-Configure your `~/.bashrc`. We will share files between instances using Amazon S3 through folders called `s3://fpga-webserver/<unique-username>`, so choose a username for yourself, such as your Amazon IAM username, and:
+We will share files between instances using Amazon S3 through folders of the form `s3://<bucket-name>[/<unique-username>]/<kernel-name>`. If your bucket is to be shared by multiple users, you should choose a `<unique-username>`, such as your Amazon IAM username.
+
+Configure your `.bashrc` for your bucket and username:
 
 ```sh
-echo 'export S3_USER=<unique-username>' >> ~/.bashrc
+echo 'export S3_BUCKET=<bucket-name>' >> ~/.bashrc
+echo 'export S3_USER=<unique-username>' >> ~/.bashrc   # Exclude this if the bucket is for a single user.
 source ~/.bashrc
 ```
 
-Use the same user name for all your instances.
+These settings are recognized by the Makefile. Use the same bucket name and user name for all your instances.
 
 ## Workdisk
 
@@ -404,17 +365,6 @@ git submodule update --init --recursive  # or ./init
 source fpga-webserver/sdaccel_setup
 ```
 
-# Building from Source
-
-Now, build both the FPGA image and host application, transfer them to the F1 instance, and run as follows.
-
-## Check Version
-
-These instructions were last debugged with SDx v2018.2. Check to see what you are in for:
-
-```sh
-sdx -version
-```
 
 ## FPGA Build
 
@@ -435,6 +385,24 @@ aws s3 ls s3://fpga-webserver/<user-id>/mandelbrot/AFIs/
 ```
 
 It also produces `/fpga-webserver/apps/mandelbrot/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsclbin` which references the S3 tarball.
+
+
+# F1 Instance Setup
+
+Once you have been granted access to F1, provision an F1 Instance as you did the Build Instance. Use instance type "f1.2xlarge". `ssh` into this instance. It is useful to provision each machine similarly, as you might find yourself doing builds on the F1 Instance as well as on the Build Instance.
+
+
+# Building from Source
+
+Now, build both the FPGA image and host application, transfer them to the F1 instance, and run as follows.
+
+## Check Version
+
+These instructions were last debugged with SDx v2018.2. Check to see what you are in for:
+
+```sh
+sdx -version
+```
 
 # Transfer files and Run
 

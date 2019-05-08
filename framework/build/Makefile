@@ -58,14 +58,18 @@
 
 PORT=8888
 
-# BUILD_ID is used to tag the build for transfer from the build instance to the F1 instance.
+# For transfer from the build instance to the F1 instance.
 ifndef S3_USER
-S3_USER=default_user
+S3_USER_PATH=
+else
+S3_USER_PATH=$(S3_USER)/
 endif
+ifndef S3_BUCKET
 S3_BUCKET=fpga-webserver
-S3_LOGS_KEY=${S3_USER}/$(KERNEL)/logs
-S3_DCP_KEY=${S3_USER}/$(KERNEL)/AFIs
-S3_TRANSFER_KEY=${S3_USER}/$(KERNEL)/xfer
+endif
+S3_LOGS_KEY=${S3_USER_PATH}$(KERNEL)/log
+S3_DCP_KEY=${S3_USER_PATH}$(KERNEL)/dcp
+S3_TRANSFER_KEY=${S3_USER_PATH}$(KERNEL)/xfer
 
 XOCC=xocc
 CC=g++
