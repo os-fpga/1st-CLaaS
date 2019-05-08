@@ -1,6 +1,6 @@
 # Overview
 
-These instructions will get you up to speed using this framework on AWS infrastructure. While this framework eliminates substantial development complexity, setup for AWS F1 remains a lengthy process. Optional instructions are provided to get the Mandelbrot application up and running on a local Linux machine without FPGA acceleration. Furthermore, to run with FPGA acceleration, prebuilt images are provided to initially bypass the lengthy builds.
+These instructions will get you up to speed using this framework on AWS infrastructure. While this framework eliminates substantial development complexity, setup for AWS F1 remains a lengthy process. Optional instructions are provided to get the Mandelbrot example application up and running on a local Linux machine without FPGA acceleration. Furthermore, to run with FPGA acceleration, prebuilt images are provided to initially bypass the lengthy builds. (Over time, this framework will better support local development of the custom kernel and automate deployment to F1.)
 
 As a preview of the complete process, to get the Mandelbrot application up and running from source code with FPGA acceleration, you will need to:
 
@@ -9,9 +9,9 @@ As a preview of the complete process, to get the Mandelbrot application up and r
   - Launch and configure an F1 Instance on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Development Instance.
   - Open the FPGA-Accelerated Web Application in a web browser.
 
-F1 machines are powerful and expensive. Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. These instructions assume the use of a separate Development Instance, which does not have an FPGA, to save costs. The FPGA kernel can be tested on this machine using "Hardware Emulation" mode, where the FPGA behavior is emulated using simulation and build times are minimal by comparison. For hobby projects, it is not practical to keep either EC2 Instance up and running for extended periods of time. On the other hand, the overhead of using two machines can sometimes result in extra cost and time of its own. Depending upon your goals, you may prefer to simplify your life by using the F1 Instance as your Development Instance, in which case you can skip the instructions below for creating and configuring the Development Instance.
+F1 machines are powerful and expensive. Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. These instructions assume the use of a separate Development Instance, which does not have an FPGA, to save costs. The FPGA kernel can be tested on this machine using "Hardware Emulation" mode, where the FPGA behavior is emulated using simulation and build times are minimal by comparison. For hobby projects, it is not practical to keep either EC2 Instance up and running for extended periods of time. The overhead of using two EC2 instances can sometimes result in extra cost and time of its own. So, depending upon your goals, you may prefer to simplify your life by using the F1 Instance as your Development Instance, in which case you can skip the instructions below for creating and configuring the Development Instance.
 
-There are many similar tutorials on line to get started with F1. Many are flawed or unclear. We found this  <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">Xilinx tutorial</a> to be the best, though we do not recommend following it to the letter. Instead, open this tutorial in its own window, and follow the instructions below which reference this tutorial.
+There are many similar tutorials on line to get started with F1. Many are flawed or unclear. We found this  <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank">Xilinx tutorial</a> to be the best, though we do not recommend following it to the letter. Instead, open the Xilinx tutorial in its own window, and follow the instructions below which reference this tutorial to avoid upkeep of redundant independent instructions.
 
 
 
@@ -22,17 +22,17 @@ Follow the "Prerequisites" instructions, noting the following:
   - When choosing a name for your S3 bucket (in step 3 of these instructions), consider who might be sharing this bucket with you. You should use this bucket for the particular fpga-webserver project you are starting. You might share this bucket with your collaborators. The bucket name should reflect your project. You might wish to use the name of your git repository, or the name of your organization, i.e. `fpga-webserver-zcorp`. If you expect to be the sole developer, you can reflect your name (perhaps your AWS username) in the bucket name and avoid the need for a `/<username>` subdirectory.
   - The subdirectories you will use are: `/<username>` if your username is not reflected in your bucket name, and within that (if created), `/dcp`, `/log`, and `/xfer`.
 
-Okay, now, follow the "FOLLOW THE INSTRUCTIONS" link under "Prerequisits". (In case you lose your place, you should be <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_ blank">here</a>.
+Okay, now, follow the "FOLLOW THE INSTRUCTIONS" link under "Prerequisits". (In case you lose your place, you should be <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_blank">here</a>.
 
-Press "Back" in your browser when you are finished the Prerequisite instructions (after requesting F1 access).
+When you are finished the Prerequisite instructions (after requesting F1 access), press "Back" in your browser.
 
 
 
 # Running Mandelbrot Locally
 
-There is a great deal of setup you can do while you wait for F1 access. First, if you have access to a Ubuntu machine (or care to try your luck with an untested platform or provision a Ubuntu machine via Digital Ocean or similar cloud provider), you can play around with the Mandelbrot example without hardware acceleration.
+There is a great deal of setup you can do while you wait for F1 access. First, if you have a Ubuntu machine (or care to provision one via AWS or Digital Ocean, etc.), you can play around with the Mandelbrot example without hardware acceleration.
 
-On a Ubuntu 16.04 machine (or try your luck with something different, at let us know):
+On a Ubuntu 16.04 machine (or try your luck with something different, and let us know):
 
 ```sh
 sudo apt-get update
@@ -58,7 +58,7 @@ More instructions for the Mandelbrot application are [here](https://github.com/a
 
 Next you will provision a Development Instance using the "Create" part of the "1. Create, configure and test an AWS F1 instance" instructions. These instructions configure an F1 machine, but you will instead first configure a Development Instance without the FPGA (in case you are still waiting for F1 approval). You'll repeat these instructions later for the F1 Instance after getting approval.
 
-Click the "FOLLOW THE INSTRUCTIONS" link (which take you <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_ blank">here</a>). As you step through the tabs of the instance creation process in AWS, perform the following additional/modified steps:
+Click the "FOLLOW THE INSTRUCTIONS" link (which take you <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank">here</a>). As you step through the tabs of the instance creation process in AWS, perform the following additional/modified steps:
 
   - In "Step 2. Choose an Instance Type" (Step3 of the tutorial instructions): Since we are creating the Development Instance first, select "c4.2xlarge" instead of "f1.2xlarge" on your first pass through these instructions.
   - In "Step 4. Add Storage" (Step 4.2. of the tutorial instructions): I found the default 5GB of Elastic Block Storage to be rather limited for doing anything more than just the tutorial. I would consider 8GB to be a minimum to support development and 12GB to be practical. (For the F1 Instance, assuming you will do most development on the Development Instance, 8GB is probably sufficient.)
@@ -81,11 +81,11 @@ Be sure not to accidentally leave instances running!!! You should configure moni
 
 ## Remote Desktop
 
-For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 is easiest, but it is far too slow to be practical. RDP and VNC required several days for me to get working. They are usable, but neither has been ideal for me. RDP has a strange issue where dark pixel colors have transparency to windows behind them. With VNC I experienced periodic stalls of several seconds at a time (which may have something to do with my client machine). Please help us refine these instructions as you try them out.
+For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 is easiest, but it is far too slow to be practical. RDP and VNC required several days for me to get working initially. They are usable, but neither has been ideal for me. RDP has a strange issue where dark pixel colors have transparency to windows behind them. With VNC I experienced periodic stalls of several seconds at a time (which may have something to do with my client machine). Please help us refine these instructions as you try them out.
 
 ### X11 Forwarding
 
-This is easy and stable, so even though it is not a solution for running Xilinx tool long-term, start with X11.
+This is easy and stable, so even though it is not a solution for running Xilinx tools long-term, start with X11.
 
 ```sh
 ssh -X -i <AWS key pairs.pem> centos@<ip>
@@ -189,15 +189,16 @@ The output of this command indicates a log file. You should take a look. I got a
 From the client:
 
 ```sh
+vncpasswd   # Enter the password used on the server.
 vncviewer <IP>:1 passwd=<home>/.vnc/passwd
 ```
 
-And kill on the remote instance with:
+And, on the remote instance, kill the VNC server with:
 ```sh
 vncserver -kill :1
 ```
 
-Any number of clients can be connected to this server while it is running. Closing the client connection does not terminate the server.
+Any number of clients can be connected to this VNC server while it is running. Closing the client connection does not terminate the server.
 
 After you see that these commands are working, the script `vnc_ec2` (at the top level of the repo) can be used locally to launch a server on the remote instance and connect to it. Note the prerequisite "Assumptions" in the header comments of this file.
 
@@ -205,7 +206,7 @@ After you see that these commands are working, the script `vnc_ec2` (at the top 
 vnc_ec2 -gXXXXxYYYY <IP>   # where -g is the VNC --geometry argument specifying desktop size.
 ```
 
-This running VNC server should be killed using:
+This running VNC server can be killed using:
 
 ```sh
 vnc_ec2 -k <IP>   # <IP> can be omitted to use the IP of the last server launched w/ vnc_ec2.
@@ -240,12 +241,12 @@ Because disk space is limited, unlike other online instructions, I chose to use 
 
 ```sh
 ln -s /home/centos/src/project_data workdisk
-cd ~/workdisk
+cd ~/workdisk   # Work here.
 ```
 
 ## AWS CLI Configuration
 
-Configure by providing your credentials. These can be found in in the Security Credentials page, which I'm not sure how to navigate to, but here's a <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_ blank">direct link</a>.
+Configure by providing your credentials. These can be found in in the Security Credentials page, which I'm not sure how to navigate to, but here's a <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_blank">direct link</a>.
 
 Use region: `us-east-1` and output: `json`.
 
@@ -279,6 +280,12 @@ git submodule update --init --recursive  # or ./init
 
 
 
+# Waiting for Access
+
+This completes the instance build and configuration, which will be repeated for the F1 Instance. Assuming you are still waiting for access, you can continue and do some builds on the Development Instance.
+
+
+
 # With Each Login
 
 ```sh
@@ -286,41 +293,75 @@ source fpga-webserver/sdaccel_setup
 ```
 
 
+# FPGA Emulation Build
 
-# FPGA Build
-
-On your Development Instance, build host and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
-
-```sh
-cd ~/workdisk/fpga-webserver/apps/mandelbrot/build
-mkdir ../out
-make build TARGET=hw KERNEL=mandelbrot -j8 > ../out/out.log &
-```
-
-TODO: What about hw_emu target and running in emulation?
-
-This produces output files in `/fpga-webserver/apps/mandelbrot/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/`. Additionally, the final step, the AFI creation, produces a `.tar` file on S3 storage asynchronously in `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/*.tar`. (You configured `<user-id>` in your `~/.bashrc`). You can see it with:
-
-```sh
-aws s3 ls s3://fpga-webserver/<user-id>/mandelbrot/AFIs/
-```
-
-It also produces `/fpga-webserver/apps/mandelbrot/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsclbin` which references the S3 tarball.
-
-
-
-# Building from Source
-
-Now, build both the FPGA image and host application, transfer them to the F1 instance, and run as follows.
-
-
-## Check Version
-
-These instructions were last debugged with SDx v2018.2. Check to see what you are in for:
+These instructions were last debugged with SDx v2018.2. Check to see what version you have. If it differs, you might get to help us debug a new platform.
 
 ```sh
 sdx -version
 ```
+
+On your Development Instance, build the host application and Amazon FPGA Image (AFI) that the host application will load onto the FPGA.
+
+```sh
+cd ~/workdisk/fpga-webserver/apps/mandelbrot/build
+mkdir ../out    # Shouldn't be necessary; not sure if I fixed the Makefile.
+make TARGET=hw_emu launch -j8
+```
+
+This produces outputs files in `../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/`, and it starts the application.
+
+Point a web browser at: `http://<IP>:8888` (or from outside: `http://<IP>:8888`). Be aware, as you use the application, that the FPGA is emulated, so it is running several orders of magnitude slower than a real FPGA. Be careful not to ask it to do too much. Make the image small, and set the depth to be minimal before selecting "FPGA" rendering.
+
+
+
+# FPGA Build
+
+Now, build both the FPGA image and host application for the real FPGA. The FPGA build will take about an hour.
+
+Still on your Development Instance and in the same `/build` directory:
+
+```sh
+make TARGET=hw -j8 launch &
+```
+
+This will produce an Amazon FPGA Image (AFI) and a host application that will load it. The final step of AFI creation runs asynchronously after the `make` command completes, fed by a "Design Check-Point" (DCP) "tarball" stored on S3 in `s3://fpga-webserver/<user-id>/mandelbrot/dcp/*.tar`. (You configured `<user-id>` in your `~/.bashrc`). To the best of my understanding the actual AFI is stored permanently by AWS at no cost.
+
+The above step generates:
+
+  - `../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsxclbin` which identifies the AFI
+  - `../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/<timestamp>_afi_id.txt` containing the ID of your AFI.
+  
+The AFI ID can be used to check the status of the AFI generation process. View the ID with:
+
+```sh
+cat ../out/hw/*/<timestamp>_afi_id.txt
+```
+
+To check the status of the AFI generation process:
+
+```sh
+aws ec2 describe-fpga-images --fpga-image-ids <AFI ID>
+```
+
+The command will show `Available` when the AFI is ready use. Otherwise, the command will show `Pending`.
+
+```json
+State: {
+   "Code" : Available"
+}
+```
+
+The tarball is taking up space on the S3 disk. It seems it is only needed during AFI creation. So after AFI creation completes, you probably want to delete the tarball. These commands will delete all tarballs and logs (including any previous builds).
+
+```sh
+aws s3 ls -recursive s3://<bucket-name>[/<user-id>]/mandelbrot/dcp  # Check first.
+aws s3 ls -recursive s3://<bucket-name>[/<user-id>]/mandelbrot/log
+aws s3 rm -recursive s3://<bucket-name>[/<user-id>]/mandelbrot/dcp  # Then delete.
+aws s3 rm -recursive s3://<bucket-name>[/<user-id>]/mandelbrot/log
+```
+
+(TODO: This should be automated. These commands will delete the directories, which may need to exist?)
 
 
 
@@ -329,7 +370,7 @@ sdx -version
 Once you have been granted access to F1, provision an F1 Instance as you did the Development Instance. Use instance type "f1.2xlarge". `ssh` into this instance. It is useful to provision each machine similarly, as you might find yourself doing builds on the F1 Instance as well as on the Development Instance.
 
 
-# Running on FPGA
+# Running Prebuilt Files on FPGA
 
 Prebuilt files are included in the repository. Try to run using those first, so you can see the FPGA in action. (TODO: You probably won't have permission to do this. This is probably something to look into.)
 
@@ -339,10 +380,10 @@ git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
 git submodule update --init --recursive  # or ./init
 cd apps/mandelbrot/build
-make PREBUILT=true TARGET=hw KERNEL=mandelbrot launch
+make PREBUILT=true TARGET=hw launch
 ```
 
-Point a web browser at `http://<IP>:8888` and play with the application.
+Point a web browser at `http://<IP>:8888` (or from outside `http://<IP>:8888`) and play with the application.
 
 When you are done, _`ctrl-C`_, `exit`, and stop your instance.
 
@@ -350,49 +391,19 @@ When you are done, _`ctrl-C`_, `exit`, and stop your instance.
 
 # Transfer files and Run
 
-All development is done on the Development Instance. The F1 Instance is just used to run. `fpga-webserver/apps/mandelbrot/` is transferred from the Development Instance to the F1 Instance in its entirety through S3 storage.
+Running the AFI built above on the F1 Instance requires the `.awsxclbin` file from the Development Instance. There are many options for how to transfer this file. It should be transferred into the right location, either `../prebuilt/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsxclbin` or `../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/mandelbrot.awsxclbin`. Transfer options are:
 
+  - Through S3 using Makefile build targets. There are targets for `push` (from the Development Instance) and `pull` (on the F1 Instance) (but these currently require some updates).
+  - Through the Git repository. The `/prebuilt` directory is part of the repository, so you can `git push` on the Development Instance and `git pull` on the F1 Instance, and build from `/prebuilt` as above.
+  - Any other file transfer method.
 
-## Push
-
-You can transfer your app directory to run on the FPGA using the `push` Make target (which runs an `aws s3 sync` command) and by explicitly running an `aws s3 sync` command to pull. Though the whole directory is copied, the files of importance are:
-
-  - the python webserver (including client content) (everything in `fpga-webserver/apps/mandelbrot/webserver`)
-  - the host application (built via intermediate Make target `host`)
-  - the `.awsxclbin` (AFI) image (which references `s3://fpga-webserver/<user-id>/mandelbrot/AFIs/`)
-  - `launch` script in `fpga-webserver/apps/mandelbrot/build`
+And run
 
 ```sh
-cd ~/workdisk/fpga-webserver/apps/mandelbrot/build
-make push TARGET=hw KERNEL=mandelbrot &
+make PREBUILT=true TARGET=hw launch   # Or without `PREBUILT=true` if you placed the `.awsxclbin` in `\out` instead of `prebuilt`.
 ```
 
-
-## Pull
-
-Now, start and log into your F1 Instance, initialize and configure AWS and pull these files:
-
-```sh
-mkdir ~/work
-cd ~/work
-mkdir mandelbrot
-cd mandelbrot
-aws s3 sync s3://fpga-webserver/<user-id>/mandelbrot/xfer .
-```
-
-
-## Launch
-
-```sh
-cd ~/mandelbrot_work/build
-chmod +x launch ../out/*/*/host # execute privs lost in transfer
-./launch hw
-```
-
-
-## Run
-
-As you did locally, you can access `http://<IP>:8888/index.html`. Now you can utilize the FPGA to generate images.
+And open: `http://localhost:8888`, or from outside `http://<IP>:8888`.
 
 
 

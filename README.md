@@ -133,6 +133,7 @@ FPGA Kernel development might justify testbench development at various points:
 # To Do
 
   - Support an emulation flow on local machine using Verilator with no OpenCL, where a Verilator (C++) shell drives the user kernel directly.
+  - Automate waiting for AFI creation to complete and deleting the tarball (and update GettingStarted.md).
 
 
 
@@ -140,4 +141,4 @@ FPGA Kernel development might justify testbench development at various points:
 
   - hw_emu instructions.
   - apps/mandelbrot/out/ does not exist for make command above. (FIXED?)
-  - remove host from prebuilts (to support usage model where C++ is edited, but kernel is prebuilt)
+  - remove host from prebuilts (to support usage model where C++ is edited, but kernel is prebuilt). Also see if the prebuilt is accessible to other users. Also fix `make push` and `make pull`. (Huh, `make pull` is missing.)
