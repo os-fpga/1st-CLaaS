@@ -31,10 +31,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-# Connect to EC2 machine, launch vncserver, connect to it, and shut it down once closed.
-# Usage: vnc_ec2 [-g XxY] [<ip>]
+# Connect to EC2 machine, launch vncserver and connect to it.
+# Usage: vnc_ec2 [-g XxY] <ip>
+#        vnc_ec2 -k [<ip>]
 #   -g: geometry as in -geometry arg of vncserver
 #   <ip>: IP address of EC2 instance. If given, it is recorded in .ec2_ip file and can be omitted in future invocations to use the same EC2 instance.
+#   -k: kill the running server
 # Assumptions:
 #   - There must be a private key file ~/.ssh/id_rsa.pem with a corresponding public key on the EC2 instance.
 #   - VNC server :7 is used. Any existing :7 server will be killed (if permissions permit). Port 5907 must be open to the EC2 machine.
