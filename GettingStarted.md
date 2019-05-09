@@ -11,7 +11,7 @@ As a preview of the complete process, to get the Mandelbrot application up and r
 
 F1 machines are powerful and expensive. Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. These instructions assume the use of a separate Development Instance, which does not have an FPGA, to save costs. The FPGA kernel can be tested on this machine using "Hardware Emulation" mode, where the FPGA behavior is emulated using simulation and build times are minimal by comparison. For hobby projects, it is not practical to keep either EC2 Instance up and running for extended periods of time. The overhead of using two EC2 instances can sometimes result in extra cost and time of its own. So, depending upon your goals, you may prefer to simplify your life by using the F1 Instance as your Development Instance, in which case you can skip the instructions below for creating and configuring the Development Instance.
 
-There are many similar tutorials on line to get started with F1. Many are flawed or unclear. We found this  <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank">Xilinx tutorial</a> to be the best, though we do not recommend following it to the letter. Instead, open the Xilinx tutorial in its own window, and follow the instructions below which reference this tutorial to avoid upkeep of redundant independent instructions.
+There are many similar tutorials on line to get started with F1. Many are flawed, unclear, or out-dated. We found this  <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank">Xilinx tutorial</a> to be the best, though we do not recommend following it to the letter. Instead, open the Xilinx tutorial in its own window, and follow the instructions below which reference this tutorial (to avoid upkeep of redundant independent instructions).
 
 
 
@@ -60,28 +60,37 @@ Next you will provision a Development Instance using the "Create" part of the "1
 
 Click the "FOLLOW THE INSTRUCTIONS" link (which take you <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank">here</a>). As you step through the tabs of the instance creation process in AWS, perform the following additional/modified steps:
 
-  - In "Step 2. Choose an Instance Type" (Step3 of the tutorial instructions): Since we are creating the Development Instance first, select "c4.2xlarge" instead of "f1.2xlarge" on your first pass through these instructions.
-  - In "Step 4. Add Storage" (Step 4.2. of the tutorial instructions): I found the default 5GB of Elastic Block Storage to be rather limited for doing anything more than just the tutorial. I would consider 8GB to be a minimum to support development and 12GB to be practical. (For the F1 Instance, assuming you will do most development on the Development Instance, 8GB is probably sufficient.)
-  - In "Step 6. Configure Security Group" (Step 5 of the tutorial instructions): after opening the RDP (Remote Desktop Protocol) port, open additional ports to make the Web Server accessible from outside. Under "Inbound":
+  - In **Step 2. Choose an Instance Type** (Step3 of the tutorial instructions): Since we are creating the Development Instance first, select "c4.2xlarge" instead of "f1.2xlarge" on your first pass through these instructions.
+  - In **Step 4. Add Storage** (Step 4.2. of the tutorial instructions): I found the default 5GB of Elastic Block Storage to be rather limited for doing anything more than just the tutorial. I would consider 8GB to be a minimum to support development and 12GB to be practical. (For the F1 Instance, assuming you will do most development on the Development Instance, 8GB is probably sufficient.)
+  - In **Step 6. Configure Security Group** (Step 5 of the tutorial instructions):
+    - Name this security group something like "fpga-webserver". When you repeat these instructions for the F1 Instance, you can simply "Select an existing security group" (this one) and you are finished with this step (Step 6).
+    - Open the RDP (Remote Desktop Protocol) port according to the tutorial.
+    - Open ports to make the Web Server accessible from outside. (By default, we will use port 8888, but we reserve several.)
+      - **Add Rule**
+      - **Type**: Custom TCP Rule (the default)
+      - **Port Range**: "8880-8889"
+      - **Source**: "Anywhere" or your IP address for better security
+      - **Description**: e.g. "development-webserver"
+    - For remote desktop, I have had issues with both RDP and VNC. (More on that below.) If you wish to be able to use VNC (from Linux), also open up ports 5901-5910.
+    
+    Note that when you repeat these instructions for your F1 Instance, you will be able to 
 
-    - "Add Rule"
-    - For "Type" select "Custom TCP Rule" (should be the default), and enter "8880-8889" as port range (by default, we will use port 8888, but let's reserve several).
-    - Select or enter a "Source", e.g. "Anywhere" or your IP address for better security.
-    - Set "Description", e.g. "development-webserver".
-    - For remote desktop, I have had issues with both RDP and VNC. (More on that below.) If you wish to be able to use VNC (from linux), also open up ports 5901-5910.
-
-Do not proceed to "2. Connecting to the Instance with a remote desktop client" just yet.
+Do not proceed to **2. Connecting to the Instance with a remote desktop client** just yet.
 
 Note that you can also make configuration changes after creating and launching the instance. Instances can be controlled via the EC2 Dashboard under "Resources", "Running Instances". To open new ports, scroll right (if necessary) and select the security group for your instance. You will use the "Running Instances" page frequently to start and stop your instances (by selecting the instance(s) and setting their state via "Actions", "Instance State").
 
-You can also name your instance, which would be a good thing to do now by clicking the pencil icon, and entering a name, like `fpga-webserver-run-1`.
+You can also name your instance, which would be a good thing to do now by hovering over its "Name" field and clicking the pencil icon. Enter a name, like `fpga-webserver-dev-1` (or `fpga-webserver-run-1` for the F1 Instance).
 
 Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. I have found it important to always refresh the page before changing machine state. And, be sure your instance transitions to "stopped" state (or, according to AWS support, charging stops at "stopping" state).
 
 
+
+# One-Time Instance Setup
+
+
 ## Remote Desktop
 
-For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 is easiest, but it is far too slow to be practical. RDP and VNC required several days for me to get working initially. They are usable, but neither has been ideal for me. RDP has a strange issue where dark pixel colors have transparency to windows behind them. With VNC I experienced periodic stalls of several seconds at a time (which may have something to do with my client machine). Please help us refine these instructions as you try them out.
+For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 is easiest, but it is far too slow to be practical. RDP and VNC required several days for me to get working initially. I suggest using RDP, but I am also including instructions for VNC as a fall-back option.
 
 ### X11 Forwarding
 
@@ -90,56 +99,36 @@ This is easy and stable, so even though it is not a solution for running Xilinx 
 ```sh
 ssh -X -i <AWS key pairs.pem> centos@<ip>
 sudo yum install xeyes -y   # Just a GUI application to test X11.
-xeyes   # You'll probably see a "Display not set" error.
-sudo yum install xorg-x11-xauth
+xeyes   # You'll probably see "Error: Can't open display", so fix this with:
+sudo yum install xorg-x11-xauth -y
 exit
 ssh -X -i <AWS key pairs.pem> centos@<ip>
 xeyes  # Hopefully, you see some eyes now.
+<Ctrl-C>
 ```
 
 ### RDP
 
-Next you will continue through "2. Connecting to the Instance with a remote desktop client". (In case you got lost, that's <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client" target="_blank">here</a>.)
+Next you will continue through **2. Connecting to the Instance with a remote desktop client**. (In case you got lost, that's <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client" target="_blank">here</a>.)
 
-I encountered the following issues:
+The `curl` command in these instructions produces a great deal of output, and there were a couple of issues the first time I tried it. It would be wise to capture the output by appending ` 2>&1 | tee /tmp/rdp_curl.log` onto the command.
 
-  - The `curl`ed script produced an error that `/usr/src/kernels/3.10.0-957.10.1.el7.x86_64` couldn't be found. I changed the link to point to `/usr/src/kernels/3.10.0-862.11.6.el7.x86_64`.
+The remaining issue for some users:
+
+  - Connecting from Linux and Windows 7 (for which support ends in Jan. 2020, so stop using it) fails with:
   
-  - I was unable to connect from Linux and Windows 7 (for which support ends in Jan. 2020, so stop using it). I found the following fix.
+  ```
+  SSL_connect: error:1408F10B:SSL routines:SSL3_GET_RECORD:wrong version number
+  Error: protocol security negotiation or connection failure
+  ```
+  
+  I found the following fix:
 
   ```sh
   sudo cp /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # create a backup
   sudo sed -i s/security_layer=negotiate/security_layer=rdp/ /etc/xrdp/xrdp.ini  # change "security_layer"
   sudo diff /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak  # just to see that something changed
   ```
-
-### RDP Desktop (DELETE ME if the above works)
-
-I first tried following an [AWS tutorial from Reinvent 2017](https://github.com/awslabs/aws-fpga-app-notes/tree/master/reInvent17_Developer_Workshop) that used RDP, but I was unsuccessful. (Note, that participants were provided a custom AMI to start from.) In case it helps to debug issues, or in case you need to connect from Windows, this is what I did following the Reinvent 2017 instructions:
-
-In place of:
-```sh
-source <(curl -s https://s3.amazonaws.com/aws-ec2-f1-reinvent-17/setup_script/setup_reinvent.sh)
-```
-
-I extracted the following commands:
-```sh
-sudo yum install -y kernel-devel # Needed to re-build ENA driver
-sudo yum groupinstall -y "Server with GUI"
-sudo systemctl set-default graphical.target
-
-sudo yum -y install epel-release
-sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
-sudo yum install -y xrdp tigervnc-server
-sudo yum install -y chromium
-sudo systemctl start xrdp
-sudo systemctl enable xrdp
-sudo systemctl disable firewalld  # Probably non-existent
-sudo systemctl stop firewalld     #  "
-```
-
-And I attepted to connect using Remmina from my Ubuntu machine without success. Likely the above "security_layer" fix was the problem.
-
 
 ### VNC from Linux Client
 
@@ -213,15 +202,13 @@ vnc_ec2 -k <IP>   # <IP> can be omitted to use the IP of the last server launche
 ```
 
 
-# One-Time Instance Setup
+## S3 Storage
 
 Log into your instance:
 
 ```sh
 ssh -i <AWS key pairs.pem> centos@<ip>`
 ```
-
-## S3 Storage
 
 We will share files between instances using Amazon S3 through folders of the form `s3://<bucket-name>[/<unique-username>]/<kernel-name>`. If your bucket is to be shared by multiple users, you should choose a `<unique-username>`, such as your Amazon IAM username.
 
