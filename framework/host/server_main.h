@@ -74,6 +74,8 @@ using json = nlohmann::json;
 
 #ifdef KERNEL
 #define KERNEL_NAME GET_STRING(KERNEL)
+#else
+#define KERNEL_NAME NULL
 #endif
 
 #define SOCKET "SOCKET"
