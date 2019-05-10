@@ -89,14 +89,14 @@ PROJ_FPGA_EXTRA_SRCS ?=    # Extra verilog source files. (All must be in ../fpga
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
 SW_HDRS=$(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS)
 SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../../../framework/host/json/include $(PROJ_SW_CFLAGS)
-SW_LFLAGS=-L${XILINX_SDX}/runtime/lib/x86_64 $(PROJ_SW_LFLAGS)
+SW_LFLAGS=-L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
 
 #Host code
 HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_SDX}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(PLATFORM) -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Name of host executable
@@ -174,9 +174,9 @@ DEST_DIR=../$(OUT_DIR_NAME)/$(DEST_SUBDIR)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(DEST_SUBDIR)
 endif
 
-ifndef XILINX_SDX
+ifndef XILINX_XRT
 ifneq ($(TARGET), sw)
-$(error XILINX_SDX is not set. Please source the SDx settings64.{csh,sh} first)
+$(error XILINX_XRT is not set. Please source the SDx settings64.{csh,sh} first)
 endif
 endif
 
@@ -219,7 +219,7 @@ ifneq ($(TARGET), sw)
 # Actually, I think it would be better to include TARGET in the build target, eg: sw_host, hw_host, etc. (As it is there is
 # redundant building for different targets).
 
-VIVADO_VERSION_MESSAGE=Note: Kernel construction assumes Vivado v2018.2
+VIVADO_VERSION_MESSAGE=Note: Kernel construction assumes Vivado v2018.3
 
 # Create tcl script for the kernel configuration
 $(DEST_DIR)/rtl_kernel_wiz.tcl: $(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py $(HW_SHELL_CONFIG_JSON)
@@ -375,7 +375,7 @@ HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif
 ifeq ($(TARGET), hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD= export XCL_EMULATION_MODE=$(TARGET) && /opt/Xilinx/SDx/2018.2.op2258646/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD= export XCL_EMULATION_MODE=$(TARGET) && $(XILINX_XRT)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 ifeq ($(TARGET), hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)

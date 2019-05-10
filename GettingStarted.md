@@ -92,6 +92,8 @@ Be sure not to accidentally leave instances running!!! You should configure moni
 
 For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 is easiest, but it is far too slow to be practical. RDP and VNC required several days for me to get working initially. I suggest using RDP, but I am also including instructions for VNC as a fall-back option.
 
+TODO: I have not figured out cut-n-paste to/from RDP.
+
 ### X11 Forwarding
 
 This is easy and stable, so even though it is not a solution for running Xilinx tools long-term, start with X11.
@@ -106,6 +108,8 @@ ssh -X -i <AWS key pairs.pem> centos@<ip>
 xeyes  # Hopefully, you see some eyes now.
 <Ctrl-C>
 ```
+
+From this ssh shell, you can launch X applications that will display on your local machine. In contrast, RDP and/or VNC provide you with a desktop environment.
 
 ### RDP
 
@@ -202,17 +206,22 @@ vnc_ec2 -k <IP>   # <IP> can be omitted to use the IP of the last server launche
 ```
 
 
-## S3 Storage
+## AWS CLI Configuration
 
-Log into your instance:
+Configure by providing your credentials you saved in a secure location earlier. (Your Secret Access Key is not accessible within the AWS Console, so if you lost this information you will have to visit the <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_blank">Security Credentials</a> page, which you can find under your account menu (your username in the upper-right) and generate new credentials.)
 
 ```sh
-ssh -i <AWS key pairs.pem> centos@<ip>`
+aws configure
 ```
+
+Use region: `us-east-1` and output: `json`.
+
+
+## S3 Storage
 
 We will share files between instances using Amazon S3 through folders of the form `s3://<bucket-name>[/<unique-username>]/<kernel-name>`. If your bucket is to be shared by multiple users, you should choose a `<unique-username>`, such as your Amazon IAM username.
 
-Configure your `.bashrc` for your bucket and username:
+Configure your `.bashrc` for your bucket and username. From your ssh shell or remote desktop terminal:
 
 ```sh
 echo 'export S3_BUCKET=<bucket-name>' >> ~/.bashrc
@@ -221,6 +230,7 @@ source ~/.bashrc
 ```
 
 These settings are recognized by the Makefile. Use the same bucket name and user name for all your instances.
+
 
 ## Workdisk
 
@@ -231,16 +241,6 @@ ln -s /home/centos/src/project_data workdisk
 cd ~/workdisk   # Work here.
 ```
 
-## AWS CLI Configuration
-
-Configure by providing your credentials. These can be found in in the Security Credentials page, which I'm not sure how to navigate to, but here's a <a href="https://console.aws.amazon.com/iam/home?#/security_credential" target="_blank">direct link</a>.
-
-Use region: `us-east-1` and output: `json`.
-
-```sh
-aws configure
-```
-
 
 ## SSH keys
 
@@ -248,7 +248,7 @@ If you happen to be using private git repositories or need passwordless authenti
 
 ```sh
 ssh-keygen -o -t rsa -b 4096 -C "<machine-identifying comment>"
-sudo yum install xclip
+sudo yum install xclip -y
 xclip -sel clip < ~/.ssh/id_rsa.pub
 ```
 

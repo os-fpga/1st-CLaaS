@@ -22,10 +22,7 @@ module foo_kernel #(
 
     input wire                       out_ready,
     output wire                      out_avail,
-    output wire [C_DATA_WIDTH-1:0]   out_data,
-    
-    input wire [31:0]                ctrl_xfer_size_in_bytes,
-    input wire [31:0]                resp_xfer_size_in_bytes
+    output wire [C_DATA_WIDTH-1:0]   out_data
 );
 ```
 
@@ -38,14 +35,13 @@ In a given cycle, these signals relate to the same data transfer, where:
   - `ready`: The receiver is willing to accept the data.
   - `avail`: The transmitter has data to deliver.
   - `data`: The data.
-
-Currently, the data transfer is packetized, and the infrastructure processes packets rather serially (though the intent is to change this). The `xfer_size_in_bytes` signals specify the number of bytes in the packet and the number of bytes that must be produced for the packet by the kernel (as requested by the client). Your kernel should be designed to ignore these signals, which are expected to disappear.
-
+  
 
 
 # Development Using this Framework
 
 Any means of delivering this kernel can be utilized, but we are partial to developing with TL-Verilog in Makerchip.
+
 
 ## Makerchip and TL-Verilog
 
