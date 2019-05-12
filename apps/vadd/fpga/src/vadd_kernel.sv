@@ -12,9 +12,7 @@ module vadd_kernel #(
 
     input wire                       out_ready,
     output wire                      out_avail,
-    output wire [C_DATA_WIDTH-1:0]   out_data,
-    input wire [31:0]            ctrl_xfer_size_in_bytes,
-    input wire [31:0]            resp_xfer_size_in_bytes
+    output wire [C_DATA_WIDTH-1:0]   out_data
 );
 
 logic [7:0] debug_sigs;

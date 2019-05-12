@@ -159,6 +159,8 @@ launch () {
   fi
   export SERVER_PID=$!
 
+  # Create a script to teardown the application by sending SIGINT to this process.
+  echo "kill -SIGINT $$" > killme
 }
 
 # Tear down.
@@ -184,6 +186,10 @@ teardown () {
     sudo kill -9 $HOST_PID3
     sudo kill -9 $SERVER_PID2
   fi
+  
+  # Done with "killme" script, created by this script.
+  # This script might currently be in use, but it seems to be okay to delete it?
+  rm killme
 }
 
 # Kill signal handler.

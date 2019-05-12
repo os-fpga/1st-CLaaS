@@ -363,6 +363,20 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 
 
 
+# For production use of port 80.
+# Run is done in its own directory to avoid socket collision with development.
+.PHONY: live dead
+
+live: build dead
+	mkdir -p ../live
+	ln -s -f ../build/launch ../live/launch
+	cd ../live; make -f ../build/Makefile TARGET=hw PORT=80 launch &
+	
+dead:
+	-source ../live/killme > /dev/null 2>&1
+	
+
+
 ifeq ($(VALGRIND), true)
 VALGRIND_PREFIX=valgrind --leak-check=yes
 else
@@ -384,6 +398,7 @@ endif
 
 build:  $(BUILD_TARGETS)
 launch: $(BUILD_TARGETS)
+	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
 	./launch -p $(PORT) $(TARGET) '$(HOST_CMD)'
 
 
