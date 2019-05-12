@@ -134,7 +134,7 @@ FPGA Kernel development might justify testbench development at various points:
 
   - Support an emulation flow on local machine using Verilator with no OpenCL, where a Verilator (C++) shell drives the user kernel directly.
   - Automate waiting for AFI creation to complete and deleting the tarball (and update GettingStarted.md).
- 
+  - It's hard to convince a browser to hard-reload a URL that redirects, so the testbench redirect is hard to clear when a different app is started.
   - The latest SDx version is 2018.3. Instructions need to be updated since 2018.2. (It's 2019. Why are updates happening a year late?) Here are some issues observed w/ 2018.3:
   
   ```

@@ -292,8 +292,7 @@ On your Development Instance, build the host application and Amazon FPGA Image (
 
 ```sh
 cd ~/workdisk/fpga-webserver/apps/mandelbrot/build
-mkdir ../out    # Shouldn't be necessary; not sure if I fixed the Makefile.
-make TARGET=hw_emu launch -j8
+make TARGET=hw_emu -j8 launch   # (-j8 is optional; it's for parallel build)
 ```
 
 This produces outputs files in `../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/`, and it starts the application.
@@ -367,7 +366,7 @@ git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
 git submodule update --init --recursive  # or ./init
 cd apps/mandelbrot/build
-make PREBUILT=true TARGET=hw launch
+make PREBUILT=true TARGET=hw -j8 launch
 ```
 
 Point a web browser at `http://<IP>:8888` (or from outside `http://<IP>:8888`) and play with the application.
@@ -387,7 +386,7 @@ Running the AFI built above on the F1 Instance requires the `.awsxclbin` file fr
 And run
 
 ```sh
-make PREBUILT=true TARGET=hw launch   # Or without `PREBUILT=true` if you placed the `.awsxclbin` in `\out` instead of `prebuilt`.
+make PREBUILT=true TARGET=hw -j8 launch   # Or without `PREBUILT=true` if you placed the `.awsxclbin` in `\out` instead of `prebuilt`.
 ```
 
 And open: `http://localhost:8888`, or from outside `http://<IP>:8888`.

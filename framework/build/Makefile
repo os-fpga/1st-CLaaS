@@ -375,7 +375,7 @@ HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif
 ifeq ($(TARGET), hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD= export XCL_EMULATION_MODE=$(TARGET) && $(XILINX_XRT)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD= export XCL_EMULATION_MODE=$(TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
 ifeq ($(TARGET), hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)

@@ -72,6 +72,7 @@ using json = nlohmann::json;
 #define TARGET_DEVICE GET_STRING(SDX_PLATFORM)
 #endif
 
+#undef KERNEL_NAME
 #ifdef KERNEL
 #define KERNEL_NAME GET_STRING(KERNEL)
 #else

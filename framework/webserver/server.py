@@ -99,7 +99,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     try:
         result = self.application.message_handlers[type](payload, type)
     except KeyError:
-        print "Unrecognized message type:", header
+        print "Unrecognized message type:", type
     
     # The result is sent back to the client
     print "Python: Responding with:", result
@@ -136,7 +136,7 @@ class FPGAServerApplication(tornado.web.Application):
     # Register a message handler.
     # 
     def registerMessageHandler(self, type, handler):
-        self.message_handlers = {type: handler}
+        self.message_handlers[type] = handler
     
     
     # Handler for GET_IMAGE.
@@ -157,7 +157,7 @@ class FPGAServerApplication(tornado.web.Application):
         super(FPGAServerApplication, self).__init__(handlers)
         server = tornado.httpserver.HTTPServer(self)
         server.listen(port)
-        
+        self.message_handlers = {}
         self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
         
