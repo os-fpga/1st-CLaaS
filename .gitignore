@@ -1,6 +1,7 @@
 *~
 **/webserver/*.pyc
 **/apps/*/out/
+**/apps/*/live/
 apps/mandelbrot/build/video
 apps/mandelbrot/build/cast
 

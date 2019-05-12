@@ -64,7 +64,7 @@ class Socket():
     SOCKET        = "SOCKET"
 
     # Connect on construction.
-    def __init__(self, port):
+    def __init__(self):
         # Opening socket with host
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server_address = (self.SOCKET)
@@ -82,10 +82,6 @@ class Socket():
                 print "Couldn't connect to host application via socket. Waiting..."
                 time.sleep(3)
                 cnt = cnt + 1
-
-        # Setting IP
-        myIP = socket.gethostbyname(socket.gethostname())
-        print '*** Websocket Server Started at %s***:%i' % (myIP, port)
 
 
     def send_string(self, tag, str):

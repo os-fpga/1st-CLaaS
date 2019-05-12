@@ -160,7 +160,7 @@ launch () {
   export SERVER_PID=$!
 
   # Create a script to teardown the application by sending SIGINT to this process.
-  echo "kill -SIGINT $$" > killme
+  echo "kill $$" > killme
 }
 
 # Tear down.

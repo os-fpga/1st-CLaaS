@@ -43,6 +43,10 @@
 #     run_system: build and run
 #     push: push application directory to S3 storage for transfer to F1 Instance
 #     prebuild: populate contents of "prebuilt" directory with current build (do not set PREBUILT variable)
+#     clean: remove all outputs for the given TARGET
+#     live: launch or relaunch TARGET=hw on PORT=80 (without the need to be explicit.)
+#     dead: kill the running production server.
+#     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
 #   Variables:
 #     PORT: The port on which to launch the webserver.
 #     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
@@ -182,12 +186,15 @@ endif
 
 
 ifdef DEST_DIR  # just to be safe
-.PHONY: clean
+.PHONY: clean shrink
 clean:
 	sudo rm -rf $(DEST_DIR)
 endif
 # TODO: Add more-selective clean targets.
 
+# Remove some of the large hw build collateral files.
+shrink:
+	rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
 
 # Rule to build host application, only if not using pre-built.
 ifneq ($(PREBUILT), true)
@@ -374,7 +381,7 @@ live: build dead
 	
 dead:
 	-source ../live/killme > /dev/null 2>&1
-	
+
 
 
 ifeq ($(VALGRIND), true)

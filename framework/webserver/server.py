@@ -112,6 +112,28 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     return True
 
 
+"""
+Handler for Real IP address GET requests (no default route for this)
+This can be useful if a proxy is used to server the http requests, but a WebSocket must be opened directly.
+"""
+class IPReqHandler(tornado.web.RequestHandler):
+    # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header("Connection", "keep-alive")
+        self.set_header("Content-Type", "text/plain")
+
+    # handles image request via get request
+    def get(self):
+        ip = FPGAServerApplication.external_ip
+        if (ip == None):
+            ip = ""
+        #ip_str = socket.gethostbyname(socket.gethostname())
+        self.write(ip_str)
+
+
 # This class can be overridden to provide application-specific behavior.
 class FPGAServerApplication(tornado.web.Application):
     
@@ -150,10 +172,10 @@ class FPGAServerApplication(tornado.web.Application):
         self.socket.send_string("data", data)
         data = read_data_handler(self.socket, None, False)
         return data
-
+    
 
     def __init__(self, handlers, port):
-        self.socket = Socket(port)
+        self.socket = Socket()
         super(FPGAServerApplication, self).__init__(handlers)
         server = tornado.httpserver.HTTPServer(self)
         server.listen(port)
@@ -161,5 +183,17 @@ class FPGAServerApplication(tornado.web.Application):
         self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
         
+        # Report external URL for the webserver.
+        # Get Real IP Address using 3rd-party service.
+        # Local IP: myIP = socket.gethostbyname(socket.gethostname())
+        port_str = "" if port == 80 else  ":" + str(port)
+        try:
+            FPGAServerApplication.external_ip = subprocess.check_output(["wget", "-qO-", "ifconfig.me"])
+            print '*** Websocket Server Started, (http://%s%s) ***' % (self.external_ip, port_str)
+        except:
+            print "Python: FPGAServerApplication failed to acquire external IP address."
+            FPGAServerApplication.external_ip = None
+            print '*** Websocket Server Started (http://localhost%s) ***' % port_str
+
         # Starting webserver
         tornado.ioloop.IOLoop.instance().start()
