@@ -374,14 +374,19 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 # Run is done in its own directory to avoid socket collision with development.
 .PHONY: live dead
 
-live: build dead
-	mkdir -p ../live
-	ln -s -f ../build/launch ../live/launch
-	cd ../live; make -f ../build/Makefile TARGET=hw PORT=80 launch &
+live: dead
+	make TARGET=hw prep_live_internal
+	@echo "Launching production server in the background"
+	nohup ./launch -p 80 hw '../live/$(HOST_EXE) $(HOST_XCLBIN)'
 	
 dead:
-	-source ../live/killme > /dev/null 2>&1
+	source ../live/killme > /dev/null 2>&1 || true
 
+# A target used by target live (and not expected to be used directly by the user).
+prep_live_internal:
+	mkdir -p ../live
+	cp $(DEST_DIR)/$(HOST_EXE) ../live
+	cp $(HOST_XCLBIN) ../live
 
 
 ifeq ($(VALGRIND), true)

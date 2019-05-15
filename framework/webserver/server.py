@@ -131,7 +131,7 @@ class IPReqHandler(tornado.web.RequestHandler):
         if (ip == None):
             ip = ""
         #ip_str = socket.gethostbyname(socket.gethostname())
-        self.write(ip_str)
+        self.write(ip)
 
 
 # This class can be overridden to provide application-specific behavior.
