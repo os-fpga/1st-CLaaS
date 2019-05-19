@@ -113,6 +113,21 @@ From this ssh shell, you can launch X applications that will display on your loc
 
 ### RDP
 
+## Running RDP with Remmina Remote Desktop Client
+ 1) Create a new remote desktop file
+ 2) Give it a name and fill in the following
+ 3) In the "Basic" tab
+   a) Server      = <IPv4 Public IP>
+   b) User name   = <centos>
+   c) Password    = <password generated at end of running setup_gui.sh>
+   d) Color depth = True color (24 bpp)
+ 4) In the "Advanced" tab
+   a) Security    = RDP
+ 5) Connect
+  
+ Note: that between Stopping and Starting Amazon instances the IPv4 instance changes
+   
+
 Next you will continue through **2. Connecting to the Instance with a remote desktop client**. (In case you got lost, that's <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client" target="_blank">here</a>.)
 
 The `curl` command in these instructions produces a great deal of output, and there were a couple of issues the first time I tried it. It would be wise to capture the output by appending ` 2>&1 | tee /tmp/rdp_curl.log` onto the command.
