@@ -113,7 +113,7 @@ From this ssh shell, you can launch X applications that will display on your loc
 
 ### RDP
 
-## Running RDP with Remmina Remote Desktop Client
+#### Running RDP with Remmina Remote Desktop Client
  1) Create a new remote desktop file
  2) Give it a name and fill in the following
  3) In the "Basic" tab
