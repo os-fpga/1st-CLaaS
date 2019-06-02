@@ -35,13 +35,11 @@ There is a great deal of setup you can do while you wait for F1 access. First, i
 On a Ubuntu 16.04 machine (or try your luck with something different, and let us know):
 
 ```sh
-sudo apt-get update
-sudo apt-get install make g++ python python-pip python-pil python-tornado
-# On centos: sudo yum install make g++ python python-pip python-pillow python-tornado (unconfirmed)
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
 git submodule update --init --recursive  # or ./init
+./installs.sh
 cd apps/mandelbrot/build
 make launch
 ```
