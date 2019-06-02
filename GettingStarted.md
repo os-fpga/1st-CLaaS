@@ -87,6 +87,13 @@ Be sure not to accidentally leave instances running!!! You should configure moni
 
 # One-Time Instance Setup
 
+##Installing necessary packages
+
+In the fpga-webserver directory run:
+```sh
+./installs.sh
+```
+It installs the Tornado webserver and some Python image processing libraries.
 
 ## Remote Desktop
 
