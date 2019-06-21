@@ -35,13 +35,11 @@ There is a great deal of setup you can do while you wait for F1 access. First, i
 On a Ubuntu 16.04 machine (or try your luck with something different, and let us know):
 
 ```sh
-sudo apt-get update
-sudo apt-get install make g++ python python-pip python-pil python-tornado
-# On centos: sudo yum install make g++ python python-pip python-pillow python-tornado (unconfirmed)
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
 git submodule update --init --recursive  # or ./init
+./installs.sh
 cd apps/mandelbrot/build
 make launch
 ```
@@ -87,6 +85,13 @@ Be sure not to accidentally leave instances running!!! You should configure moni
 
 # One-Time Instance Setup
 
+##Installing necessary packages
+
+In the fpga-webserver directory run:
+```sh
+./installs.sh
+```
+It installs the Tornado webserver and some Python image processing libraries.
 
 ## Remote Desktop
 
@@ -112,6 +117,21 @@ xeyes  # Hopefully, you see some eyes now.
 From this ssh shell, you can launch X applications that will display on your local machine. In contrast, RDP and/or VNC provide you with a desktop environment.
 
 ### RDP
+
+#### Running RDP with Remmina Remote Desktop Client
+ 1) Create a new remote desktop file
+ 2) Give it a name and fill in the following
+ 3) In the "Basic" tab
+   a) Server      = <IPv4 Public IP>
+   b) User name   = <centos>
+   c) Password    = <password generated at end of running setup_gui.sh>
+   d) Color depth = True color (24 bpp)
+ 4) In the "Advanced" tab
+   a) Security    = RDP
+ 5) Connect
+  
+ Note: that between Stopping and Starting Amazon instances the IPv4 instance changes
+   
 
 Next you will continue through **2. Connecting to the Instance with a remote desktop client**. (In case you got lost, that's <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client" target="_blank">here</a>.)
 
