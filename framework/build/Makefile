@@ -60,6 +60,8 @@
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
+SHELL=/bin/bash
+
 PORT=8888
 
 # For transfer from the build instance to the F1 instance.
@@ -217,6 +219,31 @@ endif
 endif
 
 
+
+# TL-Verilog compilation.
+# fpga/src/*.tlv are taken as top-level TLV files.
+# fpga/src/*.tlvlib are taken as TLV library files, provided for every SandPiper run (which is network overhead whether used or not).
+#KERNEL_TLV=../fpga/src/$(KERNEL_NAME)_kernel.tlv
+TLV=$(shell ls ../fpga/src/*.tlv)
+TLVLIB=$(shell ls ../fpga/src/*.tlvlib)
+SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
+SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
+
+# Run SandPiper(TM) SaaS Edition on TLV files.
+# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
+$(SV_FROM_TLV): %.sv: ../fpga/src/%.tlv
+	echo "Make sure this looks right: rm -rf $*"
+	mkdir -p $*
+	cd $* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
+	mv $*/out/*.sv ../out/sv
+	cat $*/out/stdout
+	exit `cat $*/out/status`
+
+# Kernel SV can come from fpga/src or via SandPiper.
+KERNEL_SV :=$(shell ls ../fpga/src/$(KERNEL_NAME)_kernel.sv)
+ifeq ($(KERNEL_SV),)
+KERNEL_SV :=../out/sv/$(KERNEL_NAME)_kernel.sv
+endif
 
 # Hardware build
 ifneq ($(TARGET), sw)
