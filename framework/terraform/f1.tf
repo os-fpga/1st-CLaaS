@@ -111,26 +111,34 @@ resource "aws_instance" "fpga_f1" {
     destination = "/home/centos/.aws/credentials"
     }
     provisioner "file" {
-      source      = "files/scripts/terraform/init.sh"
-      destination = "/home/centos/terraform/init.sh"
+      source      = "files/scripts/init.sh"
+      destination = "/home/centos/init.sh"
     }
     provisioner "file" {
-      source      = "files/scripts/terraform/dummy.sh"
-      destination = "/home/centos/terraform/dummy.sh"
+      source      = "files/scripts/dummy.sh"
+      destination = "/home/centos/dummy.sh"
     }
 
     provisioner "remote-exec" {
       inline = [
-        "chmod +x /home/centos/terraform/init.sh",
-        "source /home/centos/terraform/init.sh",
+        "chmod +x /home/centos/init.sh",
+        "source /home/centos/init.sh",
       ]
     }
   
     provisioner "remote-exec" {
       inline = [
-        "chmod +x /home/centos/terraform/dummy.sh",
+        "chmod +x /home/centos/dummy.sh",
         "source ${var.app_launch_script}",
       ]
     }
 }
+
+output "ip" {
+  value = aws_instance.fpga_f1.public_ip
+}
+
+
+
+
 
