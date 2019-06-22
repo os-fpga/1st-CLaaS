@@ -56,7 +56,7 @@ More instructions for the Mandelbrot application are [here](https://github.com/a
 
 Next you will provision a Development Instance using the "Create" part of the "1. Create, configure and test an AWS F1 instance" instructions. These instructions configure an F1 machine, but you will instead first configure a Development Instance without the FPGA (in case you are still waiting for F1 approval). You'll repeat these instructions later for the F1 Instance after getting approval.
 
-Click the "FOLLOW THE INSTRUCTIONS" link (which take you <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank">here</a>). As you step through the tabs of the instance creation process in AWS, perform the following additional/modified steps:
+Click the "FOLLOW THE INSTRUCTIONS" link (which take you <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md" target="_blank">here</a>). As you step through the tabs of the instance creation process in AWS, perform the following additional/modified steps:
 
   - In **Step 2. Choose an Instance Type** (Step3 of the tutorial instructions): Since we are creating the Development Instance first, select "c4.2xlarge" instead of "f1.2xlarge" on your first pass through these instructions.
   - In **Step 4. Add Storage** (Step 4.2. of the tutorial instructions): I found the default 5GB of Elastic Block Storage to be rather limited for doing anything more than just the tutorial. I would consider 8GB to be a minimum to support development and 12GB to be practical. (For the F1 Instance, assuming you will do most development on the Development Instance, 8GB is probably sufficient.)
@@ -85,7 +85,7 @@ Be sure not to accidentally leave instances running!!! You should configure moni
 
 # One-Time Instance Setup
 
-##Installing necessary packages
+## Installing necessary packages
 
 In the fpga-webserver directory run:
 ```sh
@@ -97,14 +97,13 @@ It installs the Tornado webserver and some Python image processing libraries.
 
 For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 is easiest, but it is far too slow to be practical. RDP and VNC required several days for me to get working initially. I suggest using RDP, but I am also including instructions for VNC as a fall-back option.
 
-TODO: I have not figured out cut-n-paste to/from RDP.
 
 ### X11 Forwarding
 
 This is easy and stable, so even though it is not a solution for running Xilinx tools long-term, start with X11.
 
 ```sh
-ssh -X -i <AWS key pairs.pem> centos@<ip>
+ssh -X -i <AWS key pairs.pem> centos@<ip>   # (.pem created in "Prerequisit" instructions)
 sudo yum install xeyes -y   # Just a GUI application to test X11.
 xeyes   # You'll probably see "Error: Can't open display", so fix this with:
 sudo yum install xorg-x11-xauth -y
@@ -114,24 +113,29 @@ xeyes  # Hopefully, you see some eyes now.
 <Ctrl-C>
 ```
 
-From this ssh shell, you can launch X applications that will display on your local machine. In contrast, RDP and/or VNC provide you with a desktop environment.
+From this ssh shell, you can launch X applications that will (slowly) display on your local machine. In contrast, RDP and/or VNC provide you with a desktop environment.
 
 ### RDP
 
 #### Running RDP with Remmina Remote Desktop Client
- 1) Create a new remote desktop file
- 2) Give it a name and fill in the following
- 3) In the "Basic" tab
-   a) Server      = <IPv4 Public IP>
-   b) User name   = <centos>
-   c) Password    = <password generated at end of running setup_gui.sh>
-   d) Color depth = True color (24 bpp)
- 4) In the "Advanced" tab
-   a) Security    = RDP
- 5) Connect
-  
- Note: that between Stopping and Starting Amazon instances the IPv4 instance changes
-   
+
+```sh
+sudo apt-get install remmina
+remmina
+```
+
+  1. Click "New", and fill in the following:
+    1. Name: (as you like)
+    1. In the "Basic" tab
+      1. Server: [IPv4 Public IP]
+      1. User name: centos
+      1. Password: [leave blank]
+      1. Color depth: True color (24 bpp)
+    1. In the "Advanced" tab
+      1. Security: RDP
+    1. Connect
+
+Note that between Stopping and Starting Amazon instances the IPv4 Public IP of the instance changes and will need to be reassigned in Remmina.
 
 Next you will continue through **2. Connecting to the Instance with a remote desktop client**. (In case you got lost, that's <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md#2-connecting-to-the-instance-with-a-remote-desktop-client" target="_blank">here</a>.)
 
@@ -155,6 +159,8 @@ The remaining issue for some users:
   ```
 
 ### VNC from Linux Client
+
+RDP is preferred over VNC, but, in case you have trouble with RDP...
 
 After much struggling, I was able to get VNC working with the Xfce desktop environment.
 

@@ -89,7 +89,6 @@ PROJ_C_SRC ?=
 PROJ_C_HDRS ?=
 PROJ_SW_CFLAGS ?=
 PROJ_SW_LFLAGS ?=
-PROJ_FPGA_EXTRA_SRCS ?=    # Extra verilog source files. (All must be in ../fpga/src to be added properly to project. Clean build required if sources are added.)
 
 #Software (no FPGA) flags
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
@@ -224,20 +223,24 @@ endif
 # fpga/src/*.tlv are taken as top-level TLV files.
 # fpga/src/*.tlvlib are taken as TLV library files, provided for every SandPiper run (which is network overhead whether used or not).
 #KERNEL_TLV=../fpga/src/$(KERNEL_NAME)_kernel.tlv
-TLV=$(shell ls ../fpga/src/*.tlv)
-TLVLIB=$(shell ls ../fpga/src/*.tlvlib)
+TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
+SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
+TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/nulls)
 SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
 SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
 
+
 # Run SandPiper(TM) SaaS Edition on TLV files.
 # SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
-$(SV_FROM_TLV): %.sv: ../fpga/src/%.tlv
-	echo "Make sure this looks right: rm -rf $*"
-	mkdir -p $*
-	cd $* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
-	mv $*/out/*.sv ../out/sv
-	cat $*/out/stdout
-	exit `cat $*/out/status`
+.PHONY: sv
+sandpiper: $(SV_FROM_TLV)
+../out/sv/%.sv: ../fpga/src/%.tlv
+	rm -rf ../out/sv/$*
+	mkdir -p ../out/sv/$*
+	cd ../out/sv/$* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
+	mv ../out/sv/$*/out/*.sv ../out/sv
+	cat ../out/sv/$*/out/stdout
+	exit `cat ../out/sv/$*/out/status`
 
 # Kernel SV can come from fpga/src or via SandPiper.
 KERNEL_SV :=$(shell ls ../fpga/src/$(KERNEL_NAME)_kernel.sv)
@@ -315,7 +318,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 
 # Package the project as an .xo.
 # (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
-$(XO_FILE): $(USER_KERNEL_ADDED_FILE) ../fpga/src/$(KERNEL_NAME)_kernel.sv $(PROJ_FPGA_EXTRA_SRCS)
+$(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC)
 	$(info $(VIVADO_VERSION_MESSAGE))
 	$(info "-----------------")
 	$(info "Packaging project")

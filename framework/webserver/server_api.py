@@ -109,7 +109,7 @@ class Socket():
         except socket.error:
             print "sock.recv failed."
             traceback.print_stack()
-        print "Python: recv'ed:", ret
+        #print "Python: recv'ed:", ret
         return ret
 
 ### This function requests an image from the host
