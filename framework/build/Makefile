@@ -301,7 +301,7 @@ $(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
 # TODO: How do we configure the Vivado SDAccel project, including low-optimizations. Makefile or in repo or via instructions?
 IMPORTS_DIR=$(DEST_DIR)/$(KERNEL_NAME)_ex/imports
 VADD_SV=$(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
-$(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
+$(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 	@echo $(VIVADO_VERSION_MESSAGE)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
 	@# Add user's kernel source code to project.
@@ -332,7 +332,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP)
 
 # Package the project as an .xo.
 # (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
-$(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC)
+$(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC) $(SV_FROM_TLV)
 	$(info $(VIVADO_VERSION_MESSAGE))
 	$(info "-----------------")
 	$(info "Packaging project")
