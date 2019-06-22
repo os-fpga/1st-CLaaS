@@ -186,11 +186,9 @@ endif
 endif
 
 
-ifdef DEST_DIR  # just to be safe
 .PHONY: clean shrink
 clean:
-	sudo rm -rf $(DEST_DIR)
-endif
+	sudo rm -rf ../out
 # TODO: Add more-selective clean targets.
 
 # Remove some of the large hw build collateral files.
@@ -230,20 +228,36 @@ SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
 SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
 
 
-# Run SandPiper(TM) SaaS Edition on TLV files.
-# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
+# Run SandPiper.
+# Use a local sandpiper if $(SANDPIPER) is defined to point to one, otherwise, use SandPiper(TM) SaaS.
 .PHONY: sv
-sandpiper: $(SV_FROM_TLV)
+sv: $(SV_FROM_TLV)
 ../out/sv/%.sv: ../fpga/src/%.tlv
 	rm -rf ../out/sv/$*
 	mkdir -p ../out/sv/$*
+ifeq ($(SANDPIPER),)
+	echo "SP: $(SANDPIPER)"
+	@# Run SandPiper(TM) SaaS Edition on TLV files.
+	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
 	cd ../out/sv/$* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
+else
+	echo "SP: $(SANDPIPER)"
+	@# Use local SandPiper, given by $(SANDPIPER)
+	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
+	-$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout
+	echo $$? > ../out/sv/$*/out/status
+endif
 	mv ../out/sv/$*/out/*.sv ../out/sv
+	# Vivado requires includes to be of .vh files, so change file name.
+	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
+	cd ../out/sv && sed -i s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv		
 	cat ../out/sv/$*/out/stdout
 	exit `cat ../out/sv/$*/out/status`
 
+
+
 # Kernel SV can come from fpga/src or via SandPiper.
-KERNEL_SV :=$(shell ls ../fpga/src/$(KERNEL_NAME)_kernel.sv)
+KERNEL_SV :=$(shell ls ../fpga/src/$(KERNEL_NAME)_kernel.sv 2> /dev/null)
 ifeq ($(KERNEL_SV),)
 KERNEL_SV :=../out/sv/$(KERNEL_NAME)_kernel.sv
 endif

@@ -10,16 +10,3 @@ KERNEL=mandelbrot
 
 
 include ../../../framework/build/Makefile
-
-
-
-# A target to run SandPiper to make mandelbrot_kernel*.
-# This target must be run in isolation. It does not carry proper dependencies intentionally
-# so that SandPiper installation is not required, and mandelbrot_kernel* can be treated as source code
-# for other build targets.
-PHONY: sv
-sv:
-	sandpiper --iArgs --m4out /tmp/mandelbrot.m4out.tlv -i ../fpga/mandelbrot.tlv -o ../fpga/src/mandelbrot_kernel.sv
-	# Vivado requires includes to be of .vh files, so change file name.
-	mv ../fpga/src/mandelbrot_kernel_gen.sv ../fpga/src/mandelbrot_kernel_gen.vh
-	sed -i s/mandelbrot_kernel_gen\\.sv/mandelbrot_kernel_gen\\.vh/ ../fpga/src/mandelbrot_kernel.sv
