@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cd /home/centos
-export FPGA_WEBSERVER_DIR=/home/centos/src/project-data/fpga-webserver
+export FPGA_WEBSERVER_DIR=/home/centos/src/project_data/fpga-webserver
 if [[ -d $AWS_FPGA_REPO_DIR ]]; then
 	echo "Pulling AWS-FPGA"
 	git pull
@@ -25,6 +25,7 @@ if [[ -d $FPGA_WEBSERVER_DIR ]]; then
 else
 	echo "Cloning FPGA-WEBSERVER"
 	git clone -b terraform-devel https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
+	cd fpga-webserver && git submodule update --init --recursive  # or ./init
 	echo "Sourcing installs.sh"
 	source $FPGA_WEBSERVER_DIR/installs.sh
 	echo "Sourcing sdaccel_setup"
