@@ -129,7 +129,7 @@ resource "aws_instance" "fpga_f1" {
     provisioner "remote-exec" {
       inline = [
         "chmod +x /home/centos/dummy.sh",
-        ".${var.app_launch_script}",
+        "nohup ${var.app_launch_script} &",
       ]
     }
 }
