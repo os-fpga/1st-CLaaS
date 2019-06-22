@@ -1,0 +1,1 @@
+app_launch_script = "$FPGA_WEBSERVER_DIR/apps/mandelbrot/terraform/mandelbrot.sh"
