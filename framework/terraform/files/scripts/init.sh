@@ -25,7 +25,7 @@ if [[ -d $FPGA_WEBSERVER_DIR ]]; then
 else
 	echo "Cloning FPGA-WEBSERVER"
 	git clone -b terraform-devel https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
-	cd fpga-webserver && git submodule update --init --recursive  # or ./init
+	cd fpga-$FPGA_WEBSERVER_DIR && git submodule update --init --recursive  # or ./init
 	echo "Sourcing installs.sh"
 	source $FPGA_WEBSERVER_DIR/installs.sh
 	echo "Sourcing sdaccel_setup"
