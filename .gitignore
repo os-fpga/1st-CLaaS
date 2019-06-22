@@ -4,6 +4,10 @@
 **/apps/*/live/
 apps/mandelbrot/build/video
 apps/mandelbrot/build/cast
+/framework/terraform/*.tfstate
+/framework/terraform/*.tfstate.backup
+/framework/terraform/.terraform
+/framework/terraform/.terraform*
 
 # Used by scripts to remember the active F1 instance IP address.
 .ec2_ip
