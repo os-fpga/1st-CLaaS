@@ -459,7 +459,7 @@ launch: $(BUILD_TARGETS)
 
 launch_nohup: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	nohup ./launch -p $(PORT) $(TARGET) '$(HOST_CMD)' &
+	nohup ./launch -p $(PORT) $(TARGET) '$(HOST_CMD)'
 
 
 ifeq ($(TARGET), hw)
