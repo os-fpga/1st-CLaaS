@@ -1,1 +1,1 @@
-app_launch_script = "$FPGA_WEBSERVER_DIR/apps/mandelbrot/terraform/mandelbrot.sh"
+app_launch_script = "/home/centos/workdisk/fpga-webserver/apps/mandelbrot/apps/mandelbrot/terraform/mandelbrot.sh"
