@@ -24,7 +24,7 @@ if [[ -d $FPGA_WEBSERVER_DIR ]]; then
 	source $FPGA_WEBSERVER_DIR/sdaccel_setup
 else
 	echo "Cloning FPGA-WEBSERVER"
-	git clone https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
+	git clone -b terraform-devel https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
 	echo "Sourcing installs.sh"
 	source $FPGA_WEBSERVER_DIR/installs.sh
 	echo "Sourcing sdaccel_setup"
