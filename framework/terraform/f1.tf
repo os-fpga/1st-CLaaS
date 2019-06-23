@@ -130,6 +130,7 @@ resource "aws_instance" "fpga_f1" {
       inline = [
         "chmod +x /home/centos/dummy.sh",
         "source ${var.app_launch_script}",
+        "sleep 1",
       ]
     }
 }
