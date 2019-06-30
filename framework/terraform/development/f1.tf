@@ -129,12 +129,8 @@ resource "aws_instance" "fpga_f1" {
     destination = "/home/centos/.aws/credentials"
     }
     provisioner "file" {
-      source      = "files/scripts/init.sh"
+      source      = "../deployment/files/scripts/init.sh"
       destination = "/home/centos/init.sh"
-    }
-    provisioner "file" {
-      source      = "files/scripts/dummy.sh"
-      destination = "/home/centos/dummy.sh"
     }
 
     provisioner "file" {
