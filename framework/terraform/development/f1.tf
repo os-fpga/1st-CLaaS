@@ -54,8 +54,8 @@ resource "aws_key_pair" "generated_key" {
 
 provider "aws" {
   region                  = "eu-west-1"
-  shared_credentials_file = "files/credentials"
-  profile                 = "terraform"
+  access_key              = "${var.aws_access_key_id}"
+  secret_key              = "${var.aws_secret_access_key}"
 }
 
 resource "aws_security_group" "allow_web_ssh_rdp" {
