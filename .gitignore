@@ -4,6 +4,12 @@
 **/apps/*/live/
 apps/mandelbrot/build/video
 apps/mandelbrot/build/cast
+**.tfstate
+**.tfstate.backup
+**.terraform
+**.terraform*
+**.pem
+/framework/terraform/development/centos_pwd.txt
 
 # Used by scripts to remember the active F1 instance IP address.
 .ec2_ip
