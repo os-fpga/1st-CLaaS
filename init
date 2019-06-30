@@ -1,3 +1,62 @@
-#!/bin/bash
+# One-time initialization of this repository, to be run after cloning.
+
+
+# Install submodules.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 git submodule update --init --recursive
+
+
+# Install required packages
+
+
+# Platform-specific installs.
+echo "Installing linux packages."
+if [[ -n "$(which apt-get)" ]]
+then
+  sudo apt-get update
+  sudo apt-get -y install make g++ python python-pip python-pil python-tornado python-imaging
+elif [[ -n "$(which yum)" ]]
+then
+  sudo yum -y install make g++ python python-pip python-pil python-tornado python-imaging
+fi
+
+
+# Install python libraries for user only so as not to affect system installs.
+echo "Installing Python packages for user $USER."
+pip install tornado awscli boto3 --upgrade --user --no-warn-script-location
+
+
+# Make sure ~/.local/bin is in path for python installs.
+#
+echo "Making sure Python installs are in \$PATH."
+if [[ $( which aws > /dev/null 2>&1 )$? != 0 ]]
+then
+  # Need to add ~/.local/bin to $PATH.
+  echo
+  if [[ "$SHELL" == "/bin/bash" ]]
+  then
+    if [[ -e ~/.bashrc ]]
+    then
+      if [[ $( grep fpga-webserver ~/.bashrc > /dev/null 2>&1 )$? != 0 ]]
+      then
+        echo "INFO: Strange, it looks like ~/.bashrc has already been modified, but 'aws' command is not currently in \$PATH. Might need to add ~/.local/bin to your \$PATH manually."
+      else
+        echo >> ~/.bashrc
+        echo "export PATH=\$PATH:$HOME/.local/bin  # Added by fpga-webserver repository." >> ~/.bashrc
+        echo "==================================="
+        echo "Modified ~/.bashrc to add ~/.local/bin to path, and sourcing ~/.bashrc."
+        echo "==================================="
+        source ~/.bashrc
+        if [[ $( which aws > /dev/null 2>&1 )$? != 0 ]]
+        then
+          echo "WARNING: Still cannot find 'aws' command."
+        fi
+      fi
+    else
+      echo "WARNING: Cannot find ~/.bashrc. You must add ~/.local/bin to your \$PATH manually."
+    fi
+  else
+    echo "NOTE: You must add ~/.local/bin to your \$PATH manually."
+  fi
+  echo
+fi

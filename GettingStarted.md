@@ -38,8 +38,7 @@ On a Ubuntu 16.04 machine (or try your luck with something different, and let us
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
-git submodule update --init --recursive  # or ./init
-./installs.sh
+source ./init   # (and see if you are asked to update your $PATH)
 cd apps/mandelbrot/build
 make launch
 ```
@@ -89,9 +88,9 @@ Be sure not to accidentally leave instances running!!! You should configure moni
 
 In the fpga-webserver directory run:
 ```sh
-./installs.sh
+source ./init
 ```
-It installs the Tornado webserver and some Python image processing libraries.
+This installs necessary git submodules, linux packages, and python packages.
 
 ## Remote Desktop
 
@@ -288,7 +287,7 @@ cd ~/workdisk
 git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
-git submodule update --init --recursive  # or ./init
+source ./init
 ```
 
 
@@ -390,7 +389,7 @@ Prebuilt files are included in the repository. Try to run using those first, so 
 cd
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
-git submodule update --init --recursive  # or ./init
+source ./init
 cd apps/mandelbrot/build
 make PREBUILT=true TARGET=hw -j8 launch
 ```
