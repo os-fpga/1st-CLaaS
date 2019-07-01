@@ -12,8 +12,7 @@
   <!-- Style here -->
   <script src="https://openlayers.org/en/v4.6.5/build/ol.js" type="text/javascript"></script>
   <link href="https://fonts.googleapis.com/css?family=Just+Another+Hand" rel="stylesheet">
-  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-    crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
     crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
@@ -23,6 +22,7 @@
     crossorigin="anonymous">
   <link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
   <link rel="stylesheet" href="css/demo.css">
+  <script src="framework/js/fpgaServer.js"></script>
   <title>Mandelbrot</title>
 </head>
 
@@ -463,6 +463,16 @@
         </div>
       </fieldset>
     </div>
+  </div>
+  <div class="debug-only fpga-only">
+    <h2>(DEBUG-ONLY FOR NOW) FPGA Acceleration</h2>
+    <p>This application can be accelerated using Amazon F1 FPGAs. But F1 is not free. It is currently only available as a demo and requires a password to launch.</p>
+    <form id="start-fpga-form">
+      Password: <input type="password" name="pwd">
+      <input class="btn btn-primary" type="submit" value="Power On">
+    </form>
+    <button id="stop-fpga-button" class="btn btn-primary">Stop FPGA</button>
+    <p><span class="debug-only">FPGA IP: <span id="fpga-ip"></span></span><span id="fpga-message"></span></p>
   </div>
   <div forTheme="xmas"><div class="c-only">
     <h2>Merry Christmas!!!</h2>

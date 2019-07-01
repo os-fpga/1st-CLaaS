@@ -337,7 +337,7 @@ if __name__ == "__main__":
             port = int(arg)
 
     # Webserver
-    routes = FPGAServerApplication.defaultContentRoutes()
+    routes = FPGAServerApplication.defaultContentRoutes({"start_stop_fpga"})
     routes.extend(
         [ (r"/redeploy", RedeployHandler),
           #(r'/hw', GetRequestHandler),

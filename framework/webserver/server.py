@@ -32,13 +32,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 #
-# This is the main python webserver which accepts WebSocket connections as well as
-# Get requests from a client on port 8888.
+# This is the main python webserver which:
+#   - serves static content
+#   - processes REST requests
+#   - accepts WebSocket connections
+# Roles may be divided between content server and F1 accelerated server. Both are handled by this
+# file to keep things simple in the face of various use models.
 #
 # The process is single threaded and all the requests are served synchronously and in order.
 #
 # The web server interfaces with the host application through a UNIX socket communication
-# in order to send commands and data to the FPGA
+# in order to send commands and data to the FPGA.
 #
 # Author: Alessandro Comodi, Politecnico di Milano
 #
@@ -113,10 +117,10 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
 
 """
-Handler for Real IP address GET requests (no default route for this)
-This can be useful if a proxy is used to server the http requests, but a WebSocket must be opened directly.
+Request Handlers
 """
-class IPReqHandler(tornado.web.RequestHandler):
+
+class ReqHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -125,6 +129,11 @@ class IPReqHandler(tornado.web.RequestHandler):
         self.set_header("Connection", "keep-alive")
         self.set_header("Content-Type", "text/plain")
 
+"""
+Handler for Real IP address GET requests (no default route for this)
+This can be useful if a proxy is used to server the http requests, but a WebSocket must be opened directly.
+"""
+class IPReqHandler(ReqHandler):
     # handles image request via get request
     def get(self):
         ip = FPGAServerApplication.external_ip
@@ -132,14 +141,29 @@ class IPReqHandler(tornado.web.RequestHandler):
             ip = ""
         #ip_str = socket.gethostbyname(socket.gethostname())
         self.write(ip)
+        
+"""
+Handlers for starting/stoping the F1 instance.
+"""
+class StartFPGAHandler(ReqHandler):
+    # Handles starting the FPGA server.
+    def post(self):
+        FPGAServerApplication.f1_ip = "100.100.100.100"
+        self.write(json.dumps({"ip": FPGAServerApplication.f1_ip, "message": "Just testing"}))
+class StopFPGAHandler(ReqHandler):
+    # Handles starting the FPGA server.
+    def get(self):
+        self.write(json.dumps({"status": 1, "message": "Testing more"}))
 
 
 # This class can be overridden to provide application-specific behavior.
 class FPGAServerApplication(tornado.web.Application):
     
     # Return an array containing default routes into ../webserver/{html,css,js}
+    # Args:
+    #   incl: A set of route catecories to include from: "ip", "start_stop_fpga"
     @staticmethod
-    def defaultContentRoutes():
+    def defaultContentRoutes(incl = {"dummy"}):
         dir = os.getcwd() + "/../webserver"
         mydir = os.path.dirname(__file__)
         routes = [
@@ -152,6 +176,12 @@ class FPGAServerApplication(tornado.web.Application):
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": dir + "/js"}),
               (r"/(.*\.html)", BasicFileHandler, {"path": dir + "/html"})
             ]
+        if "ip" in incl:
+            routes.append( (r'/ip', IPReqHandler) )
+        if "start_stop_fpga" in incl:
+            routes.append( (r'/start_fpga', StartFPGAHandler) )
+            routes.append( (r'/stop_fpga', StopFPGAHandler) )
+        print routes
         return routes
 
     
@@ -182,6 +212,8 @@ class FPGAServerApplication(tornado.web.Application):
         self.message_handlers = {}
         self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
+        
+        self.f1_ip = None  # The IP of an associated F1 instance, if any. (None of the F1 itself.)
         
         # Report external URL for the webserver.
         # Get Real IP Address using 3rd-party service.

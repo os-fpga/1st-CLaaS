@@ -346,9 +346,11 @@ constructor() {
   
   this.cast_tag = null; // Tag/directory to which to cast (captured when casting is enabled.)
   
+  let server = new fpgaServer();
   
   // Event handling
   
+  server.enableFPGAStartStop();
   $("#renderer input").change((evt) => {
     if (this.map) {
       this.map_source.setUrl(this.getMapURL());

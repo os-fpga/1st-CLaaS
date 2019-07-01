@@ -58,4 +58,77 @@ class fpgaServer {
     }
   }
   
+  
+  // Support for controls to start/stop an FPGA.
+  // Server can enable listening to:
+  //   /start_fpga (POST): Start FPGA, and return JSON of the form: {"ip": "...", "message": "..."}.
+  //   /stop_fpga (GET): Stop FPGA, and return JSON of the form: {"status": 0/1/2, "message": "..."}, where status 0) success, 1) not running, 2) failed (might still be running).
+  // HTML should contain:
+  //   <form id="start-fpga-form">
+  //     Password: <input type="password" name="pwd">
+  //     <input type="submit" value="Power On">
+  //   </form>
+  //   <button id="stop-fpga-button" class="btn btn-primary">Stop FPGA</button>
+  //   <p id="fpga-message"><p>
+  // This method attaches callbacks to:
+  //   #start-fpga-form
+  //   #stop-fpga-button
+  // And populates:
+  //   #fpga-ip
+  //   #fpga-message and
+  // on ajaxComplete (if they exist).
+  //
+  // Args:
+  //   started_cd(ip, message): Called if non-null on ajaxComplete.
+  enableFPGAStartStop(started_cb) {
+    $('#start-fpga-form').submit(function(e) {
+      e.preventDefault();
+      $.ajax({
+        url: '/start_fpga',
+        type: 'post',
+        data: $('#start-fpga-form').serialize(),
+        success: function(data, status, xhr) {
+          let json = "{}"
+          try {
+            json = JSON.parse(data);
+          } catch(e) {
+            json = {message: `Bad JSON response: ${json}`};
+          }
+          console.log("ajaxComplete received: " + json);
+          if (json.ip) {
+            $("#fpga-ip").text(json.ip);
+          }
+          if (json.message) {
+            $("#fpga-message").text(json.message);
+          }
+          if (started_cb) {
+            started_cb(json.ip, json.message);
+          }
+        }
+      });
+    });
+    $("#stop-fpga-button").click(function() {
+      $.ajax({
+        url: '/stop_fpga',
+        type: 'get',
+        data: '',
+        success: function(data, status, xhr) {
+          let json = "{}"
+          try {
+            json = JSON.parse(data);
+          } catch(e) {
+            json = {message: `Bad JSON response: ${json}`};
+          }
+          console.log("ajaxComplete received: " + json);
+          if (json.status === 0 || json.status === 1) {
+            $("#fpga-ip").text('');
+          }
+          if (json.message) {
+            $("#fpga-message").text(json.message);
+          }
+        }
+      })
+    });
+  }
+  
 }

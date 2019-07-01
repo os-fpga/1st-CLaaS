@@ -3,6 +3,7 @@
 This document provides an overview of the project. After reading this, please continue with:
 
   - [**Getting Started**](GettingStarted.md)
+  - [**Framework Overview**](framework/README.md)
   - [**Kernel Developer's Reference**](KernelDevelopersReference.md)
   - [**Web Developer's Reference**](WebDevReference.md)
 
