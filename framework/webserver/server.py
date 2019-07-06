@@ -65,6 +65,7 @@ import errno
 from socket import error as socket_error
 #import numpy
 from server_api import *
+import boto3
 
 
 
@@ -148,6 +149,12 @@ Handlers for starting/stoping the F1 instance.
 class StartFPGAHandler(ReqHandler):
     # Handles starting the FPGA server.
     def post(self):
+        # Get request parameters.
+        pwd = self.get_argument('pwd')
+        # Check password.
+        good_pwd = True  # TODO
+        # Start server
+        
         FPGAServerApplication.f1_ip = "100.100.100.100"
         self.write(json.dumps({"ip": FPGAServerApplication.f1_ip, "message": "Just testing"}))
 class StopFPGAHandler(ReqHandler):

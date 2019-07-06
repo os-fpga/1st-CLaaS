@@ -305,6 +305,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 	@echo $(VIVADO_VERSION_MESSAGE)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
 	@# Add user's kernel source code to project.
+	@mkdir -p ../out/sv  # Must exist for add_kernel.tcl
 	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr"
 	@# Replace the adder example code with the user's kernel (including inner shell logic).
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked

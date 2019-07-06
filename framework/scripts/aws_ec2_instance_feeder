@@ -1,0 +1,507 @@
+#!/bin/bash
+
+# BSD 3-Clause License
+# 
+# Copyright (c) 2019, Steven F. Hoover
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# 
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# 
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+# Overview:
+# --------
+#
+# This feeder script provides the illusion that it "feeds" an instance. The instance stops or terminates when
+# it starves (because at least one of its feeders failed to feed it regularly). Any software agent using the
+# instance must ensure that all of its feeders continue to feed the instance (by periodic calling this script
+# with the "feed" command). Of course, in reality, the feeder is responsible for stopping or terminating the instance
+# when not fed recently, not for feeding it, but feeding is the illusion.
+#
+# This approach is a safety measure to ensure that EC2 instances are not left running by agents that fail to
+# clean up after themselves. It also enables multiple agents to share an instance, and stops the instance only
+# when no agents are using it. To protect against faulty feeders, multiple feeders can be connected to the same
+# instance. Any agent that needs the instance must feed all connected feeders.
+#
+# This feeder is not responsible for starting instances, only for stopping/terminating them. The instance may be running
+# or stopped when the feeder is connected. While not fed recently, this script
+# will ensure that the instance is stopped/terminated. This script can be fed at anytime, at which point the instance
+# can be started immediately.
+#
+# The envisioned use model is a webserver providing content that offers access to F1 FPGAs. The FPGAs may be
+# shared by multiple users (or not). The webserver will connect a feeder, either up front for a static instance,
+# or dynamically, after creating instances for users. The instances can have their own feeders which are started
+# when the instance is started. The web client will repeatedly ping the content webserver and the FPGA webserver to
+# feed the feeders and keep the FPGA running.
+#
+# This script ignores SIGHUP, so it will continue running after exiting its shell.
+#
+#
+# Usage:
+# -----
+#
+# connect/own:
+#
+#   Associate a new feeder with an instance. This instance may be running or stopped. The feeder is implicity fed
+#   when connected.
+#
+#     > aws_ec2_instance_feeder connect <feeder-file> <instance-id> <starvation-time> [<profile>] &
+#
+#   Perform this action after starting the instance, and with periodic feeding either already enabled or to be
+#   immediately begun. Create a feeder file and begin monitoring it. This process is the "feeder process" and it
+#   continues to run until disconnected or dissociated (see below). After the initialization
+#   banner is displayed on stdout (unless $debug is set below) the feeder file is created (containing the PID of this process)
+#   and no more output goes to stdout until termination. Errors report to stderr and the script keeps running until explicitly
+#   terminated (ideally by disconnect/dissociate commands, as below). If ungracefully killed by a signal, or by pulling the plug, the
+#   instance may be left running (and hopefully another feeder will be able to stop/terminate it) and the feeder file may remain.
+#   This process intercepts common signals to delete the feeder file.
+#
+#   The distinction between connect and own is the starvation behavior:
+#      - Connect is for static  instances where the feeder is responsible for stopping    the instance on starvation.
+#      - Own     is for dynamic instances where the feeder is responsible for terminating the instance on starvation.
+#
+#   Note that this command will fail if the feeder file already exists. It is common for an instance to have its own feeder (running on the instance itself),
+#   in which case this process can be ungracefully killed when the instance is stopped (possibly by a different feeder). For
+#   this use case the feeder file must be deleted when the instance is started so its feeder can be successfully re-connected.
+#
+# feed:
+#
+#   The periodic feed action is:
+#
+#     > aws_ec2_instance_feeder feed
+#
+#   (which simply touches the feeder file with "touch -c"). This must be performed more frequently than the starvation time.
+#
+# disconnect/dissociate:
+#
+#   Terminate the feeder process with:
+#
+#     > aws_ec2_instance_feeder disconnect/dissociate <feeder-file>
+#
+#   "Disconnecting" the feeder starves (stops/terminates) the instance immediately, while "dissociate" does not (and the instance no longer needs
+#   to be fed by this feeder). The implementation of "disconnect"
+#   is to remove the file, and the feeder process immdiately detects this, stops/terminates the instance, and exits.
+#   The implementation of "dissociate" sends a SIGTERM to the feeder process, and the feeder process removes the feeder file,
+#   reports the instance's status, and exits. Dissociate is not used in any recommended use model.
+#   When the instance is no longer in use. The normal use model would be to "disconnect" it, ensuring that the instance is
+#   stopped/terminated.
+#
+# info:
+#
+#   The info command:
+#
+#     > aws_ec2_instance_feeder info [<feeder-file>]
+#
+#   provides useful information about active feeders such as:
+#     o if <feeder-file> is given:
+#       o whether the feeder process is still running
+#       o the last time the given feeder was fed
+#     o running feeder processes
+#
+#
+# A webserver might:
+#
+#  In the static case:
+#   - On webserver startup, connect feeder; on exit from webserver, disconnect feeder (and if it doesn't, the feeder
+#     is left running and the instance is still stopped).
+#   - GET request for the FPGA:
+#     - Feed instance.
+#     - Start instance.
+#     - Respond to client, who requests feeding immediately and repeatedly.
+#     - Feed instance again (maybe).
+#  In the dynamic single-user case:
+#   - GET request for an FPGA:
+#     - Create and start (perhaps optionally) a new FPGA instance.
+#     - "Own" feeder (implicitly feeding it).
+#     - Respond to client, who requests feeding immediately and repeatedly.
+#   - GET stop request (optional).
+#     - Stop and feed the instance (stop instance without terminating feeder). Note , the client must continue to feed it
+#       to prevent termination.
+#   - GET start request (optional).
+#     - Start instance
+#  In both cases:
+#   - GET feed request:
+#     - Feed instance. (It's okay if the instance is stopped, still feed.)
+#
+#
+# Command arguments are:
+#   <command>:         Connect/own/feed/starve/disconnect/dissociate/info:
+#   <feeder-file>:     File (relative to cwd) whose timestamp is touched by heartbeats to monitor. It is wise to reflect
+#                      the instance ID or description in this file name.
+#   <instance-id>:     e.g. "i-1234567890abcdef0"
+#   <starvation-time>: The amount of time since the last feeding after which to starve (stop/terminate) the instance (in seconds
+#                      as a whole number; 60 < time < 3600 makes sense).
+#   <profile>:         The aws profile (--profile arg for aws commands).
+#
+
+
+
+usage() {
+  script=$( basename "$0" )
+  echo "Usage: $script connect    <feeder-file> <instance-id> <starvation-time> [<profile>]"
+  echo "       $script own        <feeder-file> <instance-id> <starvation-time> [<profile>]"
+  echo "       $script feed       <feeder-file>"
+  echo "       $script starve     <feeder-file>"
+  echo "       $script disconnect <feeder-file>"
+  echo "       $script dissociate <feeder-file>"
+  echo "       $script info       [<feeder-file>]"
+  echo "       $script help"
+  exit 1
+}
+
+
+
+#
+# Parameters
+#
+
+debug=1
+watch_timeout=600  # Timeout for watching feeder file while instance is stopped. Several minutes is reasonable.
+                   # An AWS command will issue with each timeout, but it is pathologically/accidentally possible that
+                   # the instance is actually running, so don't set this too high.
+
+
+
+#
+# Handle all commands other than "connect"
+#
+
+cmd_arg=$1
+feeder_file=$2
+
+if [[ "$cmd_arg" == "disconnect" || "$cmd_arg" == "dissociate" || "$cmd_arg" == "starve" ]]
+then
+  # Disconnect by deleting the feeder file. Make sure it looks like a feeder file, to be safe.
+  if [[ -e "$feeder_file" ]]
+  then
+    if [[ "$cmd_arg" == "disconnect" ]]
+    then
+      rm -f $feeder_file
+    else
+      if [[ "$cmd_arg" == "dissociate" ]]
+      then
+        pid=$( cat "$feeder_file" )
+        if [[ $pid =~ ^[[:digit:]]+$ ]]
+        then
+          kill -s SIGTERM $pid
+          # SIGTERM will not be received until done waiting on the feeder file, so touch it (twice, since there's a race).
+          touch -c -r "$feeder_file" "$feeder_file" >& /dev/null
+          sleep 1
+          touch -c -r "$feeder_file" "$feeder_file" >& /dev/null
+        else
+          >&2 echo "$feeder_file doesn't look like a feeder file."
+          exit 1
+        fi
+      else
+        # Starve
+        # Set file timestamp to be starved.
+        sec=$(( $starvation_time + 1 )); touch -c -d "$sec seconds ago" "$feeder_file"
+      fi
+    fi
+    exit 0
+  else
+    >&2 echo "$feeder_file does not exist."
+    exit 1
+  fi
+fi
+
+if [[ "$cmd_arg" == "feed" ]]
+then
+  # Touch the file if it exists. (It's okay to feed before creating the feeder, so it's okay if the file doesn't exist yet.)
+  touch -c "$feeder_file"
+  exit 0
+fi
+
+if [[ "$cmd_arg" == "info" ]]
+then
+  # If a feeder file is given, report info about it.
+  if [[ -n "$feeder_file" ]]
+  then
+    if [[ -e "$feeder_file" ]]
+    then
+      # Report if the process is still running.
+      pid=$( cat "$feeder_file" )
+      if ps -q "$pid" 2>&1 > /dev/null
+      then
+        echo "The feeder process is still running."
+      else
+        echo "The feeder process is no longer running."
+      fi
+      # Report the age of the feeder file (last feed).
+      echo "It last fed "$(($(date +%s) - $(date +%s -r "$feeder_file")))" seconds ago."
+    else
+      echo "$feeder_file not found."
+    fi
+  fi
+  # Look for processes running this command.
+  echo "All feeder processes (if any) (each feed can have a duplicate process):"
+  ps --no-headers -eo pid,command | grep $( basename $0 ) | grep -v grep | grep -v "$( basename $0 ) info"
+  
+  exit 0
+fi
+  
+# Command must be "connect" or "own".
+
+if [[ "$cmd_arg" != "connect" && "$cmd_arg" != "own" ]]
+then
+  if [[ "$cmd_arg" != "help" ]]
+  then
+    >&2 echo "Illegal command argument: $cmd_arg"
+  fi
+  usage
+  exit 1
+fi
+
+
+
+#
+# Process args
+#
+
+if [[ $# != 4 && $# != 5 ]]
+then
+  usage
+fi
+
+if [[ "$cmd_rg" == "own" ]]
+then
+  starve_action="terminate"
+  starve_state_pattern="(terminated|shutting-down)"
+else
+  starve_action="stop"
+  starve_state_pattern="(stopped|stopping)"
+fi
+inst_id=$3
+starvation_time=$4
+profile=$5
+
+
+
+#
+# Interpret arguments.
+#
+
+# Determine starvation time in hours.
+starvation_time_hrs=$( echo "scale=6; $starvation_time / 60 / 60 / 24" | bc || ( >&2 echo "Failed to compute starvation time in hours." && exit ) )
+# Determine $poll_freq: how often to poll the file (in seconds). Determined as 1/3 of the starvation time (rounded up to nearest second).
+poll_freq=$( echo "( $starvation_time + 2 ) / 3" | bc || ( >&2 echo "Failed to compute poll frequency." && exit ) )
+if [[ -n "$profile" ]]
+then
+  profile_arg="--profile $profile"
+else
+  profile_arg=""
+fi
+
+
+
+#
+# Make sure aws commands will work.
+#
+
+starve_cmd="aws ec2 ${starve_action}-instances $profile_arg --output text --instance-ids $inst_id "
+
+# Validate the instance.
+get_current_state() {
+  current_state=$( aws ec2 describe-instance-status $profile_arg --output text --include-all-instances --instance-ids $inst_id | grep INSTANCESTATE )
+}
+
+get_current_state
+
+if [[ ! -n "$current_state" ]]
+then
+  >&2 echo "Failed to acquire status of instance."
+  exit 1
+else
+  >&2 echo "Current state of instance: $current_state"
+fi
+
+# Make sure the stop command will work.
+( $starve_cmd --dry-run |& grep 'would have succeeded' >& /dev/null) || ( echo "Unable to stop instance $inst_id. Make sure your profile is authorized." && echo "To debug, this command might be useful: $starve_cmd --dry-run" && exit 1 )
+
+
+
+#
+# Trap handling
+#
+
+# Do not terminate this process when its shell is exited.
+sighup_handler() {
+  echo "SIGHUP"
+  >& echo "Ignoring SIGHUP"
+}
+trap sighup_handler SIGHUP
+
+# Ctrl-C should delete the file to exit gracefully.
+sigint_handler() {
+  echo "SIGINT"
+  rm $feeder_file
+}
+trap sigint_handler SIGINT
+
+# Just exit
+trap 'exit 1' SIGUSR1
+
+# Temporarily
+trap 'exit 1' SIGKILL SIGTERM
+# Forcible traps will delete the file and exit immediately, reporting the instance state.
+#trap 'get_current_state && echo $current_state && if [[ "$current_state" =~ stopp ]]; then exit 0; else exit 2; fi' SIGKILL SIGTERM
+
+
+
+# A rare condition was encountered
+#  $1: Description.
+rare_condition() {
+  if [[ $debug == 1 ]]
+  then
+    >&2 echo "Rare condition: $1"
+    (( rare_cnt++ ))
+    if [[ $debug == 1 && $rare_cnt -gt 1000 ]]
+    then
+      >&2 echo "Hit a rare condition too many time. Exiting."
+      exit 1
+    fi
+  fi
+}
+
+# If the feeder file exists, wait for a given number of seconds, or until the feeder file is touched.
+# Return status is meaningless.
+wait_on_feeder() {
+  if [[ -e "$feeder_file" ]]
+  then
+    inotifywait -q -q -t $1 "$feeder_file" &> /dev/null
+    if [[ $? != 0 && $? != 2 ]]  # Not touhed or timedout.
+    then
+      # Could be that file was deleted just prior to inotifywait, which should cause exit.
+      rare_condition 'inotifywait failed'
+    fi
+  fi
+}
+# Determine if the instance is fed (vs. starved).
+is_fed() {
+  ( tmp="$( find $feeder_file -mtime -$starvation_time_hrs )" && [[ -n "$tmp" ]] ) &> /dev/null
+}
+
+rare_cnt=0  # A count of rare events. If this gets too high, exit if $debug.
+
+
+# ======================================================================================================
+# Up to this point, we've done no harm. From this point on, we must be careful monitoring doesn't fail and we start/exit gracefully,
+# without inadvertently leaving the instance running.
+
+
+#
+# Create feeder file
+#
+
+
+# Create feeder file.
+if ! (set -o noclobber; echo $$ > "$feeder_file" ) &> /dev/null
+then
+  >&2 echo "feeder file \"$feeder_file\" already exists."
+  exit 1
+fi
+
+echo
+echo "-------------------------------------------------------------------------------"
+echo "Instance $inst_id is tied to the file $feeder_file."
+echo "This instance will only be allowed to continue running as long as this file"
+echo "is touched at least every $starvation_time seconds (polled every $poll_freq seconds)".
+echo "Terminate this script cleanly (stopping the instance) by removing $feeder_file".
+echo "-------------------------------------------------------------------------------"
+echo
+
+
+#
+# Monitor
+#
+
+# Poll the feeder file, stopping the instance and keeping it stopped when/while the file is starved, and exiting only if the file is deleted.
+
+while true
+do
+
+  # Poll feeder file continuously until it is starved.
+  
+  [[ $debug == 0 ]] || printf "Polling for starvation: "
+  while ( wait_on_feeder $poll_freq; is_fed )
+  do
+    [[ $debug == 0 ]] || printf '.'
+  done
+  [[ $debug == 0 ]] || (echo && echo "$feeder_file is starved. Stopping $inst_id.")
+  
+  
+  # Make sure the file remains starved. This avoids a race condition that allows the file to be touched and the instance started.
+  # Without this check, this script could stop the instance immediately after it is started.
+  if ( wait_on_feeder 2; ! is_fed )
+  then
+    
+    
+    # Stop instance (even if it is already stopped), and check success.
+    
+    current_state=$( $starve_cmd | grep CURRENTSTATE )
+    if [[ ! $current_state =~ $starve_state_pattern ]]
+    then
+      # Failed to stop/terminate instance.
+      
+      if [[ ! -n $current_state ]]
+      then
+        >&2 echo "${starve_action}-instance command failed."
+      else
+        >&2 echo "${starve_action} command failed to enter '${starve_state_pattern}' state. Got: $current_state"
+      fi
+      
+      # Allow script to continue polling and try again to see if the problem clears up, but let's make sure we delay before trying again.
+      # There will be a poll delay as long as the file exists, but if it was deleted, there will be no delay.
+      # Let's make sure there is some delay here in either case, as an added safety measure against in infinite busy loop.
+      if [[ -e "$feeder_file" ]]
+      then
+        # We'll be doing the poll wait anyway, but just as a precaution:
+        wait_on_feeder 3
+      else
+        rare_condition
+        sleep 5
+        # Note that while sleeping the script is not responsive to signals, but this is an error scenario anyway.
+      fi
+      
+    else
+      # Instance has been stopped/terminated (or is stopping/shutting-down).
+    
+      # If file was deleted, exit.
+      if [[ ! -e "$feeder_file" ]]
+      then
+        echo "File $feeder_file was deleted. Instance $inst_id is $starve_state_pattern."
+        echo "Exiting gracefully and relinquishing responsibility for instance."
+        exit 0
+      fi
+      
+      # Wait until file is touched again (indicating that instance may have been started) (or timeout after -t seconds, just in case we miss it or weren't informed).
+      [[ $debug == 0 ]] || echo "Watching file $feeder_file"
+      wait_on_feeder $watch_timeout
+    fi
+  else
+    >&2 echo "Info: Fed in the nick of time."
+  fi
+  
+done
