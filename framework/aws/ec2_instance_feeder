@@ -67,7 +67,7 @@
 #   Associate a new feeder with an instance. This instance may be running or stopped. The feeder is implicity fed
 #   when connected.
 #
-#     > aws_ec2_instance_feeder connect <feeder-file> <instance-id> <starvation-time> [<profile>] &
+#     > ec2_instance_feeder connect <feeder-file> <instance-id> <starvation-time> [<profile>] &
 #
 #   Perform this action after starting the instance, and with periodic feeding either already enabled or to be
 #   immediately begun. Create a feeder file and begin monitoring it. This process is the "feeder process" and it
@@ -90,7 +90,7 @@
 #
 #   The periodic feed action is:
 #
-#     > aws_ec2_instance_feeder feed
+#     > ec2_instance_feeder feed
 #
 #   (which simply touches the feeder file with "touch -c"). This must be performed more frequently than the starvation time.
 #
@@ -98,7 +98,7 @@
 #
 #   Terminate the feeder process with:
 #
-#     > aws_ec2_instance_feeder disconnect/dissociate <feeder-file>
+#     > ec2_instance_feeder disconnect/dissociate <feeder-file>
 #
 #   "Disconnecting" the feeder starves (stops/terminates) the instance immediately, while "dissociate" does not (and the instance no longer needs
 #   to be fed by this feeder). The implementation of "disconnect"
@@ -112,7 +112,7 @@
 #
 #   The info command:
 #
-#     > aws_ec2_instance_feeder info [<feeder-file>]
+#     > ec2_instance_feeder info [<feeder-file>]
 #
 #   provides useful information about active feeders such as:
 #     o if <feeder-file> is given:
@@ -353,20 +353,20 @@ sighup_handler() {
 }
 trap sighup_handler SIGHUP
 
-# Ctrl-C should delete the file to exit gracefully.
+# Ctrl-C deletes the file to result in a graceful exit.
 sigint_handler() {
   echo "SIGINT"
   rm $feeder_file
 }
 trap sigint_handler SIGINT
 
-# Just exit
+# Just exit (undocumented behavior)
 trap 'exit 1' SIGUSR1
 
-# Temporarily
-trap 'exit 1' SIGKILL SIGTERM
+#-# Temporarily
+#-trap 'exit 1' SIGKILL SIGTERM
 # Forcible traps will delete the file and exit immediately, reporting the instance state.
-#trap 'get_current_state && echo $current_state && if [[ "$current_state" =~ stopp ]]; then exit 0; else exit 2; fi' SIGKILL SIGTERM
+trap 'get_current_state && echo $current_state && if [[ "$current_state" =~ stopp ]]; then exit 0; else exit 2; fi' SIGKILL SIGTERM
 
 
 

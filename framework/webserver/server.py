@@ -173,6 +173,8 @@ class FPGAServerApplication(tornado.web.Application):
     def defaultContentRoutes(incl = {"dummy"}):
         dir = os.getcwd() + "/../webserver"
         mydir = os.path.dirname(__file__)
+        if mydir == "":
+            mydir = "."
         routes = [
               (r"/framework/js/(.*)", BasicFileHandler, {"path": mydir + "/js"}),
               (r"/framework/css/(.*)", BasicFileHandler, {"path": mydir + "/css"}),
