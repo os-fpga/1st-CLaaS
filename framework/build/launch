@@ -121,7 +121,7 @@ then
 fi
 
 fail () {
-    echo $1
+    echo "launch: $1"
     exit 1
 }
 
@@ -134,7 +134,7 @@ launch () {
   then
     if [[ $TARGET = "sw" ]];
     then
-        #echo "launching host sw"
+        #echo "launch: Launching host sw"
         $HOST &
     else
         sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
@@ -160,13 +160,13 @@ launch () {
   export SERVER_PID=$!
 
   # Create a script to teardown the application by sending SIGINT to this process.
-  echo "kill $$" > killme
+  echo "launch: kill $$" > killme
 }
 
 # Tear down.
 teardown () {
   # Kill child processes
-  echo "Killing web server and host application."
+  echo "launch: Killing web server and host application."
   if [[ $TARGET = "sw" ]];
   then
     if [[ $HOST_PID != "" ]]
@@ -180,7 +180,7 @@ teardown () {
     HOST_PID2=`ps --ppid $HOST_PID -o pid=`
     HOST_PID3=`ps --ppid $HOST_PID2 -o pid=`
     SERVER_PID2=`ps --ppid $SERVER_PID -o pid=`
-    echo "Killing PIDs: ($HOST_PID>$HOST_PID2>)$HOST_PID3 ($SERVER_PID>)$SERVER_PID2"
+    echo "launch: Killing PIDs: ($HOST_PID>$HOST_PID2>)$HOST_PID3 ($SERVER_PID>)$SERVER_PID2"
     ps --pid $HOST_PID --pid $HOST_PID2 --pid $HOST_PID3 --pid $SERVER_PID --pid $SERVER_PID2
     #sudo kill -9 $HOST_PID2
     sudo kill -9 $HOST_PID3
@@ -190,30 +190,34 @@ teardown () {
   # Done with "killme" script, created by this script.
   # This script might currently be in use, but it seems to be okay to delete it?
   rm killme
+  
+  # Wait for child processes to finish first (to avoid output after exit)
+  wait $HOST_PID >& /dev/null
+  wait $SERVER_PID >& /dev/null
 }
 
 # Kill signal handler.
 finish () {
-  echo "finish()"
+  echo "launch: Tearing down."
   teardown
-  echo "Killed host app and web server"
+  echo "launch: Killed host app and web server"
   DONE=1
 }
 
 
 # SIGUSR1 signal invokes this to pull the latest repository and re-launch.
 upgrade () {
-  echo "Upgrade"
+  echo "launch: Upgrade"
   # Return if there are no changes in master.
   git pull origin master
   OUT=`git status`
   if ! [[ $OUT =~ Your\ branch\ is\ behind ]] ; then
-    echo "Up to date with master."
+    echo "launch: Up to date with master."
   else
-    echo "Pulled changes. Updating submodules."
+    echo "launch: Pulled changes. Updating submodules."
     git submodule update --init --recursive
 
-    echo "Re-launching web server."
+    echo "launch: Re-launching web server."
     # Kill children.
     teardown
 
@@ -221,7 +225,7 @@ upgrade () {
     bash -c "$COMPILE_CMD" || fail "Compilation for Mandelbrot failed."
 
     # Re-launch.
-    echo "Re-launching web server"
+    echo "launch: Re-launching web server"
     exec $SCRIPT_CMD
   fi
 }
@@ -236,4 +240,4 @@ while [ $DONE -le 0 ] ; do
   sleep 2
 done
 
-echo "[launch script] Done."
+echo "launch: Done."

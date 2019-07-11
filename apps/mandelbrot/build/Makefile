@@ -8,5 +8,12 @@ HW_SHELL_CONFIG_JSON=../../../framework/fpga/default_shell_config.json
 
 KERNEL=mandelbrot
 
+LAUNCH_APP_ARGS :=
+ifdef INSTANCE
+  LAUNCH_APP_ARGS :=$(LAUNCH_APP_ARGS) -I $(INSTANCE)
+endif
+ifdef PROFILE
+  LAUNCH_APP_ARGS :=$(LAUNCH_APP_ARGS) -P $(PROFILE)
+endif
 
 include ../../../framework/build/Makefile

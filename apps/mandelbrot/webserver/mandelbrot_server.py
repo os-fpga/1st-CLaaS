@@ -304,6 +304,25 @@ class ObserveImageHandler(ImageHandler):
 MAIN APPLICATION
 """
 class MandelbrotApplication(FPGAServerApplication):
+    
+    def getRoutes(self):
+        # Webserver
+        routes = self.defaultContentRoutes()
+        routes.extend(
+            [ (r"/redeploy", RedeployHandler),
+              #(r'/hw', GetRequestHandler),
+              (r'/(img)', ImageHandler),
+              (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
+              (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
+            ])
+        return routes
+
+    def __init__(self, port, instance, profile):
+        if instance:
+            self.associateEC2Instance(instance, profile)
+        super(MandelbrotApplication, self).__init__(port)
+        
+    
     """
     Get an image from the appropriate renderer (as requested/available).
     """
@@ -327,25 +346,22 @@ if __name__ == "__main__":
     # Command-line options
 
     port = 8888
+    instance = None
+    profile = None
     try:
-        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port="])
+        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "profile="])
     except getopt.GetoptError:
-        print 'Usage: %s --port #' % (sys.argv[0])
+        print 'Usage: %s [--port #] [--instance i-#] [--profile <aws-profile>]' % (sys.argv[0])
         sys.exit(2)
     for opt, arg in opts:
         if opt == '--port':
             port = int(arg)
-
-    # Webserver
-    routes = FPGAServerApplication.defaultContentRoutes({"start_stop_fpga"})
-    routes.extend(
-        [ (r"/redeploy", RedeployHandler),
-          #(r'/hw', GetRequestHandler),
-          (r'/(img)', ImageHandler),
-          (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
-          (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
-        ])
+        if opt == '--instance':
+            instance = arg
+        if opt == '--profile':
+            profile = arg
     application = MandelbrotApplication(
-            routes,
-            port
+            port,
+            instance,
+            profile
         )

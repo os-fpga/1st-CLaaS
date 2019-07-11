@@ -32,11 +32,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 This mini webserver provides a REST API to feed an ec2_instance_feeder.
+(There is similar support built into server.py.)
 
 
 Usage:
 
-  python ec2_instance_feeder_server.py <feeder-file> <port> &
+  nohup python ec2_instance_feeder_server.py <feeder-file> <port> &
+  
+  (Nohup ensures that the service continues running after its shell is closed.)
 
 API:
 
@@ -70,10 +73,10 @@ class FeedHandler(tornado.web.RequestHandler):
     def get(self):
         status = 0
         args = [FeederApplication.mydir + "/ec2_instance_feeder", "feed", FeederApplication.feeder_file]
-        out = "Error: " + ' '.join(args)
         try:
             out = subprocess.check_output(args)
         except:
+            out = "Error: " + ' '.join(args)
             status = 1
         print "Feeding returned: %s" % (out)
         self.write(str(status))

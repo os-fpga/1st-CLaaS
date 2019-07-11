@@ -67,12 +67,13 @@
 #   Associate a new feeder with an instance. This instance may be running or stopped. The feeder is implicity fed
 #   when connected.
 #
-#     > ec2_instance_feeder connect <feeder-file> <instance-id> <starvation-time> [<profile>] &
+#     > ec2_instance_feeder connect <feeder-file> <starvation-time> [<profile>] &
 #
-#   Perform this action after starting the instance, and with periodic feeding either already enabled or to be
-#   immediately begun. Create a feeder file and begin monitoring it. This process is the "feeder process" and it
+#   Run this command after starting the instance, and with periodic feeding either already enabled or to be
+#   immediately begun. Creates a feeder file whose timestamp to monitor (containing the PID of this process). The feeder file name
+#   must be the instance ID (e.g. "i-12334567890abcdef0") to stop when starved. This process is the "feeder process" and it
 #   continues to run until disconnected or dissociated (see below). After the initialization
-#   banner is displayed on stdout (unless $debug is set below) the feeder file is created (containing the PID of this process)
+#   banner is displayed on stdout (unless $debug is set below) the feeder file is created
 #   and no more output goes to stdout until termination. Errors report to stderr and the script keeps running until explicitly
 #   terminated (ideally by disconnect/dissociate commands, as below). If ungracefully killed by a signal, or by pulling the plug, the
 #   instance may be left running (and hopefully another feeder will be able to stop/terminate it) and the feeder file may remain.
@@ -148,9 +149,8 @@
 #
 # Command arguments are:
 #   <command>:         Connect/own/feed/starve/disconnect/dissociate/info:
-#   <feeder-file>:     File (relative to cwd) whose timestamp is touched by heartbeats to monitor. It is wise to reflect
-#                      the instance ID or description in this file name.
-#   <instance-id>:     e.g. "i-1234567890abcdef0"
+#   <feeder-file>:     File (absolute or relative to cwd) whose timestamp to monitor. The filename must be the
+#                      instance ID (e.g. "i-1234567890abcdef0").
 #   <starvation-time>: The amount of time since the last feeding after which to starve (stop/terminate) the instance (in seconds
 #                      as a whole number; 60 < time < 3600 makes sense).
 #   <profile>:         The aws profile (--profile arg for aws commands).
@@ -160,8 +160,8 @@
 
 usage() {
   script=$( basename "$0" )
-  echo "Usage: $script connect    <feeder-file> <instance-id> <starvation-time> [<profile>]"
-  echo "       $script own        <feeder-file> <instance-id> <starvation-time> [<profile>]"
+  echo "Usage: $script connect    <feeder-file> <starvation-time> [<profile>]"
+  echo "       $script own        <feeder-file> <starvation-time> [<profile>]"
   echo "       $script feed       <feeder-file>"
   echo "       $script starve     <feeder-file>"
   echo "       $script disconnect <feeder-file>"
@@ -190,6 +190,7 @@ watch_timeout=600  # Timeout for watching feeder file while instance is stopped.
 
 cmd_arg=$1
 feeder_file=$2
+inst_id=$( basename "$feederfile")
 
 if [[ "$cmd_arg" == "disconnect" || "$cmd_arg" == "dissociate" || "$cmd_arg" == "starve" ]]
 then
@@ -205,7 +206,7 @@ then
         pid=$( cat "$feeder_file" )
         if [[ $pid =~ ^[[:digit:]]+$ ]]
         then
-          kill -s SIGTERM $pid
+          kill $pid
           # SIGTERM will not be received until done waiting on the feeder file, so touch it (twice, since there's a race).
           touch -c -r "$feeder_file" "$feeder_file" >& /dev/null
           sleep 1
@@ -280,7 +281,7 @@ fi
 # Process args
 #
 
-if [[ $# != 4 && $# != 5 ]]
+if [[ $# != 3 && $# != 4 ]]
 then
   usage
 fi
@@ -293,9 +294,8 @@ else
   starve_action="stop"
   starve_state_pattern="(stopped|stopping)"
 fi
-inst_id=$3
-starvation_time=$4
-profile=$5
+starvation_time=$3
+profile=$4
 
 
 
@@ -325,10 +325,10 @@ starve_cmd="aws ec2 ${starve_action}-instances $profile_arg --output text --inst
 # Validate the instance.
 get_current_state() {
   current_state=$( aws ec2 describe-instance-status $profile_arg --output text --include-all-instances --instance-ids $inst_id | grep INSTANCESTATE )
+  exit 1
 }
 
 get_current_state
-
 if [[ ! -n "$current_state" ]]
 then
   >&2 echo "Failed to acquire status of instance."
@@ -355,18 +355,16 @@ trap sighup_handler SIGHUP
 
 # Ctrl-C deletes the file to result in a graceful exit.
 sigint_handler() {
-  echo "SIGINT"
+  echo "SIGINT/SIGQUIT"
   rm $feeder_file
 }
-trap sigint_handler SIGINT
+trap sigint_handler SIGINT SIGQUIT
 
 # Just exit (undocumented behavior)
 trap 'exit 1' SIGUSR1
 
-#-# Temporarily
-#-trap 'exit 1' SIGKILL SIGTERM
 # Forcible traps will delete the file and exit immediately, reporting the instance state.
-trap 'get_current_state && echo $current_state && if [[ "$current_state" =~ stopp ]]; then exit 0; else exit 2; fi' SIGKILL SIGTERM
+trap 'get_current_state && echo $current_state && if [[ "$current_state" =~ stopp ]]; then exit 0; else exit 2; fi' SIGTERM
 
 
 
@@ -417,11 +415,18 @@ rare_cnt=0  # A count of rare events. If this gets too high, exit if $debug.
 
 
 # Create feeder file.
-if ! (set -o noclobber; echo $$ > "$feeder_file" ) &> /dev/null
+if [[ -e "$feederr_file" ]]
 then
   >&2 echo "feeder file \"$feeder_file\" already exists."
   exit 1
+else
+  if ! (set -o noclobber; echo $$ > "$feeder_file" ) &> /dev/null
+  then
+    >&2 echo "Cannot create feeder file \"$feeder_file\"."
+    exit 1
+  fi
 fi
+
 
 echo
 echo "-------------------------------------------------------------------------------"

@@ -40,15 +40,14 @@ In a given cycle, these signals relate to the same data transfer, where:
 
 # Development Using this Framework
 
-Any means of delivering this kernel can be utilized, but we are partial to developing with TL-Verilog in Makerchip.
+Any means of delivering this kernel can be utilized, but we are partial to developing with TL-Verilog in  [Makerchip](https://makerchip.com/) IDE.
 
 
 ## Makerchip and TL-Verilog
 
-The Mandelbrot set accelerator has been developed in the [Makerchip](https://makerchip.com/) IDE using the TL-Verilog language extension. You can copy into Makerchip, or use this link to
-[open the design in makerchip](http://www.makerchip.com/sandbox?code_url=https:%2F%2Fraw.githubusercontent.com%2Falessandrocomodi%2Ffpga-webserver%2Fmaster%2Fapps%2Fmandelbrot%2Ffpga%2Fmandelbrot.tlv).
-After the kernel has been designed in Makerchip we retrieved the Verilog files by clicking on "E" -> "Open Results" in the Editor tab. From the new browser tab the files that host the Verilog code are called "top.sv" and "top_gen.sv".
-The content of these files has to be copied and pasted inside of the file "mandelbrot_example_adder.sv" found in the "fpga/imports" folder.
+You can copy `.tlv` code into Makerchip and copy back when finished. The Makefile will compile this into Verilog/SystemVerilog using
+Redwood EDA's SandPiper(TM) SaaS edition running as a cloud service. (This link opens the
+<a href="http://www.makerchip.com/sandbox?code_url=https:%2F%2Fraw.githubusercontent.com%2Falessandrocomodi%2Ffpga-webserver%2Fmaster%2Fapps%2Fmandelbrot%2Ffpga%2Fsrc%2Fmandelbrot_kernel.tlv" target="_blank">latest Mandelbrot Kernel from GitHub in the Makerchip IDE</a>.
 
 A WIP library of generic TL-Verilog components which mostly utilize the ready/avail interface protocol can be found <a href="https://github.com/stevehoover/tlv_flow_lib" target="_blank">here</a>.
 
