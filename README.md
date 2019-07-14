@@ -1,3 +1,5 @@
+# *Accelerating the Web*
+
 # About this Document
 
 This document provides an overview of the project. After reading this, please continue with:
@@ -10,11 +12,13 @@ This document provides an overview of the project. After reading this, please co
 
 # FPGA-Webserver Project Overview
 
-The availability of FPGAs in the data center/cloud enables very exciting compute models for accelerated, distributed applications. Prior to this project, developing such an application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer. This project aims to make cloud FPGAs much more accessible for students, start-ups, and everyone.
+In case you are not familiar with FPGAs (Field-Programmable Gate Arrays), these are chips with programmable circuitry. Rather than spending millions of dollars to fabricate a custom chip (or ASIC -- Application-Specific Integrated Circuit), you can program your custom logic onto an FPGA almost instantly. While ASICs can be more deeply optimized, FPGAs are far more accessible, and now they are even available in the cloud.
+
+Having FPGAs in the data center/cloud enables very exciting compute models for accelerated, distributed applications. But these platforms have not been easy to use. Prior to this project, developing such an application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer. This project aims to make cloud FPGAs much more accessible for students, start-ups, and everyone.
 
 This project provides the communication layer that enables web applications or distributed cloud applications to stream data to and from custom hardware logic running on FPGAs in the data center using standard web protocols. Developers need only provide the web application and the hardware kernel and need not worry about how the bits get from one to the other.
 
-With an emphasis on simplicity, the hardware kernel utilizes a simple streaming interface, which is simpler than a memory interface, and for some applications, more appropriate. This approach is often ideal for logic that is compute-intensive, but does not require a large memory footprint. If desired, modifications can be made to the webserver and/or C++/OpenCL application through which data passes to support more sophisticated architectures, but in the simplest scenario, this is not necessary, and for many applications, not justified.
+With an emphasis on simplicity, the hardware kernel utilizes a simple streaming interface, which is simpler than a memory interface, and for some applications, more appropriate. This approach is often ideal for logic that is compute-intensive, but does not require a large memory footprint. If desired, modifications can be made to the webserver and/or C++/OpenCL application through which data passes to support more sophisticated architectures, but in the simplest scenario and for many real scenarios, this is not necessary.
 
 Possible application domains might include:
 

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Run Terraform.
+
+# Usage: $0 <action> <framework-tfvars> <app-tfvars>
+#  <action>:           apply/destroy
+#  <framework-tfvars>: A list of <arg>.tfvars files to use relative to framework/terraform/deployment directory (this directory). Should include c4 or f1.
+#  <app-tfvars>:       A list of <arg>.tfvars files to ues relative to current directory.
+
+action=$1
+framework_tfvars=$2
+app_tfvars=$3
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+CWD="$(pwd)"
+cd "$THIS_DIR"
+
+if [[ $action != 'apply' && $action != 'destroy' ]]
+then
+  echo "$0: Error: Invalid Terraform action: $action"
+	exit 1
+fi
+
+args=""
+for framework_var_file_base in $framework_tfvars
+do
+	args="$args -var-file=$framework_var_file_base.tfvars"
+done
+for app_var_file_base in $app_tfvars
+do
+  args="$args -var-file=$CWD/$app_var_file_base.tfvars"
+done
+
+../../../terraform/terraform init && ../../../terraform/terraform $action -auto-approve$args
