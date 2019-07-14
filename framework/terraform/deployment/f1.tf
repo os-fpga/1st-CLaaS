@@ -22,6 +22,10 @@ variable "instance_type" {
   type = string
 }
 
+variable "region" {
+  type = string
+}
+
 variable "delete_storage_on_destroy" {
   type = bool
 }
@@ -43,7 +47,7 @@ resource "aws_key_pair" "generated_key" {
 }
 
 provider "aws" {
-  region                  = "eu-west-1"
+  region                  = "${var.region}"
   access_key              = "${var.aws_access_key_id}"
   secret_key              = "${var.aws_secret_access_key}"
 }
@@ -132,6 +136,22 @@ resource "aws_instance" "fpga_f1" {
         "source ${var.app_launch_script}",
         "sleep 1",
       ]
+    }
+
+    provisioner "local-exec" {
+     command ="echo \"${tls_private_key.temp.private_key_pem}\" > private_key.pem"    
+    }
+
+    provisioner "local-exec" {
+     command ="chmod 600 private_key.pem"    
+    }
+
+    provisioner "local-exec" {
+     command ="echo \"${tls_private_key.temp.public_key_pem}\" > public_key.pem"    
+    }
+
+    provisioner "local-exec" {
+     command ="chmod 600 public_key.pem"    
     }
 }
 
