@@ -22,7 +22,7 @@ if [[ -d $FPGA_WEBSERVER_DIR ]]; then
 	git pull
 else
 	echo "Cloning FPGA-WEBSERVER"
-	git clone -b terraform-devel https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
+	git clone https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
 	echo "Sourcing init"
 	source $FPGA_WEBSERVER_DIR/init
 fi

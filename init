@@ -17,7 +17,7 @@ then
   sudo apt-get -y install make g++ python python-pip python-pil python-tornado python-imaging inotify-tools
 elif [[ -n "$(which yum)" ]]
 then
-  sudo yum -y install make g++ python python-pip python-pil python-tornado python-imaging inotify-tools
+  sudo yum -y install make g++ python python-pip python-pil python-tornado python-imaging inotify-tools  # TODO: on AWS EC2 centos machines, no g++ and python-pil.
 fi
 
 

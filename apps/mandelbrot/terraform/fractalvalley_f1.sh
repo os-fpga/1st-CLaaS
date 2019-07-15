@@ -6,7 +6,7 @@
 #   Run from this directory as:
 #   $0 <command> [<aws-credentials-tfvars-file>]
 #       <command>: apply/destroy
-#       <aws-credentials-tfvars-file>: relative/absolute path to file containing Terraform variables for AWS credentials. Prompted if omitted.
+#       <aws-credentials-tfvars-file>: relative/absolute path to file containing Terraform variables for AWS credentials WITHOUT FILE EXTENSION. Prompted if omitted.
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
