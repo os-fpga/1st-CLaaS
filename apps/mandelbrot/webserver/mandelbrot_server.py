@@ -317,9 +317,9 @@ class MandelbrotApplication(FPGAServerApplication):
             ])
         return routes
 
-    def __init__(self, port, instance, profile):
+    def __init__(self, port, instance, timeout, profile):
         if instance:
-            self.associateEC2Instance(instance, profile)
+            self.associateEC2Instance(instance, timeout, profile)
         super(MandelbrotApplication, self).__init__(port)
         
     
@@ -347,21 +347,25 @@ if __name__ == "__main__":
 
     port = 8888
     instance = None
+    ec2_feeder_timeout = 120
     profile = None
     try:
-        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "profile="])
+        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_feeder_timeout=", "profile="])
     except getopt.GetoptError:
-        print 'Usage: %s [--port #] [--instance i-#] [--profile <aws-profile>]' % (sys.argv[0])
+        print 'Usage: %s [--port #] [--instance i-#] [--ec2_feeder_timeout] [--profile <aws-profile>]' % (sys.argv[0])
         sys.exit(2)
     for opt, arg in opts:
         if opt == '--port':
             port = int(arg)
         if opt == '--instance':
             instance = arg
+        if opt == '--ec2_feeder_timeout':
+            ec2_feeder_timeout = arg
         if opt == '--profile':
             profile = arg
     application = MandelbrotApplication(
             port,
             instance,
+            ec2_feeder_timeout,
             profile
         )

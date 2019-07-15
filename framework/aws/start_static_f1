@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# This script support the usage model where an F1 webserver instance is statically created, but dynamically started for a website.
+# It is run on the content webserver (non-F1) to start the F1 webserver.
+# It:
+#  - starts the instance
+#  - waits for it to be running
+#  - runs the given commands via ssh on the F1 instance (presumably to start the webserver and "self-feeder").
+
+
+# This script can start an EC2 instance and two feeders--one local, and one on the instance itself.
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR=`dirname "${SCRIPT_PATH}"`
+cd "$SCRIPT_DIR"
+
+
+if [[ $# != 3 ]]
+then
+  echo "Usage: $0 <local-feeder-file> <feeder-timeout-sec> <ssh-key-file> <remote-startup-cmd> [<aws-profile-name>]"
+  exit
+fi
+
+
+feeder_file="$1"
+inst_id=$( basename "$feederfile")
+feeder_timeout_sed="$2"
+ssh_pub_key_file="$3"
+startup_cmd="$4"
+profile="$5"
+
+if [[ ! -e "$ssh_pub_key_file" ]]
+then
+  echo "SSH public key file '$ssh_pub_key_file' does not exist." >&2
+  exit 1
+fi
+
+# Start the instance
+aws ec2 start-instances --output text "$inst_id" | grep 'INSTANCESTATE' || exit 1
+
+# Wait for the instance to be running. This polls every 15 sec. TODO: It would be nice to poll more frequently.
+aws ec2 instance-running --instance-ids "$inst_id"
+
+# Get IP address of instance.
+IP=$(aws ec2 describe-instances --query "Reservations[*].Instances[*].PublicIpAddress" --output=text --instance-ids "$inst_id")
+if [[ ! $IP =~ [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ ]]
+then
+  echo "$0 failed to determine IP address of instance '$inst_id'. Got '$IP'." >&2
+  exit 1
+fi
+
+# Runs commands via ssh to start the webserver and feeder on the F1 instance.
+ssh -i "$ssh_pub_key_file" "centos@$IP" "$startup_cmd"

@@ -20,15 +20,6 @@ then
   sudo yum -y install make g++ python python-pip python-pil python-tornado python-imaging inotify-tools
 fi
 
-# Download Terraform
-if [[ ! -d terrafrom ]]; then
-	mkdir terraform
-	wget https://releases.hashicorp.com/terraform/0.12.4/terraform_0.12.4_linux_amd64.zip
-	unzip terraform_0.12.4_linux_amd64.zip -d terraform
-	rm terraform_0.12.4_linux_amd64.zip
-	chmod +x terraform/terraform
-fi
-
 
 # Install python libraries for user only so as not to affect system installs.
 echo "Installing Python packages for user $USER."
@@ -74,5 +65,8 @@ fi
 if [[ ! -d terraform ]]
 then
   mkdir terraform
-  curl https://releases.hashicorp.com/terraform/0.12.4/terraform_0.12.4_linux_amd64.zip > terraform/terraform.zip && unzip terraform/terraform && rm terraform/terraform.zip
+  curl https://releases.hashicorp.com/terraform/0.12.4/terraform_0.12.4_linux_amd64.zip > terraform/terraform.zip \
+    && unzip terraform/terraform \
+    && rm terraform/terraform.zip \
+    && chmod +x terraform/terraform
 fi

@@ -173,20 +173,29 @@ class StartEC2InstanceHandler(ReqHandler):
         
         # As a safety check, make sure the feeder is running for the instance.
         try:
-            out = subprocess.check_output(['bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_feeder_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_feeder_filename + "')"])
-        
-            # Start server
-            print "Webserver: TODO: Start instance", FPGAServerApplication.ec2_instance_id, "here."
+            out = subprocess.check_output(['bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_feeder_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_feeder_filename + " -o comm=')"])
+            if ! re.match('^ec2_', out):
+                raise RuntimeError("Unable to find feeder process for " + FPGAServerApplication.ec2_feeder_filename + ".")
+            # Start EC2 server.
+            try:
+                args = [FPGAServerApplication.framework_webserver_dir + '../aws/start_static_f1',
+                        FPGAServerApplication.ec2_feeder_filename,
+                        FPGAServerApplication.ec2_feeder_timeout,
+                        FPGAServerApplication.framework_webserver_dir + '../terraform/deployment/id_rsa.pub',
+                        'cd ' + FPGAServerApplication.framework_webserver_dir + '../build && make TARGET=sw PORT=80 PREBUILT=true launch_nohup',
+                        FPGAServerApplication.ec2_profile]
+            except:
+                raise RuntimeError("Start instance command failed.")
             args = ['aws', 'ec2', 'start-instances', '--output', 'text', '--dry-run', '--instance-ids', FPGAServerApplication.ec2_instance_id]
-            if profile:
+            if FPGAServerApplication.ec2_profile:
                 args.append('--profile')
-                args.append(self.aws_profile)
+                args.append(FPGAServerApplication.ec2_profile)
             try:
                 out = subprocess.check_output(args)
             except:
                 print "Webserver: Failed to start EC2 instance with command:", ' '.join(args)
-        except:
-            print "Webserver: Feeder", FPGAServerApplication.ec2_feeder_filename, "isn't running. Refusing to start instance."
+        except BaseException e:
+            print "Webserver: Couldn't start instance because of exception:", e
         
         # TODO: IP
         self.f1_ip = "100.100.100.100"
@@ -208,13 +217,13 @@ class FPGAServerApplication(tornado.web.Application):
     #                 started via gET request and for which a feeder will be started by this function. A route (/feed_ec2_instance) will
     #                 be provided by defaultContentRoutes(..) to feed the instance via the feeder.
     #   profile:      An AWS profile to use, or None.
-    def associateEC2Instance(self, ec2_instance, profile=None):
+    def associateEC2Instance(self, ec2_instance, timeout=None, profile=None):
         ret = False
         # Create feeder.
         feeders_dir = FPGAServerApplication.app_dir + "/webserver/feeders"
         feeder_file = feeders_dir + "/" + ec2_instance
         script = FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_instance_feeder"
-        args = [script, "connect", feeder_file, "120"]
+        args = [script, "connect", feeder_file, str(timeout)]
         if profile:
             args.append(profile)
         try:
@@ -228,6 +237,7 @@ class FPGAServerApplication(tornado.web.Application):
             FPGAServerApplication.ec2_feeder_script = script
             FPGAServerApplication.ec2_instance_id = ec2_instance
             FPGAServerApplication.ec2_feeder_filename = feeder_file
+            FPGAServerApplication.ec2_feeder_timeout = timeout
             FPGAServerApplication.ec2_profile = profile
             ret = True
         except BaseException as e:
@@ -322,7 +332,9 @@ class FPGAServerApplication(tornado.web.Application):
         # These can be set by calling associateEC2Instance(..) in getRoutes() to associate an EC2 instance with this webserver.
         FPGAServerApplication.ec2_feeder_script = None
         FPGAServerApplication.ec2_feeder_filename = None
+        FPGAServerApplication.ec2_feeder_timeout = 120
         FPGAServerApplication.ec2_instance_id = None
+        FPGAServerApplication.ec2_profile = None
         super(FPGAServerApplication, self).__init__(self.getRoutes())
         
         self.socket = Socket()
