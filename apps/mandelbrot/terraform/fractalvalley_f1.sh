@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to start/terminate AWS F1 instance for fractalvalley.net.
+# Script to start/terminate AWS F1 instance for fractalvalley.net using latest code pushed to master branch.
 
 # Usage:
 #   Run from this directory as:
