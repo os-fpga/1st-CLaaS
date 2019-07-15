@@ -4,8 +4,8 @@
 
 # Usage: $0 <action> <framework-tfvars> <app-tfvars>
 #  <action>:           apply/destroy
-#  <framework-tfvars>: A list of <arg>.tfvars files to use relative to framework/terraform/deployment directory (this directory). Should include c4 or f1.
-#  <app-tfvars>:       A list of <arg>.tfvars files to ues relative to current directory.
+#  <framework-tfvars>: A list of <arg>.tfvars files (with or without file extension) to use relative to framework/terraform/deployment directory (this directory). Should include c4 or f1.
+#  <app-tfvars>:       A list of <arg>.tfvars files (with or without file extension) to ues relative to current directory.
 
 action=$1
 framework_tfvars=$2
@@ -20,14 +20,23 @@ then
 	exit 1
 fi
 
+
 args=""
+append_tfvars() {
+  args="$args -var-file=$1"
+  if [[ ! args =~ \.tfvars$ ]]
+  then
+    args="$args.tfvars"
+  fi
+}
+
 for framework_var_file_base in $framework_tfvars
 do
-	args="$args -var-file=$framework_var_file_base.tfvars"
+  append_tfvars "$framework_var_file_base"
 done
 for app_var_file_base in $app_tfvars
 do
-  args="$args -var-file=$CWD/$app_var_file_base.tfvars"
+  append_tfvars "$CWD/$app_var_file_base"
 done
 
 ../../../terraform/terraform init && ../../../terraform/terraform $action -auto-approve$args

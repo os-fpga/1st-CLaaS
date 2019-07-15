@@ -174,7 +174,7 @@ class StartEC2InstanceHandler(ReqHandler):
         # As a safety check, make sure the feeder is running for the instance.
         try:
             out = subprocess.check_output(['bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_feeder_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_feeder_filename + " -o comm=')"])
-            if ! re.match('^ec2_', out):
+            if not re.match('^ec2_', out):
                 raise RuntimeError("Unable to find feeder process for " + FPGAServerApplication.ec2_feeder_filename + ".")
             # Start EC2 server.
             try:
@@ -194,7 +194,7 @@ class StartEC2InstanceHandler(ReqHandler):
                 out = subprocess.check_output(args)
             except:
                 print "Webserver: Failed to start EC2 instance with command:", ' '.join(args)
-        except BaseException e:
+        except BaseException as e:
             print "Webserver: Couldn't start instance because of exception:", e
         
         # TODO: IP

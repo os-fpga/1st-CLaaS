@@ -180,7 +180,7 @@ teardown () {
     HOST_PID2=`ps --ppid $HOST_PID -o pid=`
     HOST_PID3=`ps --ppid $HOST_PID2 -o pid=`
     SERVER_PID2=`ps --ppid $SERVER_PID -o pid=`
-    echo "launch: Killing PIDs: ($HOST_PID>$HOST_PID2>)$HOST_PID3 ($SERVER_PID>)$SERVER_PID2"
+    echo "Killing PIDs: ($HOST_PID>$HOST_PID2>)$HOST_PID3 ($SERVER_PID>)$SERVER_PID2"
     ps --pid $HOST_PID --pid $HOST_PID2 --pid $HOST_PID3 --pid $SERVER_PID --pid $SERVER_PID2
     #sudo kill -9 $HOST_PID2
     sudo kill -9 $HOST_PID3
