@@ -2,10 +2,6 @@ variable "key_name" {
   type = string
 }
 
-variable "ami_id" {
-  type = string
-}
-
 variable "aws_access_key_id" {
   type = string
 }
@@ -41,6 +37,10 @@ variable "sdb_device_size" {
   default = 15
 }
 
+variable "region" {
+  type = string
+}
+
 
 resource "tls_private_key" "temp" {
   algorithm = "RSA"
@@ -52,8 +52,23 @@ resource "aws_key_pair" "generated_key" {
   public_key = "${tls_private_key.temp.public_key_openssh}"
 }
 
+data "aws_ami" "latest_fpgadev" {
+most_recent = true
+owners = ["679593333241"] 
+
+  filter {
+      name   = "name"
+      values = ["FPGA Developer AMI - *"]
+  }
+
+  filter {
+      name   = "virtualization-type"
+      values = ["hvm"]
+  }
+}
+
 provider "aws" {
-  region                  = "eu-west-1"
+  region                  = "${var.region}"
   access_key              = "${var.aws_access_key_id}"
   secret_key              = "${var.aws_secret_access_key}"
 }
@@ -91,7 +106,7 @@ resource "aws_security_group" "allow_web_ssh_rdp" {
   }
 
 resource "aws_instance" "fpga_f1" {
-    ami           =  var.ami_id
+    ami           = "${data.aws_ami.latest_fpgadev.id}"
     instance_type =  var.instance_type
     key_name      =  "${var.key_name}"
     vpc_security_group_ids = ["${aws_security_group.allow_web_ssh_rdp.id}"]

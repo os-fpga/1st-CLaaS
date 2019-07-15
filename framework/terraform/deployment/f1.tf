@@ -2,10 +2,6 @@ variable "key_name" {
   type = string
 }
 
-variable "ami_id" {
-  type = string
-}
-
 variable "aws_access_key_id" {
   type = string
 }
@@ -52,6 +48,21 @@ provider "aws" {
   secret_key              = "${var.aws_secret_access_key}"
 }
 
+data "aws_ami" "latest_fpgadev" {
+most_recent = true
+owners = ["679593333241"] 
+
+  filter {
+      name   = "name"
+      values = ["FPGA Developer AMI - 1.6.0-40257ab5-6688-4c95-97d1-e251a40fd1fc-ami-0b1edf08d56c2da5c.4"]
+  }
+
+  filter {
+      name   = "virtualization-type"
+      values = ["hvm"]
+  }
+}
+
 resource "aws_security_group" "allow_web" {
     name        = "allow_web"
     description = "Allow HTTP inbound traffic"
@@ -77,7 +88,7 @@ resource "aws_security_group" "allow_web" {
   }
 
 resource "aws_instance" "fpga_f1" {
-    ami           =  var.ami_id
+    ami           = "${data.aws_ami.latest_fpgadev.id}"
     instance_type =  var.instance_type
     key_name      =  "${var.key_name}"
     vpc_security_group_ids = ["${aws_security_group.allow_web.id}"]
