@@ -24,7 +24,7 @@ fi
 args=""
 append_tfvars() {
   args="$args -var-file=$1"
-  if [[ ! args =~ \.tfvars$ ]]
+  if [[ ! $args =~ \.tfvars$ ]]
   then
     args="$args.tfvars"
   fi
