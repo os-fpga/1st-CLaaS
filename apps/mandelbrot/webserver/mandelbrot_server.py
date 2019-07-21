@@ -305,9 +305,10 @@ MAIN APPLICATION
 """
 class MandelbrotApplication(FPGAServerApplication):
     
-    def getRoutes(self):
-        # Webserver
-        routes = self.defaultContentRoutes()
+    def __init__(self, port, instance, timeout, password, profile):
+        if instance:
+            self.associateEC2Instance(instance, 'cd /home/centos/src/project_data/fpga-webserver && source ./sdaccel_setup && cd apps/mandelbrot/build && make TARGET=hw PREBUILT=true build && (make TARGET=hw PREBUILT=true live &> make.log < /dev/null &) && sleep 3', timeout, password, profile)
+        routes = self.defaultRoutes()
         routes.extend(
             [ (r"/redeploy", RedeployHandler),
               #(r'/hw', GetRequestHandler),
@@ -315,12 +316,7 @@ class MandelbrotApplication(FPGAServerApplication):
               (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
               (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
             ])
-        return routes
-
-    def __init__(self, port, instance, timeout, profile):
-        if instance:
-            self.associateEC2Instance(instance, timeout, profile)
-        super(MandelbrotApplication, self).__init__(port)
+        super(MandelbrotApplication, self).__init__(port, routes)
         
     
     """
@@ -344,15 +340,18 @@ class MandelbrotApplication(FPGAServerApplication):
 if __name__ == "__main__":
 
     # Command-line options
+    
+    print "Mandelbrot webserver application starting."
 
     port = 8888
     instance = None
     ec2_feeder_timeout = 120
     profile = None
+    password = None
     try:
-        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_feeder_timeout=", "profile="])
+        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_feeder_timeout=", "password=", "profile="])
     except getopt.GetoptError:
-        print 'Usage: %s [--port #] [--instance i-#] [--ec2_feeder_timeout] [--profile <aws-profile>]' % (sys.argv[0])
+        print 'Usage: %s [--port #] [--instance i-#] [--ec2_feeder_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0])
         sys.exit(2)
     for opt, arg in opts:
         if opt == '--port':
@@ -361,11 +360,8 @@ if __name__ == "__main__":
             instance = arg
         if opt == '--ec2_feeder_timeout':
             ec2_feeder_timeout = arg
+        if opt == '--password':
+            password = arg
         if opt == '--profile':
             profile = arg
-    application = MandelbrotApplication(
-            port,
-            instance,
-            ec2_feeder_timeout,
-            profile
-        )
+    application = MandelbrotApplication(port, instance, ec2_feeder_timeout, password, profile)

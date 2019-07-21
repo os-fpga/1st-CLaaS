@@ -10,6 +10,10 @@ variable "aws_secret_access_key" {
   type = string
 }
 
+# An administrative password that will be uploaded to the instance.
+variable "admin_pwd" {
+  type = string
+}
 variable "aws_config_path" {
   type = string
 }
@@ -67,6 +71,12 @@ resource "aws_security_group" "allow_web" {
     name        = "allow_web"
     description = "Allow HTTP inbound traffic"
   
+    ingress {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "TCP"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
     ingress {
       from_port   = 8880
       to_port     = 8889
@@ -133,6 +143,11 @@ resource "aws_instance" "fpga_f1" {
       source      = "files/scripts/dummy.sh"
       destination = "/home/centos/dummy.sh"
     }
+    # A password saved as plain text on the server that may be used in any way desired, such as privileged AWS operations like starting an F1 instance via REST.
+    provisioner "file" {
+      content     = var.admin_pwd
+      destination = "/home/centos/admin_pwd.txt"
+    }
 
     provisioner "remote-exec" {
       inline = [
@@ -170,7 +185,4 @@ output "ip" {
   value = aws_instance.fpga_f1.public_ip
 }
 
-
-
-
-
+# TODO: It would be nice to also output the instance ID.

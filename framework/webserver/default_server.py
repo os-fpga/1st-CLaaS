@@ -54,6 +54,6 @@ if __name__ == "__main__":
 
     # Webserver
     application = FPGAServerApplication(
-            FPGAServerApplication.defaultContentRoutes(),
-            port
+            port,
+            FPGAServerApplication.defaultRoutes()
         )

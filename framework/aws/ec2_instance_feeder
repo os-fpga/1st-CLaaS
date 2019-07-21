@@ -343,10 +343,10 @@ get_current_state() {
 get_current_state
 if [[ ! -n "$current_state" ]]
 then
-  >&2 echo "Failed to acquire status of instance."
+  >&2 echo "$0: Failed to acquire status of instance."
   exit 1
 else
-  >&2 echo "Current state of instance: $current_state"
+  echo "$0: Current state of instance: $current_state"
 fi
 
 # Make sure the stop command will work.
@@ -505,6 +505,7 @@ then
 fi
 
 # Begin monitoring feeder file in separate process.
+echo "$0: DEBUG: starting feeder."
 feed &
 pid=$!
 # Create feeder file containing PID of feeder process.

@@ -34,6 +34,8 @@ class fpgaServer {
     this.host = location.hostname;
     this.port = location.port;
     this.url_path = "/ws";
+    this.f1_state = "stopped";
+    this.f1_ip = false;
   }
   
   connect() {
@@ -59,10 +61,59 @@ class fpgaServer {
   }
   
   
+  // Feed the EC2 instance, and, optionally, callback upon response. The callback is passed the response JSON.
+  feedEC2Instance(fed_cb) {
+    $.ajax({
+      url: '/feed_ec2_instance',
+      type: 'get',
+      success: (data, status, xhr) => {
+        let json = "{}";
+        try {
+          json = JSON.parse(data);
+        } catch(e) {
+          json = {message: `Bad JSON response to feed_ec2_instance: ${json}`};
+        }
+        console.log("feed_ec2_instance response: " + json);
+        if (json.message) {
+          $("#fpga-message").text(json.message);
+        }
+        if (fed_cb) {
+          fed_cb(json);
+        }
+      }
+    });
+  }
+  
+  // Begin feeding the EC2 instance. this.f1_state must be "running" or "pending", and this method does not perform
+  // the initial feeding. This should be called, followed by another action which feeds (like a start_ec2_instance AJAX request).
+  beginEC2Feeding() {
+    // Schedule the next feeding, continuing as long as state is "running" or "pending".
+    this.feeder_active = false;
+    let scheduleEC2Feeding = () => {
+      window.setTimeout( () => {
+        console.log("Feeding.");
+        if (this.f1_state == "running" || this.f1_state == "pending") {
+          this.feeder_active = true;
+          this.feedEC2Instance();
+          scheduleEC2Feeding();
+        } else {
+          this.feeder_active = false;
+        }
+      }, this.feeding_period * 1000);
+    }
+    
+    if (this.f1_state != "running" && this.f1_state != "pending") {
+      console.log("Bug: Starting feeding when f1_state is: " + this.f1_state);
+    }
+    if (!this.feeder_active) {
+      this.feeder_active = true;
+      scheduleEC2Feeding();
+    }
+  }
+  
   // Support for controls to start/stop an FPGA.
   // Server can enable listening to:
   //   /start_fpga (POST): Start FPGA, and return JSON of the form: {"ip": "...", "message": "..."}.
-  //   /stop_fpga (GET): Stop FPGA, and return JSON of the form: {"status": 0/1/2, "message": "..."}, where status 0) success, 1) not running, 2) failed (might still be running).
   // HTML should contain:
   //   <form id="start-fpga-form">
   //     Password: <input type="password" name="pwd">
@@ -74,60 +125,79 @@ class fpgaServer {
   //   #start-fpga-form
   //   #stop-fpga-button
   // And populates:
-  //   #fpga-ip
   //   #fpga-message and
   // on ajaxComplete (if they exist).
   //
   // Args:
-  //   started_cd(ip, message): Called if non-null on ajaxComplete.
-  enableFPGAStartStop(started_cb) {
-    $('#start-fpga-form').submit(function(e) {
+  //   feeding_period: Period between feedings in seconds.
+  
+  // Mimic EC2 F1 instance state as defined by the EC2 lifecycle.
+  // Instance is static, so states cycle among: "stopped", "pending", "running", "stopping" (or "unknown").
+  f1StateCB() {}  // A callback for f1 state change that can be overridden.
+  set f1_state(val) {
+    let els = $("ec2-instance-status");
+    if (els.length > 0) {
+      els[0].status = val;
+    }
+    this.f1StateCB();
+  }
+  get f1_state() {
+    let els = $("ec2-instance-status");
+    if (els.length > 0) {
+      return $("ec2-instance-status")[0].status;
+    } else {
+      return "unknown";
+    }
+  }
+  enableFPGAStartStop(feeding_period) {
+    if (feeding_period) {
+      this.feeding_period = feeding_period;
+    } else {
+      this.feeding_period = 60;  // 1 min default.
+    }
+    $('#start-fpga-form').submit( (e) => {
       e.preventDefault();
+      this.f1_state = "pending";
+      $("#start-fpga-button").prop("disabled", true);
+      this.beginEC2Feeding();
+      let startFailed = () => {
+        this.f1_state = "stopped";
+        $("#start-fpga-button").prop("disabled", false);
+      }
       $.ajax({
-        url: '/start_fpga',
+        url: '/start_ec2_instance',
         type: 'post',
         data: $('#start-fpga-form').serialize(),
-        success: function(data, status, xhr) {
-          let json = "{}"
+        success: (data, status, xhr) => {
+          let json = "{}";
           try {
             json = JSON.parse(data);
           } catch(e) {
-            json = {message: `Bad JSON response: ${json}`};
+            json = {message: `Bad JSON response to start_ec2_instance: ${json}`};
           }
-          console.log("ajaxComplete received: " + json);
-          if (json.ip) {
-            $("#fpga-ip").text(json.ip);
-          }
+          console.log("start_ec2_instance response: " + json);
           if (json.message) {
             $("#fpga-message").text(json.message);
           }
-          if (started_cb) {
-            started_cb(json.ip, json.message);
+          if (typeof json.ip === "undefined") {
+            startFailed()
+          } else {
+            $('#stop-fpga-button').prop("disabled", false);
+            this.f1_ip = json.ip;
+            this.f1_state = "running";
           }
+        },
+        error: (xhr, status, e) => {
+          startFailed();
         }
       });
     });
-    $("#stop-fpga-button").click(function() {
-      $.ajax({
-        url: '/stop_fpga',
-        type: 'get',
-        data: '',
-        success: function(data, status, xhr) {
-          let json = "{}"
-          try {
-            json = JSON.parse(data);
-          } catch(e) {
-            json = {message: `Bad JSON response: ${json}`};
-          }
-          console.log("ajaxComplete received: " + json);
-          if (json.status === 0 || json.status === 1) {
-            $("#fpga-ip").text('');
-          }
-          if (json.message) {
-            $("#fpga-message").text(json.message);
-          }
-        }
-      })
+    $("#stop-fpga-button").click( () => {
+      // Go straight to "stopped" state.
+      // This will cause feeding to stop in time.
+      this.f1_state = "stopped";
+      $("#stop-fpga-button").prop("disabled", true);
+      $('#start-fpga-button').prop("disabled", false);
     });
   }
   

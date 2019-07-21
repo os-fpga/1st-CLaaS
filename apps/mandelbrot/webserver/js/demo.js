@@ -30,7 +30,43 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-class demo {
+
+class mandelbrotServer extends fpgaServer {
+  constructor(demo) {
+    super();
+    this.demo = demo;   // associated object (the default class of this module).
+    // Host and port values to restore when F1 is stopped (always those serving web pages, so we could simplify).
+    this.restore_host = null;
+    this.restore_port = null;
+  }
+  f1StateCB() {
+    // While running, force #host and #port to f1_ip:80.
+    switch (this.f1_state) {
+      case "running":
+        this.restore_host = $("#host").val();
+        this.restore_port = $("#port").val();
+        $("#host").val(this.f1_ip);
+        $("#port").val("80");
+        break;
+      default:
+        if (this.restore_host) {
+          $("#host").val(this.restore_host);
+          $("#port").val(this.restore_port);
+          this.restore_host = null;
+        }
+        break;
+    }
+    if (typeof this.demo !== 'undefined') {  // (Undefined during construction.)
+      this.demo.settingsChanged();  // This will reset URL for map.
+      if (this.demo.viewer) {
+        // This will reset URL for full viewer.
+        this.demo.viewer.setServer($("#host").val(), $("#port").val());
+      }
+    }
+  }
+}
+
+export default class {
 
 // Generic methods:
 
@@ -182,7 +218,7 @@ getUpdateTimeBasedSettingsFn() {
   }
 }
 
-// Settings or view size has changed in GUI and must be reflected.
+// Settings, view size has changed in GUI and must be reflected.
 settingsChanged() {
   let test_flags = 0;
   let test_vars = [];
@@ -346,7 +382,7 @@ constructor() {
   
   this.cast_tag = null; // Tag/directory to which to cast (captured when casting is enabled.)
   
-  let server = new fpgaServer();
+  let server = new mandelbrotServer(this);
   
   // Event handling
   
@@ -511,3 +547,4 @@ constructor() {
   
 }
 }
+

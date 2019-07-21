@@ -118,8 +118,7 @@ class FullImageMandelbrotViewer {
     
     
     // Initialize members.
-    this.root_url = `http://${host}:${port}`;
-    this.base_url = `${this.root_url}/img`;
+    this.setServer(host, port);
     
     // A reference time.
     this.ref_time = new Date();
@@ -143,6 +142,11 @@ class FullImageMandelbrotViewer {
     this.image_id = 0;
   }
   
+  setServer(host, port) {
+    this.root_url = `http://${host}:${port}`;
+    this.base_url = `${this.root_url}/img`;
+  }
+  
   // Must be called after construction and DOM configuration.
   init(view) {
 
@@ -153,6 +157,29 @@ class FullImageMandelbrotViewer {
     
     
     // Make images interactive.
+    $("#fullImageViewerContainer")
+      .on('mousewheel', (e) => {
+        this.debugMessage(`Wheel: e = ${e}`);
+        e.preventDefault();
+        if (!this.exists(e, ["originalEvent", "deltaY"]) || !this.exists(e.originalEvent, ["deltaMode"])) {
+          return;
+        }
+        let sluggishness;
+        if (e.originalEvent.deltaMode == 0) {
+          sluggishness = this.WHEEL_ZOOM_SLUGGISHNESS_PIXELS;
+        } else if (e.originalEvent.deltaMode == 1) {
+          sluggishness = this.WHEEL_ZOOM_SLUGGISHNESS_LINES;
+        } else {
+          sluggishness = this.WHEEL_ZOOM_SLUGGISHNESS_PAGES;
+        }
+        let amt = - e.originalEvent.deltaY / sluggishness;
+        if (this.motion === "position") {
+          this.desired_image_properties.zoomByAt(amt, (e.offsetX - e.target.clientWidth  / 2.0) * this.desired_image_properties.pix_size_x,
+                                                      (e.offsetY - e.target.clientHeight / 2.0) * this.desired_image_properties.pix_size_y);
+        } else {
+          this.motion_z += amt;
+        }
+      });
     interact("#fullImageViewerContainer")
       .draggable({
         inertia: true
@@ -226,6 +253,7 @@ class FullImageMandelbrotViewer {
           }
         }
       })
+      /*
       .on("wheel", (e) => {
         this.debugMessage(`Wheel: e = ${e}`);
         e.preventDefault();
@@ -247,7 +275,8 @@ class FullImageMandelbrotViewer {
         } else {
           this.motion_z += amt;
         }
-      });
+      }, {passive: false});
+      */
     
   }
   

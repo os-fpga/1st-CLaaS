@@ -185,6 +185,9 @@ $(error XILINX_XRT is not set. Please source the SDx settings64.{csh,sh} first)
 endif
 endif
 
+.PHONY: nothing
+nothing:
+	@echo "No target specified. Nothing built."
 
 .PHONY: clean shrink
 clean:
@@ -215,6 +218,13 @@ endif
 
 endif
 
+
+# If project has a launch command, use it, otherwise, use launch from framework.
+LAUNCH :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo ../../../framework/build/launch; fi)
+LAUNCH_CMD :=$(LAUNCH)
+ifdef LAUNCH_W
+LAUNCH_CMD :=$(LAUNCH_CMD) -w '$(LAUNCH_W)'
+endif
 
 
 # TL-Verilog compilation.
@@ -408,12 +418,6 @@ endif
 
 # TODO: Need sdx_project and sdx_workspace targets to build SDx workspace/project configured to work w/ the host application.
 
-# TODO: This must have been from Alessandro, and emulation has never been launched from the makefile since.
-emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
-	export XCL_EMULATION_MODE=$(TARGET) && $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERNEL_EXE).xclbin
-	$(info Remember to export XCL_EMULATION_MODE=$(TARGET) and run emconfigutil for emulation purposes)
-
-
 
 # For production use of port 80.
 # Run is done in its own directory to avoid socket collision with development.
@@ -422,7 +426,7 @@ emulation:  $(DEST_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(HOST_EXE) $(BUILD_DIR)/$(KERN
 live: dead
 	make TARGET=hw prep_live_internal
 	@echo "Launching production server in the background"
-	nohup ./launch -p 80 hw '../live/$(HOST_EXE) $(HOST_XCLBIN)'
+	nohup $(LAUNCH_CMD) -p 80 hw '../live/$(HOST_EXE) $(HOST_XCLBIN)'
 	
 dead:
 	source ../live/killme > /dev/null 2>&1 || true
@@ -430,7 +434,7 @@ dead:
 # A target used by target live (and not expected to be used directly by the user).
 prep_live_internal:
 	mkdir -p ../live
-	cp $(DEST_DIR)/$(HOST_EXE) ../live
+	cp $(BUILD_DIR)/$(HOST_EXE) ../live
 	cp $(HOST_XCLBIN) ../live
 
 
@@ -456,11 +460,11 @@ endif
 build:  $(BUILD_TARGETS)
 launch: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	./launch $(LAUNCH_APP_ARGS) -p $(PORT) $(TARGET) '$(HOST_CMD)'
+	$(LAUNCH_CMD)  -p $(PORT) $(TARGET) '$(HOST_CMD)'
 
 launch_nohup: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	nohup ./launch -p $(PORT) $(TARGET) '$(HOST_CMD)' &
+	nohup $(LAUNCH_CMD) -p $(PORT) $(TARGET) '$(HOST_CMD)' &
 
 
 ifeq ($(TARGET), hw)

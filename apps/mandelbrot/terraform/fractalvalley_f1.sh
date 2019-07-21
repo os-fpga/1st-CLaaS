@@ -14,7 +14,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )"
 command="$1"
 if [[ "$1" != "apply" && "$1" != "destroy" ]]
 then
-  echo "Unrecognized command: $command"
+  echo "$0: Unrecognized command arg: $command"
   exit 1
 fi
 if [[ -n "$2" ]]

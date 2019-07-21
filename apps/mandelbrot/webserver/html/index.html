@@ -17,12 +17,14 @@
     crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
     crossorigin="anonymous"></script>
+  <!-- script src="https://cdn.jsdelivr.net/npm/interactjs@1.3.4/dist/interact.min.js"></script -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs@1.3.4/dist/interact.min.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
     crossorigin="anonymous">
   <link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
   <link rel="stylesheet" href="css/demo.css">
   <script src="framework/js/fpgaServer.js"></script>
+  <script src="framework/js/ec2_instance_status.js"></script>
   <title>Mandelbrot</title>
 </head>
 
@@ -467,12 +469,15 @@
   <div class="debug-only fpga-only">
     <h2>(DEBUG-ONLY FOR NOW) FPGA Acceleration</h2>
     <p>This application can be accelerated using Amazon F1 FPGAs. But F1 is not free. It is currently only available as a demo and requires a password to launch.</p>
-    <form id="start-fpga-form">
-      Password: <input type="password" name="pwd">
-      <input class="btn btn-primary" type="submit" value="Power On">
-    </form>
-    <button id="stop-fpga-button" class="btn btn-primary">Stop FPGA</button>
-    <p><span class="debug-only">FPGA IP: <span id="fpga-ip"></span></span><span id="fpga-message"></span></p>
+    <span id="fpga-controls">
+      <form id="start-fpga-form" style="display: inline">
+        Password: <input type="password" name="pwd">
+        <input id="start-fpga-button" class="btn btn-primary" type="submit" value="Power On">
+      </form>
+      <button id="stop-fpga-button" class="btn btn-primary" disabled>Stop FPGA</button>
+      <ec2-instance-status size="35px" status="stopped"></ec2-instance-status>
+      <span class="debug-only" style="display: inline"> </span><span id="fpga-message"></span>
+    <span>
   </div>
   <div forTheme="xmas"><div class="c-only">
     <h2>Merry Christmas!!!</h2>
@@ -562,7 +567,9 @@
   </div>
   <p id="debugLog">
   </p>
-  <script type="text/javascript">
+  <script type="module">
+    import demo from "./js/demo.js"
+    
     $(document).ready(function () {
       // populate host and port fields
       $("#host").attr("value", location.hostname);
@@ -578,7 +585,6 @@
   </script>
   <script src="js/MandelbrotView.js"></script>
   <script src="js/FullImageMandelbrotViewer.js"></script>
-  <script src="js/demo.js"></script>
 </body>
 
 </html>

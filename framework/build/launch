@@ -39,7 +39,7 @@
 #       the socket and host when it's done/killed. (Though consider how gdb can be run within editor where the editor must execute the host command.)
 
 # Usage:
-#   ./launch [-c <compile-command>] [-o <opencl-host-app-args>] [-w <webserver-command>] <hw/sw> [<host-command>]
+#   ./launch [-c <compile-command>] [-w <webserver-command>] [-p <port>] <hw/sw> [<host-command>]
 # Usage Cases (without optional args):
 #   ./launch hw '<path/to/host> <path/to/awsxclbin>'
 #   ./launch hw_emu '<path/to/host> <path/to/xclbin>'
@@ -129,12 +129,12 @@ fail () {
 # Launch web server and host application.
 launch () {
   # Launch host app.
+  echo "Launching host application as: $HOST"
   if [[ $HOST_PID == "" ]]
     # Host application launched externally (probably via gdb).
   then
     if [[ $TARGET = "sw" ]];
     then
-        #echo "launch: Launching host sw"
         $HOST &
     else
         sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
@@ -151,6 +151,7 @@ launch () {
   # Substitute <<PORT>>.
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
   # Launch.
+  echo "Launching webserver as: $CMD"
   if [[ $TARGET = "sw" ]];
   then
     $CMD &
@@ -174,7 +175,7 @@ teardown () {
       kill $HOST_PID
     fi
     kill $SERVER_PID
-    #rm SOCKET
+    rm SOCKET
   else
     # Processes are invoked through sudo and bash and don't seem to be killed with their parent.
     HOST_PID2=`ps --ppid $HOST_PID -o pid=`

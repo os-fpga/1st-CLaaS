@@ -32,7 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 This mini webserver provides a REST API to feed an ec2_instance_feeder.
-(There is similar support built into server.py.)
+(NOTE: There is similar support built into server.py, which is used by examples.
+       THIS SCRIPT IS NOT IN USE AND IS PROBABLY BROKEN.)
 
 
 Usage:
