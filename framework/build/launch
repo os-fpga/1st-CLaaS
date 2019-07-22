@@ -175,7 +175,7 @@ teardown () {
       kill $HOST_PID
     fi
     kill $SERVER_PID
-    rm SOCKET
+    rm SOCKET   # Needed?
   else
     # Processes are invoked through sudo and bash and don't seem to be killed with their parent.
     HOST_PID2=`ps --ppid $HOST_PID -o pid=`

@@ -19,18 +19,18 @@ window.customElements.define('ec2-instance-status', class extends HTMLElement {
     this.span = $(shadowRoot).find("span");
     // Status => color map.
     this.status_map = {
-      "running": {color: "#00CC00", icon: "circle"},
-      "stopping": {color: "#CC0000", icon: "spinner"},
-      "stopped": {color: "#CC0000", icon: "circle"},
-      "pending": {color: "blue", icon: "spinner"},
-      "unknown": {color: "gray", icon: "circle"}
+      "running": {color: "#00CC00", icon: "fa-circle"},
+      "stopping": {color: "#CC0000", icon: "fa-spinner fa-spin"},
+      "stopped": {color: "#CC0000", icon: "fa-circle"},
+      "pending": {color: "blue", icon: "fa-spinner fa-spin"},
+      "unknown": {color: "gray", icon: "fa-circle"}
     }
   }
   attributeChangedCallback(name, old_val, new_val) {
     switch (name) {
       case 'status':
         $(this.span).css("color", this.status_map[new_val].color);
-        $("i", this.span).attr("class", `fa fa-${this.status_map[new_val].icon}`);
+        $("i", this.span).attr("class", `fa ${this.status_map[new_val].icon}`);
         break;
       case 'size':
         $(this.span).css("font-size", new_val);

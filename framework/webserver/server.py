@@ -248,7 +248,8 @@ class StartEC2InstanceHandler(EC2Handler):
                 resp = {"message": msg}
                 print "Webserver: " + msg
                 
-                # Stop server.
+                # Stop server. Note that there might be other users of the instance, but something seems wrong with it, so
+                # tear it down, now.
                 try:
                     cmd = [FPGAServerApplication.ec2_feeder_script, "starve", FPGAServerApplication.ec2_feeder_filename]
                     out = subprocess.check_call(cmd)

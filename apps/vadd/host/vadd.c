@@ -43,7 +43,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **
 ** Author: Alessandro Comodi, Politecnico di Milano
 **
-** TODO: There's still a lot of image-specific content here. Partition cleanly.
 */
 
 
