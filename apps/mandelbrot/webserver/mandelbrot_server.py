@@ -308,7 +308,7 @@ class MandelbrotApplication(FPGAServerApplication):
     def __init__(self, port, instance, timeout, password, profile):
         if instance:
             # TODO: THIS IS NOT CORRECT FOR MULTIPLE USERS. NEED ONLY THE FIRST USER TO START THE WEBSERVER.
-            self.associateEC2Instance(instance, 'cd /home/centos/src/project_data/fpga-webserver && source ./sdaccel_setup && cd apps/mandelbrot/build && make TARGET=hw PREBUILT=true build && (make TARGET=hw PREBUILT=true live &> make.log < /dev/null &) && sleep 3', timeout, password, profile)
+            self.associateEC2Instance(instance, 'cd /home/centos/src/project_data/fpga-webserver && source ./sdaccel_setup && cd apps/mandelbrot/build && make TARGET=hw PREBUILT=false build && (make TARGET=hw PREBUILT=false live &> make.log < /dev/null &) && sleep 3', timeout, password, profile)
         routes = self.defaultRoutes()
         routes.extend(
             [ (r"/redeploy", RedeployHandler),
