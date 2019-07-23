@@ -22,6 +22,23 @@ ifdef PROFILE
 endif
 
 
+# Make a new static EC2 F1 instanace to be used by Mandelbrot content webserver to serve fractals.
+# WARNING: This target launches a new instance. Be sure it is not left running!
+# Specify:
+#   TF_ARGS: (opt) Additional arguments for Terraform. These should provide AWS credentials and admin_pwd variable. See Usage below.
+#            (You'll be prompted for unspecified variables.)
+#   EC2_TYPE: Use c4 for testing without FPGA.
+# Usage:
+#    make f1_instance PASSWORD=funkytown "TF_ARGS=-var-file=$HOME/aws_cred.tfvars"
+TF_ARGS=
+EC2_TYPE=f1
+ifdef PASSWORD
+  ADMIN_PWD=-var 'admin_pwd=$(PASSWORD)'
+endif
+.PHONY: f1_instance
+f1_instance:
+	cd ../../../framework/terraform/deployment && ../../../terraform/terraform init && ../../../terraform/terraform apply -auto-approve $(ADMIN_PWD) -var 'app_launch_script=/home/centos/src/project_data/fpga-webserver/apps/mandelbrot/terraform/fractalvalley_f1_init.sh' '-var-file=$(EC2_TYPE).tfvars' $(TF_ARGS)
+
 LAUNCH_W :=python ../webserver/mandelbrot_server.py --port=<<PORT>> $(SERVER_ARGS)
 
 include ../../../framework/build/Makefile

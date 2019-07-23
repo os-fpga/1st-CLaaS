@@ -49,7 +49,12 @@
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
 #   Variables:
 #     PORT: The port on which to launch the webserver.
-#     TARGET=[sw_emu, hw, hw_emu] or unspecified for software-only (no OpenCL) build of host application
+#     TARGET=[hw, hw_emu, sim, sw] (determined by platform by default)
+#              hw: F1 FPGA.
+#              hw_emu: SDAccel hardware emulation compilation.
+#              sim: Verilator simulation of the kernel.
+#              sw: software-only with no kernel behavior available.
+#            Target is downgraded automatically based on the platform.
 #     KERNEL: the name for the fpga model
 #     PREBUILT=[true] or default to false behavior. True to use the prebuilt files in the repository, rather than building.
 #     WAVES=[true] or default to false behavior. True to generate waveforms. (xocc )
@@ -61,6 +66,55 @@
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
 SHELL=/bin/bash
+SPACE= 
+
+
+# Characcterize platform.
+
+VERILATOR=$(shell which verilator)
+ifneq ($(AWS_FPGA_REPO_DIR),)
+ifneq ($(findstring $(shell curl http://169.254.169.254/latest/meta-data/instance-type),f1.),)
+# F1
+SUPPORTED_TARGETS :=hw hw_emu$(SPACE)
+else
+SUPPORTED_TARGETS :=hw emu$(SPACE)
+endif
+endif
+#(V) TODO: Uncomment (V) to support 'sim' TARGET.
+#(V) ifneq ($(VERILATOR),)
+#(V) # Verilator.
+#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim sw$(SPACE)
+#(V) else
+SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw$(SPACE)
+#(V) endif
+
+# Determine TARGET. [hw (default) | hw_emu | sim | sw]
+
+SPECIFIED_TARGET :=$(TARGET)
+TARGET=hw
+# If specified TARGET is not supported, choose a different one.
+ifeq ($(findstrng $(TARGET)$(SPACE),$(SUPPORTED_TARGETS)),)
+ifeq ($(TARGET),sim)
+TARGET=sw
+else
+# Downgrade to highest-level target.
+TARGET=$(firstword $(SUPPORTED_TARGETS))
+endif
+endif
+ifneq ($(SPECIFIED_TARGET),)
+$(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
+endif
+$(info Using TARGET=$(TARGET). (Platform supports: $(SUPPORTED_TARGETS)))
+
+# Characterize TARGET.
+ifeq ($(TARGET),hw)
+USE_XILINX=true
+endif
+ifeq ($(TARGET),hw_emu)
+USE_XILINX=true
+endif
+
+
 
 PORT=8888
 
@@ -134,29 +188,14 @@ $(info setting platform for an aws environment)
 PLATFORM=${AWS_PLATFORM}
 endif
 
-#TARGET for compilation [sw | sw_emu | hw_emu | hw]
-TARGET=none
-REPORT_FLAG=n
 REPORT=
-ifeq (${TARGET}, sw_emu)
-$(info software emulation)
-TARGET=sw_emu
-else ifeq (${TARGET}, hw_emu)
-$(info hardware emulation)
-TARGET=hw_emu
-REPORT=--report estimate
-else ifeq (${TARGET}, hw)
-$(info system build)
-TARGET=hw
+ifeq (${TARGET},hw)
 REPORT=--report system
-else ifeq (${TARGET}, sw)
-$(info software build)
-TARGET=sw
 else
-$(info no TARGET specified, SW assumed)
-TARGET=sw
+ifeq (${TARGET},hw_emu)
+REPORT=--report estimate
 endif
-
+endif
 
 # Build dir is "out" or "prebuilt", based on PREBUILT variable.
 BUILD_DIR_NAME = out
@@ -167,7 +206,7 @@ OUT_DIR_NAME = prebuilt_out
 endif
 
 #Assign DEST_DIR as <TARGET>/<TARGET_DEVICE>, or just <TARGET> for sw build (w/ no target device).
-ifeq ($(TARGET), sw)
+ifneq ($(USE_XILINX),true)
 DEST_DIR=../$(OUT_DIR_NAME)/$(TARGET)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(TARGET)
 else
@@ -180,7 +219,7 @@ BUILD_DIR=../$(BUILD_DIR_NAME)/$(DEST_SUBDIR)
 endif
 
 ifndef XILINX_XRT
-ifneq ($(TARGET), sw)
+ifeq ($(USE_XILINX),true)
 $(error XILINX_XRT is not set. Please source the SDx settings64.{csh,sh} first)
 endif
 endif
@@ -201,8 +240,8 @@ shrink:
 # Rule to build host application, only if not using pre-built.
 ifneq ($(PREBUILT), true)
 
-# TODO: Instead of this condition, define $(SW_SRC) and $HOST_SRC) as $(SRC) conditionally, etc.
-ifeq ($(TARGET), sw)
+# TODO: Instead of this condition, define $(SW_SRC) and $(HOST_SRC) as $(SRC) conditionally, etc.
+ifneq ($(USE_XILINX),true)
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
@@ -272,12 +311,12 @@ ifeq ($(KERNEL_SV),)
 KERNEL_SV :=../out/sv/$(KERNEL_NAME)_kernel.sv
 endif
 
-# Hardware build
-ifneq ($(TARGET), sw)
+# Xilinx build
+ifeq ($(USE_XILINX),true)
 
-# TODO: These are not relevant for TARGET=sw, and there is no distinction between hw and hw_emu, so they are defined the same
+# TODO: These are not relevant for TARGET=sw/sim, and there is no distinction between hw and hw_emu, so they are defined the same
 # regardless of TARGET. Need to make $(HW_DEST_DIR) and $(HW_BUILD_DIR) and use those for kernel build commands/files.
-# Actually, I think it would be better to include TARGET in the build target, eg: sw_host, hw_host, etc. (As it is there is
+# Actually, I think it would be better to include TARGET in the build target, eg: sw_host, hw_host, etc. (As it is, there is
 # redundant building for different targets).
 
 VIVADO_VERSION_MESSAGE=Note: Kernel construction assumes Vivado v2018.3
@@ -396,7 +435,8 @@ endif
 # Previous transfer contents are deleted.
 push: build
 	aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/
-endif
+
+endif  # End Xilinx build stuff.
 
 # Phony targets for intermediate results
 .PHONY: host xo xclbin emulation build launch
@@ -444,7 +484,7 @@ else
 VALGRIND_PREFIX=
 endif
 
-ifeq ($(TARGET), sw)
+ifneq ($(USE_XILINX),true)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
 HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to start/terminate AWS F1 instance for fractalvalley.net using latest code pushed to master branch.
+# Script to create/terminate (apply/destroy) AWS F1 instance for fractalvalley.net using latest code pushed to master branch.
 
 # Usage:
 #   Run from this directory as:
@@ -8,6 +8,8 @@
 #       <command>: apply/destroy
 #       <aws-credentials-tfvars-file>: relative/absolute path to file containing Terraform variables for AWS credentials (with or without extension).
 #                                      Prompted for values if omitted.
+
+echo "THIS SCRIPT IS BEING REPLACED BY A MAKEFILE TARGET... DELETE ME!"
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 

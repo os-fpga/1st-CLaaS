@@ -25,6 +25,9 @@ variable "instance_type" {
 variable "region" {
   type = string
 }
+# TODO: Region is hardcoded in files/aws_config/config.
+# Instead, create the file using remote-exec and "cat", using the variable.
+# TODO: Also, automate creation of aws_config.tfvars from AWS config file.
 
 variable "delete_storage_on_destroy" {
   type = bool

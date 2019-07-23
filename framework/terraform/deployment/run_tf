@@ -7,6 +7,8 @@
 #  <framework-tfvars>: A list of <arg>.tfvars files (with or without file extension) to use relative to framework/terraform/deployment directory (this directory). Should include c4 or f1.
 #  <app-tfvars>:       A list of <arg>.tfvars files (with or without file extension) to ues relative to current directory.
 
+echo "NOT SURE WE'LL KEEP THIS SCRIPT. MIGHT FAVOR MAKEFILE AUTOMATION."
+
 action=$1
 framework_tfvars=$2
 app_tfvars=$3
