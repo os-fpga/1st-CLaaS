@@ -101,7 +101,7 @@ else
 TARGET=$(firstword $(SUPPORTED_TARGETS))
 endif
 # Strip trailing '+'
-SUPPORTED_TARGETS=$(subst sw+,sw,$(SUPPORTED_TARGETS))
+SUPPORTED_TARGETS :=$(subst sw+,sw,$(SUPPORTED_TARGETS))
 endif
 ifneq ($(SPECIFIED_TARGET),)
 $(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
