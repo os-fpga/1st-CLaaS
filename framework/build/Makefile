@@ -75,17 +75,17 @@ VERILATOR=$(shell which verilator)
 ifneq ($(AWS_FPGA_REPO_DIR),)
 ifneq ($(findstring $(shell curl http://169.254.169.254/latest/meta-data/instance-type),f1.),)
 # F1
-SUPPORTED_TARGETS :=hw hw_emu$(SPACE)
+SUPPORTED_TARGETS :=hw+hw_emu+
 else
-SUPPORTED_TARGETS :=hw emu$(SPACE)
+SUPPORTED_TARGETS :=hw_emu+
 endif
 endif
 #(V) TODO: Uncomment (V) to support 'sim' TARGET.
 #(V) ifneq ($(VERILATOR),)
 #(V) # Verilator.
-#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim sw$(SPACE)
+#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim+sw+
 #(V) else
-SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw$(SPACE)
+SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw+
 #(V) endif
 
 # Determine TARGET. [hw (default) | hw_emu | sim | sw]
@@ -93,13 +93,15 @@ SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw$(SPACE)
 SPECIFIED_TARGET :=$(TARGET)
 TARGET=hw
 # If specified TARGET is not supported, choose a different one.
-ifeq ($(findstrng $(TARGET)$(SPACE),$(SUPPORTED_TARGETS)),)
+ifeq ($(findstrng $(TARGET)+,$(SUPPORTED_TARGETS)),)
 ifeq ($(TARGET),sim)
 TARGET=sw
 else
 # Downgrade to highest-level target.
 TARGET=$(firstword $(SUPPORTED_TARGETS))
 endif
+# Strip trailing '+'
+SUPPORTED_TARGETS=$(subst sw+,sw,$(SUPPORTED_TARGETS))
 endif
 ifneq ($(SPECIFIED_TARGET),)
 $(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)

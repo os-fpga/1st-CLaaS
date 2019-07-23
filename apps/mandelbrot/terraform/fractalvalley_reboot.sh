@@ -6,4 +6,4 @@
 # Cron output is sent to /var/spool/mail/root.
 # Running via ssh establishes the proper environment.
 echo "$0: Output logged in: /home/centos/src/project_data/fpga-webserver/apps/mandelbrot/build/make.log"
-ssh localhost 'cd ~/src/project_data/fpga-webserver && source ./sdaccel_setup && cd apps/mandelbrot/build && (make TARGET=hw PREBUILT=false live &> make.log < /dev/null $1)'
+ssh -o 'StrictHostKeyChecking no' localhost 'cd ~/src/project_data/fpga-webserver && source ./sdaccel_setup && cd apps/mandelbrot/build && (make TARGET=hw PREBUILT=false live &> make.log < /dev/null $1)'
