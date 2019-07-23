@@ -11,7 +11,7 @@
  && echo \
  && echo "Setting up localhost ssh." \
  && ssh-keygen -N '' -f ~/.ssh/id_rsa \
- && cat ~/.ssh/authorized_keys \
+ && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys \
  && echo \
  && echo "Setting up cron job to start webserver." \
  && sudo bash -c 'echo "@reboot centos /home/centos/src/project_data/fpga-webserver/apps/mandelbrot/terraform/fractalvalley_reboot.sh" >> /etc/crontab' \
