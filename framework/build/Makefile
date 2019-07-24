@@ -65,6 +65,7 @@
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
+
 SHELL=/bin/bash
 COMMA:= ,
 EMPTY:=
@@ -95,7 +96,7 @@ SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 SPECIFIED_TARGET :=$(TARGET)
 TARGET :=hw
 # If specified TARGET is not supported, choose a different one.
-ifeq ($(findstrng $(TARGET) |,$(SUPPORTED_TARGETS)),)
+ifeq ($(findstring $(TARGET) |,$(SUPPORTED_TARGETS)),)
 ifeq ($(TARGET),sim)
 TARGET :=sw
 else
