@@ -91,29 +91,29 @@ endif
 SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 #(V) endif
 
-# Determine TARGET. [hw (default) | hw_emu | sim | sw]
+# Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
 
-SPECIFIED_TARGET :=$(TARGET)
-TARGET :=hw
+TARGET=hw
+BUILD_TARGET :=$(TARGET)
 # If specified TARGET is not supported, choose a different one.
-ifeq ($(findstring $(TARGET) |,$(SUPPORTED_TARGETS)),)
-ifeq ($(TARGET),sim)
-TARGET :=sw
+ifeq ($(findstring $(BUILD_TARGET) |,$(SUPPORTED_TARGETS)),)
+ifeq ($(BUILD_TARGET),sim)
+BUILD_TARGET :=sw
 else
 # Downgrade to highest-level target.
-TARGET :=$(firstword $(SUPPORTED_TARGETS))
+BUILD_TARGET :=$(firstword $(SUPPORTED_TARGETS))
 endif
 endif
-ifneq ($(SPECIFIED_TARGETS),)
-$(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
+ifneq ($(BUILD_TARGET),)
+$(info Your platform does not support TARGET=$(BUILD_TARGET).)
 endif
-$(info Using TARGET=$(TARGET). (Platform supports: | $(SUPPORTED_TARGETS)))
+$(info Using TARGET=$(BUILD_TARGET). (Platform supports: | $(SUPPORTED_TARGETS)))
 
-# Characterize TARGET.
-ifeq ($(TARGET),hw)
+# Characterize BUILD_TARGET.
+ifeq ($(BUILD_TARGET),hw)
 USE_XILINX=true
 endif
-ifeq ($(TARGET),hw_emu)
+ifeq ($(BUILD_TARGET),hw_emu)
 USE_XILINX=true
 endif
 
@@ -192,10 +192,10 @@ PLATFORM=${AWS_PLATFORM}
 endif
 
 REPORT=
-ifeq (${TARGET},hw)
+ifeq (${BUILD_TARGET},hw)
 REPORT=--report system
 else
-ifeq (${TARGET},hw_emu)
+ifeq (${BUILD_TARGET},hw_emu)
 REPORT=--report estimate
 endif
 endif
@@ -208,15 +208,15 @@ BUILD_DIR_NAME = prebuilt
 OUT_DIR_NAME = prebuilt_out
 endif
 
-#Assign DEST_DIR as <TARGET>/<TARGET_DEVICE>, or just <TARGET> for sw build (w/ no target device).
+#Assign DEST_DIR as <BUILD_TARGET>/<TARGET_DEVICE>, or just <BUILD_TARGET> for sw build (w/ no target device).
 ifneq ($(USE_XILINX),true)
-DEST_DIR=../$(OUT_DIR_NAME)/$(TARGET)
-BUILD_DIR=../$(BUILD_DIR_NAME)/$(TARGET)
+DEST_DIR=../$(OUT_DIR_NAME)/$(BUILD_TARGET)
+BUILD_DIR=../$(BUILD_DIR_NAME)/$(BUILD_TARGET)
 else
 #Translate Target Device name with underscores
 PERIOD:= :
 UNDERSCORE:= _
-DEST_SUBDIR=$(TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
+DEST_SUBDIR=$(BUILD_TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
 DEST_DIR=../$(OUT_DIR_NAME)/$(DEST_SUBDIR)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(DEST_SUBDIR)
 endif
@@ -317,9 +317,9 @@ endif
 # Xilinx build
 ifeq ($(USE_XILINX),true)
 
-# TODO: These are not relevant for TARGET=sw/sim, and there is no distinction between hw and hw_emu, so they are defined the same
-# regardless of TARGET. Need to make $(HW_DEST_DIR) and $(HW_BUILD_DIR) and use those for kernel build commands/files.
-# Actually, I think it would be better to include TARGET in the build target, eg: sw_host, hw_host, etc. (As it is, there is
+# TODO: These are not relevant for BUILD_TARGET=sw/sim, and there is no distinction between hw and hw_emu, so they are defined the same
+# regardless of BUILD_TARGET. Need to make $(HW_DEST_DIR) and $(HW_BUILD_DIR) and use those for kernel build commands/files.
+# Actually, I think it would be better to include BUILD_TARGET in the build target, eg: sw_host, hw_host, etc. (As it is, there is
 # redundant building for different targets).
 
 VIVADO_VERSION_MESSAGE=Note: Kernel construction assumes Vivado v2018.3
@@ -380,7 +380,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 
 #$(DEST_DIR)/$(KERNEL_EXE).xo:
 #	mkdir -p $(DEST_DIR)
-#	$(XOCC) --platform $(PLATFORM) --target $(TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
+#	$(XOCC) --platform $(PLATFORM) --target $(BUILD_TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
 #	#cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
 
 # Package the project as an .xo.
@@ -408,7 +408,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(BUILD_TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # From: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md
 # The AFI creation process that started in the background is not instantaneous. You must make sure that the process completes successfully before it is able to run on the F1 instance.
@@ -448,10 +448,10 @@ host_debug: $(DEST_DIR)/$(HOST_EXE)_debug
 #xo: $(DEST_DIR)/$(KERNEL_EXE).xo
 xclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 
-ifeq ($(TARGET), hw_emu)
+ifeq ($(BUILD_TARGET), hw_emu)
 HOST_XCLBIN=$(DEST_DIR)/$(KERNEL_EXE).xclbin
 endif
-ifeq ($(TARGET), hw)
+ifeq ($(BUILD_TARGET), hw)
 HOST_XCLBIN=$(BUILD_DIR)/$(KERNEL_EXE).awsxclbin
 # HW targets
 .PHONY: awsxclbin afi
@@ -491,11 +491,11 @@ ifneq ($(USE_XILINX),true)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
 HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
 endif
-ifeq ($(TARGET), hw_emu)
+ifeq ($(BUILD_TARGET), hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD= export XCL_EMULATION_MODE=$(TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD= export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
-ifeq ($(TARGET), hw)
+ifeq ($(BUILD_TARGET), hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 HOST_CMD=$(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 endif
@@ -503,14 +503,14 @@ endif
 build:  $(BUILD_TARGETS)
 launch: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	$(LAUNCH_CMD)  -p $(PORT) $(TARGET) '$(HOST_CMD)'
+	$(LAUNCH_CMD)  -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
 
 launch_nohup: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	nohup $(LAUNCH_CMD) -p $(PORT) $(TARGET) '$(HOST_CMD)' &
+	nohup $(LAUNCH_CMD) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &
 
 
-ifeq ($(TARGET), hw)
+ifeq ($(BUILD_TARGET), hw)
 .PHONY: prebuild
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
