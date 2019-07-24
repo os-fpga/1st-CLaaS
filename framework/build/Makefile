@@ -83,9 +83,9 @@ endif
 #(V) TODO: Uncomment (V) to support 'sim' TARGET.
 #(V) ifneq ($(VERILATOR),)
 #(V) # Verilator.
-#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim | sw |
+#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS) sim | sw |
 #(V) else
-SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |
+SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS) sw |
 #(V) endif
 
 # Determine TARGET. [hw (default) | hw_emu | sim | sw]
@@ -93,7 +93,7 @@ SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |
 SPECIFIED_TARGET :=$(TARGET)
 TARGET :=hw
 # If specified TARGET is not supported, choose a different one.
-ifeq ($(findstrng $(TARGET),$(SUPPORTED_TARGETS)),)
+ifeq ($(findstrng $(TARGET) |,$(SUPPORTED_TARGETS)),)
 ifeq ($(TARGET),sim)
 TARGET :=sw
 else
