@@ -40,11 +40,10 @@
 #     xclbin: the FPGA image
 #     build: the host application and FPGA image
 #     emulation: ?
-#     run_system: build and run
 #     push: push application directory to S3 storage for transfer to F1 Instance
 #     prebuild: populate contents of "prebuilt" directory with current build (do not set PREBUILT variable)
 #     clean: remove all outputs for the given TARGET
-#     live: launch or relaunch TARGET=hw on PORT=80 (without the need to be explicit.)
+#     live: launch or relaunch on PORT=80 in the background such that subsequent builds will not affect the live webserver.
 #     dead: kill the running production server.
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
 #   Variables:
@@ -464,21 +463,24 @@ endif
 
 # For production use of port 80.
 # Run is done in its own directory to avoid socket collision with development.
-.PHONY: live dead
+.PHONY: live dead prep_live_internal
 
-live: dead
-	make TARGET=hw prep_live_internal
+live: dead build
+	make TARGET=$(BUILD_TARGET) prep_live_internal
 	@echo "Launching production server in the background"
-	nohup $(LAUNCH_CMD) -p 80 hw '../live/$(HOST_EXE) $(HOST_XCLBIN)'
+	nohup $(LAUNCH_CMD) -p 80 $(BUILD_TARGET) '../live_$(BUILD_TARGET)/$(HOST_EXE) $(HOST_XCLBIN)'
 	
 dead:
-	source ../live/killme > /dev/null 2>&1 || true
+	source ../live_$(BUILD_TARGET)/killme > /dev/null 2>&1 || true
 
 # A target used by target live (and not expected to be used directly by the user).
 prep_live_internal:
-	mkdir -p ../live
-	cp $(BUILD_DIR)/$(HOST_EXE) ../live
-	cp $(HOST_XCLBIN) ../live
+	mkdir -p ../live_$(BUILD_TARGET)
+	cp $(BUILD_DIR)/$(HOST_EXE) ../live_$(BUILD_TARGET)
+ifeq ($(USE_XILINX),true)
+	cp $(HOST_XCLBIN) ../live_$(BUILD_TARGET)
+endif
+	# TODO: What about copying the launch script? It this is changed, will that affect the running server?
 
 
 ifeq ($(VALGRIND), true)
