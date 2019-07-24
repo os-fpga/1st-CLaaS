@@ -66,7 +66,9 @@
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
 SHELL=/bin/bash
-SPACE= 
+COMMA:= ,
+EMPTY:=
+SPACE:= $(EMPTY) $(EMPTY)
 
 
 # Characcterize platform.
@@ -75,17 +77,17 @@ VERILATOR=$(shell which verilator)
 ifneq ($(AWS_FPGA_REPO_DIR),)
 ifneq ($(findstring $(shell curl http://169.254.169.254/latest/meta-data/instance-type),f1.),)
 # F1
-SUPPORTED_TARGETS :=hw | hw_emu |
+SUPPORTED_TARGETS :=hw | hw_emu |$(SPACE)
 else
-SUPPORTED_TARGETS :=hw_emu |
+SUPPORTED_TARGETS :=hw_emu |$(SPACE)
 endif
 endif
 #(V) TODO: Uncomment (V) to support 'sim' TARGET.
 #(V) ifneq ($(VERILATOR),)
 #(V) # Verilator.
-#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS) sim | sw |
+#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim | sw |$(SPACE)
 #(V) else
-SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS) sw |
+SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 #(V) endif
 
 # Determine TARGET. [hw (default) | hw_emu | sim | sw]
