@@ -44,6 +44,7 @@
 #     prebuild: populate contents of "prebuilt" directory with current build (do not set PREBUILT variable)
 #     clean: remove all outputs for the given TARGET
 #     live: launch or relaunch on PORT=80 in the background such that subsequent builds will not affect the live webserver.
+#           (Must be the only target.)
 #     dead: kill the running production server.
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
 #   Variables:
@@ -61,6 +62,7 @@
 #     S3_LOGS_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
 #     S3_DCP_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
 #     VALGRIND=[true] or default to false behavior. True to use Valgrind to identify memory leaks in the host application.
+#     NOHUP=true: Can be used with 'launch' target to launch in background and stay running after the shell exits. (This is implied by 'make live').
 #   Eg:
 #     make host TARGET=hw_emu KERNEL=mandelbrot
 
@@ -93,6 +95,7 @@ SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 # Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
 
 TARGET=hw
+SPECIFIED_TARGET :=$(TARGET)
 BUILD_TARGET :=$(TARGET)
 # If specified TARGET is not supported, choose a different one.
 ifeq ($(findstring $(BUILD_TARGET) |,$(SUPPORTED_TARGETS)),)
@@ -104,7 +107,7 @@ BUILD_TARGET :=$(firstword $(SUPPORTED_TARGETS))
 endif
 endif
 ifneq ($(BUILD_TARGET),)
-$(info Your platform does not support TARGET=$(BUILD_TARGET).)
+$(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
 endif
 $(info Using TARGET=$(BUILD_TARGET). (Platform supports: | $(SUPPORTED_TARGETS)))
 
@@ -207,6 +210,15 @@ BUILD_DIR_NAME = prebuilt
 OUT_DIR_NAME = prebuilt_out
 endif
 
+# 'live' target.
+ifeq ($(MAKECMDGOALS),live)
+NOHUP=true
+PORT=8080
+HOST_EXE_PATH=live/$(BUILD_TARGET)/$(HOST_EXE)
+else
+HOST_EXE_PATH=$(BUILD_DIR)/$(HOST_EXE)
+endif
+
 #Assign DEST_DIR as <BUILD_TARGET>/<TARGET_DEVICE>, or just <BUILD_TARGET> for sw build (w/ no target device).
 ifneq ($(USE_XILINX),true)
 DEST_DIR=../$(OUT_DIR_NAME)/$(BUILD_TARGET)
@@ -265,6 +277,12 @@ LAUNCH :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo ../../../fr
 LAUNCH_CMD :=$(LAUNCH)
 ifdef LAUNCH_W
 LAUNCH_CMD :=$(LAUNCH_CMD) -w '$(LAUNCH_W)'
+endif
+ifdef NOHUP
+# Run in background to continue if the shell exits; log to webserver.log and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
+LAUNCH_CMD :=nohup $(LAUNCH_CMD) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &> webserver.log < /dev/null &
+else
+LAUNCH_CMD :=$(LAUNCH_CMD) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
 endif
 
 
@@ -463,27 +481,34 @@ endif
 
 # For production use of port 80.
 # Run is done in its own directory to avoid socket collision with development.
-.PHONY: live dead prep_live_internal
+# ../live/$(BUILD_TARGET)/live indicates that the server is live.
+# ../live/$(BUILD_TARGET)/dead indicates that the server is dead.
 
-live: dead build
-	make TARGET=$(BUILD_TARGET) prep_live_internal
-	@echo "Launching production server in the background"
-	nohup $(LAUNCH_CMD) -p 80 $(BUILD_TARGET) '../live_$(BUILD_TARGET)/$(HOST_EXE) $(HOST_XCLBIN)'
-	
-dead:
-	source killme > /dev/null 2>&1 || true
+.PHONY: live dead
 
-# A target used by target live (and not expected to be used directly by the user).
-prep_live_internal:
-	mkdir -p ../live_$(BUILD_TARGET)
-	cp $(BUILD_DIR)/$(HOST_EXE) ../live_$(BUILD_TARGET)
+live: ../live/$(BUILD_TARGET)/live
+../live/$(BUILD_TARGET)/live: ../live/$(BUILD_TARGET)/dead $(BUILD_TARGETS)
+	cp $(BUILD_DIR)/$(HOST_EXE) ../live/$(BUILD_TARGET)
 ifeq ($(USE_XILINX),true)
-	cp $(HOST_XCLBIN) ../live_$(BUILD_TARGET)
+	cp $(HOST_XCLBIN) ../live/$(BUILD_TARGET)
 endif
 	# TODO: What about copying the launch script? It this is changed, will that affect the running server?
+	# TODO: Not sure it's necessary to set make vars. These might pass through as environment vars.
+	@echo "Launching production server in the background"
+	$(LAUNCH_CMD)
+	-rm ../live/$(BUILD_TARGET)/dead
+	touch ../live/$(BUILD_TARGET)/live
+	@echo "Went live!!!   (Stop with 'make dead' or restart with 'make live' again.)"
+
+dead: ../live/$(BUILD_TARGET)/dead
+../live/$(BUILD_TARGET)/dead:
+	if [[ -e killme ]]; then source killme > /dev/null 2>&1 && echo "Giving webserver time to exit gracefully." && sleep 7; fi
+	@mkdir -p ../live/$(BUILD_TARGET)
+	rm -rf ../live/$(BUILD_TARGET)/*
+	@touch ../live/$(BUILD_TARGET)/dead
 
 
-ifeq ($(VALGRIND), true)
+ifeq ($(VALGRIND),true)
 VALGRIND_PREFIX=valgrind --leak-check=yes
 else
 VALGRIND_PREFIX=
@@ -491,25 +516,24 @@ endif
 
 ifneq ($(USE_XILINX),true)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
-HOST_CMD=$(BUILD_DIR)/$(HOST_EXE)
+HOST_CMD=$(HOST_EXE_PATH)
 endif
-ifeq ($(BUILD_TARGET), hw_emu)
+ifeq ($(BUILD_TARGET),hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD= export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
 endif
-ifeq ($(BUILD_TARGET), hw)
+ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=$(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD=$(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE_PATH) $(HOST_XCLBIN)
 endif
 
-build:  $(BUILD_TARGETS)
+
+PHONY: build
+build: $(BUILD_TARGETS)
+	
 launch: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	$(LAUNCH_CMD)  -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
-
-launch_nohup: $(BUILD_TARGETS)
-	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	nohup $(LAUNCH_CMD) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &
+	$(LAUNCH_CMD)
 
 
 ifeq ($(BUILD_TARGET), hw)

@@ -20,5 +20,6 @@
  && /home/centos/src/project_data/fpga-webserver/apps/mandelbrot/terraform/fractalvalley_reboot.sh \
  && echo \
  && echo "HEY!!! The webserver has been launched. You have 3 minutes to test it out, then the machine will be shutdown, if not stopped manually." \
+ && echo \
  && sleep 180 \
- && sudo shutdown)
+ && sudo shutdown now)

@@ -23,7 +23,7 @@ if [[ -d $FPGA_WEBSERVER_DIR ]]; then
 else
 	echo "Cloning FPGA-WEBSERVER"
 	git clone https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
-	echo "Sourcing init"
+	echo "Running init"
 	$FPGA_WEBSERVER_DIR/init
 fi
 echo "Sourcing sdaccel_setup"

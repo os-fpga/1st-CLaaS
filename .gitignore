@@ -2,7 +2,8 @@
 **/webserver/*.pyc
 **/webserver/feeders/
 **/apps/*/out/
-**/apps/*/live_*/
+**/apps/*/live/
+**/apps/*/build/webserver.log
 apps/mandelbrot/build/video
 apps/mandelbrot/build/cast
 **.tfstate
