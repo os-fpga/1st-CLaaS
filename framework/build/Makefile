@@ -273,16 +273,15 @@ endif
 
 
 # If project has a launch command, use it, otherwise, use launch from framework.
-LAUNCH :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo ../../../framework/build/launch; fi)
-LAUNCH_CMD :=$(LAUNCH)
+LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo ../../../framework/build/launch; fi)
 ifdef LAUNCH_W
-LAUNCH_CMD :=$(LAUNCH_CMD) -w '$(LAUNCH_W)'
+LAUNCH_CMD_PARTIAL :=$(LAUNCH_CMD_PARTIAL) -w '$(LAUNCH_W)'
 endif
 ifdef NOHUP
 # Run in background to continue if the shell exits; log to webserver.log and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
-LAUNCH_CMD :=nohup $(LAUNCH_CMD) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &> webserver.log < /dev/null &
+LAUNCH_CMD=nohup $(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &> webserver.log < /dev/null &
 else
-LAUNCH_CMD :=$(LAUNCH_CMD) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
+LAUNCH_CMD=$(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
 endif
 
 
