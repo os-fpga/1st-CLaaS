@@ -5,7 +5,7 @@
 #     way I can find to establish the right environment is to ssh.
 #   o Establish cron @reboot command to start webserver.
 #   o Compile and start webserver for manual testing at <IP>:80.
-# If all's well, after running this via terraform, manually rename server to "fractalvalley.net-F1" and this will be the server used by fractalvaalley.net.
+# If all's well, after running this via terraform, manually rename server to "fractalvalley.net-F1" and this will be the server used by fractalvalley.net.
 (echo \
  && echo "Running fractalvalley_f1_init.sh" \
  && echo \

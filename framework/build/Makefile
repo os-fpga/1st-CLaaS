@@ -77,7 +77,7 @@ SPACE:= $(EMPTY) $(EMPTY)
 
 VERILATOR=$(shell which verilator)
 ifneq ($(AWS_FPGA_REPO_DIR),)
-ifneq ($(findstring $(shell curl http://169.254.169.254/latest/meta-data/instance-type),f1.),)
+ifneq ($(findstring f1.,$(shell curl http://169.254.169.254/latest/meta-data/instance-type)),)
 # F1
 SUPPORTED_TARGETS :=hw | hw_emu |$(SPACE)
 else
@@ -523,7 +523,7 @@ HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfig
 endif
 ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=$(VALGRIND_PREFIX) $(BUILD_DIR)/$(HOST_EXE_PATH) $(HOST_XCLBIN)
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
 endif
 
 
