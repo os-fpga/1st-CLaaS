@@ -24,7 +24,7 @@ else
 	echo "Cloning FPGA-WEBSERVER"
 	git clone https://github.com/alessandrocomodi/fpga-webserver.git $FPGA_WEBSERVER_DIR
 	echo "Sourcing init"
-	source $FPGA_WEBSERVER_DIR/init
+	$FPGA_WEBSERVER_DIR/init
 fi
 echo "Sourcing sdaccel_setup"
 source $FPGA_WEBSERVER_DIR/sdaccel_setup

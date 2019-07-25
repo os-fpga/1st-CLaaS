@@ -17,7 +17,7 @@
  && sudo bash -c 'echo "@reboot centos /home/centos/src/project_data/fpga-webserver/apps/mandelbrot/terraform/fractalvalley_reboot.sh" >> /etc/crontab' \
  && echo \
  && echo "Running reboot script to pre-build and start webserver for manual testing." \
- && /home/centos/src/project_data/fpga-webserver/apps/mandelbrot/terraform/fractalvalley_reboot.sh '&' \
+ && /home/centos/src/project_data/fpga-webserver/apps/mandelbrot/terraform/fractalvalley_reboot.sh \
  && echo \
  && echo "HEY!!! The webserver has been launched. You have 3 minutes to test it out, then the machine will be shutdown, if not stopped manually." \
  && sleep 180 \

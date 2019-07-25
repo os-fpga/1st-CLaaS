@@ -471,7 +471,7 @@ live: dead build
 	nohup $(LAUNCH_CMD) -p 80 $(BUILD_TARGET) '../live_$(BUILD_TARGET)/$(HOST_EXE) $(HOST_XCLBIN)'
 	
 dead:
-	source ../live_$(BUILD_TARGET)/killme > /dev/null 2>&1 || true
+	source killme > /dev/null 2>&1 || true
 
 # A target used by target live (and not expected to be used directly by the user).
 prep_live_internal:
