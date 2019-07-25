@@ -216,6 +216,8 @@ class StartEC2InstanceHandler(EC2Handler):
                 
             try:
                 # Start instance.
+                # Note: The instance must be constructed to launch the webserver at reboot (@reboot in crontab, for example).
+                #       It must be able to safely cleanup any lingering garbage from when it was last stopped.
                 FPGAServerApplication.awsEc2Cli(['start-instances'])
             
                 # Wait for instance to start.
@@ -231,6 +233,7 @@ class StartEC2InstanceHandler(EC2Handler):
                     resp['message'] = "Server failed to start EC2 instance."
                     raise RuntimeError("Failed to find public IP in AWS command output: " + out)
 
+                """
                 # Start webserver via ssh.
                 ssh = '/usr/bin/ssh'
                 args = [ssh, '-i', FPGAServerApplication.ec2_instance_private_key_file, '-oStrictHostKeyChecking=no', 'centos@' + ip, FPGAServerApplication.ec2_instance_start_command]
@@ -242,6 +245,7 @@ class StartEC2InstanceHandler(EC2Handler):
                 except BaseException as e:
                     print "Caught exception: " + str(e)
                     raise RuntimeError("Failed to launch webserver on EC2 instance with command: " + ' '.join(args))
+                """
                 
             except BaseException as e:
                 msg = "Couldn't initialize instance because of exception: " + str(e)
@@ -287,11 +291,9 @@ class FPGAServerApplication(tornado.web.Application):
     #   ec2_instance: (string) The ID of an AWS EC2 instance statically associated with this webserver which can be
     #                 started via gET request and for which a feeder will be started by this function. A route (/feed_ec2_instance) will
     #                 be provided by addDefaultRoutes(..) to feed the instance via the feeder.
-    #   start_command: The shell command string to be executed on the started instance via ssh.
-    #                  IMPORTANT: This command should perform initialization in the foreground, then run server in the background with all three I/O streams redirected (otherwise ssh will not return).
     #   password:     The password to require for starting the ec2 instance, or explicitly "" for no password. (Required if ec2 instance in use.)
     #   profile:      (opt) An AWS profile to use.
-    def associateEC2Instance(self, ec2_instance, start_command, timeout, password, profile=None):
+    def associateEC2Instance(self, ec2_instance, timeout, password, profile=None):
         ret = False
         # Create feeder.
         feeders_dir = FPGAServerApplication.app_dir + "/webserver/feeders"
@@ -311,7 +313,6 @@ class FPGAServerApplication(tornado.web.Application):
             
             FPGAServerApplication.ec2_feeder_script = script
             FPGAServerApplication.ec2_instance_id = ec2_instance
-            FPGAServerApplication.ec2_instance_start_command = start_command
             FPGAServerApplication.ec2_feeder_filename = feeder_file
             FPGAServerApplication.ec2_feeder_timeout = timeout
             FPGAServerApplication.ec2_profile = profile
