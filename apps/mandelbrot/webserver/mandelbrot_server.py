@@ -309,7 +309,7 @@ class MandelbrotApplication(FPGAServerApplication):
         if instance:
             # TODO: THIS IS NOT CORRECT FOR MULTIPLE USERS. NEED ONLY THE FIRST USER TO START THE WEBSERVER.
             self.associateEC2Instance(instance, timeout, password, profile)
-        routes = self.defaultRoutes()
+        routes = self.defaultRoutes(ip=True)  # ip route is used by framework as a ping for F1.
         routes.extend(
             [ (r"/redeploy", RedeployHandler),
               #(r'/hw', GetRequestHandler),

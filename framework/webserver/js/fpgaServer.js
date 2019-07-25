@@ -159,10 +159,16 @@ class fpgaServer {
       e.preventDefault();
       this.f1_state = "pending";
       $("#start-fpga-button").prop("disabled", true);
+      $("#fpga-message").text("Starting...");
       this.beginEC2Feeding();
-      let startFailed = () => {
+      
+      // Handle any failing cases for starting F1.
+      let startFailed = (msg) => {
+        // Go to "stopped" state.
+        // This will cause feeding to stop in time.
         this.f1_state = "stopped";
         $("#start-fpga-button").prop("disabled", false);
+        $("#fpga-message").text(`Start failed with: ${msg}`);
       }
       $.ajax({
         url: '/start_ec2_instance',
@@ -180,15 +186,40 @@ class fpgaServer {
             $("#fpga-message").text(json.message);
           }
           if (typeof json.ip === "undefined") {
-            startFailed()
+            startFailed("malformed response");
           } else {
-            $('#stop-fpga-button').prop("disabled", false);
-            this.f1_ip = json.ip;
-            this.f1_state = "running";
+            // Good response.
+            // Ping webserver until it responds, then start using this server.
+            let ping = (cnt, timeout_ms) => {
+              let jqxhr = $.get(`http://${json.ip}/ip`, (resp) => {
+                // Success. Use this server.
+                if (resp != json.ip) {
+                  console.log(`Ping response should be IP (${json.ip}), but it is ${resp}. Continuing anyway.`);
+                } else {
+                  console.log(`Server at ${json.ip} is operational.`);
+                }
+                $('#stop-fpga-button').prop("disabled", false);
+                this.f1_ip = json.ip;
+                this.f1_state = "running";
+              }).fail( () => {
+                // Web server isn't running yet (presumably).
+                if (cnt > 0) {
+                  // Try again.
+                  console.log(`Still waiting for webserver at json.ip... (${cnt})`);
+                  window.setTimeout( () => {
+                    ping(cnt - 1, timeout_ms);
+                  }, timeout_ms);
+                } else {
+                  // Give up.
+                  startFailed("Instance started, but web server never came up.");
+                }
+              })
+            };
+            ping(40, 4000);
           }
         },
         error: (xhr, status, e) => {
-          startFailed();
+          startFailed("AJAX request error.");
         }
       });
     });

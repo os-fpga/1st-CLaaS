@@ -137,7 +137,6 @@ Handler for Real IP address GET requests (no default route for this)
 This can be useful if a proxy is used to server the http requests, but a WebSocket must be opened directly.
 """
 class IPReqHandler(ReqHandler):
-    # handles image request via get request
     def get(self):
         ip = self.external_ip
         if (ip == None):
