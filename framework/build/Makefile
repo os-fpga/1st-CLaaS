@@ -213,7 +213,7 @@ endif
 # 'live' target.
 ifeq ($(MAKECMDGOALS),live)
 NOHUP=true
-PORT=8080
+PORT=80
 HOST_EXE_PATH=live/$(BUILD_TARGET)/$(HOST_EXE)
 else
 HOST_EXE_PATH=$(BUILD_DIR)/$(HOST_EXE)
