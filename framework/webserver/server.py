@@ -138,7 +138,7 @@ This can be useful if a proxy is used to server the http requests, but a WebSock
 """
 class IPReqHandler(ReqHandler):
     def get(self):
-        ip = self.external_ip
+        ip = FPGAServerApplication.application.external_ip
         if (ip == None):
             ip = ""
         #ip_str = socket.gethostbyname(socket.gethostname())
