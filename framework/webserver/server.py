@@ -90,13 +90,13 @@ class BasicFileHandler(tornado.web.StaticFileHandler):
 # 'handler' is a method of the form: json_response = handler(self, payload)
 class WSHandler(tornado.websocket.WebSocketHandler):
   def open(self):
-    print 'Webserver: New connection'
+    print('Webserver: New connection')
 
   # This function activates whenever there is a new message incoming from the WebSocket
   def on_message(self, message):
     msg = json.loads(message)
     response = {}
-    print "Webserver: ws.on_message:", message
+    print("Webserver: ws.on_message:", message)
     type = msg['type']
     payload = msg['payload']
 
@@ -106,10 +106,10 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     try:
         result = self.application.message_handlers[type](payload, type)
     except KeyError:
-        print "Webserver: Unrecognized message type:", type
+        print("Webserver: Unrecognized message type:", type)
     
     # The result is sent back to the client
-    print "Webserver: Responding with:", result
+    print("Webserver: Responding with:", result)
     self.write_message(result)
 
   def on_close(self):
@@ -153,7 +153,7 @@ class EC2Handler(ReqHandler):
         status = 0
         args = [FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_instance_feeder", "feed", FPGAServerApplication.ec2_feeder_filename]
         try:
-            out = subprocess.check_output(args)
+            out = subprocess.check_output(args, universal_newlines=True)
         except subprocess.CalledProcessError as e:
             out = "Error: status: " + str(e.returncode) + ", cmd: " + e.cmd + ", output: " + e.output
             status = e.returncode
@@ -161,7 +161,7 @@ class EC2Handler(ReqHandler):
             out = "Error: " + str(e)
             status = 1
         if status != 0:
-            print "Webserver: Feeding returned:", out
+            print("Webserver: Feeding returned:", out)
         return status
 
 """
@@ -196,7 +196,7 @@ class StartEC2InstanceHandler(EC2Handler):
                 raise RuntimeError("Invalid password")
             
             # As a safety check, make sure the feeder is running for the instance.
-            out = subprocess.check_output(['/bin/bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_feeder_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_feeder_filename + "') -o comm="])
+            out = subprocess.check_output(['/bin/bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_feeder_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_feeder_filename + "') -o comm="], universal_newlines=True)
             if not re.match('^ec2_', out):
                 raise RuntimeError("Unable to find feeder process for " + FPGAServerApplication.ec2_feeder_filename + ".")
                 
@@ -208,7 +208,7 @@ class StartEC2InstanceHandler(EC2Handler):
         except BaseException as e:
             msg = "Couldn't set up for EC2 instance because of exception: " + str(e)
             resp = {"message": msg}
-            print "Webserver: " + msg
+            print("Webserver: " + msg)
         
         if not "message" in resp:
             # So far, so good.
@@ -236,20 +236,20 @@ class StartEC2InstanceHandler(EC2Handler):
                 # Start webserver via ssh.
                 ssh = '/usr/bin/ssh'
                 args = [ssh, '-i', FPGAServerApplication.ec2_instance_private_key_file, '-oStrictHostKeyChecking=no', 'centos@' + ip, FPGAServerApplication.ec2_instance_start_command]
-                print "Webserver: Running: " + " ".join(args)
+                print("Webserver: Running: " + " ".join(args))
                 try:
                     ## Using spawn to run in background.
                     #os.spawnv(os.P_NOWAIT, ssh, args)
                     subprocess.check_call(args)
                 except BaseException as e:
-                    print "Caught exception: " + str(e)
+                    print("Caught exception: " + str(e))
                     raise RuntimeError("Failed to launch webserver on EC2 instance with command: " + ' '.join(args))
                 """
                 
             except BaseException as e:
                 msg = "Couldn't initialize instance because of exception: " + str(e)
                 resp = {"message": msg}
-                print "Webserver: " + msg
+                print("Webserver: " + msg)
                 
                 # Stop server. Note that there might be other users of the instance, but something seems wrong with it, so
                 # tear it down, now.
@@ -257,7 +257,7 @@ class StartEC2InstanceHandler(EC2Handler):
                     cmd = [FPGAServerApplication.ec2_feeder_script, "starve", FPGAServerApplication.ec2_feeder_filename]
                     out = subprocess.check_call(cmd)
                 except:
-                    print "Webserver: Failed to stop instance that failed to initialize properly using: " + " ".join(cmd)
+                    print("Webserver: Failed to stop instance that failed to initialize properly using: " + " ".join(cmd))
 
         self.write(json.dumps(resp))
 
@@ -299,7 +299,7 @@ class FPGAServerApplication(tornado.web.Application):
         feeder_file = feeders_dir + "/" + ec2_instance
         script = FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_instance_feeder"
         args = [script, "connect", feeder_file, str(timeout)]
-        print "Attempting to associate feeder with ec2 instance with command:", args
+        print("Attempting to associate feeder with ec2 instance with command:", args)
         if profile:
             args.append(profile)
         try:
@@ -307,8 +307,8 @@ class FPGAServerApplication(tornado.web.Application):
                 os.mkdir(feeders_dir)
             except OSError as e:
                 pass
-            subprocess.check_call(args)   # Note that subprocess.check_output(args) cannot be used because subprocess remains running and connected to stdout.
-            print '*** EC2 Instance Feeder %s Started ***' % (feeder_file)
+            subprocess.check_call(args)   # Note that subprocess.check_output(args, universal_newlines=True) cannot be used because subprocess remains running and connected to stdout.
+            print('*** EC2 Instance Feeder %s Started ***' % (feeder_file))
             
             FPGAServerApplication.ec2_feeder_script = script
             FPGAServerApplication.ec2_instance_id = ec2_instance
@@ -321,7 +321,7 @@ class FPGAServerApplication(tornado.web.Application):
             FPGAServerApplication.ec2_instance_password = password
             ret = True
         except BaseException as e:
-            print "Webserver: FPGAServerApplication failed to start feeder for EC2 instance %s with exception: %s" % (ec2_instance, str(e))
+            print("Webserver: FPGAServerApplication failed to start feeder for EC2 instance %s with exception: %s" % (ec2_instance, str(e)))
         return ret
     
     # Issue an aws ec2 command via CLI. (It would be better to use boto3, but it is blocking.)
@@ -331,13 +331,13 @@ class FPGAServerApplication(tornado.web.Application):
     @staticmethod
     def awsEc2Cli(args):
         args = ['aws', 'ec2'] + args + ['--output', 'text', '--instance-ids', FPGAServerApplication.ec2_instance_id]
-        print "Webserver: Running: " + " ".join(args)
+        print("Webserver: Running: " + " ".join(args))
         if FPGAServerApplication.ec2_profile:
             args.append('--profile')
             args.append(FPGAServerApplication.ec2_profile)
         err_str = None
         try:
-            ret = subprocess.check_output(args)
+            ret = subprocess.check_output(args, universal_newlines=True)
             """
             if property:
                 m = re.match(r'[^\n]' + property + r'\s+(.*)\n', out)
@@ -349,7 +349,7 @@ class FPGAServerApplication(tornado.web.Application):
         except:
             err_str = "AWS EC2 command failed: " + ' '.join(args)
         if err_str:
-            print "Webserver: " + err_str
+            print("Webserver: " + err_str)
             raise RuntimeError(err_str)
         return ret
     
@@ -389,7 +389,7 @@ class FPGAServerApplication(tornado.web.Application):
     
     # Handler for GET_IMAGE.
     def handleGetImage(self, payload, type):
-        print "Webserver: handleGetImage:", payload
+        print("Webserver: handleGetImage:", payload)
         response = get_image(self.socket, "GET_IMAGE", payload, True)
         return {'type': 'user', 'png': response}
         
@@ -405,32 +405,32 @@ class FPGAServerApplication(tornado.web.Application):
     def cleanupHandler(signum, frame):
         if not FPGAServerApplication.cleanup_handler_called:
             FPGAServerApplication.cleanup_handler_called = True
-            print 'Webserver: Signal handler called with signal', signum
+            print('Webserver: Signal handler called with signal', signum)
             tornado.ioloop.IOLoop.instance().add_callback(FPGAServerApplication.cleanExit)
         else:
-            print "Webserver: Duplicate call to Signal handler."
+            print("Webserver: Duplicate call to Signal handler.")
         
     # Clean up upon exiting.
     @staticmethod
     def cleanExit():
         if not FPGAServerApplication.clean_exit_called:
             FPGAServerApplication.clean_exit_called = True
-            print "Webserver: Closing socket."
+            print("Webserver: Closing socket.")
             #sock = FPGAServerApplication.application.socket
             #sock.close()  # Not found??
             
             MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 3
             if FPGAServerApplication.ec2_feeder_filename:
-                print "Webserver: Disconnecting feeder", FPGAServerApplication.ec2_feeder_filename
+                print("Webserver: Disconnecting feeder", FPGAServerApplication.ec2_feeder_filename)
                 try:
-                    out = subprocess.check_output([FPGAServerApplication.ec2_feeder_script, "disconnect", FPGAServerApplication.ec2_feeder_filename])
+                    out = subprocess.check_output([FPGAServerApplication.ec2_feeder_script, "disconnect", FPGAServerApplication.ec2_feeder_filename], universal_newlines=True)
                 except:
-                    print "Webserver: Failed to disconnect", FPGAServerApplication.ec2_feeder_filename
+                    print("Webserver: Failed to disconnect", FPGAServerApplication.ec2_feeder_filename)
         
-            print 'Webserver: Stopping http server.'
+            print('Webserver: Stopping http server.')
             FPGAServerApplication.server.stop()
 
-            #print 'Will shutdown within %s seconds ...' % MAX_WAIT_SECONDS_BEFORE_SHUTDOWN
+            #print('Will shutdown within %s seconds ...' % MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
             io_loop = tornado.ioloop.IOLoop.instance()
 
             deadline = time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN
@@ -441,16 +441,16 @@ class FPGAServerApplication(tornado.web.Application):
                     io_loop.add_timeout(now + 1, stop_loop)
                 else:
                     io_loop.stop()
-                    print 'Webserver: Shutdown'
+                    print('Webserver: Shutdown')
             stop_loop()
             
             # As an added safety measure, let's wait for the EC2 instance to stop.
             if FPGAServerApplication.ec2_feeder_filename:
-                print "Waiting for associated EC instance (" + FPGAServerApplication.ec2_instance_id + ") to stop."
+                print("Webserver: Waiting for associated EC2 instance (" + FPGAServerApplication.ec2_instance_id + ") to stop.")
                 FPGAServerApplication.awsEc2Cli(['wait', 'instance-stopped', '--no-paginate'])
-                print "EC instance " + FPGAServerApplication.ec2_instance_id + " stopped."
+                print("Webserver: EC2 instance " + FPGAServerApplication.ec2_instance_id + " stopped.")
         else:
-            print "Webserver: Duplicate call to cleanExit()."
+            print("Webserver: Duplicate call to cleanExit().")
     
         
     def __init__(self, port, routes):
@@ -472,12 +472,12 @@ class FPGAServerApplication(tornado.web.Application):
         # Local IP: myIP = socket.gethostbyname(socket.gethostname())
         port_str = "" if port == 80 else  ":" + str(port)
         try:
-            self.external_ip = subprocess.check_output(["wget", "-qO-", "ifconfig.me"])
-            print '*** Websocket Server Started, (http://%s%s) ***' % (self.external_ip, port_str)
+            self.external_ip = subprocess.check_output(["wget", "-qO-", "ifconfig.me"], universal_newlines=True)
+            print('*** Websocket Server Started, (http://%s%s) ***' % (self.external_ip, port_str))
         except:
-            print "Webserver: FPGAServerApplication failed to acquire external IP address."
+            print("Webserver: FPGAServerApplication failed to acquire external IP address.")
             self.external_ip = None
-            print '*** Websocket Server Started (http://localhost%s) ***' % port_str
+            print('*** Websocket Server Started (http://localhost%s) ***' % port_str)
         signal.signal(signal.SIGINT,  FPGAServerApplication.cleanupHandler)
         signal.signal(signal.SIGQUIT, FPGAServerApplication.cleanupHandler)
         signal.signal(signal.SIGTERM, FPGAServerApplication.cleanupHandler)
@@ -487,6 +487,6 @@ class FPGAServerApplication(tornado.web.Application):
             # Starting webserver
             tornado.ioloop.IOLoop.instance().start()
         except BaseException as e:
-            print "Webserver: Exiting due to exception:", e
+            print("Webserver: Exiting due to exception:", e)
             #FPGAServerApplication.cleanExit(e)
             

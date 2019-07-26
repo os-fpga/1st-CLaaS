@@ -37,6 +37,8 @@
 #
 # TODO: This is a big hack. The webserver should open the socket and start the host and tear down
 #       the socket and host when it's done/killed. (Though consider how gdb can be run within editor where the editor must execute the host command.)
+#
+# This should be run via the Makefile.
 
 # Usage:
 #   ./launch [-c <compile-command>] [-w <webserver-command>] [-p <port>] <hw/sw> [<host-command>]
@@ -72,7 +74,7 @@ SCRIPT_CMD="launch $*"
 PORT="8888"
 HOST_PID=""
 COMPILE_CMD=""
-LAUNCH_WEBSERVER_CMD='python ../../../framework/webserver/default_server.py --port=<<PORT>>'
+LAUNCH_WEBSERVER_CMD='python3 ../../../framework/webserver/default_server.py --port=<<PORT>>'
 
 
 # Read command line options

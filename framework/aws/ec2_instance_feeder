@@ -449,7 +449,7 @@ feed() {
     then
       
       
-      # Stop instance (even if it is already stopped), and check success.
+      # Stop/terminate instance (even if it is already stopped), and check success.
       
       current_state=$( $starve_cmd | grep CURRENTSTATE )
       if [[ ! $current_state =~ $starve_state_pattern ]]

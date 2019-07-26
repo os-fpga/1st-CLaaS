@@ -14,5 +14,7 @@ apps/mandelbrot/build/cast
 /framework/terraform/development/centos_pwd.txt
 /terraform
 
+__pycache__
+
 # Used by scripts to remember the active F1 instance IP address.
 .ec2_ip

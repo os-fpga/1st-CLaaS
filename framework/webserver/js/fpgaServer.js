@@ -189,6 +189,7 @@ class fpgaServer {
             startFailed("malformed response");
           } else {
             // Good response.
+            $("#fpga-message").text("Created. Initializing...");
             // Ping webserver until it responds, then start using this server.
             let ping = (cnt, timeout_ms) => {
               let jqxhr = $.get(`http://${json.ip}/ip`, (resp) => {
@@ -198,6 +199,7 @@ class fpgaServer {
                 } else {
                   console.log(`Server at ${json.ip} is operational.`);
                 }
+                $("#fpga-message").text("Running.");
                 $('#stop-fpga-button').prop("disabled", false);
                 this.f1_ip = json.ip;
                 this.f1_state = "running";
@@ -226,6 +228,7 @@ class fpgaServer {
     $("#stop-fpga-button").click( () => {
       // Go straight to "stopped" state.
       // This will cause feeding to stop in time.
+      $("#fpga-message").text("Stopped.");
       this.f1_state = "stopped";
       $("#stop-fpga-button").prop("disabled", true);
       $('#start-fpga-button').prop("disabled", false);

@@ -22,7 +22,7 @@ variable "delete_storage_on_destroy" {
   type = bool
 }
 
-variable "app_launch_script" {
+variable "custom_script" {
   type = string
   default = "/home/centos/terraform/dummy.sh"
 }
@@ -147,6 +147,10 @@ resource "aws_instance" "fpga_f1" {
       source      = "../deployment/files/scripts/init.sh"
       destination = "/home/centos/init.sh"
     }
+    provisioner "file" {
+      source      = "files/scripts/dummy.sh"
+      destination = "${var.custom_script}"
+    }
 
     provisioner "file" {
       source      = "files/scripts/install_gui.sh"
@@ -157,6 +161,12 @@ resource "aws_instance" "fpga_f1" {
       inline = [
         "chmod +x /home/centos/init.sh",
         "source /home/centos/init.sh",
+      ]
+    }
+    provisioner "remote-exec" {
+      inline = [
+        "chmod +x ${var.custom_script}",
+        "source ${var.custom_script}",
       ]
     }
 

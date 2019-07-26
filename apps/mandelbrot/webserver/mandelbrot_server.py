@@ -53,7 +53,7 @@ class Mandelbrot():
   @staticmethod
   def getImage(img_width, img_height, x, y, pix_x, pix_y, max_depth):
     # dummy image generation
-    #print "Producing image %i, %i, %f, %f, %f, %f, %i" % (img_width, img_height, x, y, pix_x, pix_y, max_depth)
+    #print("Producing image %i, %i, %f, %f, %f, %f, %i" % (img_width, img_height, x, y, pix_x, pix_y, max_depth))
     #self.img = Image.new('RGB', (256, 256), (int(x)*18%256, int(y)*126%256, int(pix_x)*150%256))
     image = Image.new('RGB', (img_width, img_height))  # numpy.empty([img_width, img_height])
     pixels = image.load()
@@ -97,7 +97,7 @@ a pull of the latest git repo and teardown and re-launch of this web server and 
 """
 class RedeployHandler(tornado.web.RequestHandler):
     def get(self):
-        print "Redeploying."
+        print("Redeploying.")
         os.kill(os.getppid(), signal.SIGUSR1)
 
 """
@@ -134,10 +134,9 @@ class ImageHandler(tornado.web.RequestHandler):
         json_str = self.get_query_argument("json", False)
 
         if (json_str == False):
-            print "Python: No json query argument for ImageHandler"
+            print("Python: No json query argument for ImageHandler")
             return
 
-        json_str = unicodedata.normalize('NFKD', json_str).encode("ascii", "ignore")  # Unicode to str
         json_obj = json.loads(json_str)
 
         try:
@@ -163,7 +162,7 @@ class ImageHandler(tornado.web.RequestHandler):
 
         # Determine image parameters from GET parameters
         if type == "tile":
-            #print "Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s" % (tile_z, tile_x, tile_y, depth, var1, var2)
+            #print("Get tile image z:%s, x:%s, y:%s, depth:%s, var1:%s, var2:%s" % (tile_z, tile_x, tile_y, depth, var1, var2))
 
             # map parameters to those expected by FPGA, producing 'payload'.
             tile_size = 4.0 / 2.0 ** float(tile_z)    # size of tile x/y in Mandelbrot coords
@@ -179,12 +178,12 @@ class ImageHandler(tornado.web.RequestHandler):
             json_obj["width"] = 256
             json_obj["height"] = 256
             json_obj["max_depth"] = int(depth)
-            #print "Payload from web server: %s" % payload
+            #print("Payload from web server: %s" % payload)
             json_str = json.dumps(json_obj)
         elif type == "img":
             dummy = 0
         else:
-            print "Unrecognized type arg in ImageHandler.get(..)"
+            print("Unrecognized type arg in ImageHandler.get(..)")
 
         img_data = self.application.renderImage(json_str, json_obj)
         self.write(img_data)
@@ -200,11 +199,11 @@ class ImageHandler(tornado.web.RequestHandler):
                 try:
                     # Remove any existing directory (which should only be leftover from a failure).
                     if not subprocess.call("rm -rf " + burn_dir, shell=True):
-                        print "Remove pre-existing directory " + burn_dir + " for video creation."
+                        print("Remove pre-existing directory " + burn_dir + " for video creation.")
                     os.makedirs(burn_dir)
-                    print "Successfully created the directory %s " % burn_dir
+                    print("Successfully created the directory %s " % burn_dir)
                 except OSError:
-                    print "Creation of the directory %s failed" % burn_dir
+                    print("Creation of the directory %s failed" % burn_dir)
             # Write file.
             filepath = burn_dir + "/" + str(burn_frame) + ".png"
             try:
@@ -215,27 +214,27 @@ class ImageHandler(tornado.web.RequestHandler):
                     # Got all the images, now convert to video and clean up.
                     try:
                         mp4_name = burn_dir + ".mp4"
-                        print "Burning video " + mp4_name
+                        print("Burning video " + mp4_name)
                         # Delete existing video.
                         if not subprocess.call("rm " + mp4_name, shell=True):
-                            print "Removed pre-existing video " + mp4_name
+                            print("Removed pre-existing video " + mp4_name)
                         # Create video from images.
                         if subprocess.call("ffmpeg -framerate 24 -i " + burn_dir + "/%d.png " + mp4_name, shell=True):
                             sys.stderr.write("ffmpeg command failed.")
                         else:
-                            print "Burned video as %s" % mp4_name
+                            print("Burned video as %s" % mp4_name)
                             if subprocess.call("rm -rf " + burn_dir, shell=True):
                                 sys.stderr. write("failed to remove images in " + burn_dir)
                     except Error:
                         sys.stderr.write("Failed to convert images to video.")
             except IOError:
-                print "Failed to write file %s" % filepath
+                print("Failed to write file %s" % filepath)
 
         # Cast?
         # Validate dir name.
         ok = self.valid_dirname(cast_subdir)
         if ok:
-            #print "Casting: %s" % cast_subdir
+            #print("Casting: %s" % cast_subdir)
             # Cast. Steps are:
             #   o Remove old directory if it exists.
             #   o Create new directory.
@@ -252,7 +251,7 @@ class ImageHandler(tornado.web.RequestHandler):
                 file.write(img_data)
                 file.close()
             except IOError:
-                print "Failed to write file %s" % filepath
+                print("Failed to write file %s" % filepath)
 
 """
 Handler for requesting an image generated by another client.
@@ -325,7 +324,7 @@ class MandelbrotApplication(FPGAServerApplication):
     """
     def renderImage(self, settings_str, settings):
         # Create image
-        #print settings
+        #print(settings)
         if self.socket == None or settings["renderer"] == "python":
             # No socket. Generate image here, in Python.
             outputImg = io.BytesIO()
@@ -334,7 +333,7 @@ class MandelbrotApplication(FPGAServerApplication):
             img_data = outputImg.getvalue()
         else:
             # Send image parameters over socket.
-            #print "Python sending to C++: ", payload
+            #print("Python sending to C++: ", payload)
             img_data = get_image(self.socket, GET_IMAGE, settings_str, False)
         return img_data
 
@@ -342,7 +341,7 @@ if __name__ == "__main__":
 
     # Command-line options
     
-    print "Mandelbrot webserver application starting."
+    print("Mandelbrot webserver application starting.")
 
     port = 8888
     instance = None
@@ -352,7 +351,7 @@ if __name__ == "__main__":
     try:
         opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_feeder_timeout=", "password=", "profile="])
     except getopt.GetoptError:
-        print 'Usage: %s [--port #] [--instance i-#] [--ec2_feeder_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0])
+        print('Usage: %s [--port #] [--instance i-#] [--ec2_feeder_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
         sys.exit(2)
     for opt, arg in opts:
         if opt == '--port':

@@ -46,13 +46,13 @@ def json_to_tcl_config (string):
   try:
     json_file = open(string)
   except:
-    print "ERROR: file " + string + " does not exist"
+    print("ERROR: file " + string + " does not exist")
     sys.exit(0)
 
   try:
     json_data = json.load(json_file)
   except:
-    print "ERROR: wrong json format"
+    print("ERROR: wrong json format")
     sys.exit(0)
 
   append += "CONFIG.NUM_CLOCKS {" + str(json_data['clocks']) + "} CONFIG.NUM_RESETS {1} "
@@ -74,7 +74,7 @@ if len(sys.argv) > 2:
   config_file = sys.argv[1]
   fn = sys.argv[2]
 else:
-  print "Usage: ", __file__, " <config-file> <output-file>"
+  print("Usage: ", __file__, " <config-file> <output-file>")
   sys.exit(0)
 
 #lib_dir_path = os.environ['LIB_DIR']

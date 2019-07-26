@@ -75,17 +75,17 @@ class Socket():
             try:
                 self.sock.connect(server_address)
                 connected = True
-            except socket.error, e:
+            except socket.error as e:
                 if cnt > 10:
-                  print "Giving up."
+                  print("Giving up.")
                   sys.exit(1)
-                print "Couldn't connect to host application via socket. Waiting..."
+                print("Couldn't connect to host application via socket. Waiting...")
                 time.sleep(3)
                 cnt = cnt + 1
 
 
     def send_string(self, tag, str):
-        #print "Python: sending", len(str), "-byte", tag
+        #print("Python: sending", len(str), "-byte", tag)
         self.send(tag + " size", struct.pack("I", socket.htonl(len(str))))  # pack bytes of len properly
         self.send(tag, str.encode())
 
@@ -93,23 +93,23 @@ class Socket():
     ### Send/receive over socket and report.
     def send(self, tag, data):
         if self.VERBOSITY > 5:
-            print "Python: Sending", len(data), "-byte", tag, "over socket:", data
+            print("Python: Sending", len(data), "-byte", tag, "over socket:", data)
         try:
             # To do. Be more graceful about large packets by using sock.send (once multithreading is gracefully supported).
             self.sock.sendall(data)
         except socket.error:
-            print "sock.send failed with socket.error."
+            print("sock.send failed with socket.error.")
             traceback.print_stack()
     def recv(self, tag, size):
         if self.VERBOSITY > 5:
-            print "Python: Receiving", size, "bytes of", tag, "from socket"
+            print("Python: Receiving", size, "bytes of", tag, "from socket")
         ret = None
         try:
             ret = self.sock.recv(size)
         except socket.error:
-            print "sock.recv failed."
+            print("sock.recv failed.")
             traceback.print_stack()
-        #print "Python: recv'ed:", ret
+        #print("Python: recv'ed:", ret)
         return ret
 
 ### This function requests an image from the host
@@ -121,7 +121,7 @@ class Socket():
 def get_image(sock, header, payload, b64=True):
 
   # Handshake with host application
-  #print "Header: ", header
+  #print("Header: ", header)
   sock.send_string("command", header)
   sock.send_string("image params", payload)
 
@@ -143,7 +143,7 @@ def read_data_handler(sock, header=None, b64=True):
   # Decode data size
   (size,) = struct.unpack("I", response)
   size = socket.ntohl(size)
-  print "Size: ", size
+  print("Size: ", size)
 
   ### Receive chunks of data from host ###
   data = b''
@@ -158,7 +158,7 @@ def read_data_handler(sock, header=None, b64=True):
     # Does the decode("utf-8") below do anything? Let's check.
     tmp = data
     if (data != tmp.decode("utf-8")):
-      print "FYI: UTF-8 check mismatched."
+      print("FYI: UTF-8 check mismatched.")
 
     data = data.decode("utf-8")
 

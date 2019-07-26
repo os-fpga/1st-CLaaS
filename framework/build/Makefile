@@ -31,11 +31,26 @@
 
 # Includes SDAccel 2017.1 Makefile functionality and general functionality for fpga-webserver.
 #
+# Terminology (Move to README):
+#   Landing Web Server: The public-facing web server providing the landing page for an application (in contrast to an Accelerated
+#                       Web Server, though these could be one in the same).
+#   Accelerated Web Server: A web server utilizing an attached FPGA or FPGA emulation (running on an Amazon F1 Instance or emulated
+#                           on a C4 Instance or future platform)
+#   Accelerated Instance: An EC2 Instance (or future platform) running an Accelerateed Web Server.
+#   Static Accelerated Web Server: An Accelerated Web Server Instance that is statically associated with a Landing Web Server.
+#                                  It is shared by all users and may be dynamically stopped/started based on need by an EC2 Feeder.
+#   EC2 Feeder: A utility provided in this repository responsible for stopping/terminating EC2 Instances (Accelerated Instances)
+#               when not in use.
+#
 # Usage:
 #   Projects must provide a Makefile that includes this one.
-#   Use mandelbrot example as a frame of reference.
+#   Use apps/* examples for sample usage.
 #
-#   Provided Targets:
+#   This Makefile provides targets for:
+#      o Building and launching a Landing Web Server (and its host application)
+#      o Creating a Static Accelerated Web Server
+#
+#   Provided Targets (for Web Server and Application build/launch):
 #     host: the host application
 #     xclbin: the FPGA image
 #     build: the host application and FPGA image
@@ -47,6 +62,7 @@
 #           (Must be the only target.)
 #     dead: kill the running production server.
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
+#     static_accelerated_instance: create an EC2 instance to be used by the 
 #   Variables:
 #     PORT: The port on which to launch the webserver.
 #     TARGET=[hw, hw_emu, sim, sw] (determined by platform by default)
@@ -55,7 +71,6 @@
 #              sim: Verilator simulation of the kernel.
 #              sw: software-only with no kernel behavior available.
 #            Target is downgraded automatically based on the platform.
-#     KERNEL: the name for the fpga model
 #     PREBUILT=[true] or default to false behavior. True to use the prebuilt files in the repository, rather than building.
 #     WAVES=[true] or default to false behavior. True to generate waveforms. (xocc )
 #     S3_BUCKET=bucket_name: provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
@@ -64,7 +79,25 @@
 #     VALGRIND=[true] or default to false behavior. True to use Valgrind to identify memory leaks in the host application.
 #     NOHUP=true: Can be used with 'launch' target to launch in background and stay running after the shell exits. (This is implied by 'make live').
 #   Eg:
-#     make host TARGET=hw_emu KERNEL=mandelbrot
+#     make host TARGET=hw_emu
+#
+#   Platform Targets (for constructing the multi-server platform):
+#     To create a new Static Accelerated Instance, to be associated with the Content Web Server, use:
+#        make PASSWORD=XXX PREBUILT=false/true TFVAR=$HOME/aws_cred.tfvars static_accelerated_instance  # (or omit variables to be prompted.)
+#        #    PASSWORD: (prompts as admin_pwd) might be used by webserver to authenticate administrative actions from a client.
+#        #    PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
+#        #    EC2_TYPE: Use c4 for testing without FPGA.
+#        #    INSTANCE_NAME: Name of the instance.
+#        #    TFVAR:    A single .tfvars file. To avoid prompts, this should contain:
+#        #                aws_access_key_id="XXX"
+#        #                aws_secret_access_key="XXX"
+#        #                region="XXX"   # Eg: "us-east-1"
+#        #              (It may also provide admin_pwd and use_prebuilt_afi.)
+#        #    TF_ARGS: (opt) Additional arguments for Terraform.
+#        WARNING: This launches a new instance. Be sure it is not left running!
+#     To associate F1, with this Content Web Server use:
+#        make INSTANCE=i-xxxxxxx PASSWORD=<password> PROFILE=<aws-profile> ...
+#        #    PASSWORD: used by this web server (not F1) to authenticate administrative actions; probably best to use the same PASSWORD for F1.
 
 
 SHELL=/bin/bash
@@ -121,7 +154,16 @@ endif
 
 
 
-PORT=8888
+# Determine kernel name from current directory.
+KERNEL_NAME ?= $(shell realpath $$(pwd) | sed 's|^.*/\([^/]*\)/build$$|\1|')
+
+HW_SHELL_CONFIG_JSON ?=../../../framework/fpga/default_shell_config.json
+
+WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "../../../framework/webserver/default_server.py"; fi)
+LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> $(WEBSERVER_ARGS)
+
+
+PORT ?= 8888
 
 # For transfer from the build instance to the F1 instance.
 ifndef S3_USER
@@ -132,9 +174,9 @@ endif
 ifndef S3_BUCKET
 S3_BUCKET=fpga-webserver
 endif
-S3_LOGS_KEY=${S3_USER_PATH}$(KERNEL)/log
-S3_DCP_KEY=${S3_USER_PATH}$(KERNEL)/dcp
-S3_TRANSFER_KEY=${S3_USER_PATH}$(KERNEL)/xfer
+S3_LOGS_KEY=${S3_USER_PATH}$(KERNEL_NAME)/log
+S3_DCP_KEY=${S3_USER_PATH}$(KERNEL_NAME)/dcp
+S3_TRANSFER_KEY=${S3_USER_PATH}$(KERNEL_NAME)/xfer
 
 XOCC=xocc
 CC=g++
@@ -144,16 +186,18 @@ HOST_DIR=../host
 FRAMEWORK_DIR=../../../framework
 FRAMEWORK_HOST_DIR=$(FRAMEWORK_DIR)/host
 
-PROJ_C_SRC ?=
-PROJ_C_HDRS ?=
+EXTRA_C_SRC ?=
+EXTRA_C_HDRS ?=
+PROJ_C_SRC ?=$(shell ls ../host/*.c ../host/*.cpp ../host/*.C ../host/*.cxx 2> /dev/null)
+PROJ_C_HDRS ?=$(shell ls ../host/*.h ../host/*.hpp ../host/*.H ../host/*.hxx 2> /dev/null)
 PROJ_SW_CFLAGS ?=
 PROJ_SW_LFLAGS ?=
 
 #Software (no FPGA) flags
-SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC)
-SW_HDRS=$(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS)
-SW_CFLAGS=-g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../../../framework/host/json/include $(PROJ_SW_CFLAGS)
-SW_LFLAGS=-L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
+SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC) $(EXTRA_C_SRC)
+SW_HDRS ?= $(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS) $(EXTRA_C_HDRS)
+SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../../../framework/host/json/include $(PROJ_SW_CFLAGS)
+SW_LFLAGS ?= -L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
 
 #Host code
 HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
@@ -170,8 +214,7 @@ HOST_EXE=host
 KERNEL_SRC=
 KERNEL_HDRS=
 KERNEL_FLAGS=
-KERNEL_EXE=$(KERNEL)
-KERNEL_NAME=$(KERNEL)
+KERNEL_EXE=$(KERNEL_NAME)
 
 #Custom flag to give to xocc
 KERNEL_LDCLFLAGS=--nk $(KERNEL_NAME):1 \
@@ -238,6 +281,50 @@ $(error XILINX_XRT is not set. Please source the SDx settings64.{csh,sh} first)
 endif
 endif
 
+# If project has a launch command, use it, otherwise, use launch from framework.
+LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo ../../../framework/build/launch; fi)
+ifdef LAUNCH_W
+LAUNCH_CMD_PARTIAL :=$(LAUNCH_CMD_PARTIAL) -w '$(LAUNCH_W)'
+endif
+ifdef NOHUP
+# Run in background to continue if the shell exits; log to webserver.log and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
+LAUNCH_CMD=nohup $(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &> webserver.log < /dev/null &
+else
+LAUNCH_CMD=$(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
+endif
+
+
+# TL-Verilog compilation.
+# fpga/src/*.tlv are taken as top-level TLV files.
+# fpga/src/*.tlvlib are taken as TLV library files, provided for every SandPiper run (which is network overhead whether used or not).
+#KERNEL_TLV=../fpga/src/$(KERNEL_NAME)_kernel.tlv
+TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
+SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
+TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/nulls)
+SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
+SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
+
+
+ifeq ($(VALGRIND),true)
+VALGRIND_PREFIX=valgrind --leak-check=yes
+else
+VALGRIND_PREFIX=
+endif
+
+ifneq ($(USE_XILINX),true)
+BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
+HOST_CMD=$(HOST_EXE_PATH)
+endif
+ifeq ($(BUILD_TARGET),hw_emu)
+BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
+endif
+ifeq ($(BUILD_TARGET),hw)
+BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
+endif
+
+
 .PHONY: nothing
 nothing:
 	@echo "No target specified. Nothing built."
@@ -270,30 +357,6 @@ $(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
 endif
 
 endif
-
-
-# If project has a launch command, use it, otherwise, use launch from framework.
-LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo ../../../framework/build/launch; fi)
-ifdef LAUNCH_W
-LAUNCH_CMD_PARTIAL :=$(LAUNCH_CMD_PARTIAL) -w '$(LAUNCH_W)'
-endif
-ifdef NOHUP
-# Run in background to continue if the shell exits; log to webserver.log and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
-LAUNCH_CMD=nohup $(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &> webserver.log < /dev/null &
-else
-LAUNCH_CMD=$(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
-endif
-
-
-# TL-Verilog compilation.
-# fpga/src/*.tlv are taken as top-level TLV files.
-# fpga/src/*.tlvlib are taken as TLV library files, provided for every SandPiper run (which is network overhead whether used or not).
-#KERNEL_TLV=../fpga/src/$(KERNEL_NAME)_kernel.tlv
-TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
-SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
-TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/nulls)
-SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
-SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
 
 
 # Run SandPiper.
@@ -343,7 +406,7 @@ VIVADO_VERSION_MESSAGE=Note: Kernel construction assumes Vivado v2018.3
 # Create tcl script for the kernel configuration
 $(DEST_DIR)/rtl_kernel_wiz.tcl: $(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py $(HW_SHELL_CONFIG_JSON)
 	mkdir -p $(DEST_DIR)
-	python "$(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py" "$(HW_SHELL_CONFIG_JSON)" "$(DEST_DIR)/rtl_kernel_wiz.tcl"
+	python3 "$(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py" "$(HW_SHELL_CONFIG_JSON)" "$(DEST_DIR)/rtl_kernel_wiz.tcl"
 
 XO_FILE=$(DEST_DIR)/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_EXE).xo
 # A representative file for all inner-shell files generated by the RTL Kernel Wizard.
@@ -374,7 +437,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
 	@# Add user's kernel source code to project.
 	@mkdir -p ../out/sv  # Must exist for add_kernel.tcl
-	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr"
+	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
 	@# Replace the adder example code with the user's kernel (including inner shell logic).
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
 	mv $(VADD_SV).hacked $(VADD_SV)
@@ -446,7 +509,7 @@ ifneq ($(PREBUILT), true)
 $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
-	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
+	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
 endif
 
 .PHONY: push
@@ -507,25 +570,6 @@ dead: ../live/$(BUILD_TARGET)/dead
 	@touch ../live/$(BUILD_TARGET)/dead
 
 
-ifeq ($(VALGRIND),true)
-VALGRIND_PREFIX=valgrind --leak-check=yes
-else
-VALGRIND_PREFIX=
-endif
-
-ifneq ($(USE_XILINX),true)
-BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
-HOST_CMD=$(HOST_EXE_PATH)
-endif
-ifeq ($(BUILD_TARGET),hw_emu)
-BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
-endif
-ifeq ($(BUILD_TARGET),hw)
-BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
-endif
-
 
 PHONY: build
 build: $(BUILD_TARGETS)
@@ -547,3 +591,49 @@ endif
 .PHONY: debug_prints
 debug_prints:
 	$(info host path: $(DEST_DIR)/$(HOST_EXE))
+	
+
+
+
+###################################
+# Platform Targets
+###################################
+
+SERVER_ARGS :=
+ifdef INSTANCE
+  SERVER_ARGS :=$(SERVER_ARGS) --instance $(INSTANCE)
+endif
+ifdef PASSWORD
+  SERVER_ARGS :=$(SERVER_ARGS) --password $(PASSWORD)
+endif
+ifdef PROFILE
+  SERVER_ARGS :=$(SERVER_ARGS) --profile $(PROFILE)
+endif
+
+
+# Create a new Static Accelerated Instance. See Makefile header comments for usage info.
+# WARNING: This target launches a new instance. Be sure it is not left running!
+TF_ARGS ?=
+# Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
+PASSWORD ?=$(shell $$RANDOM)
+ifdef PASSWORD
+  TF_ARGS :=$(TF_ARGS) -var 'admin_pwd=$(PASSWORD)'
+endif
+ifdef PREBUILT
+  TF_ARGS :=$(TF_ARGS) -var 'use_prebuilt_afi=$(PREBUILT)'
+endif
+ifdef INSTANCE_NAME
+  TF_ARGS :=$(TF_ARGS) -var 'instance_name=$(INSTANCE_NAME)'
+endif
+ifdef TFVAR
+  TF_ARGS :=$(TF_ARGS) '-var-file=$(TFVAR)'
+endif
+EC2_TYPE=f1
+TF_ARGS :=$(TF_ARGS) -var-file=$(EC2_TYPE).tfvars
+
+APP_LAUNCH_SCRIPT ?=/home/centos/src/project_data/fpga-webserver/framework/terraform/deployment/f1_init.sh
+.PHONY: static_accelerated_instance
+static_accelerated_instance:
+	cd ../../../framework/terraform/deployment && ../../../terraform/terraform init && ../../../terraform/terraform apply -auto-approve -var 'kernel=$(KERNEL_NAME)' -var 'app_launch_script=$(APP_LAUNCH_SCRIPT)' $(TF_ARGS)
+
+

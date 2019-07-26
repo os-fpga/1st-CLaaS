@@ -46,7 +46,7 @@ if __name__ == "__main__":
     try:
         opts, remaining = getopt.getopt(sys.argv[1:], "", ["port="])
     except getopt.GetoptError:
-        print 'Usage: %s --port <port>' % (sys.argv[0])
+        print('Usage: %s --port <port>' % (sys.argv[0]))
         sys.exit(2)
     for opt, arg in opts:
         if opt == '--port':

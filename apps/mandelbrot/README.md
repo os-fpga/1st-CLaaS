@@ -9,11 +9,44 @@ It includes an About page with general project information.
 
 ### Integration
 
-There is no continuous integration testing. Just open it locally and check it out before making a pull request.
+There is no continuous integration testing. Just open it locally and test manually before making a pull request.
 
 ### Deployment
 
-Steve holds the button to redeploy your changes. If he forgets, please [let him know](mailto:stevehoover@redwoodeda.com).
+#### fractalvalley.net
+
+Steve holds the button to redeploy your changes at http://fractalvalley.net. If he forgets, please [let him know](mailto:stevehoover@redwoodeda.com).
+
+#### Your own site
+
+To deploy at your own site on port 80 with F1 acceleration enabled:
+
+Create an AWS account w/ F1 privileges. Remember: THIS SOFTWARE IS PROVIDED AS IS. WE ARE NOT RESPONSIBLE FOR AWS CHARGES YOU INCUR BY USING THIS SOFTWARE, INCLUDING CHARGES RESULTING FROM SOFTWARE BUGS.
+
+Create a static F1 instance (based on the latest code in master):
+
+Somewhere:
+```
+git clone https://github.com/alessandrocomodi/fpga-webserver.git
+cd fpga-webserver
+./init
+aws configure  # Enter AWS keys and region.
+cd apps/mandelbrot/build
+make f1_instance   # PREBUILT=true only for main developers.
+```
+This will could run for an hour or more on the F1 instance while the FPGA image is created.
+
+Launch the main webserver:
+
+Log into your server and cd to a directory of your choice.
+```
+git clone https://github.com/alessandrocomodi/fpga-webserver.git
+cd fpga-webserver
+./init
+aws configure  # Enter AWS keys and region.
+cd apps/mandelbrot/build
+make PASSWORD=XXX INSTANCE=i-XXX live
+```
 
 ### Debug in GDB
 

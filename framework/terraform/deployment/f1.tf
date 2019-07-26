@@ -10,10 +10,22 @@ variable "aws_secret_access_key" {
   type = string
 }
 
-# An administrative password that will be uploaded to the instance.
+# Server Configuration Variables
+# These are uploaded to the instance in a configuration file.
+# Kernel name, corresponding to /apps/<kernel-name>.
+variable "kernel" {
+  type = string
+}
+# Administrative password may be used in various ways by the webserver to authenticate administrative functions.
 variable "admin_pwd" {
   type = string
 }
+# true/false for PREBUILT Makefile variable.
+variable "use_prebuilt_afi" {
+  type = string
+  default = "false"
+}
+
 variable "aws_config_path" {
   type = string
 }
@@ -29,13 +41,17 @@ variable "region" {
 # Instead, create the file using remote-exec and "cat", using the variable.
 # TODO: Also, automate creation of aws_config.tfvars from AWS config file.
 
+variable "instance_name" {
+  type = string
+  default = "FPGA_run"
+}
+
 variable "delete_storage_on_destroy" {
   type = bool
 }
 
 variable "app_launch_script" {
   type = string
-  default = "/home/centos/terraform/dummy.sh"
 }
 
 
@@ -127,7 +143,7 @@ resource "aws_instance" "fpga_f1" {
     }
   
     tags = {
-      Name = "FPGA_run"
+      Name = "${var.instance_name}"
     }
   
     provisioner "file" {
@@ -142,14 +158,11 @@ resource "aws_instance" "fpga_f1" {
       source      = "files/scripts/init.sh"
       destination = "/home/centos/init.sh"
     }
+    # A private configuration file controlling the behavior of this instance.
+    # Note: This contains a plain-text password.
     provisioner "file" {
-      source      = "files/scripts/dummy.sh"
-      destination = "/home/centos/dummy.sh"
-    }
-    # A password saved as plain text on the server that may be used in any way desired, such as privileged AWS operations like starting an F1 instance via REST.
-    provisioner "file" {
-      content     = var.admin_pwd
-      destination = "/home/centos/admin_pwd.txt"
+      content     = "KERNEL_NAME=${var.kernel}; ADMIN_PWD=${var.admin_pwd}; USE_PREBUILT_AFI=${var.use_prebuilt_afi}"
+      destination = "/home/centos/server_config.sh"
     }
 
     provisioner "remote-exec" {
@@ -161,7 +174,7 @@ resource "aws_instance" "fpga_f1" {
   
     provisioner "remote-exec" {
       inline = [
-        "chmod +x /home/centos/dummy.sh",
+        "chmod +x ${var.app_launch_script}",
         "source ${var.app_launch_script}",
         "sleep 1",
       ]

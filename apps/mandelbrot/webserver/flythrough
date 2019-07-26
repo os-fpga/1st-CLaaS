@@ -15,7 +15,7 @@ fi
 
 ../host_app/$1/host &
 HOST_PID=$!
-python flythrough.py &
+python3 flythrough.py &
 SERVER_PID=$!
 
 function finish {
