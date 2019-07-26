@@ -18,7 +18,7 @@
  && echo "Running reboot script to pre-build and start webserver for manual testing." \
  && /home/centos/src/project_data/fpga-webserver/framework/terraform/deployment/f1_reboot.sh \
  && echo \
- && echo "YEAY!!! The webserver has been launched."
+ && echo "YEAY!!! The webserver has been launched." \
  && echo "YOU HAVE 3 MINUTES to test it out, then the machine will be shutdown, if not stopped manually (but check to be sure)." \
  && echo \
  && sleep 180 \

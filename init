@@ -13,17 +13,30 @@ git submodule update --init --recursive
 echo "Installing linux packages."
 if [[ -n "$(which apt-get)" ]]
 then
+  # Ubuntu
   sudo apt-get update
-  sudo apt-get -y install make g++ python3 python3-pip python3-pil python-tornado python-imaging inotify-tools bc
+  sudo apt-get -y install make g++ python3 python3-pip python3-pil inotify-tools bc  #  python-tornado python-imaging
 elif [[ -n "$(which yum)" ]]
 then
-  sudo yum -y install make python3 python3-pip python3-tornado python-imaging inotify-tools bc
+  # CentOS
+  
+  # For Python:
+  sudo yum makecache
+  sudo yum install yum-utils
+  sudo yum install https://centos7.iuscommunity.org/ius-release.rpm
+  sudo yum makecache
+  sudo yum install python35u python35u-pip
+  # To look like Ubuntu, we need python3 and pip3.
+  sudo ln -s /usr/bin/pip3.5 /usr/bin/python3
+  sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
+  
+  sudo yum -y install make inotify-tools bc  #  python-tornado python-imaging
 fi
 
 
 # Install python libraries for user only so as not to affect system installs.
 echo "Installing Python packages for user $USER."
-pip install tornado awscli boto3 --upgrade --user --no-warn-script-location
+pip3 install tornado awscli boto3 imaging --upgrade --user --no-warn-script-location
 
 
 # Make sure ~/.local/bin is in path for python installs.
