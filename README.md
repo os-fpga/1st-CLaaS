@@ -100,7 +100,7 @@ FPGA Kernel development might justify testbench development at various points:
     - `webserver`: Python web server application.
     - `host`: OpenCL/C++ host application framework.
     - `fpga`: FPGA framework, including Verilog/TLV source code.
-    - `f1`: Specific to Amazon F1.
+    - `terraform`: Stuff related to platform configuration (creating/starting/stopping/destroying EC2 instances) using Terraform.
   - `apps`: Hardware-accelerated web applications utilizing the framework.
     - _app_
       - `client`
