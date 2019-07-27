@@ -27,7 +27,7 @@ then
   sudo yum makecache
   sudo yum -y install python35u python35u-pip
   # To look like Ubuntu, we need python3 and pip3.
-  sudo ln -s /usr/bin/pip3.5 /usr/bin/python3
+  sudo ln -s /usr/bin/python3.5 /usr/bin/python3
   sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
   
   sudo yum -y install make inotify-tools bc  #  python-tornado python-imaging
