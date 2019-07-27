@@ -629,7 +629,7 @@ debug_prints:
 # WARNING: This target launches a new instance. Be sure it is not left running!
 TF_ARGS ?=
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
-PASSWORD ?=$(shell $$RANDOM)
+PASSWORD ?=$(shell echo $$RANDOM)
 ifdef PASSWORD
   TF_ARGS :=$(TF_ARGS) -var 'admin_pwd=$(PASSWORD)'
 endif
