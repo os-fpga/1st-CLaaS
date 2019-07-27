@@ -10,6 +10,6 @@ PASSWORD_ARG=$(if [[ -n "$ADMIN_PWD"        ]]; then echo PASSWORD=$ADMIN_PWD;  
 PREBUILT_ARG=$(if [[ -n "$USE_PREBUILT_AFI" ]]; then echo PREBUILT=$USE_PREBUILT_AFI; fi)
 
 SSH_CMD="cd ~/src/project_data/fpga-webserver && source ./sdaccel_setup && cd apps/$KERNEL_NAME/build"
-SSH_CMD="$SSH_CMD && make PREBUILT=$PREBUILT_ARG build && echo '$0: Going live with web server with output in: $WEBSERVER_LOG'"
+SSH_CMD="$SSH_CMD && make $PREBUILT_ARG $PASSWORD_ARG build && echo '$0: Going live with web server with output in: $WEBSERVER_LOG'"
 SSH_CMD="$SSH_CMD && make $PREBUILT_ARG $PASSWORD_ARG live"
 ssh -o 'StrictHostKeyChecking=no' localhost "$SSH_CMD"

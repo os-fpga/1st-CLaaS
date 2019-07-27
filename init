@@ -37,7 +37,7 @@ fi
 
 # Install python libraries for user only so as not to affect system installs.
 echo "Installing Python packages for user $USER."
-pip3 install Pillow tornado awscli boto3 imaging --upgrade --user
+pip3 install Pillow tornado awscli boto3 --upgrade --user # imaging
 
 
 # Make sure ~/.local/bin is in path for python installs.
