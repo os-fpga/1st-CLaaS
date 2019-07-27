@@ -153,7 +153,7 @@ launch () {
   # Substitute <<PORT>>.
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
   # Launch.
-  echo "Launching webserver as: $CMD"
+  echo "Launching web server as: $CMD"
   if [[ $TARGET = "sw" ]];
   then
     $CMD &

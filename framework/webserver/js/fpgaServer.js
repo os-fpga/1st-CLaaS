@@ -182,14 +182,14 @@ class fpgaServer {
             json = {message: `Bad JSON response to start_ec2_instance: ${json}`};
           }
           console.log("start_ec2_instance response: " + json);
-          if (json.message) {
-            $("#fpga-message").text(json.message);
-          }
           if (typeof json.ip === "undefined") {
-            startFailed("malformed response");
+            startFailed(json.message ? `No IP in response. ${json.message}` : `Malformed response.`);
           } else {
+            if (json.message) {
+              $("#fpga-message").text(json.message);
+            }
             // Good response.
-            $("#fpga-message").text("Created. Initializing...");
+            $("#fpga-message").text("Booted. Launching web server...");
             // Ping webserver until it responds, then start using this server.
             let ping = (cnt, timeout_ms) => {
               let jqxhr = $.get(`http://${json.ip}/ip`, (resp) => {
@@ -197,7 +197,7 @@ class fpgaServer {
                 if (resp != json.ip) {
                   console.log(`Ping response should be IP (${json.ip}), but it is ${resp}. Continuing anyway.`);
                 } else {
-                  console.log(`Server at ${json.ip} is operational.`);
+                  console.log(`Web server at ${json.ip} is operational.`);
                 }
                 $("#fpga-message").text("Running.");
                 $('#stop-fpga-button').prop("disabled", false);

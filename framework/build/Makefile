@@ -153,17 +153,42 @@ USE_XILINX=true
 endif
 
 
+# Can only do PREBUILT=true w/ TARGET=hw.
+ifneq ($(TARGET),hw)
+  USE_PREBUILT=false
+else
+  USE_PREBUILT=$(PREBUILT)
+endif
+
+
 
 # Determine kernel name from current directory.
 KERNEL_NAME ?= $(shell realpath $$(pwd) | sed 's|^.*/\([^/]*\)/build$$|\1|')
 
 HW_SHELL_CONFIG_JSON ?=../../../framework/fpga/default_shell_config.json
 
+
+PORT ?= 8888
+
+
+# Python Web Server Command
+
+WEBSERVER_ARGS :=
+ifdef INSTANCE
+  WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --instance $(INSTANCE)
+endif
+ifdef PASSWORD
+  WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password $(PASSWORD)
+endif
+ifdef PROFILE
+  WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(PROFILE)
+endif
+
 WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "../../../framework/webserver/default_server.py"; fi)
 LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> $(WEBSERVER_ARGS)
 
 
-PORT ?= 8888
+
 
 # For transfer from the build instance to the F1 instance.
 ifndef S3_USER
@@ -248,7 +273,7 @@ endif
 # Build dir is "out" or "prebuilt", based on PREBUILT variable.
 BUILD_DIR_NAME = out
 OUT_DIR_NAME = out
-ifeq ($(PREBUILT), true)
+ifeq ($(USE_PREBUILT), true)
 BUILD_DIR_NAME = prebuilt
 OUT_DIR_NAME = prebuilt_out
 endif
@@ -339,7 +364,7 @@ shrink:
 	rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
 
 # Rule to build host application, only if not using pre-built.
-ifneq ($(PREBUILT), true)
+ifneq ($(USE_PREBUILT), true)
 
 # TODO: Instead of this condition, define $(SW_SRC) and $(HOST_SRC) as $(SRC) conditionally, etc.
 ifneq ($(USE_XILINX),true)
@@ -505,7 +530,7 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 # It's rediculous that there is no automation here. Or is there...
 # TODO: Wait for AFI build to complete.
 #       In create_sdaccel_afi.sh, use create-fpga-image --wait
-ifneq ($(PREBUILT), true)
+ifneq ($(USE_PREBUILT), true)
 $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
@@ -599,17 +624,6 @@ debug_prints:
 # Platform Targets
 ###################################
 
-SERVER_ARGS :=
-ifdef INSTANCE
-  SERVER_ARGS :=$(SERVER_ARGS) --instance $(INSTANCE)
-endif
-ifdef PASSWORD
-  SERVER_ARGS :=$(SERVER_ARGS) --password $(PASSWORD)
-endif
-ifdef PROFILE
-  SERVER_ARGS :=$(SERVER_ARGS) --profile $(PROFILE)
-endif
-
 
 # Create a new Static Accelerated Instance. See Makefile header comments for usage info.
 # WARNING: This target launches a new instance. Be sure it is not left running!
@@ -619,8 +633,8 @@ PASSWORD ?=$(shell $$RANDOM)
 ifdef PASSWORD
   TF_ARGS :=$(TF_ARGS) -var 'admin_pwd=$(PASSWORD)'
 endif
-ifdef PREBUILT
-  TF_ARGS :=$(TF_ARGS) -var 'use_prebuilt_afi=$(PREBUILT)'
+ifeq ($(USE_PREBUILT),true)
+  TF_ARGS :=$(TF_ARGS) -var 'use_prebuilt_afi=true'
 endif
 ifdef INSTANCE_NAME
   TF_ARGS :=$(TF_ARGS) -var 'instance_name=$(INSTANCE_NAME)'

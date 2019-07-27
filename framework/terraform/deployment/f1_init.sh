@@ -20,6 +20,4 @@
  && echo \
  && echo "YEAY!!! The webserver has been launched." \
  && echo "YOU HAVE 3 MINUTES to test it out, then the machine will be shutdown, if not stopped manually (but check to be sure)." \
- && echo \
- && sleep 180 \
- && sudo shutdown now)
+ && nohup bash -c 'sleep 180 && sudo shutdown now &> /dev/null < /dev/null &)
