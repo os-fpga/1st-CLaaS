@@ -22,10 +22,10 @@ then
   
   # For Python:
   sudo yum makecache
-  sudo yum install yum-utils
-  sudo yum install https://centos7.iuscommunity.org/ius-release.rpm
+  sudo yum -y install yum-utils
+  sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm
   sudo yum makecache
-  sudo yum install python35u python35u-pip
+  sudo yum -y install python35u python35u-pip
   # To look like Ubuntu, we need python3 and pip3.
   sudo ln -s /usr/bin/pip3.5 /usr/bin/python3
   sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
