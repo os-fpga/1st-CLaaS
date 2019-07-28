@@ -34,13 +34,16 @@ module matrix_mult_kernel #(
          $in_data[511:0] = *in_data; 
          $out_ready = *out_ready;
 
+
+   // Matrix mult definition in matrix_mult_makerchip.tlv
+   m4+matrix_mult();
+   
+   |mult
+      @3
          // Output connections
          *in_ready = $in_ready;
          *out_avail = $out_avail;
          *out_data = $out_data;
-
-   // Matrix mult definition in matrix_mult_makerchip.tlv
-   m4+matrix_mult();
 
 \SV
 endmodule
