@@ -1,7 +1,7 @@
 \m4_TLV_version 1d: tl-x.org
 
 \SV
-   m4_include_lib(['matrix_mult_makerchip.tlv'])
+   m4_include_lib(['./matrix_mult_makerchip.tlvlib'])
    `define NUM_SIZE 3
    `define NUM_BUFFERS 2
    `define REG_FILE_SIZE 16
