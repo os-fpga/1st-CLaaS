@@ -5,9 +5,8 @@ KERNEL=matrix_mult
 
 ##########
 # TODO: Eliminate lodepng here.
-PROJ_C_SRC=$(FRAMEWORK_HOST_DIR)/default_main.c ../../mandelbrot/host/lodepng.c
-PROJ_C_HDRS=
-PROJ_C_HDRS=../../mandelbrot/host/lodepng.h
+EXTRA_C_SRC=$(FRAMEWORK_HOST_DIR)/default_main.c ../../mandelbrot/host/lodepng.c
+EXTRA_C_HDRS=../../mandelbrot/host/lodepng.h
 PROJ_SW_CFLAGS=-I../../mandelbrot/host
 ##########
 

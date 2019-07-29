@@ -325,7 +325,7 @@ endif
 #KERNEL_TLV=../fpga/src/$(KERNEL_NAME)_kernel.tlv
 TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
 SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
-TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/nulls)
+TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/null)
 SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
 SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
 
@@ -388,7 +388,7 @@ endif
 # Use a local sandpiper if $(SANDPIPER) is defined to point to one, otherwise, use SandPiper(TM) SaaS.
 .PHONY: sv
 sv: $(SV_FROM_TLV)
-../out/sv/%.sv: ../fpga/src/%.tlv
+../out/sv/%.sv: ../fpga/src/%.tlv $(TLVLIB)
 	rm -rf ../out/sv/$*
 	mkdir -p ../out/sv/$*
 ifeq ($(SANDPIPER),)
