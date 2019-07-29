@@ -1,4 +1,4 @@
-![fpga-webserver header](https://raw.githubusercontent.com/alessandrocomodi/fpga-webserver/master/doc/img/header.png)
+![fpga-webserver header](doc/img/header.png)
 
 # *- Accelerating the Web -*
 
@@ -16,11 +16,9 @@ This document provides an overview of the project. After reading this, find deta
 
 This project brings data-center FPGAs within reach for students, start-ups, and everyone. With a singular focus on simplifying, it enables FPGA hardware acceleration to be easily integrated with web and cloud applications in an FPGAs-as-a-Service (FPGAaaS) model. The goal, modestly, is to enable an open-source hardware revolution!
 
-In case you are not familiar with FPGAs (Field-Programmable Gate Arrays), these are chips with programmable circuitry. Rather than spending millions of dollars to fabricate a custom chip (or ASIC--Application-Specific Integrated Circuit), you can program your custom logic onto an FPGA almost instantly. While ASICs can be more deeply optimized, FPGAs are far more accessible, and are even available in the cloud.
-
 Having FPGAs in the cloud enables very exciting compute models for accelerated, distributed applications, but these platforms have not been easy to use. Prior to this project, developing such an application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer, making them out-of-reach for individuals and small enterprises.
 
-![fpga-webserver header](https://raw.githubusercontent.com/alessandrocomodi/fpga-webserver/master/doc/img/simple.png)
+![fpga-webserver header](doc/img/simple.png)
 
 With this framework, you can accelerate a web application using web protocols (WebSockets or REST) to stream bits directly to and from your custom FPGA kernel. This kernel utilizes a very simple interface to stream bits in and out. It can be developed in Verilog (or any language compilable to Verilog). In the spirit of open-source and simplicity, we advocate for TL-Verilog development using <a href="http://makechip.com" target="_blank">makechip.com</a>. We encourage open-source TL-Verilog library development to further simplify kernel development in ways that are not possible in other HDLs.
 
