@@ -1,3 +1,5 @@
+![fpga-webserver header](https://raw.githubusercontent.com/alessandrocomodi/fpga-webserver/master/doc/img/header.png)
+
 # *- Accelerating the Web -*
 
 # About this Document
@@ -12,11 +14,13 @@ This document provides an overview of the project. After reading this, find deta
 
 # FPGA-Webserver Project Overview
 
-This project brings FPGAs that are available in the data center within reach for students, start-ups, and everyone. With a singular focus on simplifying, it enables FPGA hardware acceleration to be easily integrated with web and cloud applications in an FPGAs-as-a-Service (FPGAaaS) model. The goal, modestly, is to enable an open-source hardware revolution!
+This project brings data-center FPGAs within reach for students, start-ups, and everyone. With a singular focus on simplifying, it enables FPGA hardware acceleration to be easily integrated with web and cloud applications in an FPGAs-as-a-Service (FPGAaaS) model. The goal, modestly, is to enable an open-source hardware revolution!
 
 In case you are not familiar with FPGAs (Field-Programmable Gate Arrays), these are chips with programmable circuitry. Rather than spending millions of dollars to fabricate a custom chip (or ASIC--Application-Specific Integrated Circuit), you can program your custom logic onto an FPGA almost instantly. While ASICs can be more deeply optimized, FPGAs are far more accessible, and are even available in the cloud.
 
 Having FPGAs in the cloud enables very exciting compute models for accelerated, distributed applications, but these platforms have not been easy to use. Prior to this project, developing such an application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer, making them out-of-reach for individuals and small enterprises.
+
+![fpga-webserver header](https://raw.githubusercontent.com/alessandrocomodi/fpga-webserver/master/doc/img/simple.png)
 
 With this framework, you can accelerate a web application using web protocols (WebSockets or REST) to stream bits directly to and from your custom FPGA kernel. This kernel utilizes a very simple interface to stream bits in and out. It can be developed in Verilog (or any language compilable to Verilog). In the spirit of open-source and simplicity, we advocate for TL-Verilog development using <a href="http://makechip.com" target="_blank">makechip.com</a>. We encourage open-source TL-Verilog library development to further simplify kernel development in ways that are not possible in other HDLs.
 
@@ -41,10 +45,10 @@ Here's a short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDS
 
 # Status
 
-This repository is a work-in-progress. Further development is funded for the summer of 2019 through <a href="https://summerofcode.withgoogle.com/dashboard/project/6298628153409536/overview/" target="_blank">Google Summer of Code</a>. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank">FractalValley.net</a>.
+This repository is generally working, and is under active development in the summer of 2019 with sponsorship from Google through <a href="https://summerofcode.withgoogle.com/dashboard/project/6298628153409536/overview/" target="_blank">Google Summer of Code</a>. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank">FractalValley.net</a>.
 
 
-# Project description
+# Project Components
 
 A hardware accelerated web application utilizing this framework consists of:
 
@@ -66,7 +70,7 @@ The WebSocket or REST communication between the Web Application and the FPGA pas
   1. The Web Server echoes the data stream to the client via the WebSocket or as a GET response.
   1. The Web Cient displays the image.
 
-  
+
 # Development Overview
 
 This repository contains all that is needed to develop a hardware-accelerated web application, including the generic framework and sample applications that utilize the framework. It contains content for web development on a local machine (Ubuntu 16.04 for us) as well as for building FPGA images on the remote F1 machine, so it is to be forked and cloned locally and remotely with different parts edited on each machine.
