@@ -2,7 +2,7 @@
 
 # About this Document
 
-This document provides an overview of the project. After reading this, please continue with:
+This document provides an overview of the project. After reading this, find details in:
 
   - [**Getting Started**](GettingStarted.md)
   - [**Framework Overview**](framework/README.md)
@@ -12,13 +12,15 @@ This document provides an overview of the project. After reading this, please co
 
 # FPGA-Webserver Project Overview
 
-In case you are not familiar with FPGAs (Field-Programmable Gate Arrays), these are chips with programmable circuitry. Rather than spending millions of dollars to fabricate a custom chip (or ASIC--Application-Specific Integrated Circuit), you can program your custom logic onto an FPGA almost instantly. While ASICs can be more deeply optimized, FPGAs are far more accessible, and now they are even available in the cloud.
+This project brings FPGAs that are available in the data center within reach for students, start-ups, and everyone. With a singular focus on simplifying, it enables FPGA hardware acceleration to be easily integrated with web and cloud applications in an FPGAs-as-a-Service (FPGAaaS) model. The goal, modestly, is to enable an open-source hardware revolution!
 
-Having FPGAs in the data center/cloud enables very exciting compute models for accelerated, distributed applications, but these platforms have not been easy to use. Prior to this project, developing such an application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer. This project aims to make cloud FPGAs much more accessible for students, start-ups, and the world.
+In case you are not familiar with FPGAs (Field-Programmable Gate Arrays), these are chips with programmable circuitry. Rather than spending millions of dollars to fabricate a custom chip (or ASIC--Application-Specific Integrated Circuit), you can program your custom logic onto an FPGA almost instantly. While ASICs can be more deeply optimized, FPGAs are far more accessible, and are even available in the cloud.
 
-This project provides the communication layer that enables web applications or distributed cloud applications to stream data to and from custom hardware logic running on FPGAs in the data center using standard web protocols. Developers need only provide the web application and the hardware kernel and need not worry about how the bits get from one to the other. With an emphasis on simplicity, the hardware kernel utilizes a very simple interface where bits simply stream in and out.
+Having FPGAs in the cloud enables very exciting compute models for accelerated, distributed applications, but these platforms have not been easy to use. Prior to this project, developing such an application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer, making them out-of-reach for individuals and small enterprises.
 
-This architecture is often ideal for logic that is compute-intensive, but does not require a large memory footprint. If desired, modifications can be made to the webserver and/or C++/OpenCL application through which data passes to support more sophisticated architectures, but in the simplest scenario and for many real scenarios, this is not necessary.
+With this framework, you can accelerate a web application using web protocols (WebSockets or REST) to stream bits directly to and from your custom FPGA kernel. This kernel utilizes a very simple interface to stream bits in and out. It can be developed in Verilog (or any language compilable to Verilog). In the spirit of open-source and simplicity, we advocate for TL-Verilog development using <a href="http://makechip.com" target="_blank">makechip.com</a>. We encourage open-source TL-Verilog library development to further simplify kernel development in ways that are not possible in other HDLs.
+
+This framework is ideal for applications that are compute-limited, not communication limited. In this simplest use case, all software is client-side in the web browser, all server logic is implemented in the FPGA, and all data storage utilizes the FPGA memory. Applications requiring a more sophisticated partitioning of responsibilities can extend the host C++ code to process data between the web application and FPGA.
 
 Possible application domains might include:
 
@@ -29,11 +31,11 @@ Possible application domains might include:
   - machine learning
   - etc.
 
-This project currently focuses on utilizing Amazon's F1 FPGA instances. These are very powerful FPGA instances, and having access to this power using a pay-per-use model is compelling. Unfortunately, they are bleeding edge and require significant expertise to utilize. In our experience, documentation is often wrong as APIs and infrastructure are evolving. Developers must have a deep understanding of hardware design. They must be familiar with Xilinx tools: Viviado for RTL design and SDAccel to interface the hardware with C++ code using OpenCL. They must understand AXI protocols and manage AXI controllers. And the AWS platform can be intimidating to a newcomer. In addition to hiding most of this complexity, this framework provides the webserver and host application code that hide the implementation of passing data from client to and from the FPGA.
+This project currently focuses on utilizing Amazon's F1 FPGA instances. These are very powerful FPGA instances, and having access to this power using a pay-per-use model is compelling. Unfortunately, they are bleeding edge and require significant expertise to utilize. In our experience, documentation is often wrong as APIs and infrastructure are evolving. Developers must have a deep understanding of hardware design. They must be familiar with Xilinx tools: Viviado for RTL design and SDAccel to interface the hardware with C++ code using OpenCL. They must understand AXI protocols and manage AXI controllers. And the AWS platform can be intimidating to a newcomer. By providing the webserver, host application code, and kernel shell logit to stream the data between web application and FPGA kernel, this framework hides this complexity.
 
-Further documentation for the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
+Further documentation of the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
 
-Here's a short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a>  at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
+Here's a short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a> at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
 
 
 

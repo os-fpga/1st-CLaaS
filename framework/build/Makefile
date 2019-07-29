@@ -62,7 +62,6 @@
 #           (Must be the only target.)
 #     dead: kill the running production server.
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
-#     static_accelerated_instance: create an EC2 instance to be used by the 
 #   Variables:
 #     PORT: The port on which to launch the webserver.
 #     TARGET=[hw, hw_emu, sim, sw] (determined by platform by default)
@@ -325,7 +324,7 @@ endif
 #KERNEL_TLV=../fpga/src/$(KERNEL_NAME)_kernel.tlv
 TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
 SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
-TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/nulls)
+TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/null)
 SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
 SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
 
@@ -388,27 +387,24 @@ endif
 # Use a local sandpiper if $(SANDPIPER) is defined to point to one, otherwise, use SandPiper(TM) SaaS.
 .PHONY: sv
 sv: $(SV_FROM_TLV)
-../out/sv/%.sv: ../fpga/src/%.tlv
+../out/sv/%.sv: ../fpga/src/%.tlv $(TLVLIB)
 	rm -rf ../out/sv/$*
 	mkdir -p ../out/sv/$*
 ifeq ($(SANDPIPER),)
-	echo "SP: $(SANDPIPER)"
 	@# Run SandPiper(TM) SaaS Edition on TLV files.
 	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
 	cd ../out/sv/$* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
+	cat ../out/sv/$*/out/stdout
 else
-	echo "SP: $(SANDPIPER)"
 	@# Use local SandPiper, given by $(SANDPIPER)
 	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
-	-$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout
-	echo $$? > ../out/sv/$*/out/status
+	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 endif
+	(( $(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
 	mv ../out/sv/$*/out/*.sv ../out/sv
 	# Vivado requires includes to be of .vh files, so change file name.
 	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
-	cd ../out/sv && sed -i s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv		
-	cat ../out/sv/$*/out/stdout
-	exit `cat ../out/sv/$*/out/status`
+	cd ../out/sv && sed -i s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv
 
 
 
