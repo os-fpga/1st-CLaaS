@@ -1,4 +1,4 @@
-\m4_TLV_version 1d: tl-x.org
+\m4_TLV_version 1d --fmtFlatSignals --bestsv --noline: tl-x.org
 
 \SV
    m4_include_lib(['./matrix_mult_makerchip.tlvlib'])
@@ -32,7 +32,7 @@ module matrix_mult_kernel #(
          // Input connections
          $in_avail = *in_avail; 
          $in_data[511:0] = *in_data; 
-         $out_ready = *out_ready;
+         // UNUSED $out_ready = *out_ready;
 
 
    // Matrix mult definition in matrix_mult_makerchip.tlv
