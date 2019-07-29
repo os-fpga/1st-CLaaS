@@ -163,7 +163,7 @@ launch () {
   export SERVER_PID=$!
 
   # Create a script to teardown the application by sending SIGINT to this process.
-  echo "kill $$" > killme
+  echo "kill $$ || echo 'Webserver process $$ no longer running.'" > killme   # TODO: Would be good to confirm that this is the right process.
 }
 
 # Tear down.
