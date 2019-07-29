@@ -14,13 +14,13 @@ This document provides an overview of the project. After reading this, find deta
 
 # FPGA-Webserver Project Overview
 
-This project brings data-center FPGAs within reach for students, start-ups, and everyone. With a singular focus on simplifying, it enables FPGA hardware acceleration to be easily integrated with web and cloud applications in an FPGAs-as-a-Service (FPGAaaS) model. The goal, modestly, is to enable an open-source hardware revolution!
+This project brings data-center [FPGAs](Newbies.md) within reach for students, start-ups, and everyone. With a singular focus on simplifying, it enables FPGA hardware acceleration to be easily integrated with web and cloud applications in an FPGAs-as-a-Service (FPGAaaS) model. The goal, modestly, is to enable an <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">***open-source hardware revolution***</a>!
 
 Having FPGAs in the cloud enables very exciting compute models for accelerated, distributed applications, but these platforms have not been easy to use. Prior to this project, developing such an application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer, making them out-of-reach for individuals and small enterprises.
 
 ![fpga-webserver header](doc/img/simple.png)
 
-With this framework, you can accelerate a web application using web protocols (WebSockets or REST) to stream bits directly to and from your custom FPGA kernel. This kernel utilizes a very simple interface to stream bits in and out. It can be developed in Verilog (or any language compilable to Verilog). In the spirit of open-source and simplicity, we advocate for TL-Verilog development using <a href="http://makechip.com" target="_blank">makechip.com</a>. We encourage open-source TL-Verilog library development to further simplify kernel development in ways that are not possible in other HDLs.
+With this framework, you can accelerate a web application using web protocols (WebSockets or REST) to stream bits directly to and from your custom FPGA kernel using a very simple interface. It can be developed in Verilog (or any language compilable to Verilog). In the spirit of open-source and simplicity, we advocate for TL-Verilog development using <a href="http://makechip.com" target="_blank" atom_fix="_">makechip.com</a>.
 
 This framework is ideal for applications that are compute-limited, not communication limited. In this simplest use case, all software is client-side in the web browser, all server logic is implemented in the FPGA, and all data storage utilizes the FPGA memory. Applications requiring a more sophisticated partitioning of responsibilities can extend the host C++ code to process data between the web application and FPGA.
 
@@ -43,7 +43,7 @@ Here's a short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDS
 
 # Status
 
-This repository is generally working, and is under active development in the summer of 2019 with sponsorship from Google through <a href="https://summerofcode.withgoogle.com/dashboard/project/6298628153409536/overview/" target="_blank">Google Summer of Code</a>. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank">FractalValley.net</a>.
+This repository is generally working, and is under active development in the summer of 2019 with sponsorship from Google through <a href="https://summerofcode.withgoogle.com/dashboard/project/6298628153409536/overview/" target="_blank" atom_fix="_">Google Summer of Code</a>. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
 
 
 # Project Components
@@ -131,6 +131,32 @@ FPGA Kernel development might justify testbench development at various points:
       - `build`
         - `Makefile`
 
+
+# A Personal History of this Project
+
+Let me introduce myself. I am <a href="https://www.linkedin.com/in/steve-hoover-a44b607/" target="_ blank">Steve Hoover</a>, proud founder of <a href="http://www.redwoodeda.com" target="_blank" atom_fix="_">Redwood EDA</a>. After 18 years of banging my head against the wall designing silicon for Intel using the garbage this industry produces to do so, I decided it was time to focus on making better tools. There's no reason circuit design has to be an exclusive club for experts trained in the obscurities of an arcane ecosystem. It's just 1s and 0s. It can't get any simpler. The difficulty was entirely self-inflicted. So, let's fix it.
+
+The first thing to fix, was the language. Verilog carries with it over 30 years of baggage, and other languages have missed the mark in various ways. So I created TL-Verilog as an incremental path to simpler and *way* better "transaction-level" design methodology. But let's not stop at language, as we've done in the past. We need web- and open-source-friendly tools, and transaction-level design needs to extend from the language into the platform, so I created the <a href="http://makechip.com" target="_blank" atom_fix="_">Makerchip IDE</a>.
+
+As I got more into the open-source community, and as I saw FPGAs becoming available in the cloud, I realized there was a revolution about to unfold. Why? Well, let's get some perspective. Open-source software has been going gangbusters for years, transforming the software industry time and time again. All the while, circuit design has been done using Verilog and text editors. We've been standing still. But it gets worse. Since we started using Verilog, chips have gotten a bit bigger--not physically, but in terms of transistor counts. Any guess how much "bigger"? 100x? 1000x? Not even close. 100,000x!!!
+
+So we're ripe for change. We need circuit design to break out of its commercial fortress and discover what an open source ecosystem is capable of. And guess what. Having FPGAs in the cloud is going to release the flood gates. There have been three things holding back open source hardware:
+
+  1. Circuit design is fundamentally harder than software. I know. I said "1s and 0s". But, unlike software, your logic is physically constrained. And, like I said, Verilog and commercial tools aren't making life much easier.
+  1. Access to software: Electronic Design Automation (EDA) tools are ***expensive***.
+  1. Access to hardware: You can't just download someone's RTL and use it. You have to turn it into hardware. For a hobbyist, that's not going to be an ASIC, so we're talking FPGA. You've got to work this open-source RTL into your specific platform and your specific logic with your specific physical design constraints to make it do your bidding. You may as well start from scratch.
+
+And I realized that all of these very serious obstacles were breaking down.
+
+  1. I had been focused on simplifying hardware design with Redwood EDA, TL-Verilog, and Makerchip.
+  2. Other folks, like the almighty <a href="http://www.clifford.at/" target="_blank" atom_fix="_">Clifford Wolf</a>, have been developing open-source EDA tools, and FPGAs have been designed using purely open-source tools. Even commercially, with Amazon F1, Xilinx tools are bundled with the platform using a rental model with no up-front cost. And my own Redwood EDA tools are free for open-source development at <a href="http://makechip.com" target="_blank" atom_fix="_">makechip.com</a>, and you don't even need to install them.
+  3. Hardware access is totally solved by cloud FPGAs. Open source designs can be made available, packaged to run in hardware that is available to anyone! Just download, compile, and run in silicon, just like software.
+
+This is awesome! So a started ramping up on Amazon F1. Holy crap! What a friggin' nightmare! I've been working with others now for over a year to develop this framework using F1--very painful for me, but there's no need for you to experience that pain. I hope you are able to get up and running with this platform much easier using this framework. And, I hope you choose to feed back into the effort.
+
+Happy coding!
+
+-Steve Hoover
 
 
 # Related Technologies
