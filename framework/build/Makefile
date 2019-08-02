@@ -510,27 +510,28 @@ project: $(USER_KERNEL_ADDED_FILE)
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(BUILD_TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
-# From: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md
-# The AFI creation process that started in the background is not instantaneous. You must make sure that the process completes successfully before it is able to run on the F1 instance.
-# Note the values of the AFI IDs by opening the <timestamp>_afi_id.txt file:
-# cat *.afi_id.txt
-# Use the describe-fpga-images API to check the status AFI generation process.
-# aws ec2 describe-fpga-images --fpga-image-ids <AFI ID>
-# When AFI creation completes successfully, the output should contain:
-#  ...
-#  "State": {
-#     "Code": "available"
-#  },
-#  ...
-# Wait until the AFI becomes available before proceeding to execute the application on the F1 instance.
-# It's rediculous that there is no automation here. Or is there...
-# TODO: Wait for AFI build to complete.
-#       In create_sdaccel_afi.sh, use create-fpga-image --wait
+# Create the AFI.
+# The steps are:
+#   Start AFI creation process, which runs in the background and puts the values of the AFI IDs in <timestamp>_afi_id.txt.
+#   Wait for the process to complete.
+#   Make AFI public.
+#   Delete S3 files to avoid charges.
 ifneq ($(USE_PREBUILT), true)
 $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
+	rm $(DEST_DIR)/*_afi_id.txt
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
+	# Waiting for AFI creation to complete.
+	# THESE COMMANDS ARE NOT DEBUGGED:
+	# Get afi-<id> into a file in isolation.
+	grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt
+	# Get timestamp used in generated files.
+	ls '_afi_id.txt' | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt
+	wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
+	@# Delete S3 files to avoid charges.
+	aws s3 rm --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
+	aws s3 rm --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
 endif
 
 .PHONY: push
@@ -603,6 +604,11 @@ launch: $(BUILD_TARGETS)
 ifeq ($(BUILD_TARGET), hw)
 .PHONY: prebuild
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+	# Name the AFI.
+	aws ec2 modify-fpga-image-attribute --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --name "1st_CLaaS-$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
+	# Making AFI public.
+	aws ec2 modify-fpga-image-attribute --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
+	# Populating /prebuilt dir.
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
 	cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
 	cp $(DEST_DIR)/$(KERNEL_EXE).awsxclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).awsxclbin
