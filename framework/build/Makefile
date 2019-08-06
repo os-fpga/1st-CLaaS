@@ -38,7 +38,8 @@
 #                           on a C4 Instance or future platform)
 #   Accelerated Instance: An EC2 Instance (or future platform) running an Accelerateed Web Server.
 #   Static Accelerated Web Server: An Accelerated Web Server Instance that is statically associated with a Landing Web Server.
-#                                  It is shared by all users and may be dynamically stopped/started based on need by an EC2 Feeder.
+#                                  It is shared by all users and may be dynamically started and stopped and will be stopped by an
+#                                  EC2 time bomb.
 #   EC2 Feeder: A utility provided in this repository responsible for stopping/terminating EC2 Instances (Accelerated Instances)
 #               when not in use.
 #
@@ -81,7 +82,7 @@
 #     make host TARGET=hw_emu
 #
 #   Platform Targets (for constructing the multi-server platform):
-#     To create a new Static Accelerated Instance, to be associated with the Content Web Server, use:
+#     By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
 #        make PASSWORD=XXX PREBUILT=false/true TFVAR=$HOME/aws_cred.tfvars static_accelerated_instance  # (or omit variables to be prompted.)
 #        #    PASSWORD: (prompts as admin_pwd) might be used by webserver to authenticate administrative actions from a client.
 #        #    PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
@@ -651,5 +652,3 @@ APP_LAUNCH_SCRIPT ?=/home/centos/src/project_data/fpga-webserver/framework/terra
 .PHONY: static_accelerated_instance
 static_accelerated_instance:
 	cd ../../../framework/terraform/deployment && ../../../terraform/terraform init && ../../../terraform/terraform apply -auto-approve -var 'kernel=$(KERNEL_NAME)' -var 'app_launch_script=$(APP_LAUNCH_SCRIPT)' $(TF_ARGS)
-
-

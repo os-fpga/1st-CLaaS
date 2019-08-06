@@ -12,8 +12,8 @@ else
 	echo "Cloning AWS-FPGA"
 	git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 fi
-echo "Sourcing sdaccel_setup.sh"
-source $AWS_FPGA_REPO_DIR/sdaccel_setup.sh
+#echo "Sourcing sdaccel_setup.sh"
+#source $AWS_FPGA_REPO_DIR/sdaccel_setup.sh
 
 
 # Pull or clone $AWS_WEBSERVER_DIR
@@ -26,5 +26,5 @@ else
 	echo "Running init"
 	$FPGA_WEBSERVER_DIR/init
 fi
-echo "Sourcing sdaccel_setup"
-source $FPGA_WEBSERVER_DIR/sdaccel_setup
+#echo "Sourcing sdaccel_setup"
+#source $FPGA_WEBSERVER_DIR/sdaccel_setup

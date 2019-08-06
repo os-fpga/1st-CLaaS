@@ -31,20 +31,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 """
-This mini webserver provides a REST API to feed an ec2_instance_feeder.
+This mini web server provides a REST API to reset an ec2_time_bomb.
 (NOTE: There is similar support built into server.py, which is used by examples.
        THIS SCRIPT IS NOT IN USE AND IS PROBABLY BROKEN.)
 
 
 Usage:
 
-  nohup python3 ec2_instance_feeder_server.py <feeder-file> <port> &
+  nohup python3 ec2_time_bomb_server.py <time_bomb-file> <port> &
   
   (Nohup ensures that the service continues running after its shell is closed.)
 
 API:
 
-  GET request to :<port>/feed feeds the feeder.
+  GET request to :<port>/reset_ec2_time_bomb resets the time bomb.
   
 """
 
@@ -58,10 +58,10 @@ import json
 
 
 """
-Feed Handler
+Time Bomb Reset Handler
 """
 
-class FeedHandler(tornado.web.RequestHandler):
+class TimeBombHandler(tornado.web.RequestHandler):
     # Set the headers to avoid access-control-allow-origin errors when sending get requests from the client
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -70,48 +70,48 @@ class FeedHandler(tornado.web.RequestHandler):
         self.set_header("Connection", "keep-alive")
         self.set_header("Content-Type", "text/plain")
         
-    # Feed GET request.
+    # Reset GET request.
     def get(self):
         status = 0
-        args = [FeederApplication.mydir + "/ec2_instance_feeder", "feed", FeederApplication.feeder_file]
+        args = [TimeBombApplication.mydir + "/ec2_time_bomb", "reset", TimeBombApplication.time_bomb_file]
         try:
             out = subprocess.check_output(args, universal_newlines=True)
         except:
             out = "Error: " + ' '.join(args)
             status = 1
-        print("Feeding returned: %s" % (out))
+        print("Time bomb reset returned: %s" % (out))
         self.write(str(status))
         
 
-class FeederApplication(tornado.web.Application):
+class TimeBombApplication(tornado.web.Application):
     
-    def __init__(self, feeder_file, port):
+    def __init__(self, time_bomb_file, port):
         
-        FeederApplication.feeder_file = feeder_file
-        FeederApplication.mydir = os.path.dirname(__file__)
-        if FeederApplication.mydir == "":
-            FeederApplication.mydir = "."
-        print(FeederApplication.mydir)
+        TimeBombApplication.time_bomb_file = time_bomb_file
+        TimeBombApplication.mydir = os.path.dirname(__file__)
+        if TimeBombApplication.mydir == "":
+            TimeBombApplication.mydir = "."
+        print(TimeBombApplication.mydir)
         routes = [
-            (r"/feed", FeedHandler)
+            (r"/reset_ec2_time_bomb", TimeBombHandler)
            ]
-        super(FeederApplication, self).__init__(routes)
+        super(TimeBombApplication, self).__init__(routes)
         server = tornado.httpserver.HTTPServer(self)
         server.listen(port)
         
-        # Report external URL for the webserver.
+        # Report external URL for the web server.
         # Get Real IP Address using 3rd-party service.
         # Local IP: myIP = socket.gethostbyname(socket.gethostname())
         port_str = "" if port == 80 else  ":" + str(port)
         try:
             external_ip = subprocess.check_output(["wget", "-qO-", "ifconfig.me"], universal_newlines=True)
-            print('*** Feeder Server Started, (http://%s%s) ***' % (external_ip, port_str))
+            print('*** Time Bomb Server Started, (http://%s%s) ***' % (external_ip, port_str))
         except:
-            print("Python: FeederApplication failed to acquire external IP address.")
+            print("Python: TimeBombApplication failed to acquire external IP address.")
             external_ip = None
-            print('*** Feeder Server Started (http://localhost%s) ***' % port_str)
+            print('*** Time Bomb Server Started (http://localhost%s) ***' % port_str)
 
-        # Starting webserver
+        # Starting web server
         tornado.ioloop.IOLoop.instance().start()
         
 
@@ -120,11 +120,11 @@ if __name__ == "__main__":
     # Command-line options
     
     if len(sys.argv) < 2:
-        print("Usage: python3 ec2_instance_feeder_server <feeder-file> <port>")
+        print("Usage: python3 ec2_time_bomb_server <time-bomb-file> <port>")
         sys.exit(1)
 
     port = 65261   # (0xFEED in decimal)
     if len(sys.argv) > 2:
         port = int(sys.argv[2])
 
-    application = FeederApplication(sys.argv[1], port)
+    application = TimeBombApplication(sys.argv[1], port)

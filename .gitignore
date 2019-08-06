@@ -1,6 +1,6 @@
 *~
 **/webserver/*.pyc
-**/webserver/feeders/
+**/webserver/ec2_time_bombs/
 **/apps/*/out/
 **/apps/*/live/
 **/apps/*/build/webserver.log

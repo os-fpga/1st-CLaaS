@@ -1,0 +1,545 @@
+#!/bin/bash
+
+# BSD 3-Clause License
+# 
+# Copyright (c) 2019, Steven F. Hoover
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# 
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# 
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+# Overview:
+# --------
+#
+# This time bomb script is responsible for stopping or terminating an EC2 instance when a timeout expires.
+# Any software agent using the instance must ensure that no time bombs reach zero while the instance is in
+# use by periodically resetting the timer to its pre-configured reset time.
+#
+# This approach is a safety measure to ensure that EC2 instances are not left running by agents that fail to
+# clean up after themselves. It also enables multiple agents to share an instance, and stops the instance only
+# when no agents are using it. To protect against faulty time bombs, multiple can be controlling to the same
+# instance and all must be periodically reset to keep the instance running.
+#
+# This script is not responsible for starting instances, only for stopping/terminating them. It supports two modes
+# of operation, initiated using the "own" or "control" command.
+#  1) "own": "Own" is for one-shot (dynamic) usage of an instance. Detonation (from a timeout or "done" command)
+#            terminates the instance and exits the script.
+#  2) "control": "Control" supports a continuous (static) use model where the instance can be started and stopped any number
+#            of times. Detonation (from a timeout or a "detonate" or "done" command) stops the instance, and the
+#            instance can be started externally after resetting all time bombs on the instance and allowing some
+#            delay to prevent a race between the time bombs and starting the instance. While the timer remains
+#            expired, the script continues to ensure that the instance remains in "stopped" state by periodically
+#            (infrequently) stopping it.
+#
+# The envisioned use model is a web server providing content that offers access to F1 FPGAs. The FPGAs may be
+# shared by multiple users (or not). The web server will use time bombs, either in a continuous use model controlling
+# a static, shared instance, or as one-shots, after creating instances for users. Redundant time bombs can
+# also run on the instances themselves, which are started when the instance is started. The web client will
+# repeatedly ping the content web server and the FPGA web server to
+# reset the time bombs and allow the FPGA to keep running.
+#
+# This script ignores SIGHUP, so it will continue running after exiting its shell.
+#
+#
+# Commands:
+# -----
+#
+# control/own:
+#
+#   Create a new timebomb associated with a given instance and set it. The time bomb process continues to run until
+#   this script is run again with a "done"/"defuse" command or, for "own", timeout occurs.
+#
+#     > ec2_time_bomb control <time-bomb-file> <reset-time> [<profile>]
+#     > ec2_time_bomb own     <time-bomb-file> <reset-time> [<profile>]
+#
+#   Creates a time bomb file and launches a "time bomb process" to monitor the time bomb file's timestamp.
+#   The time bomb file contains the PID of the time bomb process, and the time bomb file's name must be the instance ID
+#   (e.g. "i-12334567890abcdef0") to stop or terminate on detonation. The time bomb process continues to run until this
+#   script is called again with a "done" or "defuse" command or, for "own", detonation. This process produces no output on
+#   stdout (unless $debug is set below); errors report to stderr. If ungracefully killed by a signal, or by pulling the
+#   plug, the instance may be left running (and hopefully another time bomb will be able to stop/terminate it) and the
+#   time bomb file may remain.
+#
+#   This process intercepts common signals to delete the time bomb file.
+#
+#   The distinction between "control" and "own" is:
+#      - Control is for continuous usage with static instances where detonation stops      the instance and the process continues.
+#      - Own     is for one-shot usage with dynamic  instances where detonation terminates the instance and the process terminates.
+#
+#   Note that this command will fail if the time bomb file already exists. It is common for an instance to have its own
+#   time bomb (running on the instance itself), in which case this process can be ungracefully killed when the instance is
+#   stopped (possibly by a different time bomb). For this use case, the time bomb file must be deleted when the instance is
+#   started so its time bomb can be successfully re-started.
+#
+# reset:
+#
+#   The periodic reset action is performed with:
+#
+#     > ec2_time_bomb reset
+#
+#   (which simply touches the time bomb file with "touch -c"). This must be performed more frequently than the reset time.
+#
+#   The reset action must also be performed before starting the instance, and it must be sufficiently prior to starting the
+#   instance so as to avoid a race with detonation.
+#
+# done/defuse:
+#
+#   Terminate the time bomb process with:
+#
+#     > ec2_time_bomb done/defuse <time-bomb-file>
+#
+#   "done" detonates prior to exit, while "defuse" does not. The implementation of "done"
+#   is to remove the file, and the time bomb process immdiately detects this, stops/terminates the instance, and exits.
+#   The implementation of "defuse" sends a SIGTERM to the time bomb process, and the time bomb process removes the time bomb file,
+#   reports the instance's status, and exits. "Defuse" is not used in any recommended use model since it can leave
+#   the instance running.
+#
+# info:
+#
+#   The info command:
+#
+#     > ec2_time_bomb info [<time-bomb-file>]
+#
+#   provides useful information about active time bombs such as:
+#     o if <time-bomb-file> is given:
+#       o whether the time bomb process is still running
+#       o the last time the given time bomb was reset
+#     o running time bomb processes
+#
+#
+# A web server might:
+#
+#  In the continuous/static case:
+#   - On web server startup, start time bomb using "control"; on exit from web server, use "done" (and if it doesn't, the time bomb
+#     is left running and the instance will still be stopped).
+#   - GET request for the FPGA:
+#     - Reset timer.
+#     - Wait a second.
+#     - Start instance.
+#     - Respond to client, who requests resets immediately and repeatedly.
+#  In the dynamic single-user per F1 case:
+#   - GET request for an FPGA:
+#     - Create and start (perhaps optionally) a new FPGA instance.
+#     - Start time bomb with "own".
+#     - Respond to client, who requests resets immediately and repeatedly.
+#   - GET stop request (optional).
+#     - Stop and reset the time bomb (stop instance without terminating time bomb). Note, the client must continue to reset it
+#       to prevent termination.
+#   - GET start request (optional).
+#     - Reset timer.
+#     - Wait a second.
+#     - Start instance
+#  In both cases:
+#   - GET reset request:
+#     - Reset time bomb. (It's okay if the instance is stopped, still reset.)
+#
+#
+# Command arguments are:
+#   <command>:         Control/own/reset/detonate/done/defuse/info:
+#   <time-bomb-file>:  File (absolute or relative to cwd) whose timestamp to monitor. The filename must be the
+#                      instance ID (e.g. "i-1234567890abcdef0").
+#   <reset-time>:      The time to which to (conceptually) reset the time bomb timer (in seconds
+#                      as a whole number; 60 < time < 3600 makes sense).
+#   <profile>:         The aws profile (--profile arg for aws commands).
+#
+
+
+
+usage() {
+  script=$( basename "$0" )
+  echo "Usage: $script control    <time-bomb-file> <reset-time> [<profile>]"
+  echo "       $script own        <time-bomb-file> <reset-time> [<profile>]"
+  echo "       $script reset      <time-bomb-file>"
+  echo "       $script detonate   <time-bomb-file>"
+  echo "       $script done       <time-bomb-file>"
+  echo "       $script defuse     <time-bomb-file>"
+  echo "       $script info       [<time-bomb-file>]"
+  echo "       $script help"
+  exit 1
+}
+
+
+
+#
+# Parameters
+#
+
+debug=1
+watch_timeout=600  # Timeout for watching time bomb file while instance is stopped. Several minutes is reasonable.
+                   # An AWS command will issue with each timeout, but it is pathologically/accidentally possible that
+                   # the instance is actually running, so don't set this too high.
+
+
+
+#
+# Handle all commands other than "control"/"own".
+#
+
+cmd_arg=$1
+time_bomb_file=$2
+inst_id=$( basename "$time_bomb_file")
+
+if [[ "$cmd_arg" == "done" || "$cmd_arg" == "defuse" || "$cmd_arg" == "detonate" ]]
+then
+  # Detonate and exit by deleting the time bomb file. Make sure it looks like a time bomb file, to be safe.
+  if [[ -e "$time_bomb_file" ]]
+  then
+    if [[ "$cmd_arg" == "done" || "$cmd_arg" == "defuse" ]]
+    then
+      pid=$( cat "$time_bomb_file" )
+      if [[ $pid =~ ^[[:digit:]]+$ ]]
+      then
+        if [[ "$cmd_arg" == "defuse" ]]
+        then
+          kill $pid
+          # SIGTERM will not be received until done waiting on the time bomb file, so touch it (without creating it) (twice, since there's a race).
+          touch -c -r "$time_bomb_file" "$time_bomb_file" >& /dev/null
+          sleep 1
+          touch -c -r "$time_bomb_file" "$time_bomb_file" >& /dev/null
+        else
+          # Trigger detonation and exit.
+          rm -f $time_bomb_file
+        fi
+      else
+        >&2 echo "$0: $time_bomb_file doesn't look like a time bomb file."
+        exit 1
+      fi
+
+      # Wait for the process to die, since it may produce output.
+      cnt=10
+      while [[ $cnt > 0 ]] && ps -q "$pid" >& /dev/null
+      do
+        sleep 1
+        cnt=$((cnt-1))
+      done
+      if [[ $cnt == 0 ]]
+      then
+        >&2 echo "$0: Failed to terminate time bomb process $pid"
+        exit 1
+      fi
+    else
+      # Detonate command.
+      # Set file timestamp to reflect detonation.
+      sec=$(( $reset_time + 1 )); touch -c -d "$sec seconds ago" "$time_bomb_file"
+    fi
+    exit 0
+  else
+    >&2 echo "$0: $time_bomb_file does not exist."
+    exit 1
+  fi
+fi
+
+if [[ "$cmd_arg" == "reset" ]]
+then
+  # Touch the file if it exists. (It's okay to reset before creating the time bomb, so it's okay if the file doesn't exist yet.)
+  touch -c "$time_bomb_file"
+  exit 0
+fi
+
+if [[ "$cmd_arg" == "info" ]]
+then
+  # If a time bomb file is given, report info about it.
+  if [[ -n "$time_bomb_file" ]]
+  then
+    if [[ -e "$time_bomb_file" ]]
+    then
+      # Report if the process is still running.
+      pid=$( cat "$time_bomb_file" )
+      if ps -q "$pid" 2>&1 > /dev/null
+      then
+        echo "The time bomb process is still running."
+      else
+        echo "The time bomb process is no longer running."
+      fi
+      # Report the age of the time bomb file (last reset).
+      echo "It last reset "$(($(date +%s) - $(date +%s -r "$time_bomb_file")))" seconds ago."
+    else
+      echo "$time_bomb_file not found."
+    fi
+  fi
+  # Look for processes running this command.
+  echo "All time bomb processes (if any) (each time bomb can have two processes):"
+  ps --no-headers -eo pid,command | grep $( basename $0 ) | grep -v grep | grep -v "$( basename $0 ) info"
+  
+  exit 0
+fi
+  
+# Command must be "control" or "own" or "help".
+
+if [[ "$cmd_arg" != "control" && "$cmd_arg" != "own" ]]
+then
+  if [[ "$cmd_arg" != "help" ]]
+  then
+    >&2 echo "$0: Illegal command argument: $cmd_arg"
+  fi
+  usage
+  exit 1
+fi
+
+
+
+#
+# Process args
+#
+
+if [[ $# != 3 && $# != 4 ]]
+then
+  usage
+fi
+
+if [[ "$cmd_rg" == "own" ]]
+then
+  detonate_action="terminate"
+  detonate_state_pattern="(terminated|shutting-down)"
+else
+  detonate_action="stop"
+  detonate_state_pattern="(stopped|stopping)"
+fi
+reset_time=$3
+profile=$4
+
+
+
+#
+# Interpret arguments.
+#
+
+# Determine reset time in hours.
+reset_time_hrs=$( echo "scale=6; $reset_time / 60 / 60 / 24" | bc || ( >&2 echo "$0: Failed to compute reset time in hours." && exit ) )
+# Determine $poll_freq: how often to poll the file (in seconds). Determined as 1/3 of the reset time (rounded up to nearest second).
+poll_freq=$( echo "( $reset_time + 2 ) / 3" | bc || ( >&2 echo "$0: Failed to compute poll frequency." && exit ) )
+if [[ -n "$profile" ]]
+then
+  profile_arg="--profile $profile"
+else
+  profile_arg=""
+fi
+
+
+
+#
+# Make sure aws commands will work.
+#
+
+detonate_cmd="aws ec2 ${detonate_action}-instances $profile_arg --output text --instance-ids $inst_id "
+
+# Validate the instance.
+get_current_state() {
+  current_state=$( aws ec2 describe-instance-status $profile_arg --output text --include-all-instances --instance-ids $inst_id | grep INSTANCESTATE )
+}
+
+get_current_state
+if [[ ! -n "$current_state" ]]
+then
+  >&2 echo "$0: Failed to acquire status of instance."
+  exit 1
+else
+  echo "$0: Current state of instance: $current_state"
+fi
+
+# Make sure the stop command will work.
+( $detonate_cmd --dry-run |& grep 'would have succeeded' >& /dev/null) || ( echo "Unable to stop instance $inst_id. Make sure your profile is authorized." && echo "To debug, this command might be useful: $detonate_cmd --dry-run" && exit 1 )
+
+
+
+#
+# Trap handling
+#
+
+# Do not terminate this process when its shell is exited.
+sighup_handler() {
+  echo "SIGHUP"
+  >& echo "Ignoring SIGHUP"
+}
+trap sighup_handler SIGHUP
+
+# Ctrl-C deletes the file to result in a graceful exit.
+sigint_handler() {
+  echo "SIGINT/SIGQUIT"
+  rm $time_bomb_file
+}
+trap sigint_handler SIGINT SIGQUIT
+
+# Just exit (undocumented behavior)
+trap 'exit 1' SIGUSR1
+
+# Forcible traps will delete the file and exit immediately, reporting the instance state.
+trap 'get_current_state && echo $current_state && if [[ "$current_state" =~ stopp ]]; then exit 0; else exit 2; fi' SIGTERM
+
+
+
+# A rare condition was encountered
+#  $1: Description.
+rare_condition() {
+  if [[ $debug == 1 ]]
+  then
+    >&2 echo "$0: Rare condition: $1"
+    (( rare_cnt++ ))
+    if [[ $debug == 1 && $rare_cnt -gt 1000 ]]
+    then
+      >&2 echo "$0: Hit a rare condition too many time. Exiting."
+      exit 1
+    fi
+  fi
+}
+
+# If the time bomb file exists, wait for a given number of seconds, or until the time bomb file is touched.
+# Return status is meaningless.
+wait_on_time_bomb_file() {
+  if [[ -e "$time_bomb_file" ]]
+  then
+    inotifywait -q -q -t $1 "$time_bomb_file" &> /dev/null
+    if [[ $? != 0 && $? != 2 ]]  # Not touhed or timedout.
+    then
+      # Could be that file was deleted just prior to inotifywait, which should cause exit.
+      rare_condition 'inotifywait failed'
+    fi
+  fi
+}
+# Determine if the timer is still running.
+timer_is_running() {
+  ( tmp="$( find $time_bomb_file -mtime -$reset_time_hrs )" && [[ -n "$tmp" ]] ) &> /dev/null
+}
+
+rare_cnt=0  # A count of rare events. If this gets too high, exit if $debug.
+
+
+# ======================================================================================================
+# Up to this point, we've done no harm. From this point on, we must be careful monitoring doesn't fail and we start/exit gracefully,
+# without inadvertently leaving the instance running.
+
+
+#
+# Run the time bomb process in the background and create the time bomb file.
+#
+
+
+# The time bomb is launched as a separate background process, whose PID is stored in the time bomb file.
+time_bomb_process() {
+  # Poll the time bomb file, stopping the instance and keeping it stopped when/while the file is detonated, and exiting only if the file is deleted.
+
+  # Wait for time bomb file to be created (containing the PID of this process).
+  while [[ ! -e "$time_bomb_file" ]]
+  do
+    sleep 1
+  done
+  
+  while true
+  do
+
+    # Poll time bomb file continuously until it detonates.
+    
+    [[ $debug == 0 ]] || printf "Polling for detonation: "
+    while ( wait_on_time_bomb_file $poll_freq; timer_is_running )
+    do
+      [[ $debug == 0 ]] || printf '.'
+    done
+    [[ $debug == 0 ]] || (echo && echo "$time_bomb_file has detonated. Stopping $inst_id.")
+    
+    
+    # Stop/terminate instance (even if it is already stopped), and check success.
+    
+    current_state=$( $detonate_cmd | grep CURRENTSTATE )
+    if [[ ! $current_state =~ $detonate_state_pattern ]]
+    then
+      # Failed to stop/terminate instance.
+      
+      if [[ ! -n $current_state ]]
+      then
+        >&2 echo "$0: ${detonate_action}-instance command failed."
+      else
+        >&2 echo "$0: ${detonate_action} command failed to enter '${detonate_state_pattern}' state. Got: $current_state"
+      fi
+      
+      # Allow script to continue polling and try again to see if the problem clears up, but let's make sure we delay before trying again.
+      # There will be a poll delay as long as the file exists, but if it was deleted, there will be no delay.
+      # Let's make sure there is some delay here in either case, as an added safety measure against in infinite busy loop.
+      if [[ -e "$time_bomb_file" ]]
+      then
+        # We'll be doing the poll wait anyway, but just as a precaution:
+        wait_on_time_bomb_file 3
+      else
+        rare_condition
+        sleep 5
+        # Note that while sleeping the script is not responsive to signals, but this is an error scenario anyway.
+      fi
+      
+    else
+      # Instance has been stopped/terminated (or is stopping/shutting-down).
+      
+      # If we're terminating the instance (started as "own"), delete the file (and this will result in exiting).
+      if [[ "$detonate_action" = "terminate" ]]
+      then
+        rm -f "$time_bomb_file"
+      fi
+    
+      # If file was deleted, exit.
+      if [[ ! -e "$time_bomb_file" ]]
+      then
+        echo "File $time_bomb_file was deleted. Instance $inst_id is $detonate_state_pattern."
+        echo "Exiting gracefully and relinquishing responsibility for instance."
+        exit 0
+      fi
+      
+      # Wait until file is touched again (indicating that instance may have been started) (or timeout after -t seconds, just in case we miss it or weren't informed).
+      [[ $debug == 0 ]] || echo "Watching file $time_bomb_file"
+      wait_on_time_bomb_file $watch_timeout
+    fi
+    
+  done
+}
+
+if [[ -e "$time_bomb_file" ]]
+then
+  >&2 echo "$0: time bomb file \"$time_bomb_file\" already exists."
+  exit 1
+fi
+
+# Begin monitoring time bomb file in separate process.
+echo "$0: DEBUG: starting time bomb process."
+time_bomb_process &
+pid=$!
+# Create time bomb file containing PID of time bomb process.
+if ! (set -o noclobber; echo "$pid" > "$time_bomb_file" ) &> /dev/null
+then
+  >&2 echo "Cannot create time bomb file \"$time_bomb_file\"."
+  kill $pid || >&2 echo "$0: Failed to kill time bomb process $pid on failure."
+  exit 1
+fi
+
+
+echo
+echo "-------------------------------------------------------------------------------"
+echo "Instance $inst_id is tied to the file $time_bomb_file (containing the PID of the time bomb process)."
+echo "This instance will only be allowed to continue running as long as this file"
+echo "is touched at least every $reset_time seconds (polled every $poll_freq seconds)."
+echo
+echo "Terminate the time bomb process cleanly ($detonate_action the instance) by running:"  # (or by sending SIGINT or by removing $time_bomb_file)
+echo "  > $0 done $time_bomb_file"
+echo "-------------------------------------------------------------------------------"
+echo
+
