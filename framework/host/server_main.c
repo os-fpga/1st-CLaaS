@@ -57,6 +57,7 @@ using namespace lodepng;
 
 int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
 {
+//TODO else ifndef OPENCL
 #ifdef OPENCL
   if (argc != 2) {
     printf("Usage: %s xclbin\n", argv[0]);
@@ -198,10 +199,11 @@ void HostApp::processTraffic() {
             cout_line() << "Done extracting data." << endl;
 
             // Send data to FPGA, or do fake FPGA processing.
-#ifdef OPENCL
+//TODO KERNEL_AVAIL
+#ifdef KERNEL_AVAIL
             // Process in FPGA.
             kernel.writeKernelData((double *)int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
-            if (verbosity > 2) {cout << "Wrote kernel." << endl;}
+            if (verbosity > 2) {cout << "Wrote kernel2." << endl;}
 
             kernel.start_kernel();
             if (verbosity > 2) {cout << "Started kernel." << endl;}
@@ -249,7 +251,7 @@ void HostApp::processTraffic() {
     default:
       cout_line() << "Unrecognized command: " << command << "." << endl;
       exit(1);
-#ifdef OPENCL
+#ifdef KERNEL_AVAIL
       //cout << "Calling handle_command(.., " << command << ", ..)" << endl;
       //handle_command(command, kernel.xclbin, kernel_name, COLS * ROWS * sizeof(int));
 #endif
@@ -495,8 +497,8 @@ int HostApp::handle_read_data(const void * data, int data_size) {
   return 0;
 }
 
-
-#ifdef OPENCL
+//TODO KERNEL_AVAIL
+#ifdef KERNEL_AVAIL
 /*
 ** Parameters
 ** socket: reference to the socket channel with the webserver

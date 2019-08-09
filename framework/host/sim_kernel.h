@@ -30,60 +30,44 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*
-**
-** Header file for the Kernel class which provides the interface through which to communicate with
-** the custom FPGA kernel logic.
-** All OpenCL calls are performed within this class.
-**
-** We have created different functions in order to gain more control on
-** the FPGA device:
-**    - initialize_platform   --> initializes the platform
-**    - initialize_kernel     --> initializes the kernel
-**    - write_kernel_data     --> writes data to FPGA board memory
-**    - read_kernel_data      --> reads data from FPGA board memory
-**    - start_kernel          --> injects the start signal to the FPGA
-**    - clean_kernel          --> clean the OpenCL variables
-**
-** Author: Alessandro Comodi, Politecnico di Milano
-*/
 
-#ifndef HEADER_KERNEL
-#define HEADER_KERNEL
+#include "kernel.h"
+#include <stdlib.h>
+#include "Vmandelbrot_kernel.h"
+#include "verilated.h"
+
+#ifndef HEADER_SIM_KERNEL
+#define HEADER_SIM_KERNEL
 
 #define COLS 4096
 #define ROWS 4096
 
 
 
-/*
-** Definition of the input data structure for the kernel
-** To be modified by the user if he sends different kind of data
-** The following struct is specific to mandelbrot set calculation
-** TODO: Doesn't belong here.
-*/
-typedef struct data_struct {
-  double coordinates[4];
-  long width;
-  long height;
-  long max_depth;
-} input_struct;
+class SIM_Kernel: public Kernel {
 
+private:
 
-class Kernel {
+  Vmandelbrot_kernel *verilator_kernel = new Vmandelbrot_kernel;
+  void* input_buff;
+  void* output_buff;
+  int data_size;
+  int resp_data_size;
 
-protected:
+public:
+
   int status = 1;
   bool initialized = false;
 
+  SIM_Kernel();
 
-  virtual void perror(const char * msg) = 0;;
+  void perror(const char * msg);
 
-  virtual void writeKernelData(void * input, int data_size, int resp_data_size) = 0;
-  virtual void write_kernel_data(input_struct * input, int data_size) = 0;
-  virtual void start_kernel() = 0;
-  virtual void read_kernel_data(int h_a_output[], int data_size) = 0;
-  virtual void clean_kernel() = 0;
+  void writeKernelData(void * input, int data_size, int resp_data_size);
+  void write_kernel_data(input_struct * input, int data_size);
+  void start_kernel();
+  void read_kernel_data(int h_a_output[], int data_size);
+  void clean_kernel();
 
 };
 

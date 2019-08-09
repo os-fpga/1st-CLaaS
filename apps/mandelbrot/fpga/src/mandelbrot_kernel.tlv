@@ -8,7 +8,7 @@
 
    // To relax Verilator compiler checking:
    /* verilator lint_off UNOPTFLAT */
-   /* verilator lint_on WIDTH */
+   /* verilator lint_off WIDTH */
    /* verilator lint_off REALCVT */  // !!! SandPiper DEBUGSIGS BUG.
 
 
@@ -78,6 +78,7 @@
    // Zero extend to given width.
    `define ZX(val, width) {{1'b0{width-$bits(val)}}, val}
 
+`ifndef FPGA_WEBSERVER_KERNEL
 	m4_makerchip_module
 		logic s_tvalid;
 		logic [M4_CONFIG_DATA_RANGE] s_tdata;
@@ -114,6 +115,7 @@
       assign passed = !clk || dut.frame_done || cyc_cnt > 2000;
       assign failed = !clk || 1'b0;
    endmodule
+`endif
 
 
    module mandelbrot_kernel #(

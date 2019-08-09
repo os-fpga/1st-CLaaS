@@ -54,9 +54,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#ifdef KERNEL_AVAIL
+#include "kernel.h"
+#include "sim_kernel.h"
+#endif
 #ifdef OPENCL
 #include <CL/opencl.h>
 #include "kernel.h"
+#include "hw_kernel.h"
 #endif
 
 #include "lodepng.h"
@@ -110,8 +115,12 @@ public:
     int data_size;
   } dynamic_array;
 
+#ifdef KERNEL_AVAIL
 #ifdef OPENCL
-  Kernel kernel;
+  HW_Kernel kernel;
+#else
+  SIM_Kernel kernel;
+#endif
 #endif
 
   static const int DATA_WIDTH_BYTES = 64;
@@ -206,7 +215,7 @@ protected:
   */
   int handle_read_data(const void * data, int data_size);
 
-  #ifdef OPENCL
+  #ifdef KERNEL_AVAIL
   void handle_get_image(int ** data_array_p, input_struct * input_p);
   #endif
 
