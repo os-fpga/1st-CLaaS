@@ -1,7 +1,7 @@
 /*
 BSD 3-Clause License
 
-Copyright (c) 2018, alessandrocomodi
+Copyright (c) 2019, Akos Hadnagy
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 **
-** This is the library that holds all the functions that perform the
-** communication with the FPGA device.
-**
-** The functions are described in the header file.
+** This library performs the Verilator-based simulation of the user kernel.
 **
 */
 
@@ -47,18 +44,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <cstdint>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <atomic>
+#include <thread>
+#include <mutex>
 #include "kernel.h"
 #include "sim_kernel.h"
 #include "verilated_vcd_c.h"
 
 
-#include "server_main.h"
-
-
 SIM_Kernel::SIM_Kernel() {
+  this->verilator_kernel = new VERILATOR_KERNEL;
+  this->tfp = new VerilatedVcdC;
+
+}
+
+SIM_Kernel::~SIM_Kernel() {
+  tfp->close();
+  delete tfp;
+  delete verilator_kernel;
 }
 
 void SIM_Kernel::perror(const char * msg) {
@@ -66,28 +73,55 @@ void SIM_Kernel::perror(const char * msg) {
   status = EXIT_FAILURE;
 }
 
+void SIM_Kernel::enable_tracing() {
+  Verilated::traceEverOn(true);
+  verilator_kernel->trace (tfp, 99);
+  tfp->open ("../out/sim/trace.vcd");
+  tracing_enabled = true;
+}
 
+void SIM_Kernel::disable_tracing() {
+  tracing_enabled = false;
+}
 
-// TODO: Experimental WIP
+void SIM_Kernel::save_trace() {
+  tfp->close();
+}
+
+void SIM_Kernel::tick() {
+  if (tracing_enabled)
+    tfp->dump (tick_cntr);
+  verilator_kernel->reset = 0;
+  verilator_kernel->clk = !verilator_kernel->clk;
+  verilator_kernel->eval();
+  tick_cntr++;
+}
+
+void SIM_Kernel::reset_kernel() {
+  for(int rst_cntr=0; rst_cntr<1000; rst_cntr++) {
+  verilator_kernel->reset = 1;
+  tick();
+  }
+  verilator_kernel->reset = 0;
+}
+
 void SIM_Kernel::writeKernelData(void * input, int data_size, int resp_data_size) {
-printf("writeKernelData");
-input_buff = input;
-output_buff = new input_struct[resp_data_size];
-this->data_size = data_size;
-this->resp_data_size = resp_data_size;
+  input_buff = input;
+  output_buff = new input_struct[resp_data_size*HostApp::DATA_WIDTH_WORDS];
+  this->data_size = data_size;
+  this->resp_data_size = resp_data_size;
 }
 
 void SIM_Kernel::write_kernel_data(input_struct * input, int data_size) {
   int err;
 
   err = 0;
-  printf("Input size: %d\n", data_size);
-  uint resp_length = (uint)(input->width * input->height) / 16;
-  cout << "C++: (" << input->width << "x" << input->height << "), resp_length = " << resp_length << endl;
+  uint resp_length = (uint)(input->width * input->height) / HostApp::DATA_WIDTH_WORDS;
+  cout << "Verilator: (" << input->width << "x" << input->height << "), resp_length = " << resp_length << endl;
 
   input_buff = input;
-  output_buff = new unsigned int [resp_length*16];
-  this->data_size = data_size/64;
+  output_buff = new uint32_t [resp_length*HostApp::DATA_WIDTH_WORDS];
+  this->data_size = data_size/HostApp::DATA_WIDTH_BYTES;
   this->resp_data_size = resp_length;
 }
 
@@ -95,88 +129,45 @@ void SIM_Kernel::write_kernel_data(input_struct * input, int data_size) {
 
 void SIM_Kernel::start_kernel() {
 
-  printf("input size: %d\n", data_size);
-  printf("output size: %d\n", resp_data_size);
+  uint32_t send_cntr=0;
+  uint32_t recv_cntr=0;
 
-int tick_cntr = 0;
-
-
-Verilated::traceEverOn(true);
-VerilatedVcdC* tfp = new VerilatedVcdC;
-
-verilator_kernel->trace (tfp, 99);
-tfp->open ("counter.vcd");
-
-printf("start_kernel");
-unsigned int send_cntr=0;
-unsigned int recv_cntr=0;
-
-for(int rst_cntr=0; rst_cntr<40; rst_cntr++) {
-  tfp->dump (tick_cntr++);
-  verilator_kernel->reset = 1;
-  verilator_kernel->clk = 1;
-  verilator_kernel->eval();
-  tfp->dump (tick_cntr++);
-  verilator_kernel->clk = 0;
-  verilator_kernel->eval();
-}
-
-
-while ((send_cntr < data_size | recv_cntr < resp_data_size)) {
-  //tfp->dump (tick_cntr++);
-  verilator_kernel->reset = 0;
-  verilator_kernel->clk = 1;
-  verilator_kernel->eval();
-
-  if(send_cntr < data_size) {
-    unsigned int * input = (unsigned int *)input_buff;
-    //printf("Input: %x\n", input[send_cntr*sizeof(unsigned int)*16]);
-    verilator_kernel->in_avail = 1;
-    for(int words = 0; words < 16; words++) {
-      verilator_kernel->in_data[words]    = input[send_cntr*16 + words];
+  while ((send_cntr < data_size | recv_cntr < resp_data_size)) {
+    tick();  
+    if(send_cntr < data_size) {
+      uint32_t * input = (uint32_t *)input_buff;
+      verilator_kernel->in_avail = 1;
+      for(int words = 0; words < HostApp::DATA_WIDTH_WORDS; words++) {
+        verilator_kernel->in_data[words]    = input[send_cntr*HostApp::DATA_WIDTH_WORDS + words];
+      }
+      if(verilator_kernel->in_ready) {
+        printf("Verilator send_cntr: %d\n", send_cntr);
+        send_cntr++;
+      }
+      
+    } else {
+       verilator_kernel->in_avail = 0;
     }
-    if(verilator_kernel->in_ready) {
-      printf("Verilator send_cntr: %d\n", send_cntr);
-      send_cntr++;
-    }
-    
-  } else {
-     verilator_kernel->in_avail = 0;
-  }
-
-  if(recv_cntr < resp_data_size) {
-    verilator_kernel->out_ready = 1;
-  } else {
-    verilator_kernel->out_ready = 0;
-  }
-
-  if(recv_cntr < resp_data_size & verilator_kernel->out_avail) {
-    unsigned int * output = (unsigned int *)output_buff;
-    for(int words = 0; words < 16; words++) {
+  
+    if(recv_cntr < resp_data_size) {
       verilator_kernel->out_ready = 1;
-      output[recv_cntr*16 + words]  = verilator_kernel->out_data[words];
-      //printf("Out data: %d\n", verilator_kernel->out_data[words]);
+    } else {
+      verilator_kernel->out_ready = 0;
     }
-    recv_cntr++;
-    //printf("Verilator recv_cntr: %d\n", recv_cntr);
-  }  
-  //tfp->dump (tick_cntr++);
-  verilator_kernel->clk = 0;
-  verilator_kernel->eval();
-}
-printf("start_kernel returned\n");
-tfp->close();
+  
+    if(recv_cntr < resp_data_size & verilator_kernel->out_avail) {
+      uint32_t * output = (uint32_t *)output_buff;
+      for(int words = 0; words < HostApp::DATA_WIDTH_WORDS; words++) {
+        verilator_kernel->out_ready = 1;
+        output[recv_cntr*HostApp::DATA_WIDTH_WORDS + words]  = verilator_kernel->out_data[words];
+      }
+      recv_cntr++;
+    }  
+    tick();
+  }
 }
 
 void SIM_Kernel::read_kernel_data(int h_a_output[], int data_size) {
-  printf("read_kernel_data");
-  memcpy(h_a_output, output_buff, sizeof(unsigned int)*resp_data_size*16);
-  //TODO FREE BUFFER!!!!!
-  free(output_buff);
-}
-
-
-void SIM_Kernel::clean_kernel() {
-printf("Test");
-
+  memcpy(h_a_output, output_buff, sizeof(uint32_t)*resp_data_size*HostApp::DATA_WIDTH_WORDS);
+  delete output_buff;
 }

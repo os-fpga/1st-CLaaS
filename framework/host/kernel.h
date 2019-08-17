@@ -78,12 +78,12 @@ protected:
 
 
   virtual void perror(const char * msg) = 0;;
-
+  virtual void reset_kernel() = 0;
   virtual void writeKernelData(void * input, int data_size, int resp_data_size) = 0;
   virtual void write_kernel_data(input_struct * input, int data_size) = 0;
   virtual void start_kernel() = 0;
   virtual void read_kernel_data(int h_a_output[], int data_size) = 0;
-  virtual void clean_kernel() = 0;
+  virtual void clean_kernel() {};
 
 };
 

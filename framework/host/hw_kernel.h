@@ -130,6 +130,8 @@ public:
   */
   void clean_kernel();
 
+  void reset_kernel() {};
+
 };
 
 #endif

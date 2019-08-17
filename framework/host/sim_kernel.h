@@ -1,7 +1,7 @@
 /*
 BSD 3-Clause License
 
-Copyright (c) 2018, alessandrocomodi
+Copyright (c) 2019, Akos Hadnagy
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+**
+** This library performs the Verilator-based simulation of the user kernel.
+**
+*/
+
 
 #include "kernel.h"
 #include <stdlib.h>
-#include "Vmandelbrot_kernel.h"
+#include "verilator_kernel.h"
 #include "verilated.h"
+#include "server_main.h"
 
 #ifndef HEADER_SIM_KERNEL
 #define HEADER_SIM_KERNEL
@@ -48,11 +55,19 @@ class SIM_Kernel: public Kernel {
 
 private:
 
-  Vmandelbrot_kernel *verilator_kernel = new Vmandelbrot_kernel;
-  void* input_buff;
-  void* output_buff;
-  int data_size;
-  int resp_data_size;
+  VERILATOR_KERNEL *verilator_kernel;
+  VerilatedVcdC* tfp;
+  void* input_buff = 0;
+  void* output_buff = 0;
+  int data_size = 0;
+  int resp_data_size = 0;
+  int tick_cntr = 0;
+  bool tracing_enabled = false;
+
+  /*
+  ** Step testbench
+  */
+  void tick();
 
 public:
 
@@ -60,15 +75,47 @@ public:
   bool initialized = false;
 
   SIM_Kernel();
+  ~SIM_Kernel();
 
   void perror(const char * msg);
 
+  /***********************************
+  **                                **
+  ** Simulation Interface functions **
+  **                                **
+  ************************************/
+
+  /*
+  ** Save the pointer to the input data
+  */
   void writeKernelData(void * input, int data_size, int resp_data_size);
   void write_kernel_data(input_struct * input, int data_size);
-  void start_kernel();
-  void read_kernel_data(int h_a_output[], int data_size);
-  void clean_kernel();
 
+  /*
+  ** Enables trace waveform recording
+  */
+  void enable_tracing();
+  /*
+  ** Disables trace waveform recording
+  */
+  void disable_tracing();
+  /*
+  ** Saves trace waveform
+  */
+  void save_trace();
+  
+  /*
+  ** Performs reset on user kernel
+  */
+  void reset_kernel();
+  /*
+  ** Starts computation
+  */
+  void start_kernel();
+  /*
+  ** Copy received data to an output buffer
+  */
+  void read_kernel_data(int h_a_output[], int data_size);
 };
 
 #endif
