@@ -120,11 +120,7 @@ source deploy.sh ~/aws_credentials.tfvars
 
 The instance that is created allows TCP/IP traffic through on port 80 for running a production web server and certain ports for development. Once the script finishes, you will see the public IP address of your Development Instance in the terminal, and you can find all the instance parameters in `terraform.tfstate`. Note that this file contains the private TLS key.
 
-<!-- Make terraform.tfstate privs 400. --> 
-
-A TLS keypair and a temporary RDP password is also generated during the process. You can find these in the same directory. You'll use these credentials to connect to the machine using SSH or RDP.
-
-<!-- temp_pwd_### is for RDP only? How is it changed? -->
+A TLS keypair is also generated during the process and placed into `~/.ssh/<instance-name>/` (locally). You'll use these credentials to connect to the machine using SSH.
 
 
 <a name="StopInstances"></a>
@@ -146,7 +142,16 @@ Note that this also deletes the created storage. (This step can be disabled in t
 
 ### Remote Desktop
 
-Terraform installed a Remote Desktop Protocol agent on the Development Instance, and the `<repo>/init` script installed Remmina, for remote desktop access. Run:
+Terraform installed a Remote Desktop Protocol agent on the Development Instance, and the `<repo>/init` script installed Remmina, for remote desktop access.
+
+Remote desktop access will require use of a linux password for the `centos` account. Set this using:
+
+```sh
+ssh -i ~/.ssh/<instance-name>/private_key.pem -c 'echo "centos:<password>" | sudo chpasswd' centos@<ip>
+# And if you'd like to hide your password, clear the terminal with "clear".
+```
+
+Run:
 
 ```sh
 remmina
@@ -165,7 +170,6 @@ remmina
 
 Note that between stopping and starting Amazon instances the IPv4 Public IP of the instance changes and will need to be reassigned in Remmina.
 
-The temporary password you will need to enter is in the `centos_pwd.txt` file. You may wish to delete this file for security reasons, and preferably you should assign a more secure password. <!-- instructions -->
 
 <!--
 ### X11 Forwarding
