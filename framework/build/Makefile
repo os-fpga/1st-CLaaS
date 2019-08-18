@@ -31,7 +31,21 @@
 
 # Includes SDAccel 2017.1 Makefile functionality and general functionality for fpga-webserver.
 #
-# Terminology (Move to README):
+# Terminology (TODO: Move to README):
+#   1st CLaaS User Configuration:
+#         Development using 1st CLaaS requires AWS resources, and the user configuration provides access
+#         to these resources. Generally, the same configuration can be used for all development by a given
+#         user, even development of different applications, and the configuration file is, by default,
+#         stored in a user's home directory. Each repo clone can have an
+#         associated default configuration defined by the file "~/1st-CLaaS_config.mk", which
+#         can be created interactively using 'make config'. It contains shell variable assignments and can
+#         be included by a Makefile or sourced by a shell script (or otherwise parsed).
+#         It encapsulates:
+#            - an AWS profile
+#            - an S3 bucket name (which must be globally unique and accessible using the AWS credentials)
+#            - on this S3 bucket, the state of AWS resources ("setups") associated with this configuration
+#         This "1st-CLaaS_config.mk" file should have 600 privs as it contains AWS credentials.
+#         The S3 bucket will hold secrets, such as TLS (SSH) access keys, so the bucket must have appropriate permissions.
 #   Landing Web Server: The public-facing web server providing the landing page for an application (in contrast to an Accelerated
 #                       Web Server, though these could be one in the same).
 #   Accelerated Web Server: A web server utilizing an attached FPGA or FPGA emulation (running on an Amazon F1 Instance or emulated
@@ -52,6 +66,8 @@
 #      o Creating a Static Accelerated Web Server
 #
 #   Provided Targets (for Web Server and Application build/launch):
+#     config: interactive user configuration for using 1st CLaaS. In the rare case that multiple configurations are desired,
+#             CONFIG_FILE=XXX can be given in this and subsequent make commands that wish to use this configuration.
 #     host: the host application
 #     xclbin: the FPGA image
 #     build: the host application and FPGA image
@@ -64,49 +80,108 @@
 #     dead: kill the running production server.
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
 #   Variables:
+#     CONFIG_FILE: The 1st CLaaS user configuration file to use. ~/1st-CLaaS_config.mk by default. This is an
+#                     included Makefile that is expected to define:
+#        AWS_PROFILE: The AWS profile to use to access AWS resources (in AWS CLI commands, the '--profile' argument).
+#                     The AWS profile provides access keys and selects the EC2 region which must be one with F1 instances.
+#        S3_BUCKET, defaulting to "1st-claas.$(S3_USER).$(S3_BUCKET_TAG)", where, by default:
+#              S3_USER=user-name
+#              S3_BUCKET_TAG=default
+#           Any of these three may optionally be provided as configurtion variables.
+#           The resulting S3_BUCKET_NAME must be a globally-unique (across all AWS users). It is used to store
+#                information about AWS resources that are in use ("setups" managed using Terraform via this Makefile).
 #     PORT: The port on which to launch the webserver.
 #     TARGET=[hw, hw_emu, sim, sw] (determined by platform by default)
-#              hw: F1 FPGA.
-#              hw_emu: SDAccel hardware emulation compilation.
-#              sim: Verilator simulation of the kernel.
-#              sw: software-only with no kernel behavior available.
-#            Target is downgraded automatically based on the platform.
+#             hw: F1 FPGA.
+#             hw_emu: SDAccel hardware emulation compilation.
+#             sim: Verilator simulation of the kernel.
+#             sw: software-only with no kernel behavior available.
+#            TARGET is downgraded automatically based on the platform.
 #     PREBUILT=[true] or default to false behavior. True to use the prebuilt files in the repository, rather than building.
 #     WAVES=[true] or default to false behavior. True to generate waveforms. (xocc )
-#     S3_BUCKET=bucket_name: provides a name for the S3 bucket to use for the AFI (.awsxclbin) build.
-#     S3_LOGS_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
-#     S3_DCP_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
 #     VALGRIND=[true] or default to false behavior. True to use Valgrind to identify memory leaks in the host application.
 #     NOHUP=true: Can be used with 'launch' target to launch in background and stay running after the shell exits. (This is implied by 'make live').
 #   Eg:
 #     make host TARGET=hw_emu
 #
-#   Platform Targets (for constructing the multi-server platform):
-#     By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
-#        make PASSWORD=XXX PREBUILT=false/true TFVAR=$HOME/aws_cred.tfvars static_accelerated_instance  # (or omit variables to be prompted.)
+#   Platform Targets (for constructing EC2 instances):
+#     Platform Target Variables:
 #        #    PASSWORD: (prompts as admin_pwd) might be used by webserver to authenticate administrative actions from a client.
-#        #    PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
-#        #    EC2_TYPE: Use c4 for testing without FPGA.
+#        #    INSTANCE_TYPE: Use c4 for testing without FPGA.
 #        #    INSTANCE_NAME: Name of the instance.
+#        #    INSTANCE_STORAGE: Size in GB of "sdb" storage on the instance. Defaults to 15, which is appropriate for Development Instance.
+#        #                      5 is the default for the AMI and is good for deployment (no implementation builds).
+#        #    INSTANCE_CONFIG_SCRIPT: Script that is run to configure the instance.
+#        #    SETUP: The Terraform "setup" to use. Each setup is managed independently with its own .tfstate file.
 #        #    TFVAR:    A single .tfvars file. To avoid prompts, this should contain:
 #        #                aws_access_key_id="XXX"
 #        #                aws_secret_access_key="XXX"
 #        #                region="XXX"   # Eg: "us-east-1"
 #        #              (It may also provide admin_pwd and use_prebuilt_afi.)
 #        #    TF_ARGS: (opt) Additional arguments for Terraform.
+#     # The following *_instance targets exist. These targets must be used as the only target in the make command.
+#     # Note that the admin password and AWS profile's keys are stored in plain text on the created instance. They are also
+#     # displayed in plain text on stdout. 
+#     # Each *_instance target has its own default values for INSTANCE_* variables.
+#     development_instance:
+#        > make PASSWORD=XXX TFVAR=$HOME/aws_cred.tfvars development_instance  # (or omit variables to be prompted.)
 #        WARNING: This launches a new instance. Be sure it is not left running!
-#     To associate F1, with this Content Web Server use:
-#        make INSTANCE=i-xxxxxxx PASSWORD=<password> PROFILE=<aws-profile> ...
+#     f1_instance:
+#        > make PASSWORD=XXX TFVAR=$HOME/aws_cred.tfvars f1_instance  # (or omit variables to be prompted.)
+#        WARNING: This launches a new instance. Be sure it is not left running!
+#        NOTE: This instance is allocated enough INSTANCE_STORAGE for development by default.
+#     static_accelerated_instance:
+#        By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
+#        > make PASSWORD=XXX PREBUILT=false/true TFVAR=$HOME/aws_cred.tfvars static_accelerated_instance  # (or omit variables to be prompted.)
+#        #    PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
+#        WARNING: This launches a new instance. Be sure it is not left running!
+#     For make launch, to associate an F1 instance, with this Content Web Server use:
+#        > make INSTANCE=i-xxxxxxx PASSWORD=<password> AWS_PROFILE=<aws-profile> launch
 #        #    PASSWORD: used by this web server (not F1) to authenticate administrative actions; probably best to use the same PASSWORD for F1.
-
+#     Instances can be destroyed (along with their associated AWS resources) using:
+#        > make destroy SETUP=XXX
+#     Available SETUPs (same as INSTANCE_NAME in this case) can be listed with:
+#        > make list_setups
 
 SHELL=/bin/bash
+
 COMMA:= ,
 EMPTY:=
 SPACE:= $(EMPTY) $(EMPTY)
 
+REPO=$(shell git rev-parse --show-toplevel)
 
-# Characcterize platform.
+# Make sure init has been run.
+ifeq ($(shell ls "$(REPO)/terraform/terraform" 2> /dev/null),)
+$(info )
+$(info *****************************)
+$(info Did you forget to run "init"?)
+$(info *****************************)
+$(info )
+endif
+
+
+# Read user configuration.
+
+CONFIG_FILE=$(HOME)/1st-CLaaS_config.mk
+
+# Default config.
+AWS_PROFILE=default
+S3_USER=$(USER)
+S3_BUCKET_TAG=default
+
+ifneq ($(MAKECMDGOALS),config)
+ifneq ($(shell ls '$(CONFIG_FILE)' 2> /dev/null),)
+include $(CONFIG_FILE)
+else
+$(info 1st CLaaS Configuration file "$(CONFIG_FILE)" can be configured interactively using "make config".)
+endif
+endif
+
+S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
+
+
+# Characterize platform.
 
 VERILATOR=$(shell which verilator)
 ifneq ($(AWS_FPGA_REPO_DIR),)
@@ -139,10 +214,7 @@ else
 BUILD_TARGET :=$(firstword $(SUPPORTED_TARGETS))
 endif
 endif
-ifneq ($(BUILD_TARGET),)
-$(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
-endif
-$(info Using TARGET=$(BUILD_TARGET). (Platform supports: | $(SUPPORTED_TARGETS)))
+$(info Using TARGET=$(BUILD_TARGET).  (Platform supports: | $(SUPPORTED_TARGETS)))
 
 # Characterize BUILD_TARGET.
 ifeq ($(BUILD_TARGET),hw)
@@ -155,9 +227,9 @@ endif
 
 # Can only do PREBUILT=true w/ TARGET=hw.
 ifneq ($(TARGET),hw)
-  USE_PREBUILT=false
+	USE_PREBUILT=false
 else
-  USE_PREBUILT=$(PREBUILT)
+	USE_PREBUILT=$(PREBUILT)
 endif
 
 
@@ -175,13 +247,13 @@ PORT ?= 8888
 
 WEBSERVER_ARGS :=
 ifdef INSTANCE
-  WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --instance $(INSTANCE)
+	WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --instance $(INSTANCE)
 endif
 ifdef PASSWORD
-  WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password $(PASSWORD)
+	WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password $(PASSWORD)
 endif
-ifdef PROFILE
-  WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(PROFILE)
+ifneq ($(AWS_PROFILE),default)
+	WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(AWS_PROFILE)
 endif
 
 WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "../../../framework/webserver/default_server.py"; fi)
@@ -190,18 +262,13 @@ LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> $(WEBSERVER_ARGS)
 
 
 
-# For transfer from the build instance to the F1 instance.
-ifndef S3_USER
-S3_USER_PATH=
-else
-S3_USER_PATH=$(S3_USER)/
-endif
-ifndef S3_BUCKET
-S3_BUCKET=fpga-webserver
-endif
-S3_LOGS_KEY=${S3_USER_PATH}$(KERNEL_NAME)/log
-S3_DCP_KEY=${S3_USER_PATH}$(KERNEL_NAME)/dcp
-S3_TRANSFER_KEY=${S3_USER_PATH}$(KERNEL_NAME)/xfer
+# For S3.
+#    S3_LOGS_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
+#    S3_DCP_KEY=folder: the S3 bucket folder to use for logs for the AFI build.
+#    S3_TF_KEY=folder: the S3 bucket folder to use for Terraform state.
+S3_LOGS_KEY=$(KERNEL_NAME)_log
+S3_DCP_KEY=$(KERNEL_NAME)_dcp
+S3_TRANSFER_KEY=$(KERNEL_NAME)_xfer
 
 XOCC=xocc
 CC=g++
@@ -229,7 +296,7 @@ HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(PLATFORM) -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Name of host executable
@@ -251,15 +318,6 @@ KERNEL_ADDITIONAL_FLAGS=
 
 #Device to be used
 TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
-
-#Check if environment is an AWS one or not
-ifndef AWS_PLATFORM
-$(info setting platform for a non-aws environment)
-PLATFORM=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
-else
-$(info setting platform for an aws environment)
-PLATFORM=${AWS_PLATFORM}
-endif
 
 REPORT=
 ifeq (${BUILD_TARGET},hw)
@@ -292,6 +350,10 @@ ifneq ($(USE_XILINX),true)
 DEST_DIR=../$(OUT_DIR_NAME)/$(BUILD_TARGET)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(BUILD_TARGET)
 else
+ifndef AWS_PLATFORM
+$(info WARNING: AWS_PLATFORM is not set. Making assumptions.)
+AWS_PLATFORM=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
+endif
 #Translate Target Device name with underscores
 PERIOD:= :
 UNDERSCORE:= _
@@ -342,7 +404,7 @@ HOST_CMD=$(HOST_EXE_PATH)
 endif
 ifeq ($(BUILD_TARGET),hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
+HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
 endif
 ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
@@ -362,6 +424,50 @@ clean:
 # Remove some of the large hw build collateral files.
 shrink:
 	rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
+
+
+# User configuration.
+define config_param
+	@echo -n "$1 [$($1)]: " && (read TMP; if [[ -n "$$TMP" ]]; then echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; else echo '$1=$($1)' >> $(CONFIG_FILE).tmp; fi)
+endef
+config:
+	@rm -f $(CONFIG_FILE).tmp
+	@[[ ! -e "$(CONFIG_FILE)" ]] || ! echo "User configuration file ($(CONFIG_FILE)) already exists. Edit with a text editor."
+	@echo
+	@echo 'Creating 1st CLaaS user configuration file: "$(CONFIG_FILE)".'
+	@echo 'Enter AWS profile to associate with your 1st CLaaS work, or leave blank to use default profile. If desired, create a new IAM user via the AWS Management Console.'
+	@ if [[ -e '~/.aws/config' && -e '~/.aws/credentials' ]];\
+	  then echo 'Known (already-configured via "aws configure" AWS profiles (if any):';\
+	       grep '\[profile' ~/.aws/config | sed 's/^\[profile \(.*\)\]$/\1/';\
+	  fi
+	$(call config_param,AWS_PROFILE)
+	@echo
+	@echo 'Have your AWS credentials ready (or create new via AWS Management Console: search "IAM", "users", select user, "Security Credentials", "Create access key").'
+	@echo '(Press <Enter> to keep current settings.)'
+	@ AWS_PROFILE=$$(cat $(CONFIG_FILE).tmp | sed 's/^.*=\(.*\)$$/\1/') && \
+	  aws configure --profile $$AWS_PROFILE && \
+	  REGION=$$(aws configure get region --profile $$AWS_PROFILE) && \
+	  if [[ ! $$REGION =~ (us-east-1|us-west-2|eu-west-1|us-gov-west-1) ]]; \
+	  then echo "Warning: Region $$REGION is not known to support F1. Valid regions w/ F1 include: 'us-east-1' (N. Virginia), 'us-west-2' (Oregon), 'eu-west-1' (Ireland), or 'us-gov-west-1' (GovCloud US). (Please update Makefile and create a pull request if you know differently.)"; \
+	  fi
+	@echo
+	@echo 'User configuration needs an associated AWS S3 bucket (storage), which requires a globally-unique name (across all AWS users).'
+	@echo 'Bucket name will be 1st-claas.$$(S3_USER).$$(S3_BUCKET_TAG)'
+	$(call config_param,S3_USER)
+	$(call config_param,S3_BUCKET_TAG)
+	@# For convenience, also store the full bucket name.
+	source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
+	@echo 'EC2 instances will be initialized with an administrative password. This password may be used by web servers to authenticate privileged actions. Choose a default.'
+	$(call config_param,PASSWORD)
+	@chmod 600 $(CONFIG_FILE).tmp
+	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
+	@echo 'Configuration complete and stored in "$(CONFIG_FILE)" accessible only to you ("$(USER)"). Contents:'
+	@cat $(CONFIG_FILE)
+	@source $(CONFIG_FILE) \
+	&& echo "Setting up S3 bucket: s3://$$S3_BUCKET" \
+	&& aws s3api create-bucket --bucket "$$S3_BUCKET" --profile "$$AWS_PROFILE" --acl private > /dev/null \
+	&& aws s3api wait bucket-exists --bucket "$$S3_BUCKET" --profile "$$AWS_PROFILE"
+
 
 # Rule to build host application, only if not using pre-built.
 ifneq ($(USE_PREBUILT), true)
@@ -481,7 +587,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 
 #$(DEST_DIR)/$(KERNEL_EXE).xo:
 #	mkdir -p $(DEST_DIR)
-#	$(XOCC) --platform $(PLATFORM) --target $(BUILD_TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
+#	$(XOCC) --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
 #	#cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
 
 # Package the project as an .xo.
@@ -509,7 +615,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 # Transfer (push) FPGA files from build instance to F1 instance through S3.
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(BUILD_TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
@@ -630,25 +736,105 @@ debug_prints:
 
 # Create a new Static Accelerated Instance. See Makefile header comments for usage info.
 # WARNING: This target launches a new instance. Be sure it is not left running!
-TF_ARGS ?=
+# Default INSTANCE_NAME, INSTANCE_STORAGE, INSTANCE_TYPE, INSTANCE_CONFIG_SCRIPT based on target. (Doesn't work if multiple targets are given.)
+# Defaults, in case instance target is unrecognized
+INSTANCE_NAME=1st-CLaaS
+INSTANCE_STORAGE=15
+INSTANCE_TYPE=f1.2xlarge
+INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/deployment/f1_init.sh
+ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
+	INSTANCE_NAME=1st-CLaaS_devel
+	INSTANCE_STORAGE=15
+	INSTANCE_TYPE=c4.2xlarge
+	INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/config_instance_dev.sh
+endif
+ifneq ($(findstring f1_instance,$(MAKECMDGOALS)),)
+	INSTANCE_NAME=1st-CLaaS_run
+	INSTANCE_STORAGE=15
+	INSTANCE_TYPE=f1.2xlarge
+	INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/config_instance_dev.sh
+endif
+ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
+	INSTANCE_NAME=1st-CLaaS_accelerator
+	INSTANCE_STORAGE=5
+	INSTANCE_TYPE=f1.2xlarge
+	INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/config_instance_dummy.sh
+endif
+# By default, each instance is an independent setup.
+SETUP=$(INSTANCE_NAME)
+S3_TF_KEY=tf_setups/$(SETUP)
+
+# Build up TF_ARGS (without evaluating)
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
 PASSWORD ?=$(shell echo $$RANDOM)
 ifdef PASSWORD
-  TF_ARGS :=$(TF_ARGS) -var 'admin_pwd=$(PASSWORD)'
+	TF_ARGS1=-var 'admin_pwd=$(PASSWORD)'
+else
+	TF_ARGS1=
 endif
 ifeq ($(USE_PREBUILT),true)
-  TF_ARGS :=$(TF_ARGS) -var 'use_prebuilt_afi=true'
+	TF_ARGS2=-var 'use_prebuilt_afi=true'
+else
+	TF_ARGS2=
 endif
-ifdef INSTANCE_NAME
-  TF_ARGS :=$(TF_ARGS) -var 'instance_name=$(INSTANCE_NAME)'
-endif
+TF_ARGS3=-var 'instance_name=$(INSTANCE_NAME)' -var 'sdb_device_size=$(INSTANCE_STORAGE)'
+TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' -var 'aws_access_key_id=$(shell aws configure get aws_access_key_id --profile $(AWS_PROFILE))'
+TF_ARGS5=-var 'aws_secret_access_key=$(shell aws configure get aws_secret_access_key --profile $(AWS_PROFILE))' -var 'aws_profile=$(AWS_PROFILE)'
+TF_ARGS6=-var 'region=$(shell aws configure get region --profile $(AWS_PROFILE))' -var 'repo_dir=$(REPO)'
 ifdef TFVAR
-  TF_ARGS :=$(TF_ARGS) '-var-file=$(TFVAR)'
+	TF_ARGS7='-var-file=$(TFVAR)'
+else
+	TF_ARGS7=
 endif
-EC2_TYPE=f1
-TF_ARGS :=$(TF_ARGS) -var-file=$(EC2_TYPE).tfvars
 
-APP_LAUNCH_SCRIPT ?=/home/centos/src/project_data/fpga-webserver/framework/terraform/deployment/f1_init.sh
-.PHONY: static_accelerated_instance
+TF_ALL_ARGS=$(TF_ARGS1) $(TF_ARGS2) $(TF_ARGS3) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS7)
+TF_DESTROY_ARGS=
+TF_COMMON_ARGS=$(TF_ARGS1) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS)
+
+
+# Macro to run terraform command. $1 contains terraform args.
+# Generic .tf file is configured for user and setup before running terraform.
+define terraform
+	rm -rf '$(REPO)/tmp/$(SETUP)'
+	mkdir -p '$(REPO)/tmp/$(SETUP)'
+	cd '$(REPO)/tmp/$(SETUP)' \
+	&& cp '$(REPO)/framework/terraform/deployment/f1.tf' . \
+	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' f1.tf \
+	&& sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' f1.tf \
+	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" f1.tf \
+	&& $(REPO)/terraform/terraform init && '$(REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS)
+endef
+.PHONY: static_accelerated_instance development_instance
+TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
+define make_instance
+	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
+	@echo 'This instance and its associated resources can be destroyed with: "make destroy SETUP=$(SETUP)".'
+endef
+define run_terraform
+endef
+ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:
-	cd ../../../framework/terraform/deployment && ../../../terraform/terraform init && ../../../terraform/terraform apply -auto-approve -var 'kernel=$(KERNEL_NAME)' -var 'app_launch_script=$(APP_LAUNCH_SCRIPT)' $(TF_ARGS)
+	$(make_instance)
+development_instance:
+	@echo "development_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
+f1_instance:
+	@echo "f1_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
+else
+static_accelerated_instance:
+	@echo "static_accelerated_instance target must have KERNEL_NAME variable defined."
+development_instance:
+	$(make_instance)
+f1_instance:
+	$(make_instance)
+endif
+
+.PHONY: destroy
+destroy:
+	$(call terraform,destroy $(TF_DESTROY_ARGS))
+	@echo 'Destroyed instance/setup $(SETUP)'
+	@if [[ -d $(TF_OUT_DIR) ]]; then rm $(TF_OUT_DIR)/public_key.pem && rm $(TF_OUT_DIR)/private_key.pem && rmdir $(TF_OUT_DIR) && echo 'Deleted $(TF_OUT_DIR) containing TLS keys'; else echo 'No directory $(TF_OUT_DIR). Perhaps another user still has these obsolete TLS keys?'; fi
+
+.PHONY: list_setups
+list_setups:
+	@echo "Setups that can be used with 'make destroy SETUP=XXX':"
+	aws s3 ls 's3://$(S3_BUCKET)/tf_setups/'

@@ -13,6 +13,7 @@ apps/mandelbrot/build/cast
 **.pem
 /framework/terraform/development/centos_pwd.txt
 /terraform
+/tmp
 
 __pycache__
 

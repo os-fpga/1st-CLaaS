@@ -10,12 +10,36 @@ variable "aws_secret_access_key" {
   type = string
 }
 
-variable "aws_config_path" {
+variable "region" {
   type = string
 }
+# TODO: Region is hardcoded in files/aws_config/config.
+# Instead, create the file using remote-exec and "cat", using the variable.
+# TODO: Also, automate creation of aws_config.tfvars from AWS config file.
 
-variable "instance_type" {
+
+ variable "aws_config_path" {
+   type = string
+ }
+
+ variable "instance_type" {
+   type = string
+ }
+
+variable "instance_name" {
   type = string
+  default = "FPGA-run"
+}
+
+
+variable "out_dir" {
+  type = string
+  default = "."
+}
+
+variable "root_device_size" {
+  type = number
+  default = 65
 }
 
 variable "delete_storage_on_destroy" {
@@ -27,18 +51,9 @@ variable "custom_script" {
   default = "/home/centos/terraform/dummy.sh"
 }
 
-variable "root_device_size" {
-  type = number
-  default = 65
-}
-
 variable "sdb_device_size" {
   type = number
   default = 15
-}
-
-variable "region" {
-  type = string
 }
 
 
@@ -52,13 +67,19 @@ resource "aws_key_pair" "generated_key" {
   public_key = "${tls_private_key.temp.public_key_openssh}"
 }
 
+provider "aws" {
+  region                  = "${var.region}"
+  access_key              = "${var.aws_access_key_id}"
+  secret_key              = "${var.aws_secret_access_key}"
+}
+
 data "aws_ami" "latest_fpgadev" {
 most_recent = true
 owners = ["679593333241"] 
 
   filter {
       name   = "name"
-      values = ["FPGA Developer AMI - *"]
+      values = ["FPGA Developer AMI - 1.6.0-40257ab5-6688-4c95-97d1-e251a40fd1fc-ami-0b1edf08d56c2da5c.4"]
   }
 
   filter {
@@ -67,11 +88,6 @@ owners = ["679593333241"]
   }
 }
 
-provider "aws" {
-  region                  = "${var.region}"
-  access_key              = "${var.aws_access_key_id}"
-  secret_key              = "${var.aws_secret_access_key}"
-}
 
 resource "aws_security_group" "allow_web_ssh_rdp" {
     name        = "allow_web_ssh_rdp"
@@ -132,17 +148,35 @@ resource "aws_instance" "fpga_f1" {
     }
   
     tags = {
-      Name = "FPGA_run"
+      Name = "${var.instance_name}"
     }
-  
+    
+    provisioner "local-exec" {
+     command ="echo \"${tls_private_key.temp.private_key_pem}\" > ${var.out_dir}/private_key.pem"    
+    }
+
+    provisioner "local-exec" {
+     command ="chmod 600 private_key.pem"    
+    }
+
+    provisioner "local-exec" {
+     command ="echo \"${tls_private_key.temp.public_key_pem}\" > ${var.out_dir}/public_key.pem"    
+    }
+
+    provisioner "local-exec" {
+     command ="chmod 600 public_key.pem"    
+    }
+
     provisioner "file" {
       source      = var.aws_config_path
       destination = "/home/centos/.aws/config"
     }
+    
     provisioner "file" {
     content     = "[default] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key}" 
     destination = "/home/centos/.aws/credentials"
     }
+    
     provisioner "file" {
       source      = "../deployment/files/scripts/init.sh"
       destination = "/home/centos/init.sh"
@@ -176,33 +210,10 @@ resource "aws_instance" "fpga_f1" {
         "source /home/centos/install_gui.sh",
       ]
     }
-    
-    provisioner "local-exec" {
-     command ="echo \"${tls_private_key.temp.private_key_pem}\" > private_key.pem"    
-    }
-
-    provisioner "local-exec" {
-     command ="chmod 600 private_key.pem"    
-    }
-
-    provisioner "local-exec" {
-     command ="echo \"${tls_private_key.temp.public_key_pem}\" > public_key.pem"    
-    }
-
-    provisioner "local-exec" {
-     command ="chmod 600 public_key.pem"    
-    }
-
-    provisioner "local-exec" {
-     command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i private_key.pem centos@${aws_instance.fpga_f1.public_ip}:~/centos_pwd.txt ."
-    }
 }
 
 output "ip" {
   value = aws_instance.fpga_f1.public_ip
 }
 
-
-
-
-
+# TODO: It would be nice to also output the instance ID.

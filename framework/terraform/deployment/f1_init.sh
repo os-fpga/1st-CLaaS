@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # Initialization script for Accelerated Web Server.
+#   o Call common init.sh.
 #   o Setup passwordless ssh for localhost ssh. This is used for cron job which needs an environment, and the only reliable
 #     way I can find to establish the right environment is to ssh.
 #   o Establish cron @reboot command to start webserver.

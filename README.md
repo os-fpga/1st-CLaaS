@@ -10,27 +10,34 @@
   - Wave 2: GPUs
   - **Wave 3: FPGAs**
 
-Having FPGAs ([Field-Progammable Gate Arrays](Newbies.md)) available in the data center presents enormous potential for new and exciting compute models. But the potential is wasted without the infrastructure to develop custom hardware accelerators for these platforms and integrate them with web applications and cloud infrastructure. The 1st CLaaS Framework brings cloud FPGAs within reach of the open-source community, startups, and everyone.
+Having FPGAs ([Field-Progammable Gate Arrays](Newbies.md)) available in the data center presents enormous potential for new and exciting compute models to evolve. But, for this emerging ecosystem to thrive, we need infrastructure to develop custom hardware accelerators for these platforms and integrate them with web applications and cloud infrastructure. The 1st CLaaS Framework brings cloud FPGAs within reach of the open-source community, startups, and everyone.
 
 
 
-# About this Document
+# Documentation
 
-This document provides an overview of the project. After reading this, find details in:
+This document provides an overview of the project. After reading this, refer to the following development resources:
 
+  <!--
+  - TODO: Include AWS Setup and Running Examples in Simulation in this README. Work toward the following.
+  At some point: [**Interface Definition Guide**](...): Defining the communication interface from application to kernel.
+  - [**Kernel Developer's Guide*](KernelDevelopersReference.md): For developing a kernel without any cloud infrastructure.
+  - [**Web Developer's Guide**](WebDevReference.md): Connecting with your application.
+  - [**Kernel Implementation Guide**](AWSDevelopersReference.md): Using AWS F1 platform to optimize and deploy your kernel.
+  -->
   - [**Getting Started**](GettingStarted.md)
-  - [**Development Overview**](framework/README.md)
+  - [**Framework Overview**](framework/README.md)
   - [**Kernel Developer's Reference**](KernelDevelopersReference.md)
   - [**Web Developer's Reference**](WebDevReference.md)
 
 
 # FPGA-Webserver Project Overview
 
-Prior to this project, developing a hardware-accelerated web application required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer. 1st CLaaS brings the effort within reach of the individual, cutting development overhead by person-months, if not person-years.
+Prior to this project, integrating FPGA hardware acceleration with web and cloud applications required a full-stack developer, a software engineer, a domain expert, an IaaS expert, and a hardware designer. 1st CLaaS cuts the development overhead from several person-months down to almost nothing, bringing FPGA acceleration within reach of everyone.
 
 ![fpga-webserver header](doc/img/simple.png)
 
-With 1st CLaaS, you can accelerate a web application using web protocols (WebSockets or REST) to stream bits directly to and from your custom FPGA kernel using a very simple interface. In the simplest use case, all software is client-side in the web browser, and all server logic and data storage is implemented in the FPGA. Your kernel can be developed in Verilog (or any language compilable to Verilog). (In the spirit of open-source and simplicity, we advocate for TL-Verilog development using <a href="http://makerchip.com" target="_blank" atom_fix="_">makerchip.com</a>.)
+With 1st CLaaS, you can stream bits directly to and from your custom FPGA kernel using standard web protocols (WebSockets or REST). In the simplest use case, all software is client-side in the web browser, and all server logic and data storage is implemented in the FPGA. Your kernel uses a very simple interface to stream the data, and it can be developed in Verilog (or any language compilable to Verilog). The developers of this framework are advocates of using TL-Verilog and <a href="http://makerchip.com" target="_blank" atom_fix="_">makerchip.com</a> to simplify kernel development.
 
 1st CLaaS is ideal for implementing functions in hardware that are compute-limited that but tolerant of internet lateny/bandwith. Applications requiring a more sophisticated partitioning of responsibilities can extend the host C++ code or Python web server to process data between the web application and FPGA.
 
@@ -49,7 +56,7 @@ Your application might be:
   - a hardware project controlled via a web interface
   - a healthy mix of custom hardware and software
 
-1st CLaaS is currently implemented to utilize Amazon's F1 FPGA instances. These are very powerful FPGA instances, and having access to this power using a pay-per-use model is quite compelling. But they are bleeding edge and require significant expertise to utilize. In our experience, documentation is often wrong as APIs and infrastructure are evolving. Developers must have a deep understanding of hardware design. They must be familiar with Xilinx tools: Viviado for RTL design and SDAccel to interface the hardware with C++ code using OpenCL. They must understand AXI protocols and manage AXI controllers. And the AWS platform can be intimidating to a newcomer. By providing the webserver, host application code, a kernel shell logic to stream the data between web application and FPGA kernel as well as automating cloud instance creation and configuration, 1st CLaaS hides all of this complexity.
+1st CLaaS is currently implemented to utilize Amazon's F1 FPGA instances. These are very powerful FPGA instances, and having access to this power using a pay-per-use model is quite compelling. But they are bleeding edge and require significant expertise to utilize. In our experience, documentation is often wrong as APIs and infrastructure are evolving. Developers must have a deep understanding of hardware design. They must be familiar with Xilinx tools: Viviado for RTL design and SDAccel to interface the hardware with C++ code using OpenCL. They must understand AXI protocols and manage AXI controllers. And the AWS platform can be intimidating to a newcomer. By providing the web server, host application code, a kernel shell logic to stream the data between web application and FPGA kernel as well as automating cloud instance creation and configuration, 1st CLaaS hides all of this complexity.
 
 
 

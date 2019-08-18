@@ -6,7 +6,7 @@ This document describes development of custom FPGA RTL kernels using the provide
 
 # Kernel Interface
 
-A custom FPGA kernel named "foo" is provided as a System Verilog module with the following interface. Note that this is subject to change).
+A custom FPGA kernel named "foo" is provided as a SystemVerilog module with the following interface. Note that this is subject to change).
 
 ```
 module foo_kernel #(
