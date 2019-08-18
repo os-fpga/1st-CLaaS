@@ -10,7 +10,17 @@ terraform {
   }
 }
 
+# Local directory of Git repository.
 variable "repo_dir" {
+  type = string
+}
+
+# URL from which repository can be cloned.
+variable "git_url" {
+  type = string
+}
+
+variable "git_branch" {
   type = string
 }
 
@@ -224,10 +234,10 @@ resource "aws_instance" "the_instance" {
     destination = "/home/centos/.aws/credentials"
     }
     
-    provisioner "file" {
-      source      = "${var.repo_dir}/framework/terraform/clone_repos.sh"
-      destination = "/home/centos/clone_repos.sh"
-    }
+    #provisioner "file" {
+    #  source      = "${var.repo_dir}/framework/terraform/clone_repos.sh"
+    #  destination = "/home/centos/clone_repos.sh"
+    #}
     
     # A private configuration file controlling the behavior of this instance.
     # Note: This contains a plain-text password, accessible to anyone with access to the machine.
@@ -236,12 +246,20 @@ resource "aws_instance" "the_instance" {
       destination = "/home/centos/server_config.sh"
     }
     
-    provisioner "remote-exec" {
-      inline = ["source '/home/centos/clone_repos.sh'"]
-    }
+    #provisioner "remote-exec" {
+    #  inline = ["source '/home/centos/clone_repos.sh'"]
+    #}
 
     provisioner "remote-exec" {
+      # Configure instance.
       inline = [
+        "echo 'Cloning AWS-FPGA repo (quietly)'",
+        "git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR > /dev/null",
+        "echo 'Cloning 1st CLaaS repo (quietly)'",
+        "git clone -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/fpga-webserver\" > /dev/null",
+        "echo 'Running init'",
+        "/home/centos/src/project_data/fpga-webserver/init",
+        "echo 'Running configuration script: \"${var.config_instance_script}\"'",
         "source ${var.config_instance_script}",
       ]
     }
