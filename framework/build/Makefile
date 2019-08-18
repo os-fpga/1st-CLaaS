@@ -227,7 +227,6 @@ SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../
 SW_LFLAGS ?= -L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
 
 #Host code
-HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
 HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/hw_kernel.c
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/hw_kernel.h
@@ -237,7 +236,6 @@ HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Simulation flags
-SIM_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
 SIM_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/sim_kernel.c
 SIM_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 SIM_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/sim_kernel.h
@@ -398,6 +396,7 @@ $(DEST_DIR)/verilator: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC)
 $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator
 	cd $(DEST_DIR)/verilator; rm verilator_kernel.h; ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
 	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) /usr/local/share/verilator/include/verilated.cpp /usr/local/share/verilator/include/verilated_vcd_c.cpp /usr/local/share/verilator/include/verilated_threads.cpp -I $(DEST_DIR)/verilator -I /usr/local/share/verilator/include -o $(DEST_DIR)/$(HOST_EXE)
+	cd $(DEST_DIR)/verilator; rm verilator_kernel.h
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 #	mkdir -p $(DEST_DIR)

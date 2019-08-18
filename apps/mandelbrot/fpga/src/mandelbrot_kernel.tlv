@@ -8,6 +8,8 @@
 
    // To relax Verilator compiler checking:
    /* verilator lint_off UNOPTFLAT */
+
+   //TODO re-enable
    /* verilator lint_off WIDTH */
    /* verilator lint_off REALCVT */  // !!! SandPiper DEBUGSIGS BUG.
 
@@ -77,6 +79,9 @@
 	//m4_makerchip_module
    // Zero extend to given width.
    `define ZX(val, width) {{1'b0{width-$bits(val)}}, val}
+
+
+//TODO ifdef Makerchip
 
 `ifndef FPGA_WEBSERVER_KERNEL
 	m4_makerchip_module

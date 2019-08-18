@@ -311,7 +311,6 @@ MandelbrotImage::MandelbrotImage(json &j) {
          << "), spec_max_depth = " << spec_max_depth */ << ", modes = " << modes << ", full = " << full_image << ". ";
 
   // FPGA image dimensions are restricted.
-  //TODO KERNEL_AVAIL
 #ifdef KERNEL_AVAIL
   if (fpga) {
     cout << "Adjusting image sizes for FPGA (if needed)." << endl;
@@ -1933,7 +1932,7 @@ void HostMandelbrotApp::get_image() {
   MandelbrotImage * mb_img_p = newMandelbrotImage(json_obj);
 
   int * depth_data = NULL;
-  //TODO KERNEL_AVAIL
+
 #ifdef KERNEL_AVAIL
   if (mb_img_p->fpga) {
     input_struct input;

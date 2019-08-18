@@ -124,7 +124,7 @@ public:
 #endif
 
   static const int DATA_WIDTH_BYTES = 64;
-  static const int DATA_WIDTH_WORDS = 16; //
+  static const int DATA_WIDTH_WORDS = DATA_WIDTH_BYTES / 4; //
   static const int DATA_WIDTH_BITS = DATA_WIDTH_BYTES * 8;  // 512 bits
   static const int verbosity = 10; // 0: no debug messages; 10: all debug messages.
 
