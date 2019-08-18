@@ -798,6 +798,7 @@ TF_COMMON_ARGS=$(TF_ARGS1) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS)
 # Macro to run terraform command. $1 contains terraform args.
 # Generic .tf file is configured for user and setup before running terraform.
 define terraform
+	# Setting up and running Terraform in a new directory.
 	rm -rf '$(REPO)/tmp/$(SETUP)'
 	mkdir -p '$(REPO)/tmp/$(SETUP)'
 	cd '$(REPO)/tmp/$(SETUP)' \

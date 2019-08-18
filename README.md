@@ -10,7 +10,7 @@
   - Wave 2: GPUs
   - **Wave 3: FPGAs**
 
-Having FPGAs ([Field-Progammable Gate Arrays](Newbies.md)) available in the data center presents enormous potential for new and exciting compute models to evolve. But, for this emerging ecosystem to thrive, we need infrastructure to develop custom hardware accelerators for these platforms and integrate them with web applications and cloud infrastructure. The 1st CLaaS Framework brings cloud FPGAs within reach of the open-source community, startups, and everyone.
+Having FPGAs ([Field-Progammable Gate Arrays](Newbies.md)) available in the data center presents enormous potential for new and exciting compute models. But, for this emerging ecosystem to thrive, we need infrastructure to develop custom hardware accelerators for these platforms and integrate them with web applications and cloud infrastructure. The 1st CLaaS Framework brings cloud FPGAs within reach of the open-source community, startups, and everyone.
 
 
 
@@ -20,10 +20,12 @@ This document provides an overview of the project. After reading this, refer to 
 
   <!--
   - TODO: Include AWS Setup and Running Examples in Simulation in this README. Work toward the following.
-  At some point: [**Interface Definition Guide**](...): Defining the communication interface from application to kernel.
-  - [**Kernel Developer's Guide*](KernelDevelopersReference.md): For developing a kernel without any cloud infrastructure.
-  - [**Web Developer's Guide**](WebDevReference.md): Connecting with your application.
-  - [**Kernel Implementation Guide**](AWSDevelopersReference.md): Using AWS F1 platform to optimize and deploy your kernel.
+  Developer's Guide:
+    (At some point) - [**Interface Definition Guide**](...): Defining the communication interface from application to kernel.
+    - [**Development Overview**](framework/README.md)
+    - [**Kernel Developer's Guide*](KernelDevelopersReference.md): For developing a kernel without any cloud infrastructure.
+    - [**Web Developer's Guide**](WebDevReference.md): Connecting with your application.
+    - [**Kernel Implementation Guide**](AWSDevelopersReference.md): Using AWS F1 platform to optimize and deploy your kernel.
   -->
   - [**Getting Started**](GettingStarted.md)
   - [**Framework Overview**](framework/README.md)
