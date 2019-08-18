@@ -811,7 +811,7 @@ endef
 .PHONY: static_accelerated_instance development_instance
 TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
 define make_instance
-	@if ! git status | grep 'working directory clean' > /dev/null; then echo && echo 'Instance construction can have unexpected behavior when working directory is not clean.' && echo; fi
+	@if ! git status | grep 'working directory clean' > /dev/null; then echo && echo -e '\e[91m\e[1mInstance construction can have unexpected behavior when working directory is not clean.\e[0m' && echo && sleep 2; fi
 	@echo 'Instance will be initialized based on latest "$(GIT_BRANCH)" branch.' && echo
 	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
 	@echo 'This instance and its associated resources can be destroyed with: "make destroy SETUP=$(SETUP)".'
