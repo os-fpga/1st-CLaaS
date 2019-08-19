@@ -30,7 +30,8 @@ then
   sudo ln -s /usr/bin/python3.5 /usr/bin/python3
   sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
   
-  sudo yum -y install python-tornado python-imaging make inotify-tools bc
+  sudo yum -y install make inotify-tools bc
+  sudo pip3 install tornado Pillow
 fi
 
 
