@@ -84,8 +84,8 @@ public:
   virtual void start_kernel() = 0;
   virtual void read_kernel_data(int h_a_output[], int data_size) = 0;
   virtual void clean_kernel() {};
-  virtual void enable_traing() {};
-  virtual void disable_trcaing() {};
+  virtual void enable_tracing() {};
+  virtual void disable_tracing() {};
   virtual void save_trace() {};
 
 };
