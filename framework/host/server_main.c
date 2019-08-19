@@ -367,6 +367,7 @@ void HostApp::init_platform(char * response) {
   }
   if(!kernel.initialized) {
     kernel.initialize_platform();
+    kernel.reset_kernel();
     if (kernel.status)
       sprintf(response, "Error: could not initialize platform");
     else
@@ -402,42 +403,6 @@ void HostApp::init_kernel(char * response, const char *xclbin, const char *kerne
   if (response == rsp) {
     printf("%s\n", response);
   }
-}
-
-void HostApp::handle_command(int command, const char *xclbin, const char *kernel_name, int memory_size) {
-  // This method was to enable client control over FPGA for stuff like recompiling the kernel without taking down the host.
-  // TODO: Needs more thought.
-  cout_line() << "OBSOLETE handle_command(...)" << endl;
-  char response[MSG_LENGTH];
-
-  switch (command) {
-    // Initialization of the platform
-    case INIT_PLATFORM_N:
-      init_platform(NULL);
-      break;
-
-    // Initialization of the kernel (loads the fpga program)
-    case INIT_KERNEL_N:
-      init_kernel(NULL, xclbin, kernel_name, memory_size);
-      kernel.reset_kernel();
-      break;
-
-    // Releasing all OpenCL links to the fpga
-    case CLEAN_KERNEL_N:
-      kernel.clean_kernel();
-      sprintf(response, "INFO: Kernel cleaned");
-      break;
-
-    // Start Kernel computation
-    case START_KERNEL_N:
-      kernel.start_kernel();
-      sprintf(response, "INFO: Started computation");
-      break;
-    default:
-      sprintf(response, "Command not recognized");
-      break;
-  }
-  cout_line() << "Handling command: " << response << endl;
 }
 
 #endif

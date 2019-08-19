@@ -199,13 +199,8 @@ protected:
   ** connection with the python webserver
   */
   #ifdef KERNEL_AVAIL
-  #ifdef OPENCL
   void init_platform(char * response);
   void init_kernel(char * response, const char *xclbin, const char *kernel_name, int memory_size);
-  void handle_command(int command, const char *xclbin, const char *kernel_name, int memory_size);
-  #else
-  void handle_command(int command);
-  #endif
   #else
   char *image_buffer;
   #endif
