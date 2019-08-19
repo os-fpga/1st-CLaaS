@@ -394,9 +394,9 @@ $(DEST_DIR)/verilator: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC)
 	mkdir -p $(DEST_DIR)
 	verilator --cc --sv --trace -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src --Mdir $(DEST_DIR)/verilator 
 $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator
-	cd $(DEST_DIR)/verilator; rm verilator_kernel.h; ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
+	cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
 	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) /usr/local/share/verilator/include/verilated.cpp /usr/local/share/verilator/include/verilated_vcd_c.cpp /usr/local/share/verilator/include/verilated_threads.cpp -I $(DEST_DIR)/verilator -I /usr/local/share/verilator/include -o $(DEST_DIR)/$(HOST_EXE)
-	cd $(DEST_DIR)/verilator; rm verilator_kernel.h
+	cd $(DEST_DIR)/verilator && rm verilator_kernel.h
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 #	mkdir -p $(DEST_DIR)

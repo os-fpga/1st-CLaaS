@@ -107,9 +107,12 @@ void SIM_Kernel::reset_kernel() {
 
 void SIM_Kernel::writeKernelData(void * input, int data_size, int resp_data_size) {
   input_buff = input;
-  output_buff = new input_struct[resp_data_size*HostApp::DATA_WIDTH_WORDS];
-  this->data_size = data_size;
-  this->resp_data_size = resp_data_size;
+  output_buff = new uint32_t[(resp_data_size/HostApp::DATA_WIDTH_BYTES)*HostApp::DATA_WIDTH_WORDS];
+  printf("data_size: %d \n", data_size);
+  printf("resp_data_size: %d \n", resp_data_size);
+  printf("int: %d, uint32_t : %d\n", sizeof(int), sizeof(uint32_t));
+  this->data_size = data_size/HostApp::DATA_WIDTH_BYTES;
+  this->resp_data_size = resp_data_size/HostApp::DATA_WIDTH_BYTES;
 }
 
 void SIM_Kernel::write_kernel_data(input_struct * input, int data_size) {
@@ -155,7 +158,7 @@ void SIM_Kernel::start_kernel() {
       verilator_kernel->out_ready = 0;
     }
   
-    if(recv_cntr < resp_data_size & verilator_kernel->out_avail) {
+    if(recv_cntr < resp_data_size && verilator_kernel->out_avail) {
       uint32_t * output = (uint32_t *)output_buff;
       for(int words = 0; words < HostApp::DATA_WIDTH_WORDS; words++) {
         verilator_kernel->out_ready = 1;

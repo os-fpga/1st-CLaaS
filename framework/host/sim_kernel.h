@@ -58,7 +58,7 @@ private:
   VERILATOR_KERNEL *verilator_kernel;
   VerilatedVcdC* tfp;
   void* input_buff = 0;
-  void* output_buff = 0;
+  uint32_t* output_buff = 0;
   int data_size = 0;
   int resp_data_size = 0;
   int tick_cntr = 0;

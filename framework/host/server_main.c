@@ -201,7 +201,7 @@ void HostApp::processTraffic() {
             // Send data to FPGA, or do fake FPGA processing.
             #ifdef KERNEL_AVAIL
             // Process in FPGA.
-            kernel.writeKernelData((double *)int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
+            kernel.writeKernelData(int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
             if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
             kernel.start_kernel();
