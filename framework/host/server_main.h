@@ -56,7 +56,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #ifdef KERNEL_AVAIL
 #include "kernel.h"
+#ifndef OPENCL
 #include "sim_kernel.h"
+#endif
 #endif
 #ifdef OPENCL
 #include <CL/opencl.h>
