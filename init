@@ -15,7 +15,8 @@ if [[ -n "$(which apt-get)" ]]
 then
   # Ubuntu
   sudo apt-get update
-  sudo apt-get -y install make g++ python3 python3-pip python3-pil python-tornado python-imaging inotify-tools bc
+  sudo apt-get -y install make g++ python3 python3-pip python3-pil python-tornado python-imaging inotify-tools bc remmina
+  #sudo python3 -m pip install Pillow
 elif [[ -n "$(which yum)" ]]
 then
   # CentOS
@@ -30,14 +31,13 @@ then
   sudo ln -s /usr/bin/python3.5 /usr/bin/python3
   sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
   
-  sudo yum -y install make inotify-tools bc
-  sudo pip3 install tornado Pillow
+  sudo yum -y install python-tornado python-imaging make inotify-tools bc remmina  #  python-tornado python-imaging redundant w/ pip install?
 fi
 
 
 # Install python libraries for user only so as not to affect system installs.
 echo "Installing Python packages for user $USER."
-pip3 install tornado awscli boto3 imaging --upgrade --user --no-warn-script-location
+sudo pip3 install Pillow tornado awscli boto3 --upgrade # imaging
 
 
 # Make sure ~/.local/bin is in path for python installs.

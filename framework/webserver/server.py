@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 #
-# This is the main python webserver which:
+# This is the main python web server which:
 #   - serves static content
 #   - processes REST requests
 #   - accepts WebSocket connections
@@ -149,9 +149,9 @@ EC2 Action Handlers
 """
 class EC2Handler(ReqHandler):
     
-    def feed(self):
+    def ping(self):
         status = 0
-        args = [FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_instance_feeder", "feed", FPGAServerApplication.ec2_feeder_filename]
+        args = [FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_time_bomb", "reset", FPGAServerApplication.ec2_time_bomb_filename]
         try:
             out = subprocess.check_output(args, universal_newlines=True)
         except subprocess.CalledProcessError as e:
@@ -161,24 +161,24 @@ class EC2Handler(ReqHandler):
             out = "Error: " + str(e)
             status = 1
         if status != 0:
-            print("Webserver: Feeding returned:", out)
+            print("Webserver: EC2 time bomb reset returned:", out)
         return status
 
 """
-Handler for feeding the EC2 instance feeder.
+Handler for resetting the EC2 instance time bomb.
 """
-class FeedHandler(EC2Handler):
-    # Feed GET request.
+class TimeBombHandler(EC2Handler):
+    # Time Bomb reset GET request.
     def get(self):
-        status = self.feed()
+        status = self.ping()
         self.write(str(status))
 """
 Handler for starting the EC2 instance.
 Return JSON: {"ip": <ip>, "message": <debug-message>}
     "ip" and "message" are optional. Existence of IP indicates success.
-(This also feeds the instance.)
-TODO: Currently, there is no StopEC2InstanceHandler. This is because the feeder is shared, and it is not the responsibility of a single user to stop the instance.
-      Only starvation from timeout will stop the instance. Support for explicit stopping would require the feeder to keep track of all users independently (as a
+(This also resets the instance time bomb.)
+TODO: Currently, there is no StopEC2InstanceHandler. This is because the time bomb is shared, and it is not the responsibility of a single user to stop the instance.
+      Only detonation from timeout will stop the instance. Support for explicit stopping would require the time bomb to keep track of all users independently (as a
       separate file per user (IP?).)
 """
 class StartEC2InstanceHandler(EC2Handler):
@@ -195,15 +195,15 @@ class StartEC2InstanceHandler(EC2Handler):
                 # Invalid passord.
                 raise RuntimeError("Invalid password")
             
-            # As a safety check, make sure the feeder is running for the instance.
-            out = subprocess.check_output(['/bin/bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_feeder_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_feeder_filename + "') -o comm="], universal_newlines=True)
+            # As a safety check, make sure the time bomb is running for the instance.
+            out = subprocess.check_output(['/bin/bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_time_bomb_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_time_bomb_filename + "') -o comm="], universal_newlines=True)
             if not re.match('^ec2_', out):
-                raise RuntimeError("Unable to find feeder process for " + FPGAServerApplication.ec2_feeder_filename + ".")
+                raise RuntimeError("Unable to find time bomb process for " + FPGAServerApplication.ec2_time_bomb_filename + ".")
                 
-            # Feed the instance.
-            if self.feed():
-                # Feed failed, so don't bother starting the instance.
-                raise RuntimeError("Unable to feed: " + FPGAServerApplication.ec2_feeder_filename + ".")
+            # Reset the time bomb.
+            if self.ping():
+                # Time bomb reset failed, so don't bother starting the instance.
+                raise RuntimeError("Unable to reset time bomb: " + FPGAServerApplication.ec2_time_bomb_filename + ".")
             
         except BaseException as e:
             msg = "Couldn't set up for EC2 instance because of exception: " + str(e)
@@ -215,7 +215,10 @@ class StartEC2InstanceHandler(EC2Handler):
                 
             try:
                 # Start instance.
-                # Note: The instance must be constructed to launch the webserver at reboot (@reboot in crontab, for example).
+                
+                # First wait a second to be sure the time bombs reset and a bomb doesn't detonate as we start the instance.
+                time.sleep(1)
+                # Note: The instance must be constructed to launch the web server at reboot (@reboot in crontab, for example).
                 #       It must be able to safely cleanup any lingering garbage from when it was last stopped.
                 FPGAServerApplication.awsEc2Cli(['start-instances'])
             
@@ -233,7 +236,7 @@ class StartEC2InstanceHandler(EC2Handler):
                     raise RuntimeError("Failed to find public IP in AWS command output: " + out)
 
                 """
-                # Start webserver via ssh.
+                # Start web server via ssh.
                 ssh = '/usr/bin/ssh'
                 args = [ssh, '-i', FPGAServerApplication.ec2_instance_private_key_file, '-oStrictHostKeyChecking=no', 'centos@' + ip, FPGAServerApplication.ec2_instance_start_command]
                 print("Webserver: Running: " + " ".join(args))
@@ -243,7 +246,7 @@ class StartEC2InstanceHandler(EC2Handler):
                     subprocess.check_call(args)
                 except BaseException as e:
                     print("Caught exception: " + str(e))
-                    raise RuntimeError("Failed to launch webserver on EC2 instance with command: " + ' '.join(args))
+                    raise RuntimeError("Failed to launch web server on EC2 instance with command: " + ' '.join(args))
                 """
                 
             except BaseException as e:
@@ -254,7 +257,7 @@ class StartEC2InstanceHandler(EC2Handler):
                 # Stop server. Note that there might be other users of the instance, but something seems wrong with it, so
                 # tear it down, now.
                 try:
-                    cmd = [FPGAServerApplication.ec2_feeder_script, "starve", FPGAServerApplication.ec2_feeder_filename]
+                    cmd = [FPGAServerApplication.ec2_time_bomb_script, "detonate", FPGAServerApplication.ec2_time_bomb_filename]
                     out = subprocess.check_call(cmd)
                 except:
                     print("Webserver: Failed to stop instance that failed to initialize properly using: " + " ".join(cmd))
@@ -272,10 +275,10 @@ class FPGAServerApplication(tornado.web.Application):
     cleanup_handler_called = False
     clean_exit_called = False
     
-    # These can be set by calling associateEC2Instance(..) to associate an EC2 instance with this webserver.
-    ec2_feeder_script = None
-    ec2_feeder_filename = None
-    ec2_feeder_timeout = 120
+    # These can be set by calling associateEC2Instance(..) to associate an EC2 instance with this web server.
+    ec2_time_bomb_script = None
+    ec2_time_bomb_filename = None
+    ec2_time_bomb_timeout = 120
     ec2_instance_id = None
     ec2_profile = None
     
@@ -285,35 +288,35 @@ class FPGAServerApplication(tornado.web.Application):
         dir = "."
         
     # A derived class can be call this in its __init__(..) prior to this class's __init__(..) to associate an
-    # AWS EC2 Instance with this webserver by starting a feeder.
+    # AWS EC2 Instance with this web server by starting a time bomb.
     # Args:
-    #   ec2_instance: (string) The ID of an AWS EC2 instance statically associated with this webserver which can be
-    #                 started via gET request and for which a feeder will be started by this function. A route (/feed_ec2_instance) will
-    #                 be provided by addDefaultRoutes(..) to feed the instance via the feeder.
+    #   ec2_instance: (string) The ID of an AWS EC2 instance statically associated with this web server which can be
+    #                 started via GET request and for which a time bomb will be started by this function. A route (/reset_ec2_time_bomb) will
+    #                 be provided by addDefaultRoutes(..) to reset the time bomb.
     #   password:     The password to require for starting the ec2 instance, or explicitly "" for no password. (Required if ec2 instance in use.)
     #   profile:      (opt) An AWS profile to use.
     def associateEC2Instance(self, ec2_instance, timeout, password, profile=None):
         ret = False
-        # Create feeder.
-        feeders_dir = FPGAServerApplication.app_dir + "/webserver/feeders"
-        feeder_file = feeders_dir + "/" + ec2_instance
-        script = FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_instance_feeder"
-        args = [script, "connect", feeder_file, str(timeout)]
-        print("Attempting to associate feeder with ec2 instance with command:", args)
+        # Create time bomb.
+        time_bomb_dir = FPGAServerApplication.app_dir + "/webserver/ec2_time_bombs"
+        time_bomb_file = time_bomb_dir + "/" + ec2_instance
+        script = FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_time_bomb"
+        args = [script, "control", time_bomb_file, str(timeout)]
+        print("Attempting to associate time bomb with ec2 instance with command:", args)
         if profile:
             args.append(profile)
         try:
             try:
-                os.mkdir(feeders_dir)
+                os.mkdir(time_bomb_dir)
             except OSError as e:
                 pass
             subprocess.check_call(args)   # Note that subprocess.check_output(args, universal_newlines=True) cannot be used because subprocess remains running and connected to stdout.
-            print('*** EC2 Instance Feeder %s Started ***' % (feeder_file))
+            print('*** EC2 Instance Time Bomb %s Started ***' % (time_bomb_file))
             
-            FPGAServerApplication.ec2_feeder_script = script
+            FPGAServerApplication.ec2_time_bomb_script = script
             FPGAServerApplication.ec2_instance_id = ec2_instance
-            FPGAServerApplication.ec2_feeder_filename = feeder_file
-            FPGAServerApplication.ec2_feeder_timeout = timeout
+            FPGAServerApplication.ec2_time_bomb_filename = time_bomb_file
+            FPGAServerApplication.ec2_time_bomb_timeout = timeout
             FPGAServerApplication.ec2_profile = profile
             #FPGAServerApplication.ec2_instance_private_key_file = FPGAServerApplication.framework_webserver_dir + "/../terraform/deployment/private_key.pem"
             # Must be absolute for now:
@@ -321,7 +324,7 @@ class FPGAServerApplication(tornado.web.Application):
             FPGAServerApplication.ec2_instance_password = password
             ret = True
         except BaseException as e:
-            print("Webserver: FPGAServerApplication failed to start feeder for EC2 instance %s with exception: %s" % (ec2_instance, str(e)))
+            print("Webserver: FPGAServerApplication failed to start time bomb for EC2 instance %s with exception: %s" % (ec2_instance, str(e)))
         return ret
     
     # Issue an aws ec2 command via CLI. (It would be better to use boto3, but it is blocking.)
@@ -374,10 +377,10 @@ class FPGAServerApplication(tornado.web.Application):
             ]
         if ip:
             routes.append( (r'/ip', IPReqHandler) )
-        if FPGAServerApplication.ec2_feeder_filename:
+        if FPGAServerApplication.ec2_time_bomb_filename:
             routes.append( (r'/start_ec2_instance', StartEC2InstanceHandler) )
             #routes.append( (r'/stop_ec2_instance', StopEC2InstanceHandler) )
-            routes.append( (r"/feed_ec2_instance", FeedHandler) )
+            routes.append( (r"/reset_ec2_time_bomb", TimeBombHandler) )
         return routes
     
     
@@ -420,12 +423,12 @@ class FPGAServerApplication(tornado.web.Application):
             #sock.close()  # Not found??
             
             MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 3
-            if FPGAServerApplication.ec2_feeder_filename:
-                print("Webserver: Disconnecting feeder", FPGAServerApplication.ec2_feeder_filename)
+            if FPGAServerApplication.ec2_time_bomb_filename:
+                print("Webserver: Stopping EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
                 try:
-                    out = subprocess.check_output([FPGAServerApplication.ec2_feeder_script, "disconnect", FPGAServerApplication.ec2_feeder_filename], universal_newlines=True)
+                    out = subprocess.check_output([FPGAServerApplication.ec2_time_bomb_script, "done", FPGAServerApplication.ec2_time_bomb_filename], universal_newlines=True)
                 except:
-                    print("Webserver: Failed to disconnect", FPGAServerApplication.ec2_feeder_filename)
+                    print("Webserver: Failed to stop EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
         
             print('Webserver: Stopping http server.')
             FPGAServerApplication.server.stop()
@@ -445,7 +448,7 @@ class FPGAServerApplication(tornado.web.Application):
             stop_loop()
             
             # As an added safety measure, let's wait for the EC2 instance to stop.
-            if FPGAServerApplication.ec2_feeder_filename:
+            if FPGAServerApplication.ec2_time_bomb_filename:
                 print("Webserver: Waiting for associated EC2 instance (" + FPGAServerApplication.ec2_instance_id + ") to stop.")
                 FPGAServerApplication.awsEc2Cli(['wait', 'instance-stopped', '--no-paginate'])
                 print("Webserver: EC2 instance " + FPGAServerApplication.ec2_instance_id + " stopped.")
@@ -467,7 +470,7 @@ class FPGAServerApplication(tornado.web.Application):
         self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
         
-        # Report external URL for the webserver.
+        # Report external URL for the web server.
         # Get Real IP Address using 3rd-party service.
         # Local IP: myIP = socket.gethostbyname(socket.gethostname())
         port_str = "" if port == 80 else  ":" + str(port)
@@ -484,7 +487,7 @@ class FPGAServerApplication(tornado.web.Application):
         signal.signal(signal.SIGHUP,  FPGAServerApplication.cleanupHandler)
             
         try:
-            # Starting webserver
+            # Starting web server
             tornado.ioloop.IOLoop.instance().start()
         except BaseException as e:
             print("Webserver: Exiting due to exception:", e)

@@ -38,7 +38,8 @@
 #                           on a C4 Instance or future platform)
 #   Accelerated Instance: An EC2 Instance (or future platform) running an Accelerateed Web Server.
 #   Static Accelerated Web Server: An Accelerated Web Server Instance that is statically associated with a Landing Web Server.
-#                                  It is shared by all users and may be dynamically stopped/started based on need by an EC2 Feeder.
+#                                  It is shared by all users and may be dynamically started and stopped and will be stopped by an
+#                                  EC2 time bomb.
 #   EC2 Feeder: A utility provided in this repository responsible for stopping/terminating EC2 Instances (Accelerated Instances)
 #               when not in use.
 #
@@ -62,7 +63,6 @@
 #           (Must be the only target.)
 #     dead: kill the running production server.
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
-#     static_accelerated_instance: create an EC2 instance to be used by the 
 #   Variables:
 #     PORT: The port on which to launch the webserver.
 #     TARGET=[hw, hw_emu, sim, sw] (determined by platform by default)
@@ -82,7 +82,7 @@
 #     make host TARGET=hw_emu
 #
 #   Platform Targets (for constructing the multi-server platform):
-#     To create a new Static Accelerated Instance, to be associated with the Content Web Server, use:
+#     By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
 #        make PASSWORD=XXX PREBUILT=false/true TFVAR=$HOME/aws_cred.tfvars static_accelerated_instance  # (or omit variables to be prompted.)
 #        #    PASSWORD: (prompts as admin_pwd) might be used by webserver to authenticate administrative actions from a client.
 #        #    PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
@@ -336,7 +336,7 @@ endif
 TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
 SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
 VH_SRC=$(shell ls ../fpga/src/*.vh 2> /dev/null)
-TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/nulls)
+TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/null)
 SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
 SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
 
@@ -416,27 +416,24 @@ endif
 # Use a local sandpiper if $(SANDPIPER) is defined to point to one, otherwise, use SandPiper(TM) SaaS.
 .PHONY: sv
 sv: $(SV_FROM_TLV)
-../out/sv/%.sv: ../fpga/src/%.tlv
+../out/sv/%.sv: ../fpga/src/%.tlv $(TLVLIB)
 	rm -rf ../out/sv/$*
 	mkdir -p ../out/sv/$*
 ifeq ($(SANDPIPER),)
-	echo "SP: $(SANDPIPER)"
 	@# Run SandPiper(TM) SaaS Edition on TLV files.
 	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
 	cd ../out/sv/$* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
+	cat ../out/sv/$*/out/stdout
 else
-	echo "SP: $(SANDPIPER)"
 	@# Use local SandPiper, given by $(SANDPIPER)
 	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
-	-$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout
-	echo $$? > ../out/sv/$*/out/status
+	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 endif
+	(( $(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
 	mv ../out/sv/$*/out/*.sv ../out/sv
 	# Vivado requires includes to be of .vh files, so change file name.
 	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
-	cd ../out/sv && sed -i s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv		
-	cat ../out/sv/$*/out/stdout
-	exit `cat ../out/sv/$*/out/status`
+	cd ../out/sv && sed -i s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv
 
 
 
@@ -542,27 +539,28 @@ project: $(USER_KERNEL_ADDED_FILE)
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 	cd $(DEST_DIR); $(XOCC) -g --platform $(PLATFORM) --target $(BUILD_TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
-# From: https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/STEP1.md
-# The AFI creation process that started in the background is not instantaneous. You must make sure that the process completes successfully before it is able to run on the F1 instance.
-# Note the values of the AFI IDs by opening the <timestamp>_afi_id.txt file:
-# cat *.afi_id.txt
-# Use the describe-fpga-images API to check the status AFI generation process.
-# aws ec2 describe-fpga-images --fpga-image-ids <AFI ID>
-# When AFI creation completes successfully, the output should contain:
-#  ...
-#  "State": {
-#     "Code": "available"
-#  },
-#  ...
-# Wait until the AFI becomes available before proceeding to execute the application on the F1 instance.
-# It's rediculous that there is no automation here. Or is there...
-# TODO: Wait for AFI build to complete.
-#       In create_sdaccel_afi.sh, use create-fpga-image --wait
+# Create the AFI.
+# The steps are:
+#   Start AFI creation process, which runs in the background and puts the values of the AFI IDs in <timestamp>_afi_id.txt.
+#   Wait for the process to complete.
+#   Make AFI public.
+#   Delete S3 files to avoid charges.
 ifneq ($(USE_PREBUILT), true)
 $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
+	rm $(DEST_DIR)/*_afi_id.txt
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
+	# Waiting for AFI creation to complete.
+	# THESE COMMANDS ARE NOT DEBUGGED:
+	# Get afi-<id> into a file in isolation.
+	grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt
+	# Get timestamp used in generated files.
+	ls '_afi_id.txt' | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt
+	wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
+	@# Delete S3 files to avoid charges.
+	aws s3 rm --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
+	aws s3 rm --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
 endif
 
 .PHONY: push
@@ -635,6 +633,11 @@ launch: $(BUILD_TARGETS)
 ifeq ($(BUILD_TARGET), hw)
 .PHONY: prebuild
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+	# Name the AFI.
+	aws ec2 modify-fpga-image-attribute --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --name "1st_CLaaS-$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
+	# Making AFI public.
+	aws ec2 modify-fpga-image-attribute --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
+	# Populating /prebuilt dir.
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
 	cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
 	cp $(DEST_DIR)/$(KERNEL_EXE).awsxclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).awsxclbin
@@ -657,7 +660,7 @@ debug_prints:
 # WARNING: This target launches a new instance. Be sure it is not left running!
 TF_ARGS ?=
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
-PASSWORD ?=$(shell $$RANDOM)
+PASSWORD ?=$(shell echo $$RANDOM)
 ifdef PASSWORD
   TF_ARGS :=$(TF_ARGS) -var 'admin_pwd=$(PASSWORD)'
 endif
@@ -677,5 +680,3 @@ APP_LAUNCH_SCRIPT ?=/home/centos/src/project_data/fpga-webserver/framework/terra
 .PHONY: static_accelerated_instance
 static_accelerated_instance:
 	cd ../../../framework/terraform/deployment && ../../../terraform/terraform init && ../../../terraform/terraform apply -auto-approve -var 'kernel=$(KERNEL_NAME)' -var 'app_launch_script=$(APP_LAUNCH_SCRIPT)' $(TF_ARGS)
-
-

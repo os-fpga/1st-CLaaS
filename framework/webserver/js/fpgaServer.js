@@ -61,19 +61,19 @@ class fpgaServer {
   }
   
   
-  // Feed the EC2 instance, and, optionally, callback upon response. The callback is passed the response JSON.
-  feedEC2Instance(fed_cb) {
+  // Reset the EC2 instance time bomb, and, optionally, callback upon response. The callback is passed the response JSON.
+  resetEC2TimeBomb(fed_cb) {
     $.ajax({
-      url: '/feed_ec2_instance',
+      url: '/reset_ec2_time_bomb',
       type: 'get',
       success: (data, status, xhr) => {
         let json = "{}";
         try {
           json = JSON.parse(data);
         } catch(e) {
-          json = {message: `Bad JSON response to feed_ec2_instance: ${json}`};
+          json = {message: `Bad JSON response to reset_ec2_time_bomb: ${json}`};
         }
-        console.log("feed_ec2_instance response: " + json);
+        console.log("reset_ec2_time_bomb response: " + json);
         if (json.message) {
           $("#fpga-message").text(json.message);
         }
@@ -84,30 +84,30 @@ class fpgaServer {
     });
   }
   
-  // Begin feeding the EC2 instance. this.f1_state must be "running" or "pending", and this method does not perform
-  // the initial feeding. This should be called, followed by another action which feeds (like a start_ec2_instance AJAX request).
-  beginEC2Feeding() {
-    // Schedule the next feeding, continuing as long as state is "running" or "pending".
-    this.feeder_active = false;
-    let scheduleEC2Feeding = () => {
+  // Begin pinging the EC2 instance time bomb. this.f1_state must be "running" or "pending", and this method does not perform
+  // the initial reset. This should be called, followed by another action which resets (like a start_ec2_instance AJAX request).
+  beginEC2TimeBomb() {
+    // Schedule the next reset, continuing as long as state is "running" or "pending".
+    this.ec2_ping_active = false;
+    let scheduleEC2TimeBombReset = () => {
       window.setTimeout( () => {
-        console.log("Feeding.");
+        console.log("Resetting EC2 time bomb.");
         if (this.f1_state == "running" || this.f1_state == "pending") {
-          this.feeder_active = true;
-          this.feedEC2Instance();
-          scheduleEC2Feeding();
+          this.ec2_ping_active = true;
+          this.resetEC2TimeBomb();
+          scheduleEC2TimeBombReset();
         } else {
-          this.feeder_active = false;
+          this.ec2_ping_active = false;
         }
-      }, this.feeding_period * 1000);
+      }, this.time_bomb_reset * 1000);
     }
     
     if (this.f1_state != "running" && this.f1_state != "pending") {
-      console.log("Bug: Starting feeding when f1_state is: " + this.f1_state);
+      console.log("Bug: Starting time bomb resetting when f1_state is: " + this.f1_state);
     }
-    if (!this.feeder_active) {
-      this.feeder_active = true;
-      scheduleEC2Feeding();
+    if (!this.ec2_ping_active) {
+      this.ec2_ping_active = true;
+      scheduleEC2TimeBombReset();
     }
   }
   
@@ -129,7 +129,7 @@ class fpgaServer {
   // on ajaxComplete (if they exist).
   //
   // Args:
-  //   feeding_period: Period between feedings in seconds.
+  //   time_bomb_reset: Period between time bomb resets in seconds.
   
   // Mimic EC2 F1 instance state as defined by the EC2 lifecycle.
   // Instance is static, so states cycle among: "stopped", "pending", "running", "stopping" (or "unknown").
@@ -149,23 +149,23 @@ class fpgaServer {
       return "unknown";
     }
   }
-  enableFPGAStartStop(feeding_period) {
-    if (feeding_period) {
-      this.feeding_period = feeding_period;
+  enableFPGAStartStop(time_bomb_reset) {
+    if (time_bomb_reset) {
+      this.time_bomb_reset = time_bomb_reset;
     } else {
-      this.feeding_period = 60;  // 1 min default.
+      this.time_bomb_reset = 60;  // 1 min default.
     }
     $('#start-fpga-form').submit( (e) => {
       e.preventDefault();
       this.f1_state = "pending";
       $("#start-fpga-button").prop("disabled", true);
       $("#fpga-message").text("Starting...");
-      this.beginEC2Feeding();
+      this.beginEC2TimeBomb();
       
       // Handle any failing cases for starting F1.
       let startFailed = (msg) => {
         // Go to "stopped" state.
-        // This will cause feeding to stop in time.
+        // This will cause time bomb reset requests to stop.
         this.f1_state = "stopped";
         $("#start-fpga-button").prop("disabled", false);
         $("#fpga-message").text(`Start failed with: ${msg}`);
@@ -227,7 +227,7 @@ class fpgaServer {
     });
     $("#stop-fpga-button").click( () => {
       // Go straight to "stopped" state.
-      // This will cause feeding to stop in time.
+      // This will cause time bomb reset commands to stop.
       $("#fpga-message").text("Stopped.");
       this.f1_state = "stopped";
       $("#stop-fpga-button").prop("disabled", true);

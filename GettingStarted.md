@@ -1,6 +1,18 @@
 # Overview
 
-These instructions will get you up to speed using this framework on AWS infrastructure. While this framework eliminates substantial development complexity, setup for AWS F1 remains a lengthy process. Optional instructions are provided to get the Mandelbrot example application up and running on a local Linux machine without FPGA acceleration. Furthermore, to run with FPGA acceleration, prebuilt images are provided to initially bypass the lengthy builds. 
+These instructions begin using the Mandelbrot example application to get you up to speed using 1st CLaaS on AWS infrastructure. It is necessary to walk through all of these steps to get properly set up for development, to become familiar with the framework, and to uncover any issues before creating your own project. You will step through:
+
+  - [AWS Account Setup with F1 Access](#AWS-Acct) (requires a day or two for approval from Amazon)
+  - [Running Locally](#RunningLocally)
+  - [Provisioning EC2 Instances](#ProvisionInstances)
+  - [FPGA Emulation Build](#EmulationBuild)
+  - [FPGA Build](#FPGABuild)
+  - [Making Your Own Application](#CustomApp)
+
+> You will be charged by Amazon for the resources required to complete these steps and to use this infrastructure. Don't come cryin' to us. We are in no way responsible for your AWS charges.
+
+<!--
+Optional instructions are provided to get the Mandelbrot example application up and running on a local Linux machine without FPGA acceleration. Furthermore, to run with FPGA acceleration, prebuilt images are provided to initially bypass the lengthy builds.
 
 As a preview of the complete process, to get the Mandelbrot application up and running from source code with FPGA acceleration, you will need to:
 
@@ -8,101 +20,149 @@ As a preview of the complete process, to get the Mandelbrot application up and r
   - Launch a Development Instance on which to compile the OpenCL, Verilog, and Transaction-Level Verilog source code into an Amazon FPGA Image (AFI).
   - Launch an F1 Instance on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Development Instance.
   - Open the FPGA-Accelerated Web Application in a web browser.
+-->
 
 F1 machines are powerful and expensive. Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. These instructions assume the use of a separate Development Instance, which does not have an FPGA, to save costs. The FPGA kernel can be tested on this machine using "Hardware Emulation" mode, where the FPGA behavior is emulated using simulation and build times are minimal by comparison. For hobby projects, it is not practical to keep either EC2 Instance up and running for extended periods of time. The overhead of using two EC2 instances can sometimes result in extra cost and time of its own. So, depending upon your goals, you may prefer to simplify your life by using the F1 Instance as your Development Instance, in which case you can skip the instructions below for creating and configuring the Development Instance.
 
-There are many similar tutorials on line to get started with F1. Many are flawed, unclear, or out-dated. We found this  <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank">Xilinx tutorial</a> to be the best, though we do not recommend following it to the letter. Instead, open the Xilinx tutorial in its own window, and follow the instructions below which reference this tutorial (to avoid upkeep of redundant independent instructions).
+There are many tutorials on line to get started with F1. Many are flawed, unclear, or out-dated. We found this <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank" atom_fix="_">Xilinx tutorial</a> to be the best. We have automated many of the steps you will find in these lengthy tutorials.
 
 
 
+<a name="AWS-Acct"></a>
 # AWS Account Setup with F1 Access
 
+<!--
+TODO: The S3 steps should be automated using the AWS CLI, and the remaining instructions should be provided here, inline.
+-->
 Follow the "Prerequisites" instructions, noting the following:
 
   - When choosing a name for your S3 bucket (in step 3 of these instructions), consider who might be sharing this bucket with you. You should use this bucket for the particular fpga-webserver project you are starting. You might share this bucket with your collaborators. The bucket name should reflect your project. You might wish to use the name of your git repository, or the name of your organization, i.e. `fpga-webserver-zcorp`. If you expect to be the sole developer, you can reflect your name (perhaps your AWS username) in the bucket name and avoid the need for a `/<username>` subdirectory.
   - The subdirectories you will use are: `/<username>` if your username is not reflected in your bucket name, and within that (if created), `/dcp`, `/log`, and `/xfer`.
 
-Okay, now, follow the "FOLLOW THE INSTRUCTIONS" link under "Prerequisits", except steps 3 and 4. (In case you lose your place, you should be <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_blank">here</a>.
+Okay, now, follow the "FOLLOW THE INSTRUCTIONS" link under "Prerequisits", except steps 3 and 4. (In case you lose your place, you should be <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_blank" atom_fix="_">here</a>.
 
 When you are finished the Prerequisite instructions (after requesting F1 access), press "Back" in your browser.
 
 
 
+<a name="RunningLocally"></a>
 # Running Mandelbrot Locally
 
-There is a great deal of setup you can do while you wait for F1 access. First, if you have a Ubuntu machine (or care to provision one via AWS or Digital Ocean, etc.), you can play around with the Mandelbrot example without hardware acceleration.
+There is a great deal you can do while you wait for F1 access. 
 
-On a Ubuntu 16.04 machine (or try your luck with something different, and let us know):
+First, you'll need a compatible "local machine." We use Ubuntu 16.04. Please help to debug other platforms. If you do not have a compatible Linux (or Mac?) machine, you can provision a cloud machine from AWS, Digital Ocean, or other providers.
+
+To configure your local environment, including installation of Python, AWS CLI, Terraform, Remmina, and other packages:
 
 ```sh
 cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
-source ./init   # (and see if you are asked to update your $PATH)
+source ./init   # This will require sudo password entry, and you may be asked to update your $PATH.)
 cd apps/mandelbrot/build
 make launch
 ```
 
-The webserver is running. You can open `http://localhost:8888/index.html` in a local web browser and explore Mandelbrot generated in the Python webserver or in the C++ host application.
-
-You can also open `http://localhost:8888/client.html`. Click "Open", click "Init FPGA", enter coords, like 0, 0, zoom: 1, depth 100, "GET IMAGE" or "Start" for a flythrough.
+You should see a message that the web server running. You can open `http://localhost:8888/index.html` in a local web browser and explore Mandelbrot generated in the Python web server or in the C++ host application.
 
 More instructions for the Mandelbrot application are [here](https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot).
 
 
 
+<a name="ProvisionInstances"></a>
 # Create Development Instance
 
-Next you will provision a Development Instance using the "Create" part of the "1. Create, configure and test an AWS F1 instance" instructions. These instructions configure an F1 machine, but you will instead first configure a Development Instance without the FPGA (in case you are still waiting for F1 approval). 
+## AWS Configuration
 
-Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. I have found it important to always refresh the page before changing machine state. And, be sure your instance transitions to "stopped" state (or, according to AWS support, charging stops at "stopping" state).
-
-To make the setup of the instances as straight-forward as possible, we use Terraform infrastructure-automation to build the the necessary environment AWS AWS. 
-
-## Setup Local Environment
-
-To be able to launch a development instance, you'll need Terraform installed. Luckily, cloning the repository and running the init script does that for you, so if you tried the Mandelbrot example locally, you can skip this step.
-The script installs the necessary packages, and downloads Terraform into your work directory.
+In order for scripts to interface with your AWS resources, you'll need to provide your AWS credentials. You can generate Access Keys on the AWS console under IAM Management, then.
 
 ```sh
-cd <wherever you would like to work>
-git clone https://github.com/alessandrocomodi/fpga-webserver
-cd fpga-webserver
-source ./init   # (and see if you are asked to update your $PATH)
+aws configure
 ```
 
-## Launch the Instance
+And provide:
 
-The following script launches an FPGA development instance on AWS, clones all the necessary repositories and sets up the remote desktop connection. Be patient, this takes around 10 minutes.
-For this, you'll need an Access key. You can generate this on the AWS console under IAM Management.
+```
+AWS Access Key ID [None]: <your access key>
+AWS Secret Access Key [None]: <your secret key>
+Default region name [None]: <your AWS region, for instance us-east-1 for northern Virginia>
+Default output format [None]: json
+```
+
+This creates files under `~/.aws`.
+
+Terraform uses the same information in a different format, so create a file outside of the repository, which we'll assume to be `~/aws_credentials.tfvars`, containing:
+
+```
+aws_access_key_id="<your access key>"
+aws_secret_access_key="<your secret key>"
+region="<your AWS region>"
+```
+
+
+## Create and Launch the Instance
+
+We use <a href="https://www.terraform.io/" target="_blank" atom_fix="_">Terraform</a> to automate provisioning and configuring instances.
+
+The following script creates an AWS EC2 instance, clones and initializes all the necessary repositories, and sets up the Remote Desktop Protocol (RDP) agent. Be patient, this takes around 10 minutes.
+
+> IMPORTANT: The instance created below is left running, and bleeding $. Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options, though plentiful, seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. We have found it important to always refresh the page before changing machine state. And, be sure your instance transitions to "stopped" state (or, according to AWS support, charging stops at "stopping" state). We'll get to [Stopping Instances](#StopInstances) shortly.
 
 ```sh
-cd framework/terraform/development
-source deploy.sh
+cd <repo>/framework/terraform/development
+source deploy.sh ~/aws_credentials.tfvars
 ```
-When the script finished, you will see the public IP address of the VM in the terminal, and you can also find all the parameters in the terraform.tfstate file.
 
-A TLS keypair and an RDP password is also generated during the process. You can find the in the same directory. Use these credentials to connect to the machine using SSH or RDP.
+The instance that is created allows TCP/IP traffic through on port 80 for running a production web server and certain ports for development. Once the script finishes, you will see the public IP address of your Development Instance in the terminal, and you can find all the instance parameters in `terraform.tfstate`. Note that this file contains the private TLS key.
 
+<!-- Make terraform.tfstate privs 400. --> 
+
+A TLS keypair and a temporary RDP password is also generated during the process. You can find these in the same directory. You'll use these credentials to connect to the machine using SSH or RDP.
+
+
+<a name="StopInstances"></a>
 ## Stop the Instance
 
-It's worth explainign how to stop the VM properly. Unfortunately, Terraform does not have a way to stop the instances the way we want,it can only terminate them.
+Terraform does not have a way to stop instances, only terminate (destroy) them.
 
-The following commands destroys the infrastructure:
+You can stop (shutdown) the instance on the AWS console, under Service -> EC2 -> Instances.
+
+The following commands destroy the infrastructure:
+
 ```sh
-cd framework/terraform/development
+cd <repo>/framework/terraform/development
 source destroy.sh
 ```
-Note that it also deletes the created storages. This step can be disabled in the f1.tfvars file.
 
-If you would like keep onto the instance, and use it later, we recommend stopping it on the AWS console, under Service -> EC2 -> Instances.
-
-
-## Remote Desktop
-
-For remote desktop access to the EC2 machines, I have used X11, RDP, and VNC from a Linux client. X11 is easiest, but it is far too slow to be practical. RDP and VNC required several days for me to get working initially. I suggest using RDP, but I am also including instructions for VNC as a fall-back option.
+Note that this also deletes the created storage. (This step can be disabled in the f1.tfvars file.)
 
 
+## Accessing Your Instance
+
+### Remote Desktop
+
+Terraform installed a Remote Desktop Protocol agent on the Development Intance, and the `<repo>/init` script installed Remmina, for remote desktop access. Run:
+
+```sh
+remmina
+```
+
+  1. Click "New", and fill in the following:
+    1. Name: (as you like)
+    1. In the "Basic" tab
+      1. Server: [IPv4 Public IP]
+      1. User name: centos
+      1. Password: [leave blank]
+      1. Color depth: True color (24 bpp)
+    1. In the "Advanced" tab
+      1. Security: RDP
+    1. Connect
+
+Note that between stopping and starting Amazon instances the IPv4 Public IP of the instance changes and will need to be reassigned in Remmina.
+
+The temporary password you will need to enter is in the `centos_pwd.txt` file. You may wish to delete this file for security reasons, and preferably you should assign a more secure password. <!-- instructions -->
+
+<!--
 ### X11 Forwarding
 
 This is easy and stable, so even though it is not a solution for running Xilinx tools long-term, start with X11.
@@ -120,114 +180,20 @@ xeyes  # Hopefully, you see some eyes now.
 
 From this ssh shell, you can launch X applications that will (slowly) display on your local machine. In contrast, RDP and/or VNC provide you with a desktop environment.
 
-### RDP
+-->
 
-#### Running RDP with Remmina Remote Desktop Client
+### SSH Access
 
-```sh
-sudo apt-get install remmina
-remmina
-```
-
-  1. Click "New", and fill in the following:
-    1. Name: (as you like)
-    1. In the "Basic" tab
-      1. Server: [IPv4 Public IP]
-      1. User name: centos
-      1. Password: [leave blank]
-      1. Color depth: True color (24 bpp)
-    1. In the "Advanced" tab
-      1. Security: RDP
-    1. Connect
-
-Note that between Stopping and Starting Amazon instances the IPv4 Public IP of the instance changes and will need to be reassigned in Remmina.
-
-The password is in the centos_pwd.txt file after running the startup script. Take a note of this password, and delete the file afterwards for security reasons.
-
-### VNC from Linux Client
-
-RDP is preferred over VNC, but, in case you have trouble with RDP...
-
-After much struggling, I was able to get VNC working with the Xfce desktop environment.
-
-On the EC2 Instance:
+A TLS keypair is generated every time you run the Terraform startup script. You can use this keypair to log into the instance.
+`-X` will forward X11 traffic, so you can use GUI tools, but performance will be inadequate for the Xilinx tools.
 
 ```sh
-sudo yum install tigervnc-server
-vncpasswd  # Provide password for VNC desktop (and, optionally, a different password for view-only access)
-```
-
-```sh
-sudo yum install -y epel-release  # (should already be installed)
-sudo yum groupinstall -y "Xfce"
-```
-(I do not think a reboot is necessary.)
-
-Edit ~/.vnc/xstartup to contain:
-
-```sh
-#!/bin/sh
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-/etc/X11/xinit/xinitrc
-[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
-[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
-vncconfig -iconic &
-#xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
-startxfce4 &
-```
-
-And make it executable:
-
-```sh
-chmod +x ~/.vnc/xstartup
-```
-
-The VNC Server can be started with:
-
-```sh
-vncserver  # Optionally -geometry XXXXxYYYY.
-```
-
-The output of this command indicates a log file. You should take a look. I got a number of warnings and a DBus permission error, but they did not appear to be fatal.
-
-From the client:
-
-```sh
-vncpasswd   # Enter the password used on the server.
-vncviewer <IP>:1 passwd=<home>/.vnc/passwd
-```
-
-And, on the remote instance, kill the VNC server with:
-```sh
-vncserver -kill :1
-```
-
-Any number of clients can be connected to this VNC server while it is running. Closing the client connection does not terminate the server.
-
-After you see that these commands are working, the script `vnc_ec2` (at the top level of the repo) can be used locally to launch a server on the remote instance and connect to it. Note the prerequisite "Assumptions" in the header comments of this file.
-
-```sh
-vnc_ec2 -gXXXXxYYYY <IP>   # where -g is the VNC --geometry argument specifying desktop size.
-```
-
-This running VNC server can be killed using:
-
-```sh
-vnc_ec2 -k <IP>   # <IP> can be omitted to use the IP of the last server launched w/ vnc_ec2.
-```
-
-### SSH from Linux client
-
-A TLS keypair is generated every time you run the Terraform startup script. You can use this keypair to log into the VM.
-
-```sh
-ssh -i puclic_key.pem centos@<public IP address of EC2 instance> 22
+ssh -X -i <repo>/framework/terraform/development/private_key.pem centos@<public IP address of EC2 instance>
 ```
 
 ## SSH keys
 
-If you happen to be using private git repositories or need passwordless authentication from your instance for any other reason, you may need to generate ssh access keys for your instance.
+In case you want to set up passwordless authentication from your Development Instance for git access or any other reason, you may need to generate ssh keys for your instance.
 
 ```sh
 ssh-keygen -o -t rsa -b 4096 -C "<machine-identifying comment>"
@@ -235,9 +201,10 @@ sudo yum install xclip -y
 xclip -sel clip < ~/.ssh/id_rsa.pub
 ```
 
-And paste this SSH key into the settings of your other account (e.g. gitlab).
+And paste this SSH key into the settings of your other account (e.g. gitlab/github).
 
 
+<!--
 ## Clone Necessary Repos
 
 ```sh
@@ -247,6 +214,7 @@ git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
 source ./init
 ```
+-->
 
 
 
@@ -263,9 +231,13 @@ source fpga-webserver/sdaccel_setup
 ```
 
 
+
+<a name="EmulationBuild"></a>
 # FPGA Emulation Build
 
-These instructions were last debugged with SDx v2018.2. Check to see what version you have. If it differs, you might get to help us debug a new platform.
+TODO: Instructions for using a specific AMI version and checking the latest version.
+
+These instructions were last debugged with SDx v2018.3. Check to see what version you have. If it differs, you might get to help us debug a new platform.
 
 ```sh
 sdx -version
@@ -278,12 +250,13 @@ cd ~/workdisk/fpga-webserver/apps/mandelbrot/build
 make TARGET=hw_emu -j8 launch   # (-j8 is optional; it's for parallel build)
 ```
 
-This produces outputs files in `../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/`, and it starts the application.
+This produces output files in `../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/`, and it starts the application.
 
 Point a web browser at: `http://<IP>:8888` (or from outside: `http://<IP>:8888`). Be aware, as you use the application, that the FPGA is emulated, so it is running several orders of magnitude slower than a real FPGA. Be careful not to ask it to do too much. Make the image small, and set the depth to be minimal before selecting "FPGA" rendering.
 
 
 
+<a name="FPGABuild"></a>
 # FPGA Build
 
 Now, build both the FPGA image and host application for the real FPGA. The FPGA build will take about an hour.
@@ -317,7 +290,7 @@ The command will show `Available` when the AFI is ready use. Otherwise, the comm
 
 ```json
 State: {
-   "Code" : Available"
+   "Code" : "Available"
 }
 ```
 
@@ -340,6 +313,8 @@ Once you have been granted access to F1, provision an F1 Instance as you did the
 
 
 # Running Prebuilt Files on FPGA
+
+TODO: Prebuilt AFI is not publicly accessible.
 
 Prebuilt files are included in the repository. Try to run using those first, so you can see the FPGA in action. (TODO: You probably won't have permission to do this. This is probably something to look into.)
 
@@ -373,6 +348,47 @@ make PREBUILT=true TARGET=hw -j8 launch   # Or without `PREBUILT=true` if you pl
 ```
 
 And open: `http://localhost:8888`, or from outside `http://<IP>:8888`.
+
+
+
+<a name="CustomApp"></a>
+# Making Your Own Application
+
+Now you are ready to make an application of your own. This section is not a cookbook, but rather some pointers to get you starte in down your own path.
+
+
+## Getting Started
+
+You may want to work locally to avoid AWS charges. But you would need to transfer your work in order to test it. We are working to enable local simulation, but for now, we will assume you are running on a Development Instance using Xilinx tools.
+
+Start with an existing project.
+
+```sh
+cd ~/workdisk/fpga-webserver/apps
+cp -r vadd <your-proj>
+```
+
+The app name (`vadd`) is reflected in several filenames for clarity, so change these to <your-proj>.
+
+
+## Web Client Application
+
+For a simple quick-and-dirty application or testbench for your kernel, you might use the existing structure to write some basic HTML, CSS, and JavaScript. If you intend to develop a real application, you probably have your own thoughts about the framework you would like to use. You can develop in a separate repo, or keep it in the same repo so it is consistently version controlled.
+
+
+# Custom Kernel
+
+The vadd kernel is a good starting point for your own kernel. It is written using TL-Verilog. A pure Verilog version is also available.
+
+
+# C++ Host Application
+
+It is not required to customize the host application, but if you need to do so, you can override the one from the framework, following the example of the mandelbrot application. (Refer to its Makefile as well as `/host` code.)
+
+
+# Python Web Server
+
+It is not required to customize the python web server, bit if you need to do so, you can overrie the one from the framewoek, following the example of the manelbrot application. (Refer to its Makefile as well as `/webserver` code.)
 
 
 
@@ -414,3 +430,7 @@ This is how I was able to generate an RTL kernel in SDAccel manually and run har
 
 
 
+# To Do
+
+  - Transition to a workflow where edits are made on local machine, and `scp -rp` syncs to EC2 machines.
+  - Further transition to using aws cli and ssh in Makefile to start/stop and launch build/run commands remotely.

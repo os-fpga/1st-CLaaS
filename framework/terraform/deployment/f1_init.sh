@@ -5,7 +5,7 @@
 #     way I can find to establish the right environment is to ssh.
 #   o Establish cron @reboot command to start webserver.
 #   o Compile and start webserver for manual testing at <IP>:80.
-(echo \
+echo \
  && echo "Running f1_init.sh" \
  && echo \
  && echo "Setting up localhost ssh." \
@@ -18,6 +18,9 @@
  && echo "Running reboot script to pre-build and start webserver for manual testing." \
  && /home/centos/src/project_data/fpga-webserver/framework/terraform/deployment/f1_reboot.sh \
  && echo \
- && echo "YEAY!!! The webserver has been launched." \
+ && echo "YEAY!!! The web server has been launched." \
  && echo "YOU HAVE 3 MINUTES to test it out, then the machine will be shutdown, if not stopped manually (but check to be sure)." \
- && nohup bash -c 'sleep 180 && sudo shutdown now &> /dev/null < /dev/null &)
+ && sleep 180;
+STATUS=$?
+nohup bash -c 'sleep 1 && sudo shutdown now &> /dev/null < /dev/null &'
+exit $STATUS # Exit (before shutdown).
