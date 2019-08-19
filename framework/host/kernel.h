@@ -76,7 +76,7 @@ protected:
   int status = 1;
   bool initialized = false;
 
-
+public:
   virtual void perror(const char * msg) = 0;;
   virtual void reset_kernel() = 0;
   virtual void writeKernelData(void * input, int data_size, int resp_data_size) = 0;
