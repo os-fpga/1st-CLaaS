@@ -429,7 +429,7 @@ else
 	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
 	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 endif
-	(( $(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
+	(( $(shell cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
 	mv ../out/sv/$*/out/*.sv ../out/sv
 	# Vivado requires includes to be of .vh files, so change file name.
 	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
