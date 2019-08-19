@@ -248,13 +248,17 @@ void HostApp::processTraffic() {
       }
       case START_TRACING_N:
       {
+        #ifdef KERNEL_AVAIL
         kernel.enable_tracing();
+        #endif
         break;
       }
       case STOP_TRACING_N:
       {
+        #ifdef KERNEL_AVAIL
         kernel.disable_tracing();
         kernel.save_trace();
+        #endif
         break;
       }
       break;
