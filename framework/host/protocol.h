@@ -54,6 +54,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CLOSE_CONN    "CLOSE_CONN"
 #define GET_IMAGE     "GET_IMAGE"
 #define DATA_MSG      "DATA_MSG"  // Generic data message containing JSON array of 16-entry arrays of unsigned integer (32-bit) data to be sent to FPGA.
+#define START_TRACING "START_TRACING"
+#define STOP_TRACING  "STOP_TRACING"
 
 
 #define INIT_PLATFORM_N   1
@@ -64,6 +66,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CLEAN_KERNEL_N    6
 #define GET_IMAGE_N       7
 #define DATA_MSG_N        8
+#define START_TRACING_N   9
+#define STOP_TRACING_N    10
 
 // Types of messages
 #define DATA_MSG "DATA_MSG"

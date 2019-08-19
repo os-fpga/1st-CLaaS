@@ -54,9 +54,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#ifdef KERNEL_AVAIL
+#include "kernel.h"
+#ifndef OPENCL
+#include "sim_kernel.h"
+#endif
+#endif
 #ifdef OPENCL
 #include <CL/opencl.h>
 #include "kernel.h"
+#include "hw_kernel.h"
 #endif
 
 #include "lodepng.h"
@@ -110,11 +117,16 @@ public:
     int data_size;
   } dynamic_array;
 
+#ifdef KERNEL_AVAIL
 #ifdef OPENCL
-  Kernel kernel;
+  HW_Kernel kernel;
+#else
+  SIM_Kernel kernel;
+#endif
 #endif
 
   static const int DATA_WIDTH_BYTES = 64;
+  static const int DATA_WIDTH_WORDS = DATA_WIDTH_BYTES / 4; //
   static const int DATA_WIDTH_BITS = DATA_WIDTH_BYTES * 8;  // 512 bits
   static const int verbosity = 0; // 0: no debug messages; 10: all debug messages.
 
@@ -186,10 +198,9 @@ protected:
   ** Utility function to handle the command decode coming from the socket
   ** connection with the python webserver
   */
-  #ifdef OPENCL
+  #ifdef KERNEL_AVAIL
   void init_platform(char * response);
   void init_kernel(char * response, const char *xclbin, const char *kernel_name, int memory_size);
-  void handle_command(int command, const char *xclbin, const char *kernel_name, int memory_size);
   #else
   char *image_buffer;
   #endif
@@ -206,7 +217,7 @@ protected:
   */
   int handle_read_data(const void * data, int data_size);
 
-  #ifdef OPENCL
+  #ifdef KERNEL_AVAIL
   void handle_get_image(int ** data_array_p, input_struct * input_p);
   #endif
 

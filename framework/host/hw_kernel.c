@@ -56,15 +56,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "server_main.h"
 
 
-Kernel::Kernel() {
+HW_Kernel::HW_Kernel() {
 }
 
-void Kernel::perror(const char * msg) {
+void HW_Kernel::perror(const char * msg) {
   printf(msg);
   status = EXIT_FAILURE;
 }
 
-int Kernel::load_file_to_memory(const char *filename, char **result) {
+int HW_Kernel::load_file_to_memory(const char *filename, char **result) {
   uint size = 0;
   FILE *f = fopen(filename, "rb");
   if (f == NULL) {
@@ -84,7 +84,7 @@ int Kernel::load_file_to_memory(const char *filename, char **result) {
   return size;
 }
 
-void Kernel::initialize_platform() {
+void HW_Kernel::initialize_platform() {
   // Get all platforms and then select Xilinx platform
   cl_platform_id platforms[16];       // platform id
   cl_uint platform_count;
@@ -151,7 +151,7 @@ void Kernel::initialize_platform() {
   status = 0;
 }
 
-void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int memory_size) {
+void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int memory_size) {
   int err;
   // Create Program Objects
   // Load binary from disk
@@ -217,7 +217,7 @@ void Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int 
   status = 0;
 }
 
-void Kernel::write_kernel_data(double h_a_input[], int data_size){
+void HW_Kernel::write_kernel_data(double h_a_input[], int data_size){
   perror("Oh! I thought write_kernel_data(double h_a_input[], int data_size) was unused.\n");
 
   int err;
@@ -240,7 +240,7 @@ void Kernel::write_kernel_data(double h_a_input[], int data_size){
 }
 
 // TODO: Experimental WIP
-void Kernel::writeKernelData(void * input, int data_size, int resp_data_size) {
+void HW_Kernel::writeKernelData(void * input, int data_size, int resp_data_size) {
   int err;
   err = clEnqueueWriteBuffer(commands, read_mem, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -262,7 +262,7 @@ void Kernel::writeKernelData(void * input, int data_size, int resp_data_size) {
   }
 }
 
-void Kernel::write_kernel_data(input_struct * input, int data_size) {
+void HW_Kernel::write_kernel_data(input_struct * input, int data_size) {
   int err;
   err = clEnqueueWriteBuffer(commands, read_mem, CL_TRUE, 0, data_size, input, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
@@ -287,7 +287,7 @@ void Kernel::write_kernel_data(input_struct * input, int data_size) {
   }
 }
 
-void Kernel::start_kernel() {
+void HW_Kernel::start_kernel() {
   int err;
   err = clEnqueueTask(commands, kernel, 0, NULL, NULL);
   if (err) {
@@ -301,7 +301,7 @@ void Kernel::start_kernel() {
   status = 0;
 }
 
-void Kernel::read_kernel_data(int h_a_output[], int data_size) {
+void HW_Kernel::read_kernel_data(int h_a_output[], int data_size) {
   int err;
   cl_event readevent;
 
@@ -324,7 +324,7 @@ void Kernel::read_kernel_data(int h_a_output[], int data_size) {
   clWaitForEvents(1, &readevent);
 }
 
-void Kernel::clean_kernel() {
+void HW_Kernel::clean_kernel() {
   // This has to be modified by the user if the number (or name) of arguments is different
   clReleaseMemObject(read_mem);
   clReleaseMemObject(write_mem);
