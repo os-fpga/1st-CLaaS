@@ -349,7 +349,7 @@ endif
 
 ifneq ($(USE_XILINX),true)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
-HOST_CMD=$(HOST_EXE_PATH)
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH)
 endif
 ifeq ($(BUILD_TARGET),hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
@@ -359,7 +359,6 @@ ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
 endif
-
 
 .PHONY: nothing
 nothing:
@@ -627,7 +626,9 @@ build: $(BUILD_TARGETS)
 	
 launch: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
+	echo $(LAUNCH_CMD)
 	$(LAUNCH_CMD)
+
 
 
 ifeq ($(BUILD_TARGET), hw)

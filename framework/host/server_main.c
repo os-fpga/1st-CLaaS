@@ -117,6 +117,8 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
     init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
   #endif
 
+  kernel.reset_kernel();
+
 
   while (true) {
     if ((socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
@@ -204,6 +206,7 @@ void HostApp::processTraffic() {
             kernel.writeKernelData(int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
             if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
+            
             kernel.start_kernel();
             if (verbosity > 2) {cout << "Started kernel." << endl;}
 
@@ -245,6 +248,7 @@ void HostApp::processTraffic() {
           cerr_line() << "Unable to process DATA message." << endl;
           exit(1);
         }
+        break;
       }
       case START_TRACING_N:
       {
@@ -371,7 +375,7 @@ void HostApp::init_platform(char * response) {
   }
   if(!kernel.initialized) {
     kernel.initialize_platform();
-    kernel.reset_kernel();
+    
     if (kernel.status)
       sprintf(response, "Error: could not initialize platform");
     else

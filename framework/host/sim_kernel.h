@@ -59,9 +59,9 @@ private:
   VerilatedVcdC* tfp;
   void* input_buff = 0;
   uint32_t* output_buff = 0;
-  int data_size = 0;
-  int resp_data_size = 0;
-  int tick_cntr = 0;
+  unsigned int data_size = 0;
+  unsigned int resp_data_size = 0;
+  unsigned int tick_cntr = 0;
   bool tracing_enabled = false;
 
   /*
