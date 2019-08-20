@@ -1,4 +1,4 @@
-/*
+ /*
 BSD 3-Clause License
 
 Copyright (c) 2018, alessandrocomodi
@@ -311,7 +311,7 @@ MandelbrotImage::MandelbrotImage(json &j) {
          << "), spec_max_depth = " << spec_max_depth */ << ", modes = " << modes << ", full = " << full_image << ". ";
 
   // FPGA image dimensions are restricted.
-#ifdef OPENCL
+#ifdef KERNEL_AVAIL
   if (fpga) {
     cout << "Adjusting image sizes for FPGA (if needed)." << endl;
     // FPGA has an upper bound on image size. I don't think this shrinkage will break anything catastrophically, but it's not tested.
@@ -1932,7 +1932,8 @@ void HostMandelbrotApp::get_image() {
   MandelbrotImage * mb_img_p = newMandelbrotImage(json_obj);
 
   int * depth_data = NULL;
-#ifdef OPENCL
+
+#ifdef KERNEL_AVAIL
   if (mb_img_p->fpga) {
     input_struct input;
 

@@ -192,13 +192,14 @@ else
 SUPPORTED_TARGETS :=hw_emu |$(SPACE)
 endif
 endif
-#(V) TODO: Uncomment (V) to support 'sim' TARGET.
-#(V) ifneq ($(VERILATOR),)
-#(V) # Verilator.
-#(V) SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim | sw |$(SPACE)
-#(V) else
+
+
+ifneq ($(VERILATOR),)
+# Verilator.
+SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim | sw |$(SPACE)
+else
 SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
-#(V) endif
+endif
 
 # Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
 
@@ -207,12 +208,16 @@ SPECIFIED_TARGET :=$(TARGET)
 BUILD_TARGET :=$(TARGET)
 # If specified TARGET is not supported, choose a different one.
 ifeq ($(findstring $(BUILD_TARGET) |,$(SUPPORTED_TARGETS)),)
+#If sim is not supported, downgrade to sw
 ifeq ($(BUILD_TARGET),sim)
 BUILD_TARGET :=sw
 else
 # Downgrade to highest-level target.
 BUILD_TARGET :=$(firstword $(SUPPORTED_TARGETS))
 endif
+endif
+ifeq ($(BUILD_TARGET),)
+$(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
 endif
 $(info Using TARGET=$(BUILD_TARGET).  (Platform supports: | $(SUPPORTED_TARGETS)))
 
@@ -292,12 +297,20 @@ SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../
 SW_LFLAGS ?= -L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
 
 #Host code
-HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/kernel.c
+HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/hw_kernel.c
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
+HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/hw_kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
+
+#Simulation flags
+SIM_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/sim_kernel.c
+SIM_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
+SIM_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/sim_kernel.h
+SIM_CFLAGS=$(SW_CFLAGS) -std=c++11 -lpthread -DVL_THREADED=1 -D KERNEL_AVAIL -D KERNEL=$(KERNEL_NAME) -D VERILATOR_KERNEL=V$(KERNEL_NAME)_kernel
+SIM_LFLAGS=$(SW_LFLAGS)
 
 #Name of host executable
 HOST_EXE=host
@@ -387,6 +400,7 @@ endif
 #KERNEL_TLV=../fpga/src/$(KERNEL_NAME)_kernel.tlv
 TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
 SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
+VH_SRC=$(shell ls ../fpga/src/*.vh 2> /dev/null)
 TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/null)
 SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
 SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
@@ -400,7 +414,7 @@ endif
 
 ifneq ($(USE_XILINX),true)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
-HOST_CMD=$(HOST_EXE_PATH)
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH)
 endif
 ifeq ($(BUILD_TARGET),hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
@@ -410,7 +424,6 @@ ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
 endif
-
 
 .PHONY: nothing
 nothing:
@@ -474,6 +487,8 @@ ifneq ($(USE_PREBUILT), true)
 
 # TODO: Instead of this condition, define $(SW_SRC) and $(HOST_SRC) as $(SRC) conditionally, etc.
 ifneq ($(USE_XILINX),true)
+ifeq (${BUILD_TARGET},sw)
+#sw target
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
@@ -482,6 +497,21 @@ $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 else
+#sim target
+$(DEST_DIR)/verilator: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC)
+	mkdir -p $(DEST_DIR)
+	verilator --cc --sv --trace -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src --Mdir $(DEST_DIR)/verilator 
+$(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator
+	cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
+	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) /usr/local/share/verilator/include/verilated.cpp /usr/local/share/verilator/include/verilated_vcd_c.cpp /usr/local/share/verilator/include/verilated_threads.cpp -I $(DEST_DIR)/verilator -I /usr/local/share/verilator/include -o $(DEST_DIR)/$(HOST_EXE)
+	cd $(DEST_DIR)/verilator && rm verilator_kernel.h
+# Host for debug.
+#$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
+#	mkdir -p $(DEST_DIR)
+#	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
+endif
+else
+#hw and hw_emu target
 $(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
 	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
@@ -705,7 +735,9 @@ build: $(BUILD_TARGETS)
 	
 launch: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
+	echo $(LAUNCH_CMD)
 	$(LAUNCH_CMD)
+
 
 
 ifeq ($(BUILD_TARGET), hw)

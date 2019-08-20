@@ -57,6 +57,7 @@ using namespace lodepng;
 
 int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
 {
+//TODO else ifndef OPENCL
 #ifdef OPENCL
   if (argc != 2) {
     printf("Usage: %s xclbin\n", argv[0]);
@@ -115,6 +116,8 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
     init_platform(NULL);
     init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
   #endif
+
+  kernel.reset_kernel();
 
 
   while (true) {
@@ -198,21 +201,22 @@ void HostApp::processTraffic() {
             cout_line() << "Done extracting data." << endl;
 
             // Send data to FPGA, or do fake FPGA processing.
-#ifdef OPENCL
+            #ifdef KERNEL_AVAIL
             // Process in FPGA.
-            kernel.writeKernelData((double *)int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
+            kernel.writeKernelData(int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
             if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
+            
             kernel.start_kernel();
             if (verbosity > 2) {cout << "Started kernel." << endl;}
 
             if (verbosity > 2) {cout << "Reading kernel data (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
             kernel.read_kernel_data((int *)int_resp_data_p, resp_size * DATA_WIDTH_BYTES);
             if (verbosity > 3) {cout << "Read kernel data (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
-#else
+            #else
             // Fake the kernel.
             fakeKernel(size * DATA_WIDTH_BYTES, int_data_p, resp_size * DATA_WIDTH_BYTES, int_resp_data_p);
-#endif
+            #endif
 
             // Convert data to JSON.
             string s("");
@@ -244,15 +248,35 @@ void HostApp::processTraffic() {
           cerr_line() << "Unable to process DATA message." << endl;
           exit(1);
         }
+        break;
+      }
+      case START_TRACING_N:
+      {
+        #ifdef KERNEL_AVAIL
+        kernel.enable_tracing();
+        #endif
+        break;
+      }
+      case STOP_TRACING_N:
+      {
+        #ifdef KERNEL_AVAIL
+        kernel.disable_tracing();
+        kernel.save_trace();
+        #endif
+        break;
       }
       break;
     default:
       cout_line() << "Unrecognized command: " << command << "." << endl;
       exit(1);
-#ifdef OPENCL
+      #ifdef KERNEL_AVAIL
+      #ifdef OPENCL
       //cout << "Calling handle_command(.., " << command << ", ..)" << endl;
       //handle_command(command, kernel.xclbin, kernel_name, COLS * ROWS * sizeof(int));
-#endif
+      #else
+      //Simulation commands
+      #endif
+      #endif
   }
 
   if (verbosity > 2) {
@@ -340,8 +364,8 @@ json HostApp::socket_recv_json(const char * tag) {
   free(c_str);
   return ret;
 }
-#ifdef OPENCL
 
+#ifdef OPENCL
 // A wrapper around initialize_platform that reports errors.
 // Use NULL response to report errors.
 void HostApp::init_platform(char * response) {
@@ -351,6 +375,7 @@ void HostApp::init_platform(char * response) {
   }
   if(!kernel.initialized) {
     kernel.initialize_platform();
+    
     if (kernel.status)
       sprintf(response, "Error: could not initialize platform");
     else
@@ -388,41 +413,9 @@ void HostApp::init_kernel(char * response, const char *xclbin, const char *kerne
   }
 }
 
-void HostApp::handle_command(int command, const char *xclbin, const char *kernel_name, int memory_size) {
-  // This method was to enable client control over FPGA for stuff like recompiling the kernel without taking down the host.
-  // TODO: Needs more thought.
-  cout_line() << "OBSOLETE handle_command(...)" << endl;
-  char response[MSG_LENGTH];
-
-  switch (command) {
-    // Initialization of the platform
-    case INIT_PLATFORM_N:
-      init_platform(NULL);
-      break;
-
-    // Initialization of the kernel (loads the fpga program)
-    case INIT_KERNEL_N:
-      init_kernel(NULL, xclbin, kernel_name, memory_size);
-      break;
-
-    // Releasing all OpenCL links to the fpga
-    case CLEAN_KERNEL_N:
-      kernel.clean_kernel();
-      sprintf(response, "INFO: Kernel cleaned");
-      break;
-
-    // Start Kernel computation
-    case START_KERNEL_N:
-      kernel.start_kernel();
-      sprintf(response, "INFO: Started computation");
-      break;
-    default:
-      sprintf(response, "Command not recognized");
-      break;
-  }
-  cout_line() << "Handling command: " << response << endl;
-}
 #endif
+
+
 
 /*
 ** Paramters
@@ -495,8 +488,7 @@ int HostApp::handle_read_data(const void * data, int data_size) {
   return 0;
 }
 
-
-#ifdef OPENCL
+#ifdef KERNEL_AVAIL
 /*
 ** Parameters
 ** socket: reference to the socket channel with the webserver
@@ -565,6 +557,10 @@ int HostApp::get_command(const char * command) {
     return GET_IMAGE_N;
   else if(!strncmp(command, DATA_MSG, strlen(DATA_MSG)))
     return DATA_MSG_N;
+  else if(!strncmp(command, START_TRACING, strlen(START_TRACING)))
+    return START_TRACING_N;
+  else if(!strncmp(command, STOP_TRACING, strlen(STOP_TRACING)))
+    return STOP_TRACING_N;
   else
     return -1;
 }
