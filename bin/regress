@@ -33,7 +33,7 @@
 
 # A regression test.
 
-# Runs regression scripts for framework (framework/bin/regress) and apps (app/*/bin/regress).
+# Runs regression scripts for framework (framework/bin/regress) and apps (apps/*/bin/regress).
 
 # Each regress script should use the following conventions (as run by this script on via command-line):
 #   o use configuration from $CONFIG_FILE.
@@ -72,6 +72,8 @@ shift $((OPTIND -1))
 cd "$( dirname "${BASH_SOURCE[0]}")/.."
 
 
+echo -e '\e[91m\e[1mWARNING: Failed regression tests might leave EC2 instance running and resources allocated. It is necessary to monitor EC2 usage during/after regression testing.\e[0m'
+
 # If init was not run yet, run it.
 
 if [[ ! -e terraform/terraform ]]
@@ -107,7 +109,13 @@ do
     STATUS_FILES="$STATUS_FILES $STATUS"
   else
     # Sequential.
-    "$regression" "$CONFIG_FILE" |& tee "$LOG"
+    echo
+    if "$regression" |& tee "$LOG"
+    then
+      echo -e  '\e[32m\e[1mRegression PASSED!!!\e[0m'
+    else
+      echo -e '\e[91m\e[1mRegression FAILED!!!\e[0m'
+    fi
   fi
 done
 

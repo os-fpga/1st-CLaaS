@@ -30,18 +30,28 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+# For usage, see <repo>/bin/regress
+
+
 set -e  # Fail on any failure.
 
 cd "$( dirname "${BASH_SOURCE[0]}")/../build"
+mkdir -p ../out/regress ../log
 
-echo "Running framework regression."
+echo "Running mandelbrot regression."
 
 
-# Create and destroy development instance and run instance.
+# Run locally.
 
-make development_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_devel_regress
-make list_setups
-make destroy SETUP=1st-CLaaS_devel_regress AUTO_APPROVE=true
+# Go live
+make live TARGET=sw PORT=8887 # && sleep 2
+# Access image
+wget -O ../out/regress/img.jpg 'http://localhost:8887/img?json={"x":0,"y":0,"pix_x":0.2,"pix_y":0.2,"width":10,"height":10,"max_depth":25,"renderer":"cpp"}'
+# Go dead
+make dead TARGET=sw
 
-make f1_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_run_regress
-make destroy SETUP=1st-CLaaS_run_regress AUTO_APPROVE=true
+# Create and destroy static F1 instance.
+make static_accelerated_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_static_accelerated_regress
+make destroy SETUP=1st-CLaaS_static_accelerated_regress AUTO_APPROVE=true
+

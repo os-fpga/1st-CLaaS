@@ -181,6 +181,9 @@ endif
 S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
 
 
+AUTO_APPROVE=false
+
+
 # Characterize platform.
 
 VERILATOR=$(shell which verilator)
@@ -443,7 +446,8 @@ shrink:
 define config_param
 	@echo -n "$1 [$($1)]: " && (read TMP; if [[ -n "$$TMP" ]]; then echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; else echo '$1=$($1)' >> $(CONFIG_FILE).tmp; fi)
 endef
-config:
+config: $(CONFIG_FILE)
+$(CONFIG_FILE):
 	@rm -f $(CONFIG_FILE).tmp
 	@[[ ! -e "$(CONFIG_FILE)" ]] || ! echo "User configuration file ($(CONFIG_FILE)) already exists. Edit with a text editor."
 	@echo
@@ -817,6 +821,11 @@ TF_ARGS3=-var 'instance_name=$(INSTANCE_NAME)' -var 'sdb_device_size=$(INSTANCE_
 TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' -var 'aws_access_key_id=$(shell aws configure get aws_access_key_id --profile $(AWS_PROFILE))'
 TF_ARGS5=-var 'aws_secret_access_key=$(shell aws configure get aws_secret_access_key --profile $(AWS_PROFILE))' -var 'aws_profile=$(AWS_PROFILE)'
 TF_ARGS6=-var 'region=$(shell aws configure get region --profile $(AWS_PROFILE))' -var 'repo_dir=$(REPO)' -var 'git_url=$(GIT_URL)' -var 'git_branch=$(GIT_BRANCH)'
+ifeq ($(AUTO_APPROVE),true)
+TF_AUTO_APPROVE_ARG=--auto-approve
+else
+TF_AUTO_APPROVE_ARG=
+endif
 ifdef TFVAR
 	TF_ARGS7='-var-file=$(TFVAR)'
 else
@@ -825,7 +834,7 @@ endif
 
 TF_ALL_ARGS=$(TF_ARGS1) $(TF_ARGS2) $(TF_ARGS3) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS7)
 TF_DESTROY_ARGS=
-TF_COMMON_ARGS=$(TF_ARGS1) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS)
+TF_COMMON_ARGS=$(TF_AUTO_APPROVE_ARG) $(TF_ARGS1) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS)
 
 
 # Macro to run terraform command. $1 contains terraform args.
