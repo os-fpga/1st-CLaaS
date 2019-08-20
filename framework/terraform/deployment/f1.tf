@@ -253,13 +253,14 @@ resource "aws_instance" "the_instance" {
     provisioner "remote-exec" {
       # Configure instance.
       inline = [
+        "echo && echo -e '\\e[32m\\e[1mSetting up remote instance.\\e[0m' && echo",
         "echo 'Cloning AWS-FPGA repo'",
         "git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR",
         "echo 'Cloning 1st CLaaS repo'",
         "git clone -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/fpga-webserver\"",
         "echo 'Running init'",
         "/home/centos/src/project_data/fpga-webserver/init",
-        "echo 'Running configuration script: \"${var.config_instance_script}\"'",
+        "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
         "source ${var.config_instance_script}",
       ]
     }

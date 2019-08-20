@@ -507,7 +507,7 @@ else
 	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
 	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 endif
-	(( $(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
+	(( $(shell cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
 	mv ../out/sv/$*/out/*.sv ../out/sv
 	# Vivado requires includes to be of .vh files, so change file name.
 	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
@@ -700,7 +700,7 @@ dead: ../live/$(BUILD_TARGET)/dead
 
 
 
-PHONY: build
+PHONY: build launch
 build: $(BUILD_TARGETS)
 	
 launch: $(BUILD_TARGETS)
@@ -733,32 +733,33 @@ debug_prints:
 # Platform Targets
 ###################################
 
+FIRST_CLAAS_REMOTE_REPO_DIR=/home/centos/src/project_data/fpga-webserver
 
 # Create a new Static Accelerated Instance. See Makefile header comments for usage info.
 # WARNING: This target launches a new instance. Be sure it is not left running!
 # Default INSTANCE_NAME, INSTANCE_STORAGE, INSTANCE_TYPE, INSTANCE_CONFIG_SCRIPT based on target. (Doesn't work if multiple targets are given.)
 # Defaults, in case instance target is unrecognized
 INSTANCE_NAME=1st-CLaaS
-INSTANCE_STORAGE=15
-INSTANCE_TYPE=f1.2xlarge
-INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/deployment/f1_init.sh
+INSTANCE_STORAGE=0
+INSTANCE_TYPE=UNDEFINED
+INSTANCE_CONFIG_SCRIPT=UNDEFINED
 ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_devel
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=c4.2xlarge
-	INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/config_instance_dev.sh
+	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring f1_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_run
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/config_instance_dev.sh
+	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
-	INSTANCE_NAME=1st-CLaaS_accelerator
+	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
 	INSTANCE_STORAGE=5
 	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=/home/centos/src/project_data/fpga-webserver/framework/terraform/config_instance_dummy.sh
+	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/deployment/f1_init.sh
 endif
 # By default, each instance is an independent setup.
 SETUP=$(INSTANCE_NAME)
@@ -799,8 +800,9 @@ TF_COMMON_ARGS=$(TF_ARGS1) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS)
 # Generic .tf file is configured for user and setup before running terraform.
 define terraform
 	# Setting up and running Terraform in a new directory.
-	rm -rf '$(REPO)/tmp/$(SETUP)'
-	mkdir -p '$(REPO)/tmp/$(SETUP)'
+	@#rm -rf '$(REPO)/tmp/$(SETUP)'
+	@mkdir -p '$(REPO)/tmp/$(SETUP)'
+	rm -f '$(REPO)/tmp/$(SETUP)/.terraform/terraform.tfstate' '$(REPO)/tmp/$(SETUP)/'*.*
 	cd '$(REPO)/tmp/$(SETUP)' \
 	&& cp '$(REPO)/framework/terraform/deployment/f1.tf' . \
 	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' f1.tf \
@@ -837,6 +839,7 @@ endif
 .PHONY: destroy
 destroy:
 	$(call terraform,destroy $(TF_DESTROY_ARGS))
+	aws s3 rm's3://$(S3_BUCKET)/tf_setups/$(SETUP)'
 	@echo 'Destroyed instance/setup $(SETUP)'
 	@if [[ -d $(TF_OUT_DIR) ]]; then rm $(TF_OUT_DIR)/public_key.pem && rm $(TF_OUT_DIR)/private_key.pem && rmdir $(TF_OUT_DIR) && echo 'Deleted $(TF_OUT_DIR) containing TLS keys'; else echo 'No directory $(TF_OUT_DIR). Perhaps another user still has these obsolete TLS keys?'; fi
 

@@ -147,7 +147,7 @@ Terraform installed a Remote Desktop Protocol agent on the Development Instance,
 Remote desktop access will require use of a linux password for the `centos` account. Set this using:
 
 ```sh
-ssh -i ~/.ssh/<instance-name>/private_key.pem -c 'echo "centos:<password>" | sudo chpasswd' centos@<ip>
+ssh -i ~/.ssh/<instance-name>/private_key.pem centos@<ip> 'echo "centos:<password>" | sudo chpasswd'
 # And if you'd like to hide your password, clear the terminal with "clear".
 ```
 

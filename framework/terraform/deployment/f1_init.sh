@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/sh
 
 # Initialization script for Accelerated Web Server.
 #   o Call common init.sh.

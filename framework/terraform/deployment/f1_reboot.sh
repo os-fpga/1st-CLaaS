@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # This script starts or restarts the webserver (using 'make live') based on configuration variables saved by Terraform. It is run by Terraform on initialization,
 # and terraform configures cron to run this @reboot.
