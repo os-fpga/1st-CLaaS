@@ -1,2 +1,2 @@
 !/usr/bin/bash
-# Default instance initialization script. Do nothing.
+# Default EC2 instance configuration script. Do nothing.

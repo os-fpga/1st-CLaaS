@@ -135,7 +135,7 @@ cd <repo>/framework/terraform/development
 source destroy.sh
 ```
 
-Note that this also deletes the created storage. (This step can be disabled in the f1.tfvars file.)
+Note that this also deletes the created storage. (This step can be disabled in the `ec2_instance.tf` file.)
 
 
 ## Accessing Your Instance

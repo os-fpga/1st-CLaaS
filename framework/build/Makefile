@@ -791,7 +791,7 @@ ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
 	INSTANCE_STORAGE=5
 	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/deployment/f1_init.sh
+	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_static_f1_instance.sh
 endif
 # By default, each instance is an independent setup.
 SETUP=$(INSTANCE_NAME)
@@ -836,10 +836,10 @@ define terraform
 	@mkdir -p '$(REPO)/tmp/$(SETUP)'
 	rm -f '$(REPO)/tmp/$(SETUP)/.terraform/terraform.tfstate' '$(REPO)/tmp/$(SETUP)/'*.*
 	cd '$(REPO)/tmp/$(SETUP)' \
-	&& cp '$(REPO)/framework/terraform/deployment/f1.tf' . \
-	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' f1.tf \
-	&& sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' f1.tf \
-	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" f1.tf \
+	&& cp '$(REPO)/framework/terraform/ec2_instance.tf' . \
+	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' ec2_instance.tf \
+	&& sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' ec2_instance.tf \
+	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" ec2_instance.tf \
 	&& $(REPO)/terraform/terraform init && '$(REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS)
 endef
 .PHONY: static_accelerated_instance development_instance
