@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# BSD 3-Clause License
+#
+# Copyright (c) 2019, Steven F. Hoover
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+# A regression test.
+
+# Runs regression scripts for framework (framework/bin/regress) and apps (app/*/bin/regress).
+
+# Each regress script should use the following conventions (as run by this script on via command-line):
+#   o use configuration from $CONFIG_FILE.
+#   o do local testing first, then EC2 testing.
+
+
+# Process command-line arguments.
+
+usage() {
+  echo "Usage: $0 [-c config-file] [-p] [-m] [-h]"
+}
+
+export CONFIG_FILE="$HOME/1st-CLaaS_config.mk"
+PARALLEL="false"
+MONITOR="true"
+while getopts “:c:ph” opt; do
+  case $opt in
+    c) export CONFIG_FILE=$OPTARG ;;
+    p) PARALLEL="true" ;;
+    m) MONITOR="true" ;;
+    h) echo "Run regressions for framework and each app."
+       usage
+       echo "  -c <config-file>: Specifies config file created with 'make config CONFIG_FILE=<config-file>' if other than $CONFIG_FILE."
+       echo "  -p: Run framework and each app regression in parallel."
+       echo "  -m: For use with -p. Monitor background processes and report real-time status updates."
+       echo "  -h: You figured this one out already."
+       ;;
+    \? ) usage
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
+
+
+cd "$( dirname "${BASH_SOURCE[0]}")/.."
+
+
+# If init was not run yet, run it.
+
+if [[ ! -e terraform/terraform ]]
+then
+  ./init
+fi
+
+
+# Run each regression test in sequentially or in parallel.
+
+if [[ $PARALLEL == "true" ]]
+then
+  PROCS=''
+  DIRS=''
+  LOG_FILES=''
+  STATUS_FILES=''
+fi
+  
+for regression in $(ls framework/bin/regress apps/*/bin/regress)
+do
+  DIR="$(dirname "$(dirname "$regression")")"
+  LOG="$(dirname "$regression")/../log/regress.log"
+  STATUS="$(dirname "$regression")/../out/regress_status.txt"
+  mkdir -p $(dirname "$LOG") $(dirname "$STATUS")
+  touch "$STATUS"  # Create it so it can be watched.
+  if [[ $PARALLEL == "true" ]]
+  then
+    # Parallel.
+    ( "$regression" >& "$LOG" && echo $? > "$STATUS" ) &
+    PROCS="$PROCS $!"
+    DIRS="$DIRS $DIR"
+    LOG_FILES="$LOG_FILES $LOG"
+    STATUS_FILES="$STATUS_FILES $STATUS"
+  else
+    # Sequential.
+    "$regression" "$CONFIG_FILE" |& tee "$LOG"
+  fi
+done
+
+if [[ $PARALLEL == "true" ]]
+then
+  echo "Running regressions in: $DIRS"
+  echo "Processes: $PROCS"
+  echo "Logging to */log/regress.log"
+  echo "Status will be written to: */out/regress_status.txt"
+  
+  # Monitor regressions.
+  if [[ $MONITOR == "true" ]]
+  then
+    while sleep 1 && ps -p $PROCS > /dev/null
+    do
+      inotifywait -t 30 $STATUS_FILES
+      echo
+      echo "Still running:"
+      ps -p $PROCS
+      echo
+      echo "Completed regressions:"
+      for status_file in $STATUS_FILES
+      do
+        if [[ -e "$status_file" ]]
+        then
+          echo "$status_file: $(cat $status_file)"
+        fi
+      done
+    done
+  fi  
+fi

@@ -1,7 +1,6 @@
 *~
 **/webserver/*.pyc
 **/webserver/ec2_time_bombs/
-**/apps/*/out/
 **/apps/*/live/
 **/apps/*/build/webserver.log
 apps/mandelbrot/build/video
@@ -14,6 +13,8 @@ apps/mandelbrot/build/cast
 /framework/terraform/development/centos_pwd.txt
 /terraform
 /tmp
+**/log/
+**/out/
 
 __pycache__
 
