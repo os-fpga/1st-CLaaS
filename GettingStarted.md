@@ -1,6 +1,6 @@
 # Overview
 
-These instructions begin using the Mandelbrot example application to get you up to speed using 1st CLaaS on AWS infrastructure. It is necessary to walk through all of these steps to get properly set up for development, to become familiar with the framework, and to uncover any issues before creating your own project. You will step through:
+These instructions use the Mandelbrot example application to get you up to speed using 1st CLaaS on AWS infrastructure. It is important to walk through all of these steps to get properly set up for development, to become familiar with the framework, and to uncover any issues before creating your own project. You will step through:
 
   - [AWS Account Setup with F1 Access](#AWS-Acct) (requires a day or two for approval from Amazon)
   - [Running Locally](#RunningLocally)
@@ -50,7 +50,7 @@ When you are finished the Prerequisite instructions (after requesting F1 access)
 
 There is a great deal you can do while you wait for F1 access. 
 
-First, you'll need a compatible "local machine." We use Ubuntu 16.04. Please help to debug other platforms. If you do not have a compatible Linux (or Mac?) machine, you can provision a cloud machine from AWS, Digital Ocean, or other providers.
+First, you'll need a compatible local machine. We use Ubuntu 16.04. Please help to debug other platforms. If you do not have a compatible Linux (or Mac?) machine, you can provision a cloud machine from AWS, Digital Ocean, or other providers as your "local" machine.
 
 To configure your local environment, including installation of Python, AWS CLI, Terraform, Remmina, and other packages:
 
@@ -59,13 +59,18 @@ cd <wherever you would like to work>
 git clone https://github.com/alessandrocomodi/fpga-webserver
 cd fpga-webserver
 source ./init   # This will require sudo password entry, and you may be asked to update your $PATH.)
+```
+
+And to run the Mandelbrot application locally, without an FPGA:
+
+```sh
 cd apps/mandelbrot/build
 make launch
 ```
 
-You should see a message that the web server running. You can open `http://localhost:8888/index.html` in a local web browser and explore Mandelbrot generated in the Python web server or in the C++ host application.
+You should see a message that the web server is running. You can open `http://localhost:8888/index.html` in a local web browser and explore Mandelbrot generated in the Python web server or in the C++ host application.
 
-More instructions for the Mandelbrot application are [here](https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot).
+More instructions for the Mandelbrot application are [here](apps/mandelbrot).
 
 
 
@@ -104,7 +109,7 @@ region="<your AWS region>"
 
 We use <a href="https://www.terraform.io/" target="_blank" atom_fix="_">Terraform</a> to automate provisioning and configuring instances.
 
-The following script creates an AWS EC2 instance, clones and initializes all the necessary repositories, and sets up the Remote Desktop Protocol (RDP) agent. Be patient, this takes around 10 minutes.
+The following script creates your Development Instance. To initialize the instance, it clones and initializes all the necessary repositories, and sets up the Remote Desktop Protocol (RDP) agent. Be patient, this takes around 10 minutes.
 
 > IMPORTANT: The instance created below is left running, and bleeding $. Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options, though plentiful, seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. We have found it important to always refresh the page before changing machine state. And, be sure your instance transitions to "stopped" state (or, according to AWS support, charging stops at "stopping" state). We'll get to [Stopping Instances](#StopInstances) shortly.
 
@@ -115,19 +120,15 @@ source deploy.sh ~/aws_credentials.tfvars
 
 The instance that is created allows TCP/IP traffic through on port 80 for running a production web server and certain ports for development. Once the script finishes, you will see the public IP address of your Development Instance in the terminal, and you can find all the instance parameters in `terraform.tfstate`. Note that this file contains the private TLS key.
 
-<!-- Make terraform.tfstate privs 400. --> 
-
-A TLS keypair and a temporary RDP password is also generated during the process. You can find these in the same directory. You'll use these credentials to connect to the machine using SSH or RDP.
+A TLS keypair is also generated during the process and placed into `~/.ssh/<instance-name>/` (locally). You'll use these credentials to connect to the machine using SSH.
 
 
 <a name="StopInstances"></a>
 ## Stop the Instance
 
-Terraform does not have a way to stop instances, only terminate (destroy) them.
+You can stop (shutdown) the instance on the AWS console, under Service -> EC2 -> Instances. (Terraform does not have a way to stop instances, only terminate (destroy) them.)
 
-You can stop (shutdown) the instance on the AWS console, under Service -> EC2 -> Instances.
-
-The following commands destroy the infrastructure:
+The following commands terminate the instance:
 
 ```sh
 cd <repo>/framework/terraform/development
@@ -141,7 +142,16 @@ Note that this also deletes the created storage. (This step can be disabled in t
 
 ### Remote Desktop
 
-Terraform installed a Remote Desktop Protocol agent on the Development Intance, and the `<repo>/init` script installed Remmina, for remote desktop access. Run:
+Terraform installed a Remote Desktop Protocol agent on the Development Instance, and the `<repo>/init` script installed Remmina, for remote desktop access.
+
+Remote desktop access will require use of a linux password for the `centos` account. Set this using:
+
+```sh
+ssh -i ~/.ssh/<instance-name>/private_key.pem centos@<ip> 'echo "centos:<password>" | sudo chpasswd'
+# And if you'd like to hide your password, clear the terminal with "clear".
+```
+
+Run:
 
 ```sh
 remmina
@@ -160,7 +170,6 @@ remmina
 
 Note that between stopping and starting Amazon instances the IPv4 Public IP of the instance changes and will need to be reassigned in Remmina.
 
-The temporary password you will need to enter is in the `centos_pwd.txt` file. You may wish to delete this file for security reasons, and preferably you should assign a more secure password. <!-- instructions -->
 
 <!--
 ### X11 Forwarding

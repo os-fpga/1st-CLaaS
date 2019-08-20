@@ -85,3 +85,4 @@ then
     && rm terraform.zip \
     && chmod +x terraform )
 fi
+# Note that framework/Makefile uses the existence of terraform/terraform to indicate that this script was run.
