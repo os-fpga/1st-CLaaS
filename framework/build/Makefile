@@ -137,7 +137,7 @@
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     For make launch, to associate an F1 instance, with this Content Web Server use:
 #        > make INSTANCE=i-xxxxxxx PASSWORD=<password> AWS_PROFILE=<aws-profile> launch
-#        #    PASSWORD: used by this web server (not F1) to authenticate administrative actions; probably best to use the same PASSWORD for F1.
+#        #    PASSWORD: used by this web server (not F1) to authenticate administrative actions (may not be necessary); probably best to use the same PASSWORD for F1.
 #     Instances can be destroyed (along with their associated AWS resources) using:
 #        > make destroy SETUP=XXX
 #     Available SETUPs (same as INSTANCE_NAME in this case) can be listed with:
@@ -839,11 +839,11 @@ endif
 .PHONY: destroy
 destroy:
 	$(call terraform,destroy $(TF_DESTROY_ARGS))
-	aws s3 rm's3://$(S3_BUCKET)/tf_setups/$(SETUP)'
+	aws s3 rm 's3://$(S3_BUCKET)/tf_setups/$(SETUP)'
 	@echo 'Destroyed instance/setup $(SETUP)'
 	@if [[ -d $(TF_OUT_DIR) ]]; then rm $(TF_OUT_DIR)/public_key.pem && rm $(TF_OUT_DIR)/private_key.pem && rmdir $(TF_OUT_DIR) && echo 'Deleted $(TF_OUT_DIR) containing TLS keys'; else echo 'No directory $(TF_OUT_DIR). Perhaps another user still has these obsolete TLS keys?'; fi
 
 .PHONY: list_setups
 list_setups:
 	@echo "Setups that can be used with 'make destroy SETUP=XXX':"
-	aws s3 ls 's3://$(S3_BUCKET)/tf_setups/'
+	echo "Setups:" && aws s3 ls 's3://$(S3_BUCKET)/tf_setups/' || true
