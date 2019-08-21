@@ -117,7 +117,9 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
     init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
   #endif
 
-  kernel.reset_kernel();
+  #ifdef KERNEL_AVAIL
+    kernel.reset_kernel();
+  #endif
 
 
   while (true) {

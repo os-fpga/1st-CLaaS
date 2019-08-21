@@ -1,8 +1,14 @@
 # One-time initialization of this repository, to be run after cloning.
 
 
-# Install submodules.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
+mkdir -p log
+LOG=log/init.log
+echo "Logging stdout and stderr to $LOG"
+
+(
+
+# Install submodules.
 git submodule update --init --recursive
 
 
@@ -85,4 +91,6 @@ then
     && rm terraform.zip \
     && chmod +x terraform )
 fi
-# Note that framework/Makefile uses the existence of terraform/terraform to indicate that this script was run.
+# Note that framework/Makefile and bin/regress use the existence of terraform/terraform to indicate that this script was run.
+
+) |& tee $LOG
