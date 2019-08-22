@@ -284,6 +284,7 @@ class FPGAServerApplication(tornado.web.Application):
     
     app_dir = os.getcwd() + "/.."
     framework_webserver_dir = os.path.dirname(__file__)
+    framework_client_dir = os.path.dirname(__file__) + "/../client"
     if dir == "":
         dir = "."
         
@@ -356,7 +357,7 @@ class FPGAServerApplication(tornado.web.Application):
             raise RuntimeError(err_str)
         return ret
     
-    # Return an array containing default routes into ../webserver/{html,css,js}
+    # Return an array containing default routes into ../client/{html,css,js}
     # Args:
     #   ip: Truthy to include /ip route.
     # These settings affect routes:
@@ -365,9 +366,9 @@ class FPGAServerApplication(tornado.web.Application):
     @staticmethod
     def defaultRoutes(ip=None):
         routes = [
-              (r"/framework/js/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_webserver_dir + "/js"}),
-              (r"/framework/css/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_webserver_dir + "/css"}),
-              (r"/framework/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.framework_webserver_dir + "/html"}),
+              (r"/framework/js/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/js"}),
+              (r"/framework/css/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/css"}),
+              (r"/framework/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/html"}),
               (r"/()", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/html", "default_filename": "index.html"}),
               (r'/ws', WSHandler),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/css"}),

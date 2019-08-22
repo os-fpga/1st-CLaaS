@@ -421,7 +421,7 @@ void HostApp::init_kernel(char * response, const char *xclbin, const char *kerne
 
 /*
 ** Paramters
-** socket: reference to the socket channel with the webserver
+** socket: reference to the socket channel with the web server
 ** TODO: Not used
 ** TODO: Only works when size aligns w/ sizeof double.
 */
@@ -432,10 +432,10 @@ HostApp::dynamic_array HostApp::handle_write_data() {
   dynamic_array array_struct;
   double * data_chunks;
 
-  // Receive size of the data that will be transmitted by the webserver
+  // Receive size of the data that will be transmitted by the web server
   socket_recv("Size", &data_size, sizeof(data_size));
 
-  //-// Sending ACK to webserver to synchronize
+  //-// Sending ACK to web server to synchronize
   //-send(socket, ACK_SIZE, strlen(ACK_SIZE), MSG_NOSIGNAL);
 
   // Prepare to receive the data allocating space in the memory
@@ -469,7 +469,7 @@ HostApp::dynamic_array HostApp::handle_write_data() {
 
 /*
 ** Parameters
-** socket: reference to the socket channel with the webserver
+** socket: reference to the socket channel with the web server
 ** data: array containing data to be sent. For this function the array is made of bytes
 ** data_size: size of the array that has to be sent
 */
@@ -493,7 +493,7 @@ int HostApp::handle_read_data(const void * data, int data_size) {
 #ifdef KERNEL_AVAIL
 /*
 ** Parameters
-** socket: reference to the socket channel with the webserver
+** socket: reference to the socket channel with the web server
 ** cl: OpenCL datatypes
 */
 void HostApp::handle_get_image(int ** data_array_p, input_struct * input_p) {

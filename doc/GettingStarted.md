@@ -9,41 +9,6 @@ These instructions use the Mandelbrot example application to get you up to speed
   - [FPGA Build](#FPGABuild)
   - [Making Your Own Application](#CustomApp)
 
-> You will be charged by Amazon for the resources required to complete these steps and to use this infrastructure. Don't come cryin' to us. We are in no way responsible for your AWS charges.
-
-<!--
-Optional instructions are provided to get the Mandelbrot example application up and running on a local Linux machine without FPGA acceleration. Furthermore, to run with FPGA acceleration, prebuilt images are provided to initially bypass the lengthy builds.
-
-As a preview of the complete process, to get the Mandelbrot application up and running from source code with FPGA acceleration, you will need to:
-
-  - Get an AWS account with access to F1 instances. (This requires a day or two to get approval from Amazon.)
-  - Launch a Development Instance on which to compile the OpenCL, Verilog, and Transaction-Level Verilog source code into an Amazon FPGA Image (AFI).
-  - Launch an F1 Instance on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Development Instance.
-  - Open the FPGA-Accelerated Web Application in a web browser.
--->
-
-F1 machines are powerful and expensive. Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. These instructions assume the use of a separate Development Instance, which does not have an FPGA, to save costs. The FPGA kernel can be tested on this machine using "Hardware Emulation" mode, where the FPGA behavior is emulated using simulation and build times are minimal by comparison. For hobby projects, it is not practical to keep either EC2 Instance up and running for extended periods of time. The overhead of using two EC2 instances can sometimes result in extra cost and time of its own. So, depending upon your goals, you may prefer to simplify your life by using the F1 Instance as your Development Instance, in which case you can skip the instructions below for creating and configuring the Development Instance.
-
-There are many tutorials on line to get started with F1. Many are flawed, unclear, or out-dated. We found this <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank" atom_fix="_">Xilinx tutorial</a> to be the best. We have automated many of the steps you will find in these lengthy tutorials.
-
-
-
-<a name="AWS-Acct"></a>
-# AWS Account Setup with F1 Access
-
-<!--
-TODO: The S3 steps should be automated using the AWS CLI, and the remaining instructions should be provided here, inline.
--->
-Follow the "Prerequisites" instructions, noting the following:
-
-  - When choosing a name for your S3 bucket (in step 3 of these instructions), consider who might be sharing this bucket with you. You should use this bucket for the particular fpga-webserver project you are starting. You might share this bucket with your collaborators. The bucket name should reflect your project. You might wish to use the name of your git repository, or the name of your organization, i.e. `fpga-webserver-zcorp`. If you expect to be the sole developer, you can reflect your name (perhaps your AWS username) in the bucket name and avoid the need for a `/<username>` subdirectory.
-  - The subdirectories you will use are: `/<username>` if your username is not reflected in your bucket name, and within that (if created), `/dcp`, `/log`, and `/xfer`.
-
-Okay, now, follow the "FOLLOW THE INSTRUCTIONS" link under "Prerequisits", except steps 3 and 4. (In case you lose your place, you should be <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_blank" atom_fix="_">here</a>.
-
-When you are finished the Prerequisite instructions (after requesting F1 access), press "Back" in your browser.
-
-
 
 <a name="RunningLocally"></a>
 # Running Mandelbrot Locally

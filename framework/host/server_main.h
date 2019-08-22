@@ -196,7 +196,7 @@ protected:
 
   /*
   ** Utility function to handle the command decode coming from the socket
-  ** connection with the python webserver
+  ** connection with the python web server
   */
   #ifdef KERNEL_AVAIL
   void init_platform(char * response);

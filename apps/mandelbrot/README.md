@@ -36,7 +36,7 @@ make f1_instance   # PREBUILT=true only for main developers.
 ```
 This will could run for an hour or more on the F1 instance while the FPGA image is created.
 
-Launch the main webserver:
+Launch the main web server:
 
 Log into your server and cd to a directory of your choice.
 ```

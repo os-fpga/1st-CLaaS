@@ -90,7 +90,7 @@
 #           Any of these three may optionally be provided as configurtion variables.
 #           The resulting S3_BUCKET_NAME must be a globally-unique (across all AWS users). It is used to store
 #                information about AWS resources that are in use ("setups" managed using Terraform via this Makefile).
-#     PORT: The port on which to launch the webserver.
+#     PORT: The port on which to launch the web server.
 #     TARGET=[hw, hw_emu, sim, sw] (determined by platform by default)
 #             hw: F1 FPGA.
 #             hw_emu: SDAccel hardware emulation compilation.
@@ -106,7 +106,7 @@
 #
 #   Platform Targets (for constructing EC2 instances):
 #     Platform Target Variables:
-#        #    PASSWORD: (prompts as admin_pwd) might be used by webserver to authenticate administrative actions from a client.
+#        #    PASSWORD: (prompts as admin_pwd) might be used by web server to authenticate administrative actions from a client.
 #        #    INSTANCE_TYPE: Use c4 for testing without FPGA.
 #        #    INSTANCE_NAME: Name of the instance.
 #        #    INSTANCE_STORAGE: Size in GB of "sdb" storage on the instance. Defaults to 15, which is appropriate for Development Instance.
@@ -152,12 +152,13 @@ SPACE:= $(EMPTY) $(EMPTY)
 REPO=$(shell git rev-parse --show-toplevel)
 
 # Make sure init has been run.
-ifeq ($(shell ls "$(REPO)/terraform/terraform" 2> /dev/null),)
+ifeq ($(shell ls "$(REPO)/teraform/terraform" 2> /dev/null),)
 $(info )
 $(info *****************************)
 $(info Did you forget to run "init"?)
 $(info *****************************)
 $(info )
+DUMMY :=$(shell sleep 3)
 endif
 
 
@@ -727,7 +728,7 @@ endif
 
 dead: ../live/$(BUILD_TARGET)/dead
 ../live/$(BUILD_TARGET)/dead:
-	if [[ -e killme ]]; then source killme > /dev/null 2>&1 && echo "Giving webserver time to exit gracefully." && sleep 7; fi
+	if [[ -e killme ]]; then source killme > /dev/null 2>&1 && echo "Giving web server time to exit gracefully." && sleep 7; fi
 	@mkdir -p ../live/$(BUILD_TARGET)
 	rm -rf ../live/$(BUILD_TARGET)/*
 	@touch ../live/$(BUILD_TARGET)/dead
