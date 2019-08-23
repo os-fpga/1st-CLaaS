@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+cd $(dirname ${BASH_SOURCE})/../apps
+
+app_name="$1"
+template_app_name='vadd'
+
+if [[ ! $app_name =~ ^[[:alnum:]_-]+$ ]]
+then
+  echo 'Illegal application name'
+  exit 1
+fi
+
+cp -r vadd "$app_name"
+cd "$app_name"
+
+# Change file names.
+for file in $(find . -name "*$template_app_name*")
+do
+  mv "$file" $(echo "$file" | sed "s/$template_app_name/$app_name/")
+done
+
+# Replace app name within files.
+for file in $(find . -name '*')
+do
+  if [[ -f "$file" ]]
+  then
+    sed -i "s/$template_app_name/$app_name/" || true
+  fi
+done

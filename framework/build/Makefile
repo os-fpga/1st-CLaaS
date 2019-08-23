@@ -152,7 +152,7 @@ SPACE:= $(EMPTY) $(EMPTY)
 REPO=$(shell git rev-parse --show-toplevel)
 
 # Make sure init has been run.
-ifeq ($(shell ls "$(REPO)/teraform/terraform" 2> /dev/null),)
+ifeq ($(shell ls "$(REPO)/terraform/terraform" 2> /dev/null),)
 $(info )
 $(info *****************************)
 $(info Did you forget to run "init"?)

@@ -29,14 +29,6 @@ For optimization and deployment of your custom kernel using AWS F1 with Xilinx t
   - [**Optimization and Deployment Guide**](doc/F1Guide.md): For developing on AWS F1 with Xilinx tools.
 
 
-# Further Information
-
-  - Further documentation of the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
-  - A short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a> at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
-  - [How 1st CLaaS came to be](doc/Story.md)
-
-
-
 # FPGA-Webserver Project Overview
 
 ![fpga-webserver header](doc/img/simple.png)
@@ -61,6 +53,31 @@ Your application might be:
   - a healthy mix of custom hardware and software
 
 1st CLaaS supports hardware kernel development using free and open source tools on Linux (Ubuntu and CentOS, currently). Deployment is currently targeted to Amazon's F1 FPGA instances. We welcome contributions to extend 1st CLaaS to other platforms and operating systems.
+
+
+
+# Project Components
+
+A hardware accelerated web application utilizing this framework consists of:
+
+  - Web Client Application: a web application, or any other agent communicating with the accelerated server via web protocols.
+  - Web Server: a web server written in Python using the Tornado library.
+  - Host Application: the host application written in C/C++/OpenCL which interfaces with the hardware.
+  - FPGA Shell: FPGA logic provided by this framework that builds upon and simplifies the shell logic provided by Xilinx.
+  - Custom Kernel: The application-specific FPGA logic.
+  
+![framework](doc/img/framework.png)
+
+Data is transmitted from the Web Client Application in chunks of 512 bits (currently). JavaScript calls a send method and receives data from Custom Kernel in a callback. Custom Kernel has a simple streaming interface with a 512bit bus of input data and a 512-bit bus for output data. Data travels from JavaScript:
+  - as JSON (currently) via WebSocket to Web Server,
+  - as JSON (currently) via a UNIX socket to Host Application,
+  - as chunks via OpenCL memory buffers to FPGA Shell,
+  - as streamed chunks to Custom Kernel,
+  - and back, in similar fashion.
+
+Communication performance is not currently the focus. Applications that are well suited to this architecture are inherently compute-limited, so optimizing communication is often unimportant, but the implementation can be optimized as the need arises.
+
+In the simple case, you provide only the green components in the diagram above, and all custom processing of data is performed by the Custom Kernel. But the C++/OpenCL Host Application and/or Python Web Server can be extended as desired.
 
 
 
@@ -99,31 +116,6 @@ To further streamline development and avoid any dependency on the F1 platform an
 
 Reducing the problem to web and RTL development is not the finish line for us. 1st CLaaS is a part of a broader effort to redefine the silicon industry and bring silicon to the masses. Getting past the complexities of RTL modeling is part of that. 1st CLaaS is driven by avid supporters of TL-Verilog, in association with Redwood EDA. TL-Verilog introduces a much-needed digital circuit design methodology shift with simpler and more powerful modeling constructs. 1st CLaaS is in no way tied to TL-Verilog. You can use Verilog/SystemVerilog or any hardware description language that can be turned into Verilog. But TL-Verilog lnguage extensions are supported out of the box, and we strongly encourage you to take advantage of them and help us drive this innovation forward. Redwood EDA provides a free, online IDE for TL-Verilog development at <a href="http://makerchip.com" target="_blank" atom_fix="_">makerchip.com</a>. You can find training materials in the IDE. Read [the more-complete story](docs/Story.md) from Redwood EDA founder, <a href="https://www.linkedin.com/in/steve-hoover-a44b607/" target="_ blank">Steve Hoover</a>.
 
- 
-
-# Project Components
-
-A hardware accelerated web application utilizing this framework consists of:
-
-  - Web Client Application: a web application, or any other agent communicating with the accelerated server via web protocols.
-  - Web Server: a web server written in Python using the Tornado library.
-  - Host Application: the host application written in C/C++/OpenCL which interfaces with the hardware.
-  - FPGA Shell: FPGA logic provided by this framework that builds upon and simplifies the shell logic provided by Xilinx.
-  - Custom Kernel: The application-specific FPGA logic.
-  
-![framework](doc/img/framework.png)
-
-Data is transmitted from the Web Client Application in chunks of 512 bits (currently). JavaScript calls a send method and receives data from Custom Kernel in a callback. Custom Kernel has a simple streaming interface with a 512bit bus of input data and a 512-bit bus for output data. Data travels from JavaScript:
-  - as JSON (currently) via WebSocket to Web Server,
-  - as JSON (currently) via a UNIX socket to Host Application,
-  - as chunks via OpenCL memory buffers to FPGA Shell,
-  - as streamed chunks to Custom Kernel,
-  - and back, in similar fashion.
-
-Communication performance is not currently the focus. Applications that are well suited to this architecture are inherently compute-limited, so optimizing communication is often unimportant, but the implementation can be optimized as the need arises.
-
-In the simple case, you provide only the green components in the diagram above, and all custom processing of data is performed by the Custom Kernel. But the C++/OpenCL Host Application and/or Python Web Server can be extended as desired.
-
 
 
 # Status
@@ -143,6 +135,14 @@ This repository is generally working, and is under active development in the sum
 # Related Technologies
 
   - We are considering a unification with [Fletcher](https://github.com/johanpel/fletcher).
+
+
+
+# Further Information
+
+  - Further documentation of the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
+  - A short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a> at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
+  - [How 1st CLaaS came to be](doc/Story.md)
 
 
 
