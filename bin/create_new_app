@@ -26,6 +26,6 @@ for file in $(find . -name '*')
 do
   if [[ -f "$file" ]]
   then
-    sed -i "s/$template_app_name/$app_name/" || true
+    sed -i "s/$template_app_name/$app_name/" "$file" || true
   fi
 done

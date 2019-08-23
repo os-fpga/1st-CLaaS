@@ -4,7 +4,6 @@
 - [Provisioning EC2 Instances](#ProvisionInstances)
 - [FPGA Emulation Build](#EmulationBuild)
 - [FPGA Build](#FPGABuild)
-- [Making Your Own Application](#CustomApp)
 
 
 # Table of Contents
@@ -328,47 +327,6 @@ make PREBUILT=true TARGET=hw -j8 launch   # Or without `PREBUILT=true` if you pl
 ```
 
 And open: `http://localhost:8888`, or from outside `http://<IP>:8888`.
-
-
-
-<a name="CustomApp"></a>
-# Making Your Own Application
-
-Now you are ready to make an application of your own. This section is not a cookbook, but rather some pointers to get you starte in down your own path.
-
-
-## Getting Started
-
-You may want to work locally to avoid AWS charges. But you would need to transfer your work in order to test it. We are working to enable local simulation, but for now, we will assume you are running on a Development Instance using Xilinx tools.
-
-Start with an existing project.
-
-```sh
-cd ~/workdisk/fpga-webserver/apps
-cp -r vadd <your-proj>
-```
-
-The app name (`vadd`) is reflected in several filenames for clarity, so change these to <your-proj>.
-
-
-## Web Client Application
-
-For a simple quick-and-dirty application or testbench for your kernel, you might use the existing structure to write some basic HTML, CSS, and JavaScript. If you intend to develop a real application, you probably have your own thoughts about the framework you would like to use. You can develop in a separate repo, or keep it in the same repo so it is consistently version controlled.
-
-
-# Custom Kernel
-
-The vadd kernel is a good starting point for your own kernel. It is written using TL-Verilog. A pure Verilog version is also available.
-
-
-# C++ Host Application
-
-It is not required to customize the host application, but if you need to do so, you can override the one from the framework, following the example of the mandelbrot application. (Refer to its Makefile as well as `/host` code.)
-
-
-# Python Web Server
-
-It is not required to customize the python web server, bit if you need to do so, you can overrie the one from the framewoek, following the example of the manelbrot application. (Refer to its Makefile as well as `/webserver` code.)
 
 
 
