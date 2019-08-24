@@ -70,7 +70,7 @@ SIM_Kernel::~SIM_Kernel() {
 }
 
 void SIM_Kernel::perror(const char * msg) {
-  printf(msg);
+  cout << msg;
   status = EXIT_FAILURE;
 }
 
@@ -117,9 +117,6 @@ void SIM_Kernel::writeKernelData(void * input, int data_size, int resp_data_size
 }
 
 void SIM_Kernel::write_kernel_data(input_struct * input, int data_size) {
-  int err;
-
-  err = 0;
   uint resp_length = (uint)(input->width * input->height) / HostApp::DATA_WIDTH_WORDS;
   cout << "Verilator: (" << input->width << "x" << input->height << "), resp_length = " << resp_length << endl;
 
@@ -138,7 +135,7 @@ void SIM_Kernel::start_kernel() {
   unsigned int send_cntr=0;
   unsigned int recv_cntr=0;
 
-  while ((send_cntr < data_size | recv_cntr < resp_data_size)) {
+  while ((send_cntr < data_size) || (recv_cntr < resp_data_size)) {
     tick();
 
     if(recv_cntr < resp_data_size) {

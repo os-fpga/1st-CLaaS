@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-import getopt
 import sys
 import os
 from server import *
@@ -41,19 +40,22 @@ from server import *
 if __name__ == "__main__":
 
     # Command-line options
-
+    args = defaultParseArgs()
+    """
     port = 8888
     try:
         opts, remaining = getopt.getopt(sys.argv[1:], "", ["port="])
     except getopt.GetoptError:
+        print("Invalid arguments:", sys.argv)
         print('Usage: %s --port <port>' % (sys.argv[0]))
         sys.exit(2)
     for opt, arg in opts:
         if opt == '--port':
             port = int(arg)
+    """
 
     # Webserver
     application = FPGAServerApplication(
-            port,
+            int(args['port']),
             FPGAServerApplication.defaultRoutes()
         )

@@ -122,6 +122,7 @@ Reducing the problem to web and RTL development is not the finish line for us. 1
 
 This repository is generally working, and is under active development in the summer of 2019 with sponsorship from Google through <a href="https://summerofcode.withgoogle.com/" target="_blank" atom_fix="_">Google Summer of Code</a>. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
 
+Anything and everything is subject to change at this point, especially with respect to the interface provided by the framework for applications to build upon. So, you should build on a specific version of the framework and expect to do some debugging if you choose to upgrade by pulling from master.
 
 
 # Main Contributors

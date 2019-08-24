@@ -87,12 +87,12 @@ Stop the web server wth `<CTRL>-C`.
 
 Now you are ready to make an application of your own. This section is not a cookbook, but rather some pointers to get you started down your own path.
 
-```sh
-cd ~/workdisk/fpga-webserver/apps
-cp -r vadd <your-proj>
-```
+`vadd` is a good starting point. We've provided a command to copy an application and update the application name throughout the copy.
 
-The app name (`vadd`) is reflected in several filenames and in files for clarity, so change these to <your-proj>.
+```sh
+cd <repo>/apps/apps/vadd/build
+make copy_app APP_NAME=<my-app>
+```
 
 
 ## Web Client Application

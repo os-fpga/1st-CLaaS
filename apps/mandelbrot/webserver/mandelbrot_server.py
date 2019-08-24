@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-import getopt
 import sys
 import os
 import signal
@@ -343,25 +342,6 @@ if __name__ == "__main__":
     
     print("Mandelbrot webserver application starting.")
 
-    port = 8888
-    instance = None
-    ec2_time_bomb_timeout = 120
-    profile = None
-    password = None
-    try:
-        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_time_bomb_timeout=", "password=", "profile="])
-    except getopt.GetoptError:
-        print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '--port':
-            port = int(arg)
-        if opt == '--instance':
-            instance = arg
-        if opt == '--ec2_time_bomb_timeout':
-            ec2_time_bomb_timeout = arg
-        if opt == '--password':
-            password = arg
-        if opt == '--profile':
-            profile = arg
-    application = MandelbrotApplication(port, instance, ec2_time_bomb_timeout, password, profile)
+    args = defaultParseArgs()
+
+    application = MandelbrotApplication(int(args.port), args.instance, args.ec2_time_bomb_timeout, args.password, args.profile)

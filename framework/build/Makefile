@@ -79,6 +79,7 @@
 #           (Must be the only target.)
 #     dead: kill the running production server.
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
+#     copy_app: copy this app to a new app with name $(APP_NAME).
 #   Variables:
 #     CONFIG_FILE: The 1st CLaaS user configuration file to use. ~/1st-CLaaS_config.mk by default. This is an
 #                     included Makefile that is expected to define:
@@ -503,12 +504,13 @@ $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 else
 #sim target
-$(DEST_DIR)/verilator: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC)
+$(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC)
 	mkdir -p $(DEST_DIR)
 	verilator --cc --sv --trace -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src --Mdir $(DEST_DIR)/verilator 
-$(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator
+$(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp
 	cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
-	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) /usr/local/share/verilator/include/verilated.cpp /usr/local/share/verilator/include/verilated_vcd_c.cpp /usr/local/share/verilator/include/verilated_threads.cpp -I $(DEST_DIR)/verilator -I /usr/local/share/verilator/include -o $(DEST_DIR)/$(HOST_EXE)
+	@# For multithreaded, include on command line: /usr/local/share/verilator/include/verilated_threads.cpp
+	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) /usr/local/share/verilator/include/verilated.cpp /usr/local/share/verilator/include/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I /usr/local/share/verilator/include -o $(DEST_DIR)/$(HOST_EXE)
 	cd $(DEST_DIR)/verilator && rm verilator_kernel.h
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
@@ -807,11 +809,10 @@ GIT_BRANCH=$(shell git branch | grep \* | cut -d ' ' -f2)
 
 # Build up TF_ARGS (without evaluating)
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
-PASSWORD ?=$(shell echo $$RANDOM)
 ifdef PASSWORD
 	TF_ARGS1=-var 'admin_pwd=$(PASSWORD)'
 else
-	TF_ARGS1=
+	TF_ARGS1=-var 'admin_pwd=$(shell echo $$RANDOM)'
 endif
 ifeq ($(USE_PREBUILT),true)
 	TF_ARGS2=-var 'use_prebuilt_afi=true'
@@ -889,3 +890,7 @@ destroy:
 list_setups:
 	@echo "Setups that can be used with 'make destroy SETUP=XXX':"
 	echo "Setups:" && aws s3 ls 's3://$(S3_BUCKET)/tf_setups/' || true
+
+.PHONY: copy_app
+copy_app:
+	if [[ -n '$(APP_NAME)' ]]; then $(REPO)/bin/copy_app '$(KERNEL_NAME)' '$(APP_NAME)'; else echo -e '\e[91m\e[1mAPP_NAME must be provided.\e[0m'; fi

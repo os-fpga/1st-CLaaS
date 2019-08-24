@@ -3,9 +3,18 @@ set -e
 
 cd $(dirname ${BASH_SOURCE})/../apps
 
-app_name="$1"
-template_app_name='vadd'
+template_app_name="$1"
+app_name="$2"
 
+usage() {
+  echo '$0 <from-app-name> <to-app-name>'
+}
+
+if [[ ! -e "../apps/$template_app_name" ]]
+then
+  echo "No such app: $template_app_name"
+  exit 1
+fi
 if [[ ! $app_name =~ ^[[:alnum:]_-]+$ ]]
 then
   echo 'Illegal application name'

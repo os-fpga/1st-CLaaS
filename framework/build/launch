@@ -98,13 +98,6 @@ then
   HOST_PID=""
 fi
 
-#echo "t: $TARGET h: $HOST p: $PORT"
-
-if [[ $TARGET = "sw" ]] && [[ $HOST = "" ]];
-then
-  HOST="../out/$TARGET/host"
-fi
-
 if [[ $TARGET = "" ]];
 then
   usage
@@ -115,6 +108,19 @@ then
     then
       usage
     fi
+fi
+
+if [[ $TARGET = "sw" || $TARGET = "sim" ]]
+then
+  USE_XILINX=false
+else
+  USE_XILINX=true
+fi
+
+
+if [[ $USE_XILINX = "false" ]] && [[ $HOST = "" ]];
+then
+  HOST="../out/$TARGET/host"
 fi
 
 if [[ $COMPILE_CMD = "" ]];
@@ -135,7 +141,7 @@ launch () {
   if [[ $HOST_PID == "" ]]
     # Host application launched externally (probably via gdb).
   then
-    if [[ $TARGET = "sw" ]];
+    if [[ $USE_XILINX = "false" ]];
     then
         $HOST &
     else
@@ -154,7 +160,7 @@ launch () {
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
   # Launch.
   echo "Launching web server as: $CMD"
-  if [[ $TARGET = "sw" ]];
+  if [[ $USE_XILINX = "false" ]];
   then
     $CMD &
   else
@@ -170,7 +176,7 @@ launch () {
 teardown () {
   # Kill child processes
   echo "launch: Killing web server and host application."
-  if [[ $TARGET = "sw" ]];
+  if [[ $USE_XILINX = "false" ]];
   then
     if [[ $HOST_PID != "" ]]
     then
