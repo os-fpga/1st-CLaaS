@@ -32,16 +32,29 @@
 
 set -e  # Fail on any failure.
 
+
+# Args:
+AWS_REGRESS="$1"
+export CONFIG_FILE="$2"
+
+
 cd "$( dirname "${BASH_SOURCE[0]}")/../build"
 
 echo "Running framework regression."
 
 
-# Create and destroy development instance and run instance.
+if [[ "$AWS_REGRESS" ]]
+then
 
-make development_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_devel_regress
-make list_setups
-make destroy SETUP=1st-CLaaS_devel_regress AUTO_APPROVE=true
+  echo "Running AWS tests for Framework."
 
-make f1_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_run_regress
-make destroy SETUP=1st-CLaaS_run_regress AUTO_APPROVE=true
+  # Create and destroy development instance and run instance.
+
+  make development_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_devel_regress
+  make list_setups
+  make destroy SETUP=1st-CLaaS_devel_regress AUTO_APPROVE=true
+
+  make f1_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_run_regress
+  make destroy SETUP=1st-CLaaS_run_regress AUTO_APPROVE=true
+
+fi

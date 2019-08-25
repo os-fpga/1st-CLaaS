@@ -35,7 +35,7 @@
 
 # Runs regression scripts for framework (framework/bin/regress) and apps (apps/*/bin/regress).
 
-# Each regress script should use the following conventions (as run by this script on via command-line):
+# Each regress script must have the following usage:should use the following conventions (as run by this script on via command-line):
 #   o use configuration from $CONFIG_FILE.
 #   o do local testing first, then EC2 testing.
 
@@ -43,23 +43,29 @@
 # Process command-line arguments.
 
 usage() {
-  echo "Usage: $0 [-c config-file] [-p] [-m] [-h]"
+  echo "Usage: $0 [-a] [-c config-file] [-p] [-m] [-h]"
 }
 
-export CONFIG_FILE="$HOME/1st-CLaaS_config.mk"
+AWS_REGRESS="false"
+CONFIG_FILE="$HOME/1st-CLaaS_config.mk"
 PARALLEL="false"
 MONITOR="true"
-while getopts “:c:ph” opt; do
+while getopts “:ac:ph” opt; do
   case $opt in
+    a) AWS_REGRESS="true"
     c) export CONFIG_FILE=$OPTARG ;;
     p) PARALLEL="true" ;;
     m) MONITOR="true" ;;
-    h) echo "Run regressions for framework and each app."
+    h) echo "Run regressions for framework and each app (as .../regress <aws> <config-file>)."
        usage
+       echo "  -a: Include test that use AWS resources."
        echo "  -c <config-file>: Specifies config file created with 'make config CONFIG_FILE=<config-file>' if other than $CONFIG_FILE."
        echo "  -p: Run framework and each app regression in parallel."
        echo "  -m: For use with -p. Monitor background processes and report real-time status updates."
        echo "  -h: You figured this one out already."
+       echo " For each regression script:"
+       echo "   <aws>: true/false indicating whether -a was present."
+       echo "   <config-file>: from the -c argument value."
        ;;
     \? ) usage
       ;;
@@ -102,7 +108,7 @@ do
   if [[ $PARALLEL == "true" ]]
   then
     # Parallel.
-    ( "$regression" >& "$LOG" && echo $? > "$STATUS" ) &
+    ( "$regression" "$AWS_REGRESS" "$CONFIG_FILE" >& "$LOG" && echo $? > "$STATUS" ) &
     PROCS="$PROCS $!"
     DIRS="$DIRS $DIR"
     LOG_FILES="$LOG_FILES $LOG"
@@ -110,7 +116,7 @@ do
   else
     # Sequential.
     echo
-    if "$regression" |& tee "$LOG"
+    if "$regression" "$AWS_REGRESS" "$CONFIG_FILE" |& tee "$LOG"
     then
       echo -e  '\e[32m\e[1mRegression PASSED!!!\e[0m'
     else

@@ -60,7 +60,7 @@ HW_Kernel::HW_Kernel() {
 }
 
 void HW_Kernel::perror(const char * msg) {
-  printf(msg);
+  cout << msg;
   status = EXIT_FAILURE;
 }
 

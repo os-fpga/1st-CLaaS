@@ -48,6 +48,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 """
 
+import inspect
+import getopt
 import tornado.httpserver
 import tornado.websocket
 import os.path
@@ -284,6 +286,7 @@ class FPGAServerApplication(tornado.web.Application):
     
     app_dir = os.getcwd() + "/.."
     framework_webserver_dir = os.path.dirname(__file__)
+    framework_client_dir = os.path.dirname(__file__) + "/../client"
     if dir == "":
         dir = "."
         
@@ -356,7 +359,7 @@ class FPGAServerApplication(tornado.web.Application):
             raise RuntimeError(err_str)
         return ret
     
-    # Return an array containing default routes into ../webserver/{html,css,js}
+    # Return an array containing default routes into ../client/{html,css,js}
     # Args:
     #   ip: Truthy to include /ip route.
     # These settings affect routes:
@@ -365,10 +368,10 @@ class FPGAServerApplication(tornado.web.Application):
     @staticmethod
     def defaultRoutes(ip=None):
         routes = [
-              (r"/framework/js/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_webserver_dir + "/js"}),
-              (r"/framework/css/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_webserver_dir + "/css"}),
-              (r"/framework/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.framework_webserver_dir + "/html"}),
-              (r"/()", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/html", "default_filename": "index.html"}),
+              (r"/framework/js/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/js"}),
+              (r"/framework/css/(.*)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/css"}),
+              (r"/framework/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/html"}),
+              (r"/()", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/html", "default_filename": "index.html"}),
               (r'/ws', WSHandler),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/css"}),
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/js"}),
@@ -409,7 +412,7 @@ class FPGAServerApplication(tornado.web.Application):
         if not FPGAServerApplication.cleanup_handler_called:
             FPGAServerApplication.cleanup_handler_called = True
             print('Webserver: Signal handler called with signal', signum)
-            tornado.ioloop.IOLoop.instance().add_callback(FPGAServerApplication.cleanExit)
+            tornado.ioloop.IOLoop.instance().add_callback_from_signal(FPGAServerApplication.cleanExit)
         else:
             print("Webserver: Duplicate call to Signal handler.")
         
@@ -422,7 +425,7 @@ class FPGAServerApplication(tornado.web.Application):
             #sock = FPGAServerApplication.application.socket
             #sock.close()  # Not found??
             
-            MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 3
+            MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 1
             if FPGAServerApplication.ec2_time_bomb_filename:
                 print("Webserver: Stopping EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
                 try:
@@ -438,9 +441,12 @@ class FPGAServerApplication(tornado.web.Application):
 
             deadline = time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN
 
+            # If there is nothing pending in io_loop, stop, otherwise wait and repeat until timeout.
+            # TODO: Had to disable "nothing pending" check, so this is just a fixed timeout now.
+            #       Monitor this to see if a solution pops up: https://gist.github.com/mywaiting/4643396  
             def stop_loop():
                 now = time.time()
-                if now < deadline and (io_loop._callbacks or io_loop._timeouts):
+                if now < deadline: # and (io_loop._callbacks or io_loop._timeouts):
                     io_loop.add_timeout(now + 1, stop_loop)
                 else:
                     io_loop.stop()
@@ -493,3 +499,38 @@ class FPGAServerApplication(tornado.web.Application):
             print("Webserver: Exiting due to exception:", e)
             #FPGAServerApplication.cleanExit(e)
             
+
+# Default argument parsing, to be called by __main__.
+# TODO: Require parameters to include optional arguments, like those for static F1 instances.
+def defaultParseArgs():
+    ret = {}
+    try:
+        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_time_bomb_timeout=", "password=", "profile="])
+    except getopt.GetoptError:
+        print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
+        sys.exit(2)
+    # Strip leading dashes.
+    for opt, arg in opts:
+        opt = re.sub(r'^-*', '', opt)
+        ret[opt] = arg
+    return ret    
+    
+    """
+    ret = {"port": 8888, "instance": None, "ec2_time_bomb_timeout": 120, "profile": None, "password": None}
+    try:
+        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_time_bomb_timeout=", "password=", "profile="])
+    except getopt.GetoptError:
+        print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '--port':
+            ret.port = int(arg)
+        if opt == '--instance':
+            ret.instance = arg
+        if opt == '--ec2_time_bomb_timeout':
+            ret.ec2_time_bomb_timeout = arg
+        if opt == '--password':
+            ret.password = arg
+        if opt == '--profile':
+            ret.profile = arg
+    """

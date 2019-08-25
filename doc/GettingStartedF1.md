@@ -1,13 +1,32 @@
-# Overview
+# Getting Started with AWS and F1
 
-These instructions use the Mandelbrot example application to get you up to speed using 1st CLaaS on AWS infrastructure. It is important to walk through all of these steps to get properly set up for development, to become familiar with the framework, and to uncover any issues before creating your own project. You will step through:
 
+# Table of Contents
+
+  - [About this Document](#about)
+  - [Overview](#Overview)
   - [AWS Account Setup with F1 Access](#AWS-Acct) (requires a day or two for approval from Amazon)
-  - [Running Locally](#RunningLocally)
   - [Provisioning EC2 Instances](#ProvisionInstances)
   - [FPGA Emulation Build](#EmulationBuild)
   - [FPGA Build](#FPGABuild)
-  - [Making Your Own Application](#CustomApp)
+
+
+
+<a name="about"></a>
+# About this Document
+
+This guide will walk you through the steps to run 1st CLaaS sample applications using AWS F1 and other AWS resources and prepare you for development of your own accelerated application.
+
+Development utilizes multiple machines w/ different cost/capability trade-offs.
+
+  - Local Machine: Any platform of your choice can be utilized for web/cloud application development. Presumably this is your local machine. This repository may be utilized for simple web client applications.
+  - Development Instance: An AWS machine (EC2 instance) without an FPGA on which build and simulation can be done. This includes "Hardware Emulation" mode, where the application can be tested w/ FPGA behavior running as simulation. (~$0.80/hr)
+  - F1 Instance: The EC2 instance with an attached FPGA, supporting the final application. (~$1.65/hr)
+
+
+
+<a name="Overview"></a>
+# Overview
 
 > You will be charged by Amazon for the resources required to complete these steps and to use this infrastructure. Don't come cryin' to us. We are in no way responsible for your AWS charges.
 
@@ -42,35 +61,6 @@ Follow the "Prerequisites" instructions, noting the following:
 Okay, now, follow the "FOLLOW THE INSTRUCTIONS" link under "Prerequisits", except steps 3 and 4. (In case you lose your place, you should be <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_blank" atom_fix="_">here</a>.
 
 When you are finished the Prerequisite instructions (after requesting F1 access), press "Back" in your browser.
-
-
-
-<a name="RunningLocally"></a>
-# Running Mandelbrot Locally
-
-There is a great deal you can do while you wait for F1 access. 
-
-First, you'll need a compatible local machine. We use Ubuntu 16.04. Please help to debug other platforms. If you do not have a compatible Linux (or Mac?) machine, you can provision a cloud machine from AWS, Digital Ocean, or other providers as your "local" machine.
-
-To configure your local environment, including installation of Python, AWS CLI, Terraform, Remmina, and other packages:
-
-```sh
-cd <wherever you would like to work>
-git clone https://github.com/alessandrocomodi/fpga-webserver
-cd fpga-webserver
-source ./init   # This will require sudo password entry, and you may be asked to update your $PATH.)
-```
-
-And to run the Mandelbrot application locally, without an FPGA:
-
-```sh
-cd apps/mandelbrot/build
-make launch
-```
-
-You should see a message that the web server is running. You can open `http://localhost:8888/index.html` in a local web browser and explore Mandelbrot generated in the Python web server or in the C++ host application.
-
-More instructions for the Mandelbrot application are [here](apps/mandelbrot).
 
 
 
@@ -357,47 +347,6 @@ make PREBUILT=true TARGET=hw -j8 launch   # Or without `PREBUILT=true` if you pl
 ```
 
 And open: `http://localhost:8888`, or from outside `http://<IP>:8888`.
-
-
-
-<a name="CustomApp"></a>
-# Making Your Own Application
-
-Now you are ready to make an application of your own. This section is not a cookbook, but rather some pointers to get you starte in down your own path.
-
-
-## Getting Started
-
-You may want to work locally to avoid AWS charges. But you would need to transfer your work in order to test it. We are working to enable local simulation, but for now, we will assume you are running on a Development Instance using Xilinx tools.
-
-Start with an existing project.
-
-```sh
-cd ~/workdisk/fpga-webserver/apps
-cp -r vadd <your-proj>
-```
-
-The app name (`vadd`) is reflected in several filenames for clarity, so change these to <your-proj>.
-
-
-## Web Client Application
-
-For a simple quick-and-dirty application or testbench for your kernel, you might use the existing structure to write some basic HTML, CSS, and JavaScript. If you intend to develop a real application, you probably have your own thoughts about the framework you would like to use. You can develop in a separate repo, or keep it in the same repo so it is consistently version controlled.
-
-
-# Custom Kernel
-
-The vadd kernel is a good starting point for your own kernel. It is written using TL-Verilog. A pure Verilog version is also available.
-
-
-# C++ Host Application
-
-It is not required to customize the host application, but if you need to do so, you can override the one from the framework, following the example of the mandelbrot application. (Refer to its Makefile as well as `/host` code.)
-
-
-# Python Web Server
-
-It is not required to customize the python web server, bit if you need to do so, you can overrie the one from the framewoek, following the example of the manelbrot application. (Refer to its Makefile as well as `/webserver` code.)
 
 
 

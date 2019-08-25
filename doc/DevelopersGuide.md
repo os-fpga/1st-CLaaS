@@ -1,0 +1,185 @@
+# Developer's Guide
+
+# Table of Contents
+
+  - [About this Document](#about)
+  - [Prerequisites](#prereq)
+  - [Repository Structure](#repo)
+  - [Development Strategies](#strategies)
+  - [Framework Features](#framework)
+  - [Web Client Development](#web_dev)
+  - [Kernel Development](#kernel_dev)  
+
+
+
+<a name="about"></a>
+# About this Document
+
+1st CLaaS is built to enable initial development on your local machine. Local development, using RTL simulation of the custom kernel is covered in this document.
+
+When it comes time to optimize and deploy your kernel, 1st CLaaS provides infrastructure to do so using AWS F1 with Xilinx tools. These are covered in separate documents. [Getting Started with F1](GettingStartedF1.md) will get you started, and the [Optimization and Deployment Guide](F1Guide.md) will be your AWS/F1 reference.
+
+
+
+<a name="prereq"></a>
+# Prerequisites
+
+Before utilizing this development guide, you should first have an understanding of 1st CLaaS by reading the repository's [README.md](../README.md), and you should have gotten your environment up and running stepping through [Getting Started](GettingStarted.md).
+
+
+<a name="repo"></a>
+# Repository Structure
+
+This Git repository contains all that is needed to develop a hardware-accelerated web application, including:
+
+  - the generic 1st Class Framework
+  - sample applications that utilize the framework
+
+It contains infrastructure for:
+
+  - developing a web client on a local machine (Ubuntu 16.04 for us)
+  - developing the hardware kernel locally
+  - building and optimizing FPGA images on remote F1 machine
+
+The top-level file structure is:
+
+  - `framework`: files that may be used by any or all applications
+    - ***content that provides the generic 1st CLaaS framework***
+  - `apps`:
+    - _app_: individual applications utilizing the framework
+      - ***content for this specific app***
+  - `aws`: Scripts, etc. used to control AWS instances.
+  - `bin`: top-level executables (and `init` and `sdaccel_setup` scripts sit root-level.)
+    - `regress`: a regression script that launches framework and app regression scripts
+  - `doc`: documentation (including this document)
+  - `init`: a script to set up the repository for development
+  - `sdaccel_setup`: a script to set up for development using Xilinx tools on AWS
+
+An application _`foo`_ is constructed from code in `framework` and `apps/`_`foo`_ and these contain files/directories using nearly identical structure:
+
+  - `bin`: executables
+    - `regress`: regression script
+  - `webserver`: python web server application
+  - `client`: browser application code served by web server
+    - `html`: HTML code
+    - `js`: JavaScript code
+    - `css`: CSS (Cascading Style Sheets) code
+  - `host`: OpenCL/C++ host application
+  - `fpga`: content for the FPGA kernel, including Verilog/TL-Verilog source code
+    - `scripts`: (framework) utility scripts needed to create a Vivado RTL project
+    - `src`: Verilog/SystemVerilog/TL-Verilog/etc. source code for the kernel
+  - `terraform`: content related to platform configuration (creating/starting/stopping/destroying EC2 instances) using Terraform
+  - `build`: content related to building and running
+    - `Makefile`: nearly all build automation
+  - `out`: the target directory for build results, including the host application binary, and FPGA images; (not committed with the repository)
+  - `prebuilt`: prebuilt host application, and public Amazon FPGA Image (AFI) identifier. These may be committed for convenience so users can run new installations without lengthy builds
+
+
+
+<a name="strategies"></a>
+# Development Strategies
+
+![framework](img/framework.png)
+
+Your development strategy--how you partition development tasks--will depend on your specific application, but this section describes some possible strategies and considerations, and development infrastructure provided by 1st CLaaS.
+
+It is perfectly reasonable to develop your own web/cloud application using any technologies and infrastructure you choose and utilize this repository just for the FPGA microservice development (everything server-side). The web infrastructure provided in this repository is intentionally basic to illustrate the framework with relative simplicity. Notably, for package management this repository simply utilizes git submodules rather than using a package manager like npm.
+
+<!-- Web Server (Python) and Host Application (C++) can be extended as desired, but in the simplest usage, they can be directly provided by the framework. -->
+
+An actual F1, and even AWS as a whole, are needed very little during development, especially early on. Four modes of execution are supported by the build process, controlled by the `TARGET` Make variable:
+
+  - Software (`sw`): An optional mode where the RTL kernel is not utilized. Custom C++ code is required to provide emulated kernel behavior.
+  - Simulation (`sim`): Verilator is used for 2-state simulation of the custom RTL kernel. Verilator creates a C++ model of the kernel which is directly compiled in with the host executable. The Host Application C++ code controls the kernel clock and decides when to send/receive data to/from the kernel.
+  - Hardware Emulation (`hw_emu`): This mode is supported by Xilinx SDAccel on AWS. All FPGA logic is simulated, including the custom kernel and surrounding shell logic. This runs much slower than Simulaation.
+  - Hardware (`hw`): Uses a real F1 FPGA.
+
+It is often reasonable to co-develop the client and kernel as a single application. Other times it can be beneficial to develop the application and kernel separately.
+
+Application development might benefit from fake FPGA behavior at various points to speed development and provide control over testing:
+
+  - In the Web Client Application, avoiding any server-side functionality altogether. Especially when web development is in a separate repository/framework this can help to cleanly partition development
+  - In the Web Server and/or Host Application (`sw` target). This enables local development without RTL. (There is currently no specific build target for Web Server without Host, but this could be added.)
+
+FPGA Kernel development might justify testbench development at various points:
+
+  - Using traditional RTL development methodologies enabling use of Vivado on AWS, or <a href="http://www.makerchip.com/" target="_blank" atom_fix="_">makerchip.com</a> for TL-Verilog kernels, etc.); a default testbench leveraging a Xilinx example is available for use (though probably broken?).
+  - In the Host Application; a default testbench leveraging a Xilinx example is available for use (though, probably broken?); this would be most useful if OpenCL or RTL shell logic changes are made.
+  - We'll probably develop testbenches in Makerchip over time, but even without one, Makerchip will provide random stimulus.
+  - In a testbench web client; a default web client testbench is provided (as used by the `vadd` example) allowing manual entry of data to send to the kernel
+  - In the real Web Client Application. This would be customization of the Web Client Application to support development.
+
+
+
+<a name="framework"></a>
+# Framework Features
+
+## Makefile
+
+The `Makefile` encapsulates just about ever command provided by the framework for development. See header comments in `<repo>/framework/build/Makefile` for details.
+
+
+## REST API
+
+The web server provides, or can provide, the following REST API features.
+
+  - Self identification: The web server can determine its own IP to enable direct communication in scenarios where its content is served through a proxy.
+  - Starting/Stopping an F1 instance for acceleration.
+
+
+<a name="web_dev"></a>
+# Web Client Development
+
+For now, follow the lead of `<repo>/framework/client`. Methods provided by `<repo>/framework/client/js/fpgaServer.js` are very much subject to change.
+
+
+
+<a name="kernel_dev"></a>
+# Kernel Development
+
+This section describes development of custom FPGA RTL kernels using the provided Kernel API. Development that modifies the provided kernel interface is not covered here, nor elsewhere (other than in the commented code).
+
+
+## Kernel Interface
+
+A custom FPGA kernel named "foo" is provided as a SystemVerilog module with the following interface. Note that this is subject to change).
+
+```
+module foo_kernel #(
+    parameter integer C_DATA_WIDTH = 512 // Data width of both input and output data
+                                         // (This will be instantiated with its default value of 512.)
+) (
+    input wire                       clk,
+    input wire                       reset,
+
+    output wire                      in_ready,
+    input wire                       in_avail,
+    input wire  [C_DATA_WIDTH-1:0]   in_data,
+
+    input wire                       out_ready,
+    output wire                      out_avail,
+    output wire [C_DATA_WIDTH-1:0]   out_data
+);
+```
+
+This includes a streaming interface at the input and another at the output. Unless there are modifications to the intervening software layers, the data streaming into the kernel is the data sent from the Web Client application (or cloud application) communicating via the WebSocket, and the data sent from the kernel is received by the Web Client.
+
+The streaming interface includes, `ready`, `avail`, and `data`. This is similar to a standard AXI streaming interface, generally referred to as a ready/valid protocol, though the naming is chosen to be consistent with TL-Verilog naming conventions.
+
+In a given cycle, these signals relate to the same data transfer, where:
+
+  - `ready`: The receiver is willing to accept the data.
+  - `avail`: The transmitter has data to deliver.
+  - `data`: The data.
+
+
+## TL-Verilog and Makerchip
+
+Any means of delivering this kernel can be utilized, but we are partial to developing with TL-Verilog in  [Makerchip](https://makerchip.com/) IDE.
+
+You can copy `.tlv` code into Makerchip and copy back when finished. Locally, the Makefile will compile this into Verilog/SystemVerilog using
+Redwood EDA's SandPiper(TM) SaaS edition running as a cloud service. (This link opens the
+<a href="http://www.makerchip.com/sandbox?code_url=https:%2F%2Fraw.githubusercontent.com%2Falessandrocomodi%2Ffpga-webserver%2Fmaster%2Fapps%2Fmandelbrot%2Ffpga%2Fsrc%2Fmandelbrot_kernel.tlv" target="_blank" atom-fix="_">latest Mandelbrot Kernel from GitHub in the Makerchip IDE</a>.
+
+A WIP library of generic TL-Verilog components which mostly utilize the ready/avail interface protocol can be found <a href="https://github.com/stevehoover/tlv_flow_lib" target="_blank">here</a>.
+

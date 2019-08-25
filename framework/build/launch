@@ -35,13 +35,13 @@
 # This script can be used by the application to start the host application built for sw or hw.
 # It MUST be invoked from the application's build directory and should generally be invoked via 'make TARGET=xx launch'.
 #
-# TODO: This is a big hack. The webserver should open the socket and start the host and tear down
+# TODO: This is a big hack. The web server should open the socket and start the host and tear down
 #       the socket and host when it's done/killed. (Though consider how gdb can be run within editor where the editor must execute the host command.)
 #
 # This should be run via the Makefile.
 
 # Usage:
-#   ./launch [-c <compile-command>] [-w <webserver-command>] [-p <port>] <hw/sw> [<host-command>]
+#   ./launch [-c <compile-command>] [-w <web-server-command>] [-p <port>] <hw/sw> [<host-command>]
 # Usage Cases (without optional args):
 #   ./launch hw '<path/to/host> <path/to/awsxclbin>'
 #   ./launch hw_emu '<path/to/host> <path/to/xclbin>'
@@ -54,7 +54,7 @@
 # Optional args:
 #   -p <port>: The port number on which to launch. 8888 by default.
 #   -c <compile-command>: The compile command used to rebuilt when upgraded.
-#   -w <python-webserver-command>: The command to launch the webserver. '<<PORT>>' will be substituted with the port number.
+#   -w <python-web-server-command>: The command to launch the web server. '<<PORT>>' will be substituted with the port number.
 
 # Must be launched from the projects 'build' directory because:
 #   o If -w is not specified or the project utilizes default routing, the default web content paths are "../webserver/*".
@@ -63,7 +63,7 @@
 
 
 usage () {
-    echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-w webserver-args] (sw|hw_emu|hw) host-command"
+    echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-w web-server-args] (sw|hw_emu|hw) host-command"
     exit 1
 }
 
@@ -98,13 +98,6 @@ then
   HOST_PID=""
 fi
 
-#echo "t: $TARGET h: $HOST p: $PORT"
-
-if [[ $TARGET = "sw" ]] && [[ $HOST = "" ]];
-then
-  HOST="../out/$TARGET/host"
-fi
-
 if [[ $TARGET = "" ]];
 then
   usage
@@ -115,6 +108,19 @@ then
     then
       usage
     fi
+fi
+
+if [[ $TARGET = "sw" || $TARGET = "sim" ]]
+then
+  USE_XILINX=false
+else
+  USE_XILINX=true
+fi
+
+
+if [[ $USE_XILINX = "false" ]] && [[ $HOST = "" ]];
+then
+  HOST="../out/$TARGET/host"
 fi
 
 if [[ $COMPILE_CMD = "" ]];
@@ -135,7 +141,7 @@ launch () {
   if [[ $HOST_PID == "" ]]
     # Host application launched externally (probably via gdb).
   then
-    if [[ $TARGET = "sw" ]];
+    if [[ $USE_XILINX = "false" ]];
     then
         $HOST &
     else
@@ -154,7 +160,7 @@ launch () {
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
   # Launch.
   echo "Launching web server as: $CMD"
-  if [[ $TARGET = "sw" ]];
+  if [[ $USE_XILINX = "false" ]];
   then
     $CMD &
   else
@@ -170,7 +176,7 @@ launch () {
 teardown () {
   # Kill child processes
   echo "launch: Killing web server and host application."
-  if [[ $TARGET = "sw" ]];
+  if [[ $USE_XILINX = "false" ]];
   then
     if [[ $HOST_PID != "" ]]
     then

@@ -33,8 +33,13 @@
 
 # For usage, see <repo>/bin/regress
 
-
 set -e  # Fail on any failure.
+
+
+# Args:
+AWS_REGRESS="$1"
+export CONFIG_FILE="$2"
+
 
 cd "$( dirname "${BASH_SOURCE[0]}")/../build"
 mkdir -p ../out/regress ../log
@@ -51,7 +56,15 @@ wget -O ../out/regress/img.jpg 'http://localhost:8887/img?json={"x":0,"y":0,"pix
 # Go dead
 make dead TARGET=sw
 
-# Create and destroy static F1 instance.
-make static_accelerated_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_static_accelerated_regress
-make destroy SETUP=1st-CLaaS_static_accelerated_regress AUTO_APPROVE=true
 
+
+if [[ "$AWS_REGRESS" ]]
+then
+
+  echo "Running AWS tests for Mandelbrot."
+
+  # Create and destroy static F1 instance.
+  make static_accelerated_instance AUTO_APPROVE=true INSTANCE_NAME=1st-CLaaS_static_accelerated_regress
+  make destroy SETUP=1st-CLaaS_static_accelerated_regress AUTO_APPROVE=true
+
+fi
