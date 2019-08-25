@@ -1,14 +1,14 @@
 # Getting Started with AWS and F1
 
-- [AWS Account Setup with F1 Access](#AWS-Acct) (requires a day or two for approval from Amazon)
-- [Provisioning EC2 Instances](#ProvisionInstances)
-- [FPGA Emulation Build](#EmulationBuild)
-- [FPGA Build](#FPGABuild)
-
 
 # Table of Contents
 
   - [About this Document](#about)
+  - [Overview](#Overview)
+  - [AWS Account Setup with F1 Access](#AWS-Acct) (requires a day or two for approval from Amazon)
+  - [Provisioning EC2 Instances](#ProvisionInstances)
+  - [FPGA Emulation Build](#EmulationBuild)
+  - [FPGA Build](#FPGABuild)
 
 
 
@@ -23,6 +23,9 @@ Development utilizes multiple machines w/ different cost/capability trade-offs.
   - Development Instance: An AWS machine (EC2 instance) without an FPGA on which build and simulation can be done. This includes "Hardware Emulation" mode, where the application can be tested w/ FPGA behavior running as simulation. (~$0.80/hr)
   - F1 Instance: The EC2 instance with an attached FPGA, supporting the final application. (~$1.65/hr)
 
+
+
+<a name="Overview"></a>
 # Overview
 
 > You will be charged by Amazon for the resources required to complete these steps and to use this infrastructure. Don't come cryin' to us. We are in no way responsible for your AWS charges.
@@ -41,6 +44,23 @@ As a preview of the complete process, to get the Mandelbrot application up and r
 F1 machines are powerful and expensive. Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. These instructions assume the use of a separate Development Instance, which does not have an FPGA, to save costs. The FPGA kernel can be tested on this machine using "Hardware Emulation" mode, where the FPGA behavior is emulated using simulation and build times are minimal by comparison. For hobby projects, it is not practical to keep either EC2 Instance up and running for extended periods of time. The overhead of using two EC2 instances can sometimes result in extra cost and time of its own. So, depending upon your goals, you may prefer to simplify your life by using the F1 Instance as your Development Instance, in which case you can skip the instructions below for creating and configuring the Development Instance.
 
 There are many tutorials on line to get started with F1. Many are flawed, unclear, or out-dated. We found this <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank" atom_fix="_">Xilinx tutorial</a> to be the best. We have automated many of the steps you will find in these lengthy tutorials.
+
+
+
+<a name="AWS-Acct"></a>
+# AWS Account Setup with F1 Access
+
+<!--
+TODO: The S3 steps should be automated using the AWS CLI, and the remaining instructions should be provided here, inline.
+-->
+Follow the "Prerequisites" instructions, noting the following:
+
+  - When choosing a name for your S3 bucket (in step 3 of these instructions), consider who might be sharing this bucket with you. You should use this bucket for the particular fpga-webserver project you are starting. You might share this bucket with your collaborators. The bucket name should reflect your project. You might wish to use the name of your git repository, or the name of your organization, i.e. `fpga-webserver-zcorp`. If you expect to be the sole developer, you can reflect your name (perhaps your AWS username) in the bucket name and avoid the need for a `/<username>` subdirectory.
+  - The subdirectories you will use are: `/<username>` if your username is not reflected in your bucket name, and within that (if created), `/dcp`, `/log`, and `/xfer`.
+
+Okay, now, follow the "FOLLOW THE INSTRUCTIONS" link under "Prerequisits", except steps 3 and 4. (In case you lose your place, you should be <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/PREREQUISITES/README.md" target="_blank" atom_fix="_">here</a>.
+
+When you are finished the Prerequisite instructions (after requesting F1 access), press "Back" in your browser.
 
 
 
