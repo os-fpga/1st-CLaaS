@@ -54,7 +54,7 @@
 # Optional args:
 #   -p <port>: The port number on which to launch. 8888 by default.
 #   -c <compile-command>: The compile command used to rebuilt when upgraded.
-#   -w <python-web-server-command>: The command to launch the web server. '<<PORT>>' will be substituted with the port number.
+#   -w <web-server-command>: The command to launch the web server. '<<PORT>>' will be substituted with the port number.
 
 # Must be launched from the projects 'build' directory because:
 #   o If -w is not specified or the project utilizes default routing, the default web content paths are "../webserver/*".

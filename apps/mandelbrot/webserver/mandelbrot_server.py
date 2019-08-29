@@ -344,4 +344,4 @@ if __name__ == "__main__":
 
     args = defaultParseArgs()
 
-    application = MandelbrotApplication(int(args.port), args.instance, args.ec2_time_bomb_timeout, args.password, args.profile)
+    application = MandelbrotApplication(int(args['port']), args['instance'], args['ec2_time_bomb_timeout'], args['password'], args['profile'])

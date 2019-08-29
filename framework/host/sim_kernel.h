@@ -65,7 +65,7 @@ private:
   bool tracing_enabled = false;
 
   /*
-  ** Step testbench
+  ** Step test bench
   */
   void tick();
 

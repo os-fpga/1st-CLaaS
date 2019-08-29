@@ -25,26 +25,19 @@ Create an AWS account w/ F1 privileges. Remember: THIS SOFTWARE IS PROVIDED AS I
 
 Create a static F1 instance (based on the latest code in master):
 
-Somewhere:
+You must first have completed instructions in [**Getting Started**](../../doc/GettingStarted.md) and [**Getting Started with F1**](../../doc/GettingStartedF1.md). Then:
+
 ```
-git clone https://github.com/alessandrocomodi/fpga-webserver.git
-cd fpga-webserver
-./init
-aws configure  # Enter AWS keys and region.
-cd apps/mandelbrot/build
-make f1_instance   # PREBUILT=true only for main developers.
+cd <repo>/apps/mandelbrot/build
+make static_accelerated_instance PREBUILT=true
 ```
-This will could run for an hour or more on the F1 instance while the FPGA image is created.
 
 Launch the main web server:
 
-Log into your server and cd to a directory of your choice.
 ```
-git clone https://github.com/alessandrocomodi/fpga-webserver.git
-cd fpga-webserver
-./init
-aws configure  # Enter AWS keys and region.
-cd apps/mandelbrot/build
+make ssh
+cd fpga-webserver/apps/mandelbrot
+make config  # Enter AWS keys, region, etc.
 make PASSWORD=XXX INSTANCE=i-XXX live
 ```
 
@@ -52,7 +45,7 @@ make PASSWORD=XXX INSTANCE=i-XXX live
 
 To debug using GDB inside Atom.
   - Use [dbg-gdb Atom plugin](https://atom.io/packages/dbg-gdb)
-  - in `mandelbrot/built`
+  - in `mandelbrot/build`
     - `make host_debug`
     - `F5` in Atom (to run `out/sw/host_debug`), and set breakpoints.
     - `launch -h none sw`

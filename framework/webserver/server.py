@@ -373,10 +373,10 @@ class FPGAServerApplication(tornado.web.Application):
               (r"/framework/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/html"}),
               (r"/()", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/html", "default_filename": "index.html"}),
               (r'/ws', WSHandler),
-              (r"/css/(.*\.css)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/css"}),
-              (r"/js/(.*\.js)",   BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/js"}),
-              (r"/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/html"}),
-              (r"/(.*\.ico)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/webserver/html"})
+              (r"/css/(.*\.css)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/css"}),
+              (r"/js/(.*\.js)",   BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/js"}),
+              (r"/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/html"}),
+              (r"/(.*\.ico)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/html"})
             ]
         if ip:
             routes.append( (r'/ip', IPReqHandler) )
@@ -503,17 +503,17 @@ class FPGAServerApplication(tornado.web.Application):
 # Default argument parsing, to be called by __main__.
 # TODO: Require parameters to include optional arguments, like those for static F1 instances.
 def defaultParseArgs():
-    ret = {}
+    ret = {"port": 8888, "instance": None, "ec2_time_bomb_timeout": 120, "profile": None, "password": None}
     try:
         opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_time_bomb_timeout=", "password=", "profile="])
     except getopt.GetoptError:
-        print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
+        print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout <sec>] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
         sys.exit(2)
     # Strip leading dashes.
     for opt, arg in opts:
         opt = re.sub(r'^-*', '', opt)
         ret[opt] = arg
-    return ret    
+    return ret
     
     """
     ret = {"port": 8888, "instance": None, "ec2_time_bomb_timeout": 120, "profile": None, "password": None}

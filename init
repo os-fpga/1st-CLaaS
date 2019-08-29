@@ -17,7 +17,7 @@ git submodule update --init --recursive
 
 # Platform-specific installs.
 echo "Installing linux packages."
-COMMON_PACKAGES='python-tornado python-imaging make inotify-tools bc remmina verilator'
+COMMON_PACKAGES='python-tornado python-imaging make inotify-tools bc remmina verilator jq perl'
 if [[ -n "$(which apt-get)" ]]
 then
   # Ubuntu
@@ -47,7 +47,22 @@ fi
 
 # Install python libraries for user only so as not to affect system installs.
 echo "Installing Python packages for user $USER."
-sudo pip3 install Pillow tornado awscli boto3 --upgrade # imaging
+python3 -m pip install --upgrade pip
+python3 -m pip install --user --upgrade Pillow tornado awscli boto3  # imaging
+
+
+# Configure remmina to disble the tray icon (so, it isn't left running when launched via Makefile).
+if [[ -e "~/.remmina/remmina.pref" ]]
+then
+  sed 's/^disable_tray_icon=false$/disable_tray_icon=true'
+else
+  mkdir -p ~/.remmina
+  echo [remmina_pref] > ~/.remmina/remmina.pref
+  echo 'disable_tray_icon=true' >> ~/.remmina/remmina.pref
+fi
+# Protect remmina.pref as this contains an encryption key. (No idea why remmina leaves this open.)
+# Passwords stored in remmina will be decryptable by anyone with access to this file.
+chmod 400 "~/.remmina/remmina.pref"
 
 
 # Make sure ~/.local/bin is in path for python installs.

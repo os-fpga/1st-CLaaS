@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-// This file contains content to help develop webpage testbenches for apps.
+// This file contains content to help develop webpage test benches for apps.
 
 
 // Main

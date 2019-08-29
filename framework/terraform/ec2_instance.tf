@@ -262,6 +262,8 @@ resource "aws_instance" "the_instance" {
         "/home/centos/src/project_data/fpga-webserver/init",
         "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
         "source ${var.config_instance_script}",
+        "ln -s /home/centos/src/project_data /home/centos/src/workdisk",
+        "ln -s /home/centos/src/project_data/fpga-webserver /home/centos/src/fpga-webserver",
       ]
     }
 }

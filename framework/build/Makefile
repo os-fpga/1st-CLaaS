@@ -108,6 +108,7 @@
 #   Platform Targets (for constructing EC2 instances):
 #     Platform Target Variables:
 #        #    PASSWORD: (prompts as admin_pwd) might be used by web server to authenticate administrative actions from a client.
+#        #    LINUX_PASSWORD: Constructed instances will be assigned this Linux password. (Must not contain single/double quote or backslash.)
 #        #    INSTANCE_TYPE: Use c4 for testing without FPGA.
 #        #    INSTANCE_NAME: Name of the instance.
 #        #    INSTANCE_STORAGE: Size in GB of "sdb" storage on the instance. Defaults to 15, which is appropriate for Development Instance.
@@ -134,15 +135,29 @@
 #     static_accelerated_instance:
 #        By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
 #        > make PASSWORD=XXX PREBUILT=false/true TFVAR=$HOME/aws_cred.tfvars static_accelerated_instance  # (or omit variables to be prompted.)
-#        #    PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
+#           # PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     For make launch, to associate an F1 instance, with this Content Web Server use:
 #        > make INSTANCE=i-xxxxxxx PASSWORD=<password> AWS_PROFILE=<aws-profile> launch
-#        #    PASSWORD: used by this web server (not F1) to authenticate administrative actions (may not be necessary); probably best to use the same PASSWORD for F1.
+#           # PASSWORD: used by this web server (not F1) to authenticate administrative actions (may not be necessary); probably best to use the same PASSWORD for F1.
 #     Instances can be destroyed (along with their associated AWS resources) using:
 #        > make destroy SETUP=XXX
 #     Available SETUPs (same as INSTANCE_NAME in this case) can be listed with:
 #        > make list_setups
+#   Targets for connecting to EC2 instances:
+#     # Connect to remote desktop via RDP.
+#     desktop:
+#       >make INSTANCE_NAME=<instance_name> desktop
+#          # INSTANCE_NAME: (opt) Can be supplied if multiple EC2 instances are running to identify the instance.
+#     # Connect or run a command via SSH (and accept the ECDSA key fingerprint).
+#     ssh
+#       >make INSTANCE_NAME=<instance-name> SSH_CMD=<command> ssh
+#          # INSTANCE_NAME: (opt) Can be supplied if multiple EC2 instances are running to identify the instance.
+#          # SSH_CMD: (opt) A command to run remotely via SSH (otherwise keep the SSH shell running).
+#     # Report the instance name and IP of the running instance.
+#     ip
+#       >make INSTANCE_NAME=<instance_name> ip
+#          # INSTANCE_NAME: (opt) Can be supplied if multiple EC2 instances are running to identify the instance.
 
 SHELL=/bin/bash
 
@@ -443,18 +458,20 @@ clean:
 shrink:
 	rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
 
+	
 
 # User configuration.
 define config_param
 	@echo -n "$1 [$($1)]: " && (read TMP; if [[ -n "$$TMP" ]]; then echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; else echo '$1=$($1)' >> $(CONFIG_FILE).tmp; fi)
 endef
-config: $(CONFIG_FILE)
-$(CONFIG_FILE):
+.PHONY: config
+config:
 	@rm -f $(CONFIG_FILE).tmp
 	@[[ ! -e "$(CONFIG_FILE)" ]] || ! echo "User configuration file ($(CONFIG_FILE)) already exists. Edit with a text editor."
 	@echo
 	@echo 'Creating 1st CLaaS user configuration file: "$(CONFIG_FILE)".'
-	@echo 'Enter AWS profile to associate with your 1st CLaaS work, or leave blank to use default profile. If desired, create a new IAM user via the AWS Management Console.'
+	@echo 'To keep a default value, press <Enter>.'
+	@echo 'Enter AWS profile to associate with your 1st CLaaS work. If desired, create a new IAM user via the AWS Management Console.'
 	@ if [[ -e '~/.aws/config' && -e '~/.aws/credentials' ]];\
 	  then echo 'Known (already-configured via "aws configure" AWS profiles (if any):';\
 	       grep '\[profile' ~/.aws/config | sed 's/^\[profile \(.*\)\]$/\1/';\
@@ -462,10 +479,9 @@ $(CONFIG_FILE):
 	$(call config_param,AWS_PROFILE)
 	@echo
 	@echo 'Have your AWS credentials ready (or create new via AWS Management Console: search "IAM", "users", select user, "Security Credentials", "Create access key").'
-	@echo '(Press <Enter> to keep current settings.)'
-	@ AWS_PROFILE=$$(cat $(CONFIG_FILE).tmp | sed 's/^.*=\(.*\)$$/\1/') && \
-	  aws configure --profile $$AWS_PROFILE && \
-	  REGION=$$(aws configure get region --profile $$AWS_PROFILE) && \
+	source $(CONFIG_FILE).tmp && NEW_AWS_PROFILE="$$AWS_PROFILE" && unset AWS_PROFILE && aws configure --profile "$$AWS_PROFILE"  # (aws configure doesn't work if $AWS_PROFILE doesn't already exist.)
+	source $(CONFIG_FILE).tmp && \
+	  REGION=$$(aws configure get region) && \
 	  if [[ ! $$REGION =~ (us-east-1|us-west-2|eu-west-1|us-gov-west-1) ]]; \
 	  then echo "Warning: Region $$REGION is not known to support F1. Valid regions w/ F1 include: 'us-east-1' (N. Virginia), 'us-west-2' (Oregon), 'eu-west-1' (Ireland), or 'us-gov-west-1' (GovCloud US). (Please update Makefile and create a pull request if you know differently.)"; \
 	  fi
@@ -475,17 +491,17 @@ $(CONFIG_FILE):
 	$(call config_param,S3_USER)
 	$(call config_param,S3_BUCKET_TAG)
 	@# For convenience, also store the full bucket name.
-	source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
-	@echo 'EC2 instances will be initialized with an administrative password. This password may be used by web servers to authenticate privileged actions. Choose a default.'
+	@source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
+	@echo 'EC2 instances will be initialized with an administrative password. This password may be used by optional administrative features of 1st-CLaaS web servers. Choose a default.'
 	$(call config_param,PASSWORD)
 	@chmod 600 $(CONFIG_FILE).tmp
 	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
 	@echo 'Configuration complete and stored in "$(CONFIG_FILE)" accessible only to you ("$(USER)"). Contents:'
 	@cat $(CONFIG_FILE)
 	@source $(CONFIG_FILE) \
-	&& echo "Setting up S3 bucket: s3://$$S3_BUCKET" \
-	&& aws s3api create-bucket --bucket "$$S3_BUCKET" --profile "$$AWS_PROFILE" --acl private > /dev/null \
-	&& aws s3api wait bucket-exists --bucket "$$S3_BUCKET" --profile "$$AWS_PROFILE"
+	  && echo "Setting up S3 bucket: s3://$$S3_BUCKET" \
+	  && aws s3api create-bucket --bucket "$$S3_BUCKET" --acl private > /dev/null \
+	  && aws s3api wait bucket-exists --bucket "$$S3_BUCKET"
 
 
 # Rule to build host application, only if not using pre-built.
@@ -674,15 +690,15 @@ $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	ls '_afi_id.txt' | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt
 	wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
 	@# Delete S3 files to avoid charges.
-	aws s3 rm --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
-	aws s3 rm --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
+	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
+	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
 endif
 
 .PHONY: push
-# Push the entire contents of the app directory for running on F1. (SDAccel tarball should already be in S3.)
+# Push the entire contents of the app directory for running on F1. (TODO: Be more selective.)
 # Previous transfer contents are deleted.
 push: build
-	aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/
+	aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/ --profile $(AWS_PROFILE)
 
 endif  # End Xilinx build stuff.
 
@@ -751,9 +767,9 @@ ifeq ($(BUILD_TARGET), hw)
 .PHONY: prebuild
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 	# Name the AFI.
-	aws ec2 modify-fpga-image-attribute --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --name "1st_CLaaS-$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
+	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --name "1st-CLaaS_$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
 	# Making AFI public.
-	aws ec2 modify-fpga-image-attribute --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
+	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
 	# Populating /prebuilt dir.
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
 	cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
@@ -778,8 +794,8 @@ FIRST_CLAAS_REMOTE_REPO_DIR=/home/centos/src/project_data/fpga-webserver
 # WARNING: This target launches a new instance. Be sure it is not left running!
 # Default INSTANCE_NAME, INSTANCE_STORAGE, INSTANCE_TYPE, INSTANCE_CONFIG_SCRIPT based on target. (Doesn't work if multiple targets are given.)
 # Defaults, in case instance target is unrecognized
-INSTANCE_NAME=1st-CLaaS
-INSTANCE_STORAGE=0
+#INSTANCE_NAME=1st-CLaaS
+#INSTANCE_STORAGE=0
 INSTANCE_TYPE=UNDEFINED
 INSTANCE_CONFIG_SCRIPT=UNDEFINED
 ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
@@ -799,6 +815,11 @@ ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
 	INSTANCE_STORAGE=5
 	INSTANCE_TYPE=f1.2xlarge
 	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_static_f1_instance.sh
+endif
+ifdef INSTANCE_NAME
+  INSTANCE_NAME_FILTER=--filter 'Name=tag:Name,Values=$(INSTANCE_NAME)'
+else
+  INSTANCE_NAME_FILTER=
 endif
 # By default, each instance is an independent setup.
 SETUP=$(INSTANCE_NAME)
@@ -843,9 +864,10 @@ TF_COMMON_ARGS=$(TF_AUTO_APPROVE_ARG) $(TF_ARGS1) $(TF_ARGS4) $(TF_ARGS5) $(TF_A
 # Generic .tf file is configured for user and setup before running terraform.
 define terraform
 	# Setting up and running Terraform in a new directory.
+	[[ -n '$(SETUP)' ]]  # $(SETUP) must be defined.
 	@#rm -rf '$(REPO)/tmp/$(SETUP)'
 	@mkdir -p '$(REPO)/tmp/$(SETUP)'
-	rm -f '$(REPO)/tmp/$(SETUP)/.terraform/terraform.tfstate' '$(REPO)/tmp/$(SETUP)/'*.*
+	rm -f '$(REPO)/tmp/$(SETUP)/'*.* # '$(REPO)/tmp/$(SETUP)/.terraform/terraform.tfstate'
 	cd '$(REPO)/tmp/$(SETUP)' \
 	&& cp '$(REPO)/framework/terraform/ec2_instance.tf' . \
 	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' ec2_instance.tf \
@@ -860,8 +882,7 @@ define make_instance
 	@echo 'Instance will be initialized based on latest "$(GIT_BRANCH)" branch.' && echo
 	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
 	@echo 'This instance and its associated resources can be destroyed with: "make destroy SETUP=$(SETUP)".'
-endef
-define run_terraform
+	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password" && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'
 endef
 ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:
@@ -879,17 +900,42 @@ f1_instance:
 	$(make_instance)
 endif
 
+# Connect to the single running EC2 instance.
+define connect
+	IPs=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --query "Reservations[*].Instances[*].PublicIpAddress" $(INSTANCE_NAME_FILTER) --output=text) \
+		&& if [[ $$IPs =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\s*$$ ]]; \
+			then \
+				INSTANCE_NAME=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --filters "Name=ip-address,Values=$$IPs" --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value' --output=text) && \
+				PRIVATE_KEY=$$(realpath ~/".ssh/$$INSTANCE_NAME/private_key.pem") && \
+				echo "$1 $$INSTANCE_NAME ($$IPs)" && \
+				mkdir -p ../out && \
+				$2 \
+			else \
+				echo "There is not exactly one instance running. Use INSTANCE_NAME=<instance-name> to select from the following running instances:" && \
+				aws ec2 describe-instances --profile $(AWS_PROFILE) --filters 'Name=instance-state-name,Values=running' --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value' --output=text | sed 's/^\(.*\)$$/   o \1/'; \
+			fi
+endef
+
+.PHONY: desktop ssh
+desktop:
+	@# Call remmina using template.remmina configuration with "TBD" values substituted. (perl is used to substitute arbitrary literal text.)
+	$(call connect,Connecting via RDP using Remmina to,TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(REPO)/framework/build/template.remmina" > "$(REPO)/framework/out/tmp.remmina" && sed -i "s/^server=TBD/server=$$IPs/" "$(REPO)/framework/out/tmp.remmina" && remmina -c "$(REPO)/framework/out/tmp.remmina" &)
+ssh:
+	$(call connect,Connecting via SSH to,ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" centos@$$IPs $(SSH_CMD);)
+ip:
+	$(call connect,Running instance:,true)
+
 .PHONY: destroy
 destroy:
 	$(call terraform,destroy $(TF_DESTROY_ARGS))
-	aws s3 rm 's3://$(S3_BUCKET)/tf_setups/$(SETUP)'
+	aws s3 rm 's3://$(S3_BUCKET)/tf_setups/$(SETUP)' --profile $(AWS_PROFILE)
 	@echo 'Destroyed instance/setup $(SETUP)'
 	@if [[ -d $(TF_OUT_DIR) ]]; then rm $(TF_OUT_DIR)/public_key.pem && rm $(TF_OUT_DIR)/private_key.pem && rmdir $(TF_OUT_DIR) && echo 'Deleted $(TF_OUT_DIR) containing TLS keys'; else echo 'No directory $(TF_OUT_DIR). Perhaps another user still has these obsolete TLS keys?'; fi
 
 .PHONY: list_setups
 list_setups:
 	@echo "Setups that can be used with 'make destroy SETUP=XXX':"
-	echo "Setups:" && aws s3 ls 's3://$(S3_BUCKET)/tf_setups/' || true
+	echo "Setups:" && aws s3 ls 's3://$(S3_BUCKET)/tf_setups/' --profile $(AWS_PROFILE) || true
 
 .PHONY: copy_app
 copy_app:

@@ -16,7 +16,7 @@ Having FPGAs ([Field-Progammable Gate Arrays](Newbies.md)) available in the data
 
 # Documentation
 
-This document provides an overview of the project, which is valuable context for these step-by-step instructions and development guide:
+This README provides an overview of the project. The following documents are also available. After this README, get hand-on with **Getting Started**.
 
 For initial local development:
 
@@ -27,6 +27,7 @@ For optimization and deployment of your custom kernel using AWS F1 with Xilinx t
 
   - [**Getting Started with F1**](doc/GettingStartedF1.md): Instructions to get up and running with AWS, F1, and Xilinx tools.
   - [**Optimization and Deployment Guide**](doc/F1Guide.md): For developing on AWS F1 with Xilinx tools.
+
 
 
 # FPGA-Webserver Project Overview
@@ -151,7 +152,9 @@ Anything and everything is subject to change at this point, especially with resp
 
 (File issues. Repo is going to move; just waiting for that.)
 
-  - It's hard to convince a browser to hard-reload a URL that redirects, so the testbench redirect is hard to clear when a different app is started.
+  - Provide automation for provisioning a compatible "local" platform. 
+  - remove host from prebuilts (to support usage model where C++ is edited, but kernel is prebuilt).
+  - Also fix `make push` and `make pull`. (Huh, `make pull` is missing.) Support a model where the repo is not used on the F1 instance, just push/pull contents. Or get rid of push/pull, and rely on prebuilt and git push/pull?
   - The latest SDx version is 2018.3. Instructions need to be updated since 2018.2. (It's 2019. Why are updates happening a year late?) Here are some issues observed w/ 2018.3:
   
   ```
@@ -177,5 +180,3 @@ Anything and everything is subject to change at this point, especially with resp
 
 # Immediate Issues
 
-  - create a rdp_ec2 script similar (but simpler) to the vnc_ev2 script. It should update a config file if <IP> is given and run remmina with this config.
-  - remove host from prebuilts (to support usage model where C++ is edited, but kernel is prebuilt). Also see if the prebuilt is accessible to other users. Also fix `make push` and `make pull`. (Huh, `make pull` is missing.)
