@@ -205,7 +205,7 @@ Considerations for using Makerchip:
 
 Expect the pros to grow and the cons to shrink over time.
 
-To use Makerchip for development, copy `.tlv` code into Makerchip, and copy back when finished (and features are in the plans to automate this). Development templates will be provided over time.
+To use Makerchip for development, copy `.tlv` code into the <a href="http://www.makerchip.com/" target="_blank" atom_fix="_">Makerchip/a> IDE, and copy back when finished (and features are in the plans to automate this). Development templates will be provided over time.
 
 This link opens the
 <a href="http://www.makerchip.com/sandbox?code_url=https:%2F%2Fraw.githubusercontent.com%2Falessandrocomodi%2Ffpga-webserver%2Fmaster%2Fapps%2Fmandelbrot%2Ffpga%2Fsrc%2Fmandelbrot_kernel.tlv" target="_blank" atom-fix="_">latest Mandelbrot Kernel from GitHub in the Makerchip IDE</a>.
