@@ -1,3 +1,4 @@
+<a name="Overview"></a>
 # Developer's Guide
 
 # Table of Contents
@@ -15,14 +16,14 @@
 <a name="about"></a>
 # About this Document
 
-1st CLaaS is built to enable initial development on your local machine. Local development, using RTL simulation of the custom kernel is covered in this document. When it comes time to optimize and deploy your kernel, 1st CLaaS provides infrastructure to do so using AWS F1 with Xilinx tools. These are covered in separate documents. [Getting Started with F1](GettingStartedF1.md) will get you started, and the [Optimization and Deployment Guide](F1Guide.md) will be your AWS/F1 reference.
+1st CLaaS is built to enable initial development on your local machine. Local development, using RTL simulation of the custom kernel is covered in this document. When it comes time to optimize and deploy your kernel, 1st CLaaS provides infrastructure to do so using AWS F1 with Xilinx tools. These are covered in separate documents. [Getting Started with F1](GettingStartedF1.md#top) will get you started, and the [Optimization and Deployment Guide](F1Guide.md#top) will be your AWS/F1 reference.
 
 
 
 <a name="prereq"></a>
 # Prerequisites
 
-Before utilizing this development guide, you should first have an understanding of 1st CLaaS by reading the repository's [README.md](../README.md), and you should have gotten your environment up and running stepping through [Getting Started](GettingStarted.md).
+Before utilizing this development guide, you should first have an understanding of 1st CLaaS by reading the repository's [README.md](../README.md#top), and you should have gotten your environment up and running stepping through [Getting Started](GettingStarted.md#top).
 
 
 <a name="repo"></a>

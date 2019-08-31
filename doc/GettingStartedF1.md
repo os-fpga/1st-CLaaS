@@ -1,3 +1,4 @@
+<a name="Overview"></a>
 # Getting Started with AWS and F1
 
 
@@ -126,7 +127,7 @@ This creates:
 
 An instance setup, including all the above resources can be destroyed with a single `make destroy INSTANCE_NAME=<instance_name` command (reported upon completion of the creation command). Resources that are managed as part of a 1st CLaaS Setup have names beginning with `1st-CLaaS_`. These should be managed (destroyed) via `make ...` commands, not via the EC2 Console.
 
-For more information about managing these instance setups, refer to the [**Optimization and Deployment Guide**](F1Guide.md).
+For more information about managing these instance setups, refer to the [**Optimization and Deployment Guide**](F1Guide.md#top).
 
 
 ## Accessing Your Development Instance

@@ -1,13 +1,14 @@
+<a name="top"></a>
 # Getting Started with 1st CLaaS
 
 ## Overview
 
 Getting started is easy. We'll show you a few commands to get your feet wet, test out your platform, and write your own "Hello World" application. Then you can either:
 
-  - jump right into development with help from the [Developer's Guide](DevelopersGuide.md), or
-  - test drive AWS F1 with [Getting Started with F1](GettingStartedF1.md)
+  - jump right into development with help from the [Developer's Guide](DevelopersGuide.md#top), or
+  - test drive AWS F1 with [Getting Started with F1](GettingStartedF1.md#top)
 
-> Note that F1 use requires approval, which can take a day or more, so you may want to do the first step of the [Developer's Guide](doc/DevelopersGuide.md) now, so your F1 platform will be ready when you are.
+> Note that F1 use requires approval, which can take a day or more, so you may want to do the first step of the [Developer's Guide](doc/DevelopersGuide.md#top) now, so your F1 platform will be ready when you are.
 
 
 ## Platform
@@ -57,7 +58,7 @@ More instructions for the Mandelbrot application are [here](../apps/mandelbrot).
 
 Stop the web server with `<Ctrl>-C` (in the terminal window).
 
-You'll be able to see the speedup you get from an FPGA when you get to [Getting Started with F1](GettingStartedF1.md).
+You'll be able to see the speedup you get from an FPGA when you get to [Getting Started with F1](GettingStartedF1.md#top).
 
 
 ## Running Vector Add Locally
@@ -97,7 +98,7 @@ The web client is defined by the HTML, CSS, and JS content in `<repo>/apps/toy/c
 ### Custom Kernel
 
 The vadd kernel is a good starting point for your own kernel. Though we strongly recommend using TL-Verilog, this kernel is written in SystemVerilog, which is currently more broadly familiar. You can start with TL-Verilog with `cd <repo>/apps/toy/fpga/src &&
-cp tlv_varients/toy_kernel.tlv.disabled toy_kernel.tlv`. We'll add some [TL-Verilog Tutorials](TLV_Tutorials.md).
+cp tlv_varients/toy_kernel.tlv.disabled toy_kernel.tlv`. We'll add some [TL-Verilog Tutorials](TLV_Tutorials.md#top).
 
 Modify the kernel code as desired. Try subtraction or anything you like.
 
@@ -128,5 +129,5 @@ It is not required to customize the Python web server, but if you would like to 
 
 Now that you've got your feet wet, either:
 
-  - continue development with help from the [Developer's Guide](DevelopersGuide.md), or
-  - test drive AWS F1 with [Getting Started with F1](GettingStartedF1.md)
+  - continue development with help from the [Developer's Guide](DevelopersGuide.md#top), or
+  - test drive AWS F1 with [Getting Started with F1](GettingStartedF1.md#top)

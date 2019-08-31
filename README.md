@@ -1,3 +1,4 @@
+<a name="top"></a>
 # The 1st CLaaS Framework
 
 #### CLaaS: Custom Logic as a Service
@@ -16,17 +17,17 @@ Having FPGAs ([Field-Progammable Gate Arrays](Newbies.md)) available in the data
 
 # Documentation
 
-This README provides an overview of the project. The following documents are also available. After this README, get hand-on with **Getting Started**.
+This README provides an overview of the project. The following documents are also available. After this README, get hand-on with [**Getting Started**](doc/GettingStarted.md).
 
-For initial local development:
+For local development:
 
-  - [**Getting Started**](doc/GettingStarted.md): Instructions to get up and running.
-  - [**Developer's Guide**](doc/DevelopersGuide.md): Your main development resource.
+  - [**Getting Started**](doc/GettingStarted.md#top): Instructions to get up and running.
+  - [**Developer's Guide**](doc/DevelopersGuide.md#top): Your main development resource.
   
 For optimization and deployment of your custom kernel using AWS F1 with Xilinx tools.
 
-  - [**Getting Started with F1**](doc/GettingStartedF1.md): Instructions to get up and running with AWS, F1, and Xilinx tools.
-  - [**Optimization and Deployment Guide**](doc/F1Guide.md): For developing on AWS F1 with Xilinx tools.
+  - [**Getting Started with F1**](doc/GettingStartedF1.md#top): Instructions to get up and running with AWS, F1, and Xilinx tools.
+  - [**Optimization and Deployment Guide**](doc/F1Guide.md#top): For developing on AWS F1 with Xilinx tools.
 
 
 
@@ -36,7 +37,7 @@ For optimization and deployment of your custom kernel using AWS F1 with Xilinx t
 
 With 1st CLaaS, you can stream bits directly to and from your custom FPGA kernel using standard web protocols (WebSockets or REST). In the simplest use case, all software is client-side in the web browser, and all server logic and data storage is implemented in the FPGA. Your kernel uses a very simple interface to stream the data, and it can be developed in Verilog (or any language compilable to Verilog).
 
-1st CLaaS is ideal for implementing functions in hardware that are compute-limited but tolerant of internet lateny/bandwith. Applications requiring a more sophisticated partitioning of responsibilities can extend the host C++ code or Python web server to process data between the web application and FPGA.
+1st CLaaS is ideal for implementing functions in hardware that are compute-limited but tolerant of internet latency and bandwith. Applications requiring a more sophisticated partitioning of responsibilities can extend the host C++ code or Python web server to process data between the web application and FPGA.
 
 Possible application domains might include:
 
@@ -82,7 +83,7 @@ In the simple case, you provide only the green components in the diagram above, 
 
 
 
-# Streamlining
+# Streamlining F1
 
 Prior to this project, integrating FPGA hardware acceleration with web and cloud applications was a daunting undertaking requiring:
 
@@ -111,26 +112,29 @@ Looking specifically at the Amazon F1 platform, F1 provides powerful Xilinx FPGA
   - Developers must understand AXI protocols and manage AXI controllers.
   - The AWS platform can be intimidating to a newcomer.
 
-We had to go through this pain, but we bundled our work so you won't have to.
+We had to go through this pain, but we bundled our work so you wouldn't have to.
 
-To further streamline development and avoid any dependency on the F1 platform and Xilinx tool stack, the server can be run on your local machine where the kernel is emulated with RTL simulation using the Verilator open-source RTL simulator. AWS and Xilinx tools are only required for kernel optimization and deployment. As an added bonus, Verilator simulation runs significantly (~100x?) faster than simulation using the Xilinx "hardware emulation flow," partly because Verilator is fast and partly because it need not include the shell logic surrounding the kernel.
+To further streamline development, reduce cost, and avoid any dependency on the F1 platform and Xilinx tool stack, we support development on your local machine where the kernel is emulated with RTL simulation using the Verilator open-source RTL simulator. AWS and Xilinx tools are only required for kernel optimization and deployment. As an added bonus, Verilator simulation runs significantly (~100x?!) faster than simulation using the Xilinx "hardware emulation flow," partly because Verilator is fast and partly because we simulate only the Custom Kernel, not including the shell logic surrounding the kernel.
 
-Reducing the problem to web and RTL development is not the finish line for us. 1st CLaaS is a part of a broader effort to redefine the silicon industry and bring silicon to the masses. Getting past the complexities of RTL modeling is part of that. 1st CLaaS is driven by avid supporters of TL-Verilog, in association with Redwood EDA. TL-Verilog introduces a much-needed digital circuit design methodology shift with simpler and more powerful modeling constructs. 1st CLaaS is in no way tied to TL-Verilog. You can use Verilog/SystemVerilog or any hardware description language that can be turned into Verilog. But TL-Verilog lnguage extensions are supported out of the box, and we strongly encourage you to take advantage of them and help us drive this innovation forward. Redwood EDA provides a free, online IDE for TL-Verilog development at <a href="http://makerchip.com" target="_blank" atom_fix="_">makerchip.com</a>. You can find training materials in the IDE. Read [the more-complete story](docs/Story.md) from Redwood EDA founder, <a href="https://www.linkedin.com/in/steve-hoover-a44b607/" target="_ blank">Steve Hoover</a>.
+Reducing the problem to web and RTL development is not the finish line for us. 1st CLaaS is a part of a broader effort to redefine the silicon industry and bring silicon to the masses. Getting past the complexities of RTL modeling is part of that. 1st CLaaS is driven by avid supporters of TL-Verilog, in association with <a href="http://redwoodeda.com" target="_blank" atom_fix="_">Redwood EDA</a>. TL-Verilog introduces a much-needed digital circuit design methodology shift with simpler and more powerful modeling constructs. 1st CLaaS is in no way tied to TL-Verilog. You can use Verilog/SystemVerilog or any hardware description language that can be turned into Verilog. But TL-Verilog lnguage extensions are supported out of the box, and we strongly encourage you to take advantage of them and help us drive this innovation forward. Redwood EDA provides a free, online IDE for TL-Verilog development at <a href="http://makerchip.com" target="_blank" atom_fix="_">makerchip.com</a>. You can find training materials in the IDE. Read [the more-complete story](docs/Story.md) from Redwood EDA founder, <a href="https://www.linkedin.com/in/steve-hoover-a44b607/" target="_blank" atom_fix="_">Steve Hoover</a>.
 
 
 
 # Status
 
-This repository is generally working, and is under active development in the summer of 2019 with sponsorship from Google through <a href="https://summerofcode.withgoogle.com/" target="_blank" atom_fix="_">Google Summer of Code</a>. A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
+This repository is generally working, and the initial development push is winding down.
+
+A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
 
 Anything and everything is subject to change at this point, especially with respect to the interface provided by the framework for applications to build upon. So, you should build on a specific version of the framework and expect to do some debugging if you choose to upgrade by pulling from master.
+
 
 
 # Main Contributors
 
   - <a href="https://www.linkedin.com/in/steve-hoover-a44b607/" target="_ blank">Steve Hoover</a>: Project lead/lead developer.
   - <a href="https://www.linkedin.com/in/alessandro-comodi-2a522a65/" target="_ blank">Alessandro Comodi</a>: Early development, in collaboration with the NECSTLab at Politecnico di Milano, under Marco Santambrogio.
-  - <a href="https://www.linkedin.com/in/akos-hadnagy/" target="_ blank">Akos Hadnagy</a>: Terraform and Verilator infrastructure as a student in Google Summer of Code, 2019.
+  - <a href="https://www.linkedin.com/in/akos-hadnagy/" target="_ blank">Akos Hadnagy</a>: Terraform and Verilator infrastructure sponsored by Google in <a href="https://summerofcode.withgoogle.com/" target="_blank" atom_fix="_">Google Summer of Code</a>, 2019.
 
 
 
@@ -144,7 +148,14 @@ Anything and everything is subject to change at this point, especially with resp
 
   - Further documentation of the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
   - A short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a> at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
-  - [How 1st CLaaS came to be](doc/Story.md)
+  - [How 1st CLaaS came to be](doc/Story.md).
+  - [Akos's 2019 Google Summer of Code Summary](https://www.linkedin.com/pulse/paving-way-fpga-accelerated-web-applications-%25C3%25A1kos-hadnagy/?trackingId=2nssE2INjhEAeFTh7IWUuA%3D%3D).
+
+
+
+# Donations
+
+Hmmmm... We haven't given that much thought yet. Just say something nice, and we'll be happy.
 
 
 
