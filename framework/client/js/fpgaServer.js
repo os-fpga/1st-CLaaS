@@ -60,6 +60,24 @@ class fpgaServer {
     }
   }
   
+  // This is the API currently exposed for sending data.
+  // Args:
+  //   - resp_size: The number of chunks that must be returned in response. (The need to provide this is an artifact of the current implementation.)
+  //   - chunks: An array of arrays of up to 16 32-bit signed or unsigned integer values. Chunks with fewer than 16 values will be padded w/ 0 values.
+  sendChunks(resp_size, chunks) {
+    chunks.forEach( (el) => {
+      // Pad the chunks.
+      for (let i = el.length; i < 16; i++) {
+        el[i] = 0;
+      };
+    })
+    this.send("DATA_MSG", JSON.stringify({
+          size: chunks.length,
+          resp_size: resp_size,
+          data: chunks
+    }));
+  }
+  
   
   // Reset the EC2 instance time bomb, and, optionally, callback upon response. The callback is passed the response JSON.
   resetEC2TimeBomb(fed_cb) {

@@ -1,0 +1,10 @@
+#assembly-code {
+  resize: both;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+#assembled-code > p {
+  margin: 0px;
+}
+.error {
+  color: red;
+}

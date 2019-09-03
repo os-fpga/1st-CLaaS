@@ -115,9 +115,7 @@ class RawTestBench {
     if (! this.tx_data_valid) {
       console.log("Bug: Refusing to send invalid data.");
     } else {
-      let tmp = `{"size":${this.tx_data_array.length},"resp_size":${$("#num-resp-chunks").val()},"data":${JSON.stringify(this.tx_data_array)}}`;
-      console.log(`Sending DATA_MSG: ${tmp}`);
-      this.server.send("DATA_MSG", tmp);
+      this.server.sendChunks(parseInt($("#num-resp-chunks").val()), this.tx_data_array);
     }
   }
 
