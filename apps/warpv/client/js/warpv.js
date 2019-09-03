@@ -66,7 +66,7 @@ class WARPV_Example {
 
       $.ajax({
         type: "POST",
-        url: 'http://localhost:8000/sandpiper/json',
+        url: 'http://saas.makerchip.com/sandpiper/json',
         data: { tlv: JSON.stringify( {"!top.tlv": this.tlv} ) },
         //contentType: "application/json; charset=utf-8",
         dataType: "json",
@@ -84,7 +84,7 @@ class WARPV_Example {
       });
     });
     
-    $("#warp-url").val("https://raw.githubusercontent.com/stevehoover/warp-v/master/warp-v.tlv");
+    $("#warpv-url").val("https://raw.githubusercontent.com/stevehoover/warp-v/master/warp-v.tlv");
     
     $("#assembly-code").val(
 `
@@ -139,7 +139,7 @@ class WARPV_Example {
     this.tlv =
 `\\m4_TLV_version 1d: tl-x.org
 \\SV
-m4_include_url(['${$(#warp-url)}'])
+m4_include_url(['${$("#warpv-url").val()}'])
 
 // A big hack to convince the latest WARP-V to assemble the given code into parseable output.
 // This is all very sensitive to changes.
