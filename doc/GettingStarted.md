@@ -97,8 +97,14 @@ The web client is defined by the HTML, CSS, and JS content in `<repo>/apps/toy/c
 
 ### Custom Kernel
 
-The vadd kernel is a good starting point for your own kernel. Though we strongly recommend using TL-Verilog, this kernel is written in SystemVerilog, which is currently more broadly familiar. You can start with TL-Verilog with `cd <repo>/apps/toy/fpga/src &&
-cp tlv_varients/toy_kernel.tlv.disabled toy_kernel.tlv`. We'll add some [TL-Verilog Tutorials](TLV_Tutorials.md#top).
+The vadd kernel is a good starting point for your own kernel. Though we strongly recommend using TL-Verilog, this kernel is written in SystemVerilog, which is currently more broadly familiar. If you'd like to try TL-Verilog:
+
+```sh
+cd <repo>/apps/toy/fpga/src
+cp tlv_varients/toy_kernel.tlv.disabled toy_kernel.tlv
+```
+
+We'll add some [TL-Verilog Tutorials](TLV_Tutorials.md#top).
 
 Modify the kernel code as desired. Try subtraction or anything you like.
 

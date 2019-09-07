@@ -310,6 +310,11 @@ PROJ_C_HDRS ?=$(shell ls ../host/*.h ../host/*.hpp ../host/*.H ../host/*.hxx 2> 
 PROJ_SW_CFLAGS ?=
 PROJ_SW_LFLAGS ?=
 
+# If the project supplies C++ code, it must supply main. Otherwise, use framework main.
+ifeq ($(PROJ_C_SRC)$(EXTRA_C_SRC),)
+  PROJ_C_SRC=$(FRAMEWORK_HOST_DIR)/default_main.c
+endif
+
 #Software (no FPGA) flags
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC) $(EXTRA_C_SRC)
 SW_HDRS ?= $(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS) $(EXTRA_C_HDRS)
