@@ -39,6 +39,16 @@ $(document).ready(function () {
 class WARPV_Example {
   constructor () {
     // Constants:
+    // The FPGA interface. The first word of the first chunk identifies the packet type.
+    // To keep it simple, there is a response chunk for every chunk sent.
+    // Each type shows send format, then receive format.
+    this.IMEM_WRITE_TYPE = 1;  // {type, addr(instr-granular), data, ...} {type, addr(instr-granular), data, ...}
+    this.IMEM_READ_TYPE = 2;   // {type, addr, ...} {type, addr, data, ...}
+    this.HALT_TYPE = 3;        // {type, ...} {type, ...}
+    this.RUN_TYPE = 4;         // {type, ...} {type, ...}
+    
+    this.IMEM_SIZE = 16;       // Number of entries/instructions in IMem.
+    
     this.BEGIN_PROGRAM_LINE = "/* BEGIN PROGRAM";
     this.END_PROGRAM_LINE = "END_PROGRAM */";
     this.SV_BASE_CHARS = {b: 2, d: 10, h: 16};
@@ -47,13 +57,28 @@ class WARPV_Example {
     this.server.connect();
 
     this.source_instrs = null;  // An array for the parsed source code, where each entry is an extracted instruction as a parenthetical expression.
-    //-this.tx_data_array = null;
-    //-this.tx_data_valid = false;
 
-    // Attach handlers.
 
+    // Process responses from FPGA.
     this.server.ws.onmessage = (msg) => {
-      this.receiveData(msg);
+      try {
+        let data = JSON.parse(msg.data);
+        let chunk_type = data[0][0];
+        if (chunk_type == this.IMEM_WRITE_TYPE) {
+          this.receiveWriteResponse(data);
+        }
+        else if (chunk_type == this.IMEM_READ_TYPE) {
+          this.receiveReadResponse(data);
+        }
+        else if (chunk_type == this.HALT_TYPE || chunk_type == this.IMEM_READ_TYPE) {
+          console.log(`Received response for type: ${chunk_type}.`);
+        }
+        else {
+          this.log(`Illegal chunk type: ${chunk_type}`);
+        }
+      } catch(err) {
+        this.log(`Failed to parse returned json string: ${msg.data}`);
+      }
     }
     
     $('#assemble-button').click( (evt) => {
@@ -71,11 +96,15 @@ class WARPV_Example {
         //contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: (response) => {
+          // Process SandPiper output to extract assembled data.
           let chunks = this.verilogToChunks(response["top.m4out.tlv"]);
+          // Send assembled binary to FPGA.
           this.server.sendChunks(chunks.length, chunks);
+          // Send read commanads to server to read each instruction from IMem..
+          this.readIMem();
         },
         failure: (response) => {
-          console.log('Error calling SandPiper(TM) SaaS');
+          this.log('Error calling SandPiper(TM) SaaS');
         },
         complete: () => {
           // Done assembly. Re-enable button.
@@ -117,10 +146,6 @@ class WARPV_Example {
 (BGE, r1, r2, 1111111010100) //     TERMINATE by branching to -1
 `
     );
-    
-    this.server.ws.onmessage = (msg) => {
-      this.receiveData(msg);
-    }
 
   }
 
@@ -235,7 +260,7 @@ ${this.END_PROGRAM_LINE}
         if (num_bits != 32) {
           throw new Error(`Assembled value does not contain 32 bits: ${line}`);
         }
-        ret.push([value32]);
+        ret.push([this.IMEM_WRITE_TYPE, instr_cnt, value32]);
       } catch (e) {
         assemblerError(`Failed to parse assembled Verilog expressions with exception: ${e.message}`);
         error = true;
@@ -253,10 +278,17 @@ ${this.END_PROGRAM_LINE}
     
     return ret;
   }
+  
+  readIMem() {
+    let i;
+    for (i = 0; i < this.IMEM_SIZE; i++) {
+      this.server.sendChunks(1, [[this.IMEM_READ_TYPE, i]]);
+    }
+  }
 
   sendData(data) {
     if (! this.tx_data_valid) {
-      console.log("Bug: Refusing to send invalid data.");
+      this.log("Bug: Refusing to send invalid data.");
     } else {
       let tmp = `{"size":${this.tx_data_array.length},"resp_size":${$("#num-resp-chunks").val()},"data":${JSON.stringify(this.tx_data_array)}}`;
       console.log(`Sending DATA_MSG: ${tmp}`);
@@ -264,10 +296,9 @@ ${this.END_PROGRAM_LINE}
     }
   }
 
-  receiveData(msg) {
+  receiveWriteResponse(data) {
     // Translate msg to hex.
     try {
-      let data = JSON.parse(msg.data);
       let display_data = [];
       data.forEach( (chunk, i) => {
         let display_chunk = chunk.map( (val) => {return val.toString(16);} );
@@ -275,7 +306,25 @@ ${this.END_PROGRAM_LINE}
       });
       $("#rx-data").text(JSON.stringify(display_data));
     } catch(err) {
-      $("#message").text(`Failed to parse returned json string: ${msg.data}`);
+      this.log(`Failed to display program load response.`);
     }
+  }
+  
+  receiveReadResponse(data) {
+    try {
+      data = data[0];
+      let addr = data[1];
+      let el = $(`#imem > #instr${addr}`);
+      if (el.length == 0) {
+        $("#imem").append($(`<p id="instr${addr}"></p>`));
+      }
+      $(`#imem > #instr${addr}`).text(`32'h${data[2].toString(16)}`);
+    } catch(err) {
+      this.log(`Failed to process IMem read response.`);
+    }
+  }
+  
+  log(msg) {
+    $("#message").text(msg);
   }
 }
