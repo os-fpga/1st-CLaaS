@@ -17,7 +17,8 @@ git submodule update --init --recursive
 
 # Platform-specific installs.
 echo "Installing linux packages."
-COMMON_PACKAGES='python-tornado python-imaging make inotify-tools bc remmina verilator jq perl'
+mkdir -p local
+COMMON_PACKAGES='python-tornado make inotify-tools bc remmina jq perl'
 if [[ -n "$(which apt-get)" ]]
 then
   # Ubuntu
@@ -52,17 +53,17 @@ python3 -m pip install --user --upgrade Pillow tornado awscli boto3  # imaging
 
 
 # Configure remmina to disble the tray icon (so, it isn't left running when launched via Makefile).
-if [[ -e "~/.remmina/remmina.pref" ]]
+if [[ -e "$HOME/.remmina/remmina.pref" ]]
 then
-  sed 's/^disable_tray_icon=false$/disable_tray_icon=true'
+  sed -i 's/^disable_tray_icon=false$/disable_tray_icon=true/' "$HOME/.remmina/remmina.pref"
 else
-  mkdir -p ~/.remmina
-  echo [remmina_pref] > ~/.remmina/remmina.pref
-  echo 'disable_tray_icon=true' >> ~/.remmina/remmina.pref
+  mkdir -p "$HOME/.remmina"
+  echo [remmina_pref] > "$HOME/.remmina/remmina.pref"
+  echo 'disable_tray_icon=true' >> "$HOME/.remmina/remmina.pref"
 fi
 # Protect remmina.pref as this contains an encryption key. (No idea why remmina leaves this open.)
-# Passwords stored in remmina will be decryptable by anyone with access to this file.
-chmod 400 "~/.remmina/remmina.pref"
+# Passwords stored in remmina can be decrypted by anyone with access to this file.
+chmod 400 "$HOME/.remmina/remmina.pref"
 
 
 # Make sure ~/.local/bin is in path for python installs.
@@ -74,18 +75,18 @@ then
   echo
   if [[ "$SHELL" == "/bin/bash" ]]
   then
-    if [[ -e ~/.bashrc ]]
+    if [[ -e "$HOME/.bashrc" ]]
     then
-      if [[ $( grep fpga-webserver ~/.bashrc > /dev/null 2>&1 )$? != 0 ]]
+      if [[ $( grep fpga-webserver "$HOME/.bashrc" > /dev/null 2>&1 )$? != 0 ]]
       then
         echo "INFO: Strange, it looks like ~/.bashrc has already been modified, but 'aws' command is not currently in \$PATH. Might need to add ~/.local/bin to your \$PATH manually."
       else
-        echo >> ~/.bashrc
+        echo >> "$HOME/.bashrc"
         echo "export PATH=\$PATH:$HOME/.local/bin  # Added by fpga-webserver repository." >> ~/.bashrc
         echo "==================================="
         echo "Modified ~/.bashrc to add ~/.local/bin to path, and sourcing ~/.bashrc."
         echo "==================================="
-        source ~/.bashrc
+        source "$HOME/.bashrc"
         if [[ $( which aws > /dev/null 2>&1 )$? != 0 ]]
         then
           echo "WARNING: Still cannot find 'aws' command."
@@ -100,9 +101,12 @@ then
   echo
 fi
 
+
 # Download Terraform binary.
+# TODO: Move this into /local.
 if [[ ! -d terraform ]]
 then
+  echo "Downloading Terraform"
   mkdir terraform
   ( cd terraform && \
     curl https://releases.hashicorp.com/terraform/0.12.4/terraform_0.12.4_linux_amd64.zip > terraform.zip \
@@ -112,4 +116,27 @@ then
 fi
 # Note that framework/Makefile and bin/regress use the existence of terraform/terraform to indicate that this script was run.
 
+
+# Check Verilator installation.
+# Need Verilator 4+ (ish).
+# Installation runs long, so here, we just report what should be done.
+echo -e "\e[1m\e[33m"  # Report in bold yellow.
+# if [[ no local install ]] && ( no verilator || verilator is not version 4+ )
+if [[ ! -n "$(ls "local/verilator/bin/verilator" 2> /dev/null)" ]] && ( ! which verilator &> /dev/null || ! (( $(verilator --version | sed 's/^Verilator \([[:digit:]]\+\)\..*$/\1/') > 3 )) > /dev/null )
+then
+  echo "Could not find Verilator 4+."
+  if which verilator &> /dev/null
+  then
+    echo "You have: $(verilator --version)"
+    if which verilator &> /dev/null
+    then
+       # Ubuntu
+       echo "Uninstall first (sudo apt-get remove verilator?), then:"
+    else
+       echo "Uninstall first, then:"
+    fi
+  fi
+  echo "Install using ./bin/install_verilator, or visit veripool.org for information about the latest version."
+fi
+echo -e "\e[0m"  # Back to normal font.
 ) |& tee $LOG

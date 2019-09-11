@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Install Verilator in <REPO>/local/verilator (if missing), or "install_verilator global" to also
+# install globally on the system.
+
+set -e
+cd $(dirname ${BASH_SOURCE})/..
+
+arg1="$1"
+if [[ -n "$arg1" && "$arg1" != "global" ]]
+then
+  echo "Usage: $0 [global]"
+  exit 1
+fi
+
+
+mkdir -p local
+cd local
+
+if [[ -e ./verilator ]]
+then
+  echo "$(pwd)/verilator exists."
+  echo "To reinstall, first 'rm -rf $(pwd)/verilator'."
+else
+  curl https://www.veripool.org/ftp/verilator-4.018.tgz | tar -zx
+  mv verilator* verilator  # So path is not version-dependent.
+  cd verilator
+  ./configure
+  make
+fi
+
+if [[ "$arg1" == "global" ]]
+then
+  if which verilator &> /dev/null
+  then
+    echo "Verilator exists in PATH. Cowardly refusing to install globally."
+    exit 1
+  else
+    sudo make install
+  fi
+fi

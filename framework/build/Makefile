@@ -202,8 +202,15 @@ AUTO_APPROVE=false
 
 
 # Characterize platform.
-
-VERILATOR=$(shell which verilator)
+ifeq ($(shell ls "$(REPO)/local/verilator"),)
+# No local verilator.
+VERILATOR=/usr/local/bin/verilator
+VERILATOR_INCLUDE=$(VERILATOR_INCLUDE)
+else
+VERILATOR=$(REPO)/local/verilator/bin/verilator
+VERILATOR_ROOT=$(REPO)/local/verilator
+VERILATOR_INCLUDE=$(REPO)/local/verilator/include
+endif
 ifneq ($(AWS_FPGA_REPO_DIR),)
 ifneq ($(findstring f1.,$(shell curl http://169.254.169.254/latest/meta-data/instance-type)),)
 # F1
@@ -527,11 +534,11 @@ else
 #sim target
 $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC)
 	mkdir -p $(DEST_DIR)
-	verilator --cc --sv --trace -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator 
+	$(VERILATOR) --cc --sv --trace -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator 
 $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp
 	cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
-	@# For multithreaded, include on command line: /usr/local/share/verilator/include/verilated_threads.cpp
-	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) /usr/local/share/verilator/include/verilated.cpp /usr/local/share/verilator/include/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I /usr/local/share/verilator/include -o $(DEST_DIR)/$(HOST_EXE)
+	@# For multithreaded, include on command line: $(VERILATOR_INCLUDE)/verilated_threads.cpp
+	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) $(VERILATOR_INCLUDE)/verilated.cpp $(VERILATOR_INCLUDE)/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I $(VERILATOR_INCLUDE) -o $(DEST_DIR)/$(HOST_EXE)
 	cd $(DEST_DIR)/verilator && rm verilator_kernel.h
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)

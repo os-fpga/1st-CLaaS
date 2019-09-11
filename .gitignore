@@ -11,6 +11,7 @@ apps/mandelbrot/build/cast
 **.terraform*
 **.pem
 /framework/terraform/development/centos_pwd.txt
+/local
 /terraform
 /tmp
 **/log/
