@@ -40,6 +40,6 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
-  cout << "Hello from host application.\n";
+  //cout << "Hello from host application.\n";
   (new HostApp())->server_main(argc, argv, KERNEL_NAME);
 }

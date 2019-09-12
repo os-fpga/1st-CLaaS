@@ -770,7 +770,6 @@ build: $(BUILD_TARGETS)
 	
 launch: $(BUILD_TARGETS)
 	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
-	echo $(LAUNCH_CMD)
 	$(LAUNCH_CMD)
 
 

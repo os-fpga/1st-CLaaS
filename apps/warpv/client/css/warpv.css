@@ -5,7 +5,7 @@
   resize: both;
   font-family: "Lucida Console", Monaco, monospace;
 }
-#assembled-code > p {
+#assembled-code > p, #imem > p {
   margin: 0px;
 }
 .error {
