@@ -19,7 +19,7 @@ echo \
  && echo "Running reboot script to pre-build and start web server for manual testing." \
  && /home/centos/src/project_data/fpga-webserver/framework/terraform/static_f1_reboot.sh \
  && echo \
- && echo "YEAY!!! The web server has been launched." \
+ && echo "YAY!!! The web server has been launched." \
  && echo "YOU HAVE 3 MINUTES to test it out, then the machine will be shutdown, if not stopped manually (but check to be sure)." \
  && sleep 180;
 STATUS=$?

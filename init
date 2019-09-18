@@ -18,7 +18,7 @@ git submodule update --init --recursive
 # Platform-specific installs.
 echo "Installing linux packages."
 mkdir -p local
-COMMON_PACKAGES='python-tornado make inotify-tools bc remmina jq perl'
+COMMON_PACKAGES='make inotify-tools bc remmina jq perl'  # python-tornado removed -- redundant w/ pip install of tornado
 if [[ -n "$(which apt-get)" ]]
 then
   # Ubuntu
@@ -41,14 +41,14 @@ then
   
   sudo yum -y install $COMMON_PACKAGES  #  python-tornado python-imaging redundant w/ pip install?
   
-  # bash lives at /usr/bin/bash in CentOS, but in /bin/bash for Ubuntu. Create /bin/bash.
-  sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment. 
+  ## bash lives at /usr/bin/bash in CentOS, but in /bin/bash for Ubuntu. Create /bin/bash.
+  #sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment. 
 fi
 
 
 # Install python libraries for user only so as not to affect system installs.
 echo "Installing Python packages for user $USER."
-python3 -m pip install --upgrade pip
+sudo python3 -m pip install --upgrade pip
 python3 -m pip install --user --upgrade Pillow tornado awscli boto3  # imaging
 
 

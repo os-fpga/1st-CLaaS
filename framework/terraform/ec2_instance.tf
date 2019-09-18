@@ -252,6 +252,7 @@ resource "aws_instance" "the_instance" {
 
     provisioner "remote-exec" {
       # Configure instance.
+      # Note: "sudo .../init" is required for F1 use, where server must be run as root.
       inline = [
         "echo && echo -e '\\e[32m\\e[1mSetting up remote instance.\\e[0m' && echo",
         "echo 'Cloning AWS-FPGA repo'",
@@ -260,10 +261,11 @@ resource "aws_instance" "the_instance" {
         "git clone -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/fpga-webserver\"",
         "echo 'Running init'",
         "/home/centos/src/project_data/fpga-webserver/init",
+        "sudo /home/centos/src/project_data/fpga-webserver/init",
         "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
         "source ${var.config_instance_script}",
-        "ln -s /home/centos/src/project_data /home/centos/src/workdisk",
-        "ln -s /home/centos/src/project_data/fpga-webserver /home/centos/src/fpga-webserver",
+        "ln -s /home/centos/src/project_data /home/centos/workdisk",
+        "ln -s /home/centos/src/project_data/fpga-webserver /home/centos/fpga-webserver",
       ]
     }
 }
