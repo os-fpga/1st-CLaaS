@@ -202,9 +202,11 @@ AUTO_APPROVE=false
 
 
 # Characterize platform.
-ifeq ($(shell ls "$(REPO)/local/verilator"),)
+VERILATOR=$(shell ls "$(REPO)/local/verilator" 2> /dev/null)
+ifeq ($(VERILATOR),)
 # No local verilator.
-VERILATOR=/usr/local/bin/verilator
+VERILATOR=$(shell which verilator)
+# Presumable verilator is /usr/local/bin/verilator or /usr/bin/verilator (but there is no check).
 VERILATOR_INCLUDE=/usr/share/verilator/include
 else
 VERILATOR=$(REPO)/local/verilator/bin/verilator
