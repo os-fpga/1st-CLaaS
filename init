@@ -42,7 +42,7 @@ then
   sudo yum -y install $COMMON_PACKAGES  #  python-tornado python-imaging redundant w/ pip install?
   
   # bash lives at /usr/bin/bash in CentOS, but in /bin/bash for Ubuntu. Create /bin/bash.
-  sudo ln -s /usr/bin/bash /bin/bash    # TODO: So far, untested. Test and delete this comment. 
+  sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment. 
 fi
 
 

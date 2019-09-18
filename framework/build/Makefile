@@ -54,8 +54,8 @@
 #   Static Accelerated Web Server: An Accelerated Web Server Instance that is statically associated with a Landing Web Server.
 #                                  It is shared by all users and may be dynamically started and stopped and will be stopped by an
 #                                  EC2 time bomb.
-#   EC2 Feeder: A utility provided in this repository responsible for stopping/terminating EC2 Instances (Accelerated Instances)
-#               when not in use.
+#   EC2 Time Bomb: A utility provided in this repository responsible for stopping/terminating EC2 Instances (Accelerated Instances)
+#                  when not in use.
 #
 # Usage:
 #   Projects must provide a Makefile that includes this one.
@@ -205,7 +205,7 @@ AUTO_APPROVE=false
 ifeq ($(shell ls "$(REPO)/local/verilator"),)
 # No local verilator.
 VERILATOR=/usr/local/bin/verilator
-VERILATOR_INCLUDE=$(VERILATOR_INCLUDE)
+VERILATOR_INCLUDE=/usr/share/verilator/include
 else
 VERILATOR=$(REPO)/local/verilator/bin/verilator
 VERILATOR_ROOT=$(REPO)/local/verilator
@@ -892,8 +892,9 @@ define make_instance
 	@if ! git status | grep 'working directory clean' > /dev/null; then echo && echo -e '\e[91m\e[1mInstance construction can have unexpected behavior when working directory is not clean.\e[0m' && echo && sleep 2; fi
 	@echo 'Instance will be initialized based on latest "$(GIT_BRANCH)" branch.' && echo
 	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
-	@echo 'This instance and its associated resources can be destroyed with: "make destroy SETUP=$(SETUP)".'
-	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password" && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'
+	@echo 'This instance and its associated resources can be destroyed with:'
+	@echo '   > make destroy SETUP=$(SETUP).'
+	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password" && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
 endef
 ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:
