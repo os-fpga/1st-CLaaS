@@ -111,6 +111,9 @@ class Socket():
             traceback.print_stack()
         #print("Python: recv'ed:", ret)
         return ret
+        
+    def close(self):
+        self.sock.close()
 
 ### This function requests an image from the host
 ### Parameters:

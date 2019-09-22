@@ -8,13 +8,21 @@
 
 ## run Mandelbrot
 
-  - Copy 2-lines of Run Mandelbrot Locally.
-  - Chrome: open "localhost:8888"
+  - In Terminal 2:
+    - [AWS already set up]
+      Create FPGA instance:
+      `cd /tmp/fpga-webserver/apps/mandelbrot/build && make static_accelerated_instance PASSWORD=demo PREBUILT=true`
+      (and let it run in background)
+    - type "yes"
+  - `make launch`
+  - In Chrome, open `localhost:8888`
   - Demo C++
   - Demo "FPGA" (sim)
-  - Pull in pre-opened fractalvalley:8000
-  - Start FPGA
-  - Demo
+  - wait for F1 build
+  - ? Open AWS Console ?
+  - NO: Grab IP address
+  - NO: Start FPGA
+  - Demo FPGA
 
 ## Make Custom App
 

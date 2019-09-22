@@ -212,16 +212,16 @@ resource "aws_instance" "the_instance" {
     
     # Save TLS keys.
     provisioner "local-exec" {
-     command ="mkdir -p ${var.out_dir} && echo \"${tls_private_key.temp.private_key_pem}\" > ${var.out_dir}/private_key.pem"    
+      command ="mkdir -p ${var.out_dir} && echo \"${tls_private_key.temp.private_key_pem}\" > ${var.out_dir}/private_key.pem"
     }
     provisioner "local-exec" {
-     command ="chmod 600 ${var.out_dir}/private_key.pem"    
+      command ="chmod 600 ${var.out_dir}/private_key.pem"
     }
     provisioner "local-exec" {
-     command ="echo \"${tls_private_key.temp.public_key_pem}\" > ${var.out_dir}/public_key.pem"    
+      command ="echo \"${tls_private_key.temp.public_key_pem}\" > ${var.out_dir}/public_key.pem"
     }
     provisioner "local-exec" {
-     command ="chmod 600 ${var.out_dir}/public_key.pem"    
+      command ="chmod 600 ${var.out_dir}/public_key.pem"
     }
 
     provisioner "file" {
@@ -249,21 +249,21 @@ resource "aws_instance" "the_instance" {
     #provisioner "remote-exec" {
     #  inline = ["source '/home/centos/clone_repos.sh'"]
     #}
-
+    
+    # Configure instance.
     provisioner "remote-exec" {
-      # Configure instance.
       # Note: "sudo .../init" is required for F1 use, where server must be run as root.
       inline = [
         "echo && echo -e '\\e[32m\\e[1mSetting up remote instance.\\e[0m' && echo",
         "echo 'Cloning AWS-FPGA repo'",
-        "git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR",
+        "git clone -q https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR",
         "echo 'Cloning 1st CLaaS repo'",
-        "git clone -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/fpga-webserver\"",
+        "git clone -q -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/fpga-webserver\"",
         "echo 'Running init'",
         "/home/centos/src/project_data/fpga-webserver/init",
         "sudo /home/centos/src/project_data/fpga-webserver/init",
         "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
-        "source ${var.config_instance_script}",
+        "source ${var.config_instance_script} ${aws_instance.the_instance.public_ip}",
         "ln -s /home/centos/src/project_data /home/centos/workdisk",
         "ln -s /home/centos/src/project_data/fpga-webserver /home/centos/fpga-webserver",
       ]

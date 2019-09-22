@@ -116,6 +116,10 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
   def on_close(self):
     print('Webserver: Connection closed')
+    oneshot = self.application.args["oneshot"]
+    if oneshot != None:
+        print ("Webserver: Killing application:", oneshot)
+        os.kill(int(oneshot), signal.SIGTERM)
 
   def check_origin(self, origin):
     return True
@@ -269,7 +273,7 @@ class StartEC2InstanceHandler(EC2Handler):
 
 # This class can be overridden to provide application-specific behavior.
 # The derived constructor should:
-#   # optionally, app.associateEC2Instance(...)
+#   # optionally, app.associateEC2Instance()
 #   routes = defaultRoutes()
 #   routes.extend(...)
 #   super(MyApplication, self).__init__(port, routes)
@@ -277,7 +281,7 @@ class FPGAServerApplication(tornado.web.Application):
     cleanup_handler_called = False
     clean_exit_called = False
     
-    # These can be set by calling associateEC2Instance(..) to associate an EC2 instance with this web server.
+    # These can be set by calling associateEC2Instance() to associate an EC2 instance with this web server.
     ec2_time_bomb_script = None
     ec2_time_bomb_filename = None
     ec2_time_bomb_timeout = 120
@@ -291,14 +295,14 @@ class FPGAServerApplication(tornado.web.Application):
         dir = "."
         
     # A derived class can be call this in its __init__(..) prior to this class's __init__(..) to associate an
-    # AWS EC2 Instance with this web server by starting a time bomb.
-    # Args:
-    #   ec2_instance: (string) The ID of an AWS EC2 instance statically associated with this web server which can be
-    #                 started via GET request and for which a time bomb will be started by this function. A route (/reset_ec2_time_bomb) will
-    #                 be provided by addDefaultRoutes(..) to reset the time bomb.
-    #   password:     The password to require for starting the ec2 instance, or explicitly "" for no password. (Required if ec2 instance in use.)
-    #   profile:      (opt) An AWS profile to use.
-    def associateEC2Instance(self, ec2_instance, timeout, password, profile=None):
+    # AWS EC2 Instance with this web server based on command-line arguments by starting a time bomb.
+    def associateEC2Instance(self):
+        # Extract command-line args.
+        ec2_instance = self.args["instance"]
+        timeout = self.args["ec2_time_bomb_timeout"]
+        password = self.args["password"]
+        profile = self.args["profile"]
+        
         ret = False
         # Create time bomb.
         time_bomb_dir = FPGAServerApplication.app_dir + "/webserver/ec2_time_bombs"
@@ -419,50 +423,106 @@ class FPGAServerApplication(tornado.web.Application):
     # Clean up upon exiting.
     @staticmethod
     def cleanExit():
-        if not FPGAServerApplication.clean_exit_called:
-            FPGAServerApplication.clean_exit_called = True
-            print("Webserver: Closing socket.")
-            #sock = FPGAServerApplication.application.socket
-            #sock.close()  # Not found??
-            
-            MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 1
-            if FPGAServerApplication.ec2_time_bomb_filename:
-                print("Webserver: Stopping EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
+        try:
+            if not FPGAServerApplication.clean_exit_called:
+                FPGAServerApplication.clean_exit_called = True
                 try:
-                    out = subprocess.check_output([FPGAServerApplication.ec2_time_bomb_script, "done", FPGAServerApplication.ec2_time_bomb_filename], universal_newlines=True)
-                except:
-                    print("Webserver: Failed to stop EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
-        
-            print('Webserver: Stopping http server.')
-            FPGAServerApplication.server.stop()
-
-            #print('Will shutdown within %s seconds ...' % MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
-            io_loop = tornado.ioloop.IOLoop.instance()
-
-            deadline = time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN
-
-            # If there is nothing pending in io_loop, stop, otherwise wait and repeat until timeout.
-            # TODO: Had to disable "nothing pending" check, so this is just a fixed timeout now.
-            #       Monitor this to see if a solution pops up: https://gist.github.com/mywaiting/4643396  
-            def stop_loop():
-                now = time.time()
-                if now < deadline: # and (io_loop._callbacks or io_loop._timeouts):
-                    io_loop.add_timeout(now + 1, stop_loop)
-                else:
-                    io_loop.stop()
-                    print('Webserver: Shutdown')
-            stop_loop()
+                    FPGAServerApplication.application.socket.close()
+                except Exception as e:
+                    print("Failed to close socket:", e)
+                
+                MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 1
+                if FPGAServerApplication.ec2_time_bomb_filename:
+                    print("Webserver: Stopping EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
+                    try:
+                        out = subprocess.check_output([FPGAServerApplication.ec2_time_bomb_script, "done", FPGAServerApplication.ec2_time_bomb_filename], universal_newlines=True)
+                    except:
+                        print("Webserver: Failed to stop EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
             
-            # As an added safety measure, let's wait for the EC2 instance to stop.
-            if FPGAServerApplication.ec2_time_bomb_filename:
-                print("Webserver: Waiting for associated EC2 instance (" + FPGAServerApplication.ec2_instance_id + ") to stop.")
-                FPGAServerApplication.awsEc2Cli(['wait', 'instance-stopped', '--no-paginate'])
-                print("Webserver: EC2 instance " + FPGAServerApplication.ec2_instance_id + " stopped.")
-        else:
-            print("Webserver: Duplicate call to cleanExit().")
+                print('Webserver: Stopping http server.')
+                FPGAServerApplication.server.stop()
+
+                #print('Will shutdown within %s seconds ...' % MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
+                io_loop = tornado.ioloop.IOLoop.instance()
+
+                deadline = time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN
+
+                # If there is nothing pending in io_loop, stop, otherwise wait and repeat until timeout.
+                # TODO: Had to disable "nothing pending" check, so this is just a fixed timeout now.
+                #       Monitor this to see if a solution pops up: https://gist.github.com/mywaiting/4643396  
+                def stop_loop():
+                    now = time.time()
+                    if now < deadline: # and (io_loop._callbacks or io_loop._timeouts):
+                        io_loop.add_timeout(now + 1, stop_loop)
+                    else:
+                        io_loop.stop()
+                        print('Webserver: Shutdown')
+                stop_loop()
+                
+                # As an added safety measure, let's wait for the EC2 instance to stop.
+                if FPGAServerApplication.ec2_time_bomb_filename:
+                    print("Webserver: Waiting for associated EC2 instance (" + FPGAServerApplication.ec2_instance_id + ") to stop.")
+                    FPGAServerApplication.awsEc2Cli(['wait', 'instance-stopped', '--no-paginate'])
+                    print("Webserver: EC2 instance " + FPGAServerApplication.ec2_instance_id + " stopped.")
+            else:
+                print("Webserver: Duplicate call to cleanExit().")
+        except Exception as e:
+            print("Failed to exit cleanly. Exception", e)
     
         
-    def __init__(self, port, routes):
+    # Return arguments dict that can be .update()d to application constructor arg to provide arguments for
+    # associateEC2Instance().
+    # Command-line args are:
+    #   instance: The ID of an AWS EC2 instance statically associated with this web server which can be
+    #             started via GET request. associateEC2Instance() will start a time bomb and defaultRoutes() will create
+    #             a route (/reset_ec2_time_bomb) to reset the time bomb.
+    #   ec2_time_bomb_timeout: A timeout value in seconds for the time bomb.
+    #   password: The password to require for starting the ec2 instance, or explicitly "" for no password. (Required if ec2 instance in use.)
+    #   profile:  (opt) An AWS profile to use.
+    @staticmethod
+    def EC2Args():
+        return {"instance": None, "ec2_time_bomb_timeout": 120, "profile": None, "password": None}
+
+    # Argument parsing, the result of which is to be passed to the constructor. (It is separated from
+    # constructor to allow for routes (which are a parameter of tornado.web.Application) to depend on args.)
+    #   flags: {list} Long-form command-line parameters without values (without '--').
+    #          Implicit flags are:
+    #             "oneshot": Exit after socket is closed.
+    #   params: {dict} Long-form command-line args with default values. Use None if no default. There is no distinction between required
+    #           and optional arguments, so required args should be checked for None values. Default argument processing can be avoided
+    #           by passing flags=None and params=<value of args after command-line processing>.
+    #           Implicit params are:
+    #              "port" (8888): Socket on which web server will listen.
+    # Return: {dict} The parameters/arguments. When a command-line arg is not given, it will have default value. A flag will not exist if not given, or have "" value if given.
+    @staticmethod
+    def commandLineArgs(flags=[], params={}):
+        # Apply implicit args. ("password" is from EC2Args(), but the Makefile will provide it from configuration parameters, whether used or not.)
+        ret = {"port": 8888, "password": None, "oneshot": None}
+        ret.update(params)
+        arg_list = flags
+        # Apply implicit flags (currently none).
+        arg_list.extend([])
+        for arg in ret:
+            arg_list.append(arg + "=")
+        try:
+            opts, remaining = getopt.getopt(sys.argv[1:], "", arg_list)
+        except getopt.GetoptError:
+            print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout <sec>] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
+            sys.exit(2)
+        # Strip leading dashes.
+        for opt, arg in opts:
+            opt = re.sub(r'^-*', '', opt)
+            ret[opt] = arg
+        return ret
+        
+    # Params:
+    #   routes: {list of tuples} as for Tornado. Can pass defaultRoutes().
+    #   args: from commandLineArgs() (generally).
+    def __init__(self, routes, args):
+        self.args = args
+        
+        self.port = int(self.args['port'])
+        
         FPGAServerApplication.application = self
         
         super(FPGAServerApplication, self).__init__(routes)
@@ -471,7 +531,7 @@ class FPGAServerApplication(tornado.web.Application):
         
         server = tornado.httpserver.HTTPServer(self)
         FPGAServerApplication.server = server
-        server.listen(port)
+        server.listen(self.port)
         self.message_handlers = {}
         self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
@@ -479,7 +539,7 @@ class FPGAServerApplication(tornado.web.Application):
         # Report external URL for the web server.
         # Get Real IP Address using 3rd-party service.
         # Local IP: myIP = socket.gethostbyname(socket.gethostname())
-        port_str = "" if port == 80 else  ":" + str(port)
+        port_str = "" if self.port == 80 else  ":" + str(self.port)
         try:
             self.external_ip = subprocess.check_output(["wget", "-qO-", "ifconfig.me"], universal_newlines=True)
             print('*** Websocket Server Started, (http://%s%s) ***' % (self.external_ip, port_str))
@@ -499,38 +559,3 @@ class FPGAServerApplication(tornado.web.Application):
             print("Webserver: Exiting due to exception:", e)
             #FPGAServerApplication.cleanExit(e)
             
-
-# Default argument parsing, to be called by __main__.
-# TODO: Require parameters to include optional arguments, like those for static F1 instances.
-def defaultParseArgs():
-    ret = {"port": 8888, "instance": None, "ec2_time_bomb_timeout": 120, "profile": None, "password": None}
-    try:
-        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_time_bomb_timeout=", "password=", "profile="])
-    except getopt.GetoptError:
-        print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout <sec>] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
-        sys.exit(2)
-    # Strip leading dashes.
-    for opt, arg in opts:
-        opt = re.sub(r'^-*', '', opt)
-        ret[opt] = arg
-    return ret
-    
-    """
-    ret = {"port": 8888, "instance": None, "ec2_time_bomb_timeout": 120, "profile": None, "password": None}
-    try:
-        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port=", "instance=", "ec2_time_bomb_timeout=", "password=", "profile="])
-    except getopt.GetoptError:
-        print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '--port':
-            ret.port = int(arg)
-        if opt == '--instance':
-            ret.instance = arg
-        if opt == '--ec2_time_bomb_timeout':
-            ret.ec2_time_bomb_timeout = arg
-        if opt == '--password':
-            ret.password = arg
-        if opt == '--profile':
-            ret.profile = arg
-    """

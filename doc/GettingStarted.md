@@ -85,7 +85,7 @@ Now you are ready to make an simple application of your own.
 `vadd` is a good starting point. We've provided a command to copy an application and update the application name throughout the copy.
 
 ```sh
-cd <repo>/apps/apps/vadd/build
+cd <repo>/apps/vadd/build
 make copy_app APP_NAME=toy
 ```
 

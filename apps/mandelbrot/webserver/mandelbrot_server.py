@@ -303,10 +303,10 @@ MAIN APPLICATION
 """
 class MandelbrotApplication(FPGAServerApplication):
     
-    def __init__(self, port, instance, timeout, password, profile):
-        if instance:
+    def __init__(self, args):
+        if args["instance"]:
             # TODO: THIS IS NOT CORRECT FOR MULTIPLE USERS. NEED ONLY THE FIRST USER TO START THE WEBSERVER.
-            self.associateEC2Instance(instance, timeout, password, profile)
+            self.associateEC2Instance()
         routes = self.defaultRoutes(ip=True)  # ip route is used by framework as a ping for F1.
         routes.extend(
             [ (r"/redeploy", RedeployHandler),
@@ -315,7 +315,7 @@ class MandelbrotApplication(FPGAServerApplication):
               (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
               (r"/(?P<type>\w*tile)/(?P<depth>[^\/]+)/(?P<tile_z>[^\/]+)/?(?P<tile_x>[^\/]+)?/?(?P<tile_y>[^\/]+)?", ImageHandler),
             ])
-        super(MandelbrotApplication, self).__init__(port, routes)
+        super(MandelbrotApplication, self).__init__(routes, args)
         
     
     """
@@ -339,9 +339,8 @@ class MandelbrotApplication(FPGAServerApplication):
 if __name__ == "__main__":
 
     # Command-line options
+    args = FPGAServerApplication.commandLineArgs([], FPGAServerApplication.EC2Args())
     
     print("Mandelbrot webserver application starting.")
 
-    args = defaultParseArgs()
-
-    application = MandelbrotApplication(int(args['port']), args['instance'], args['ec2_time_bomb_timeout'], args['password'], args['profile'])
+    application = MandelbrotApplication(args)

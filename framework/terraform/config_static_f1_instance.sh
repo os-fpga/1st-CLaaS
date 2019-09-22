@@ -20,7 +20,7 @@ echo \
  && /home/centos/src/project_data/fpga-webserver/framework/terraform/static_f1_reboot.sh \
  && echo \
  && echo "YAY!!! The web server has been launched." \
- && echo "YOU HAVE 3 MINUTES to test it out, then the machine will be shutdown, if not stopped manually (but check to be sure)." \
+ && echo -e "\e[1m\e[33mYOU HAVE 3 MINUTES to test it out at http://$1 (<Cntrl>-click), then the machine will be shutdown, if not stopped manually (but check to be sure).\e[0m" \
  && sleep 180;
 STATUS=$?
 nohup bash -c 'sleep 1 && sudo shutdown now &> /dev/null < /dev/null &'

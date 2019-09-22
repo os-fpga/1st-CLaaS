@@ -126,15 +126,15 @@
 #     # displayed in plain text on stdout. 
 #     # Each *_instance target has its own default values for INSTANCE_* variables.
 #     development_instance:
-#        > make PASSWORD=XXX TFVAR=$HOME/aws_cred.tfvars development_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX development_instance  # (or omit variables to be prompted.)
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     f1_instance:
-#        > make PASSWORD=XXX TFVAR=$HOME/aws_cred.tfvars f1_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX f1_instance  # (or omit variables to be prompted.)
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #        NOTE: This instance is allocated enough INSTANCE_STORAGE for development by default.
 #     static_accelerated_instance:
 #        By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
-#        > make PASSWORD=XXX PREBUILT=false/true TFVAR=$HOME/aws_cred.tfvars static_accelerated_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX PREBUILT=false/true static_accelerated_instance  # (or omit variables to be prompted.)
 #           # PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     For make launch, to associate an F1 instance, with this Content Web Server use:
@@ -200,6 +200,9 @@ S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
 
 AUTO_APPROVE=false
 
+
+# Chrome executable if there is one. Empty if not found and unspecified.
+CHROME=$(shell which google-chrome)
 
 # Characterize platform.
 VERILATOR=$(shell ls "$(REPO)/local/verilator" 2> /dev/null)
@@ -281,13 +284,13 @@ PORT ?= 8888
 
 WEBSERVER_ARGS :=
 ifdef INSTANCE
-	WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --instance $(INSTANCE)
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --instance $(INSTANCE)
 endif
 ifdef PASSWORD
-	WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password $(PASSWORD)
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password $(PASSWORD)
 endif
 ifneq ($(AWS_PROFILE),default)
-	WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(AWS_PROFILE)
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(AWS_PROFILE)
 endif
 
 WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "../../../framework/webserver/default_server.py"; fi)
@@ -769,11 +772,18 @@ dead: ../live/$(BUILD_TARGET)/dead
 
 PHONY: build launch
 build: $(BUILD_TARGETS)
-	
+
+LAUNCH_CHECK=@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
 launch: $(BUILD_TARGETS)
-	@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
+	$(LAUNCH_CHECK)
 	$(LAUNCH_CMD)
 
+# An un-documented target to launch the web server and open Chrome to test it.
+# Requires $(CHROME) and works only for applications that open the websocket.
+chrome: $(BUILD_TARGETS)
+	$(LAUNCH_CHECK)
+	@# Launch Chrome in background and webserver in foreground in "one-shot" mode (exit when websocket is closed).
+	$(CHROME) -app='http:localhost:8888' & $(LAUNCH_CMD_PARTIAL) -p $(PORT) -o $(BUILD_TARGET) '$(HOST_CMD)'
 
 
 ifeq ($(BUILD_TARGET), hw)
@@ -886,7 +896,7 @@ define terraform
 	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' ec2_instance.tf \
 	&& sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' ec2_instance.tf \
 	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" ec2_instance.tf \
-	&& $(REPO)/terraform/terraform init && '$(REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS)
+	&& $(REPO)/terraform/terraform init && '$(REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS) |& tee terraform.log
 endef
 .PHONY: static_accelerated_instance development_instance
 TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
@@ -896,6 +906,7 @@ define make_instance
 	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
 	@echo 'This instance and its associated resources can be destroyed with:'
 	@echo '   > make destroy SETUP=$(SETUP).'
+	@# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
 	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password" && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
 endef
 ifneq ($(KERNEL_NAME),framework)

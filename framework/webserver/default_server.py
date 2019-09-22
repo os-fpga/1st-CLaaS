@@ -39,23 +39,8 @@ from server import *
 # This creates routes for html, js, and css files to serve web content.
 if __name__ == "__main__":
 
-    # Command-line options
-    args = defaultParseArgs()
-    """
-    port = 8888
-    try:
-        opts, remaining = getopt.getopt(sys.argv[1:], "", ["port="])
-    except getopt.GetoptError:
-        print("Invalid arguments:", sys.argv)
-        print('Usage: %s --port <port>' % (sys.argv[0]))
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '--port':
-            port = int(arg)
-    """
-
     # Webserver
     application = FPGAServerApplication(
-            int(args['port']),
-            FPGAServerApplication.defaultRoutes()
+            FPGAServerApplication.defaultRoutes(),
+            FPGAServerApplication.commandLineArgs()
         )

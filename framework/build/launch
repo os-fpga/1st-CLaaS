@@ -55,6 +55,7 @@
 #   -p <port>: The port number on which to launch. 8888 by default.
 #   -c <compile-command>: The compile command used to rebuilt when upgraded.
 #   -w <web-server-command>: The command to launch the web server. '<<PORT>>' will be substituted with the port number.
+#   -o: Launch webserver in one-shot mode, where it will kill the launch process when the websocket is closed (browser tab is closed).
 
 # Must be launched from the projects 'build' directory because:
 #   o If -w is not specified or the project utilizes default routing, the default web content paths are "../webserver/*".
@@ -75,20 +76,22 @@ PORT="8888"
 HOST_PID=""
 COMPILE_CMD=""
 LAUNCH_WEBSERVER_CMD='python3 ../../../framework/webserver/default_server.py --port=<<PORT>>'
-
+ONESHOT_ARG=' '
 
 # Read command line options
 
-while getopts "p:h:c:w:" opt
+while getopts "p:h:c:w:o" opt
   do
     case "${opt}" in
       p) PORT=${OPTARG};;
       h) HOST_PID=${OPTARG};;
       c) COMPILE_CMD="${OPTARG}";;
       w) LAUNCH_WEBSERVER_CMD="${OPTARG}";;
+      o) ONESHOT_ARG=" --oneshot=$$"
     esac
   done
 shift $((OPTIND -1))
+LAUNCH_WEBSERVER_CMD="$LAUNCH_WEBSERVER_CMD$ONESHOT_ARG"
 
 TARGET="$1"
 HOST="$2"

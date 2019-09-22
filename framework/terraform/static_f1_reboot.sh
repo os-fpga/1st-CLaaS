@@ -4,6 +4,7 @@
 # and terraform configures cron to run this @reboot.
 # Cron output is sent to /var/spool/mail/root.
 # Running via ssh establishes the proper environment.
+# TODO: Look into EC2 user_data or cloud-init to replace this mechanism.
 source /home/centos/server_config.sh
 WEBSERVER_LOG="/home/centos/src/project_data/fpga-webserver/apps/$KERNEL_NAME/build/webserver.log"
 PASSWORD_ARG=$(if [[ -n "$ADMIN_PWD"        ]]; then echo PASSWORD=$ADMIN_PWD;        fi)
