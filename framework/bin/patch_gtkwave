@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# GTKWave seems to have an issue with scopes that begin with "|", so traces produced with "\m4_TLV_version 1d --debugSigs: tl-x.org"
+# cannot be used in GTKWave. This script patches the trace file.
+#
+# Usage: $0 <file>
+
+sed -i 's/|\([a-z][a-z]\)/_I_\1/' "$1"

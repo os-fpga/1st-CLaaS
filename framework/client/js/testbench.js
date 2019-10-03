@@ -40,6 +40,7 @@ $(document).ready(function () {
 class RawTestBench {
   constructor () {
     // Member Variables:
+    this.tracing = false;
     this.server = new fpgaServer();
     this.server.connect();
 
@@ -49,7 +50,12 @@ class RawTestBench {
     // Attach handlers.
 
     this.server.ws.onmessage = (msg) => {
-      this.receiveData(msg);
+      if (data.hasOwnProperty('type')) {   // HACK
+        // Presumably a TRACE message.
+        this.log(`Received message: ${data.type}`);
+      } else {
+        this.receiveData(msg);
+      }
     }
 
     $("#tx-data-js").change( (evt) => {
@@ -72,6 +78,18 @@ class RawTestBench {
     );
     $("#tx-data-js").change();
     $("#num-resp-chunks").change();
+    
+    $('#trace-button').click( (evt) => {
+      if (this.tracing) {
+        this.tracing = false;
+        this.server.stopTracing();
+        $('#trace-button').text("Trace On");
+      } else {
+        this.tracing = true;
+        this.server.startTracing();
+        $('#trace-button').text("Trace Off");
+      }
+    });
   }
 
   parseTxData() {

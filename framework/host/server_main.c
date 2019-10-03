@@ -197,7 +197,7 @@ void HostApp::processTraffic() {
               for (int i = 0; i < DATA_WIDTH_UINT32; i++) {
                 uint32_t val = data_json["data"][d][i];
                 int_data_p[d * DATA_WIDTH_UINT32 + i] = val;
-                cout_line() << "Set data[" << d << "][" << i << "] to " << hex << val << dec << endl;
+                if (verbosity > 1) {cout_line() << "Set data[" << d << "][" << i << "] to " << hex << val << dec << endl;}
               }
             }
             cout_line() << "Done extracting data." << endl;
@@ -234,7 +234,7 @@ void HostApp::processTraffic() {
                 if (i > 0) {s += ",";}
                 uint32_t val = int_resp_data_p[d * DATA_WIDTH_UINT32 + i];
                 s += to_string(val);
-                cout_line() << "Read data[" << d << "][" << i << "] == " << hex << val << dec << endl;
+                if (verbosity > 1) {cout_line() << "Read data[" << d << "][" << i << "] == " << hex << val << dec << endl;}
               }
               s += "]";
             }
@@ -254,17 +254,23 @@ void HostApp::processTraffic() {
       }
       case START_TRACING_N:
       {
+        //json data_json = socket_recv_json("START TRACING");
         #ifdef KERNEL_AVAIL
+        if (verbosity > 1) {cout_line() << "STARTING TRACE." << endl;}
         kernel.enable_tracing();
         #endif
+        //socket_send("START_TRACING Response", string("\"START_TRACING ACK\""));
         break;
       }
       case STOP_TRACING_N:
       {
+        //json data_json = socket_recv_json("START TRACING");
         #ifdef KERNEL_AVAIL
+        if (verbosity > 1) {cout_line() << "STOPPING TRACE." << endl;}
         kernel.disable_tracing();
         kernel.save_trace();
         #endif
+        //socket_send("STOP_TRACING Response", string("\"STOP_TRACING ACK\""));
         break;
       }
       break;

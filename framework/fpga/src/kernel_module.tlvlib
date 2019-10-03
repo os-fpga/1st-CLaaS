@@ -62,14 +62,14 @@ m4_define(['m4_kernel_module'], ['module $1 #(parameter integer C_DATA_WIDTH = 5
 //
 \TLV flow_shell(|_in_pipe, @_in_at, |_out_pipe, @_out_at, /_trans)
    m4_pushdef(['m4_in_pipe'], m4_ifelse(|_in_pipe, [''], input, |_in_pipe))
-   m4_pushdef(['m4_in_at'], m4_ifelse(@_in_at, [''], 1, @_in_at))
+   m4_pushdef(['m4_in_at'], m4_ifelse(@_in_at, [''], @1, @_in_at))
    m4_pushdef(['m4_out_pipe'], m4_ifelse(|_out_pipe, [''], output, |_out_pipe))
-   m4_pushdef(['m4_out_at'], m4_ifelse(@_out_at, [''], 1, @_out_at))
+   m4_pushdef(['m4_out_at'], m4_ifelse(@_out_at, [''], @1, @_out_at))
    m4_pushdef(['m4_trans_ind'], m4_ifelse(/_trans, [''], [''], ['   ']))
    
    m4_in_pipe
       m4_in_at
-         $reset = *reset;
+         $reset = *reset;  // TODO: Take this a cycle earlier.
          $avail = *in_avail;
          ?$avail
             /_trans
@@ -79,6 +79,7 @@ m4_define(['m4_kernel_module'], ['module $1 #(parameter integer C_DATA_WIDTH = 5
       m4_out_at
          $blocked = ! *out_ready;
          $accepted = $avail && ! $blocked;
+         `BOGUS_USE($accepted)
          *out_avail = $avail;
          ?$avail
             /_trans

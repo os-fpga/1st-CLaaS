@@ -54,6 +54,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class SIM_Kernel: public Kernel {
 
 private:
+  
+  const static int MAX_PHASES;
+  const static int MAX_TRACE_PHASES;
 
   VERILATOR_KERNEL *verilator_kernel;
   VerilatedVcdC* tfp;
@@ -61,7 +64,8 @@ private:
   uint32_t* output_buff = 0;
   unsigned int data_size = 0;
   unsigned int resp_data_size = 0;
-  unsigned int tick_cntr = 0;
+  int phase_cnt = 0;  // Count of simulation phases.
+  int trace_phase_cnt = 0; // Count of phases in the trace file (valid when tracing_enabled).
   bool tracing_enabled = false;
 
   /*

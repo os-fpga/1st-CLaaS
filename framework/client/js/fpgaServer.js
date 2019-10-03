@@ -60,6 +60,14 @@ class fpgaServer {
     }
   }
   
+  startTracing() {
+    this.ws.send(JSON.stringify({ "type": "START_TRACING", payload: {} }));
+  }
+  
+  stopTracing() {
+    this.ws.send(JSON.stringify({ "type": "STOP_TRACING", payload: {} }));
+  }
+  
   // This is the API currently exposed for sending data.
   // Args:
   //   - resp_size: The number of chunks that must be returned in response. (The need to provide this is an artifact of the current implementation.)

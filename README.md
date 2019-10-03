@@ -146,6 +146,7 @@ Anything and everything is subject to change at this point, especially with resp
 
 # Further Information
 
+  - Google recognized 1st CLaaS as a game-changer from among 1,134 completed Google Summer of Code 2019 projects by publishing this <a href="https://opensource.googleblog.com/2019/09/unleashing-open-source-silicon.html" target="_ blank">post</a> in their Google Open Source Blog.
   - Further documentation of the project vision, can be found in this <a href="https://drive.google.com/drive/folders/1EdhyuvQmIN18YxHsRkTGffVvuAwmHfkJ?usp=sharing" target="_ blank">Google Drive Folder</a>.
   - A short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a> at VSDOpen 2018 about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole that is good context and motivation for this project.
   - [How 1st CLaaS came to be](doc/Story.md).

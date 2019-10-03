@@ -1,37 +1,60 @@
 # 1st-CLaaS Screen-Capture Notes for ORConf 2019
 
-## Clone/Init
+## Prep
 
-  - Chrome. Search "1st-CLaaS FPGA". Click repo link.
-  - Open "Getting Started".
-  - Copy 3-lines of clone/cd/init.
+  ```sh
+  cd /tmp/fpga-webserver/apps/mandelbrot/build
+  make destroy SETUP=1st-CLaaS_mandelbrot_accelerator
+  rm -rf /tmp/fpga-webserver
+  ```
+  
+  - Terminals:
+    - Terminal 1 in /tmp `*** Part 1: Install and Run ***`
+    - Terminal 2 contains command `*** Part 2: FPGA ***`, `cd /tmp/fpga-webserver/apps/mandelbrot/build`.
+    - Terminal 3 contains command `*** Part 3: Custom Kernel ***`, `cd /tmp/fpga-webserver/apps/vadd/build`.
+  - Chrome window with EC2 Console and new tab (open).
+  - Note: [---] waiting for machine; [...] waiting for presenter
 
-## run Mandelbrot
+## Terminal 1: Clone/Init; run Mandelbrot (sim)
 
-  - In Terminal 2:
-    - [AWS already set up]
-      Create FPGA instance:
-      `cd /tmp/fpga-webserver/apps/mandelbrot/build && make static_accelerated_instance PASSWORD=demo PREBUILT=true`
-      (and let it run in background)
-    - type "yes"
-  - `make launch`
-  - In Chrome, open `localhost:8888`
-  - Demo C++
-  - Demo "FPGA" (sim)
-  - wait for F1 build
-  - ? Open AWS Console ?
-  - NO: Grab IP address
-  - NO: Start FPGA
-  - Demo FPGA
+  - In Chrome:
+    - New tab. Search "fpga-webserver". Click repo link.
+    - Open "Getting Started".
+    - Copy 3-lines of clone/cd/init and paste into Terminal 1. [-]
+  - In Terminal 1, make launch:
+    - `cd apps/mandelbrot/build`
+    - `make launch`
+  - In Chrome, demo:
+    - Open `localhost:8888`
+    - Demo C++ (velocity mode, zoom, enlarge)
+    - Shrink; Demo "FPGA" (sim)
+  - In Terminal 1:
+    - <ctrl>-C
+
+## Terminal 2: Build F1 and Demo
+  - In Terminal 2, make static_accelerated_instance:
+    - <Enter> to `cd /tmp/fpga-webserver/apps/mandelbrot/build`
+      `make static_accelerated_instance PREBUILT=true`
+      [Create F1 instance. AWS already set up.]
+    - Wait. Type "yes".
+    - /STOP RECORDING/
+    - /START RECORDING/
+    - wait for F1 build
+    - ctrl-click IP URL.
+  - In Browser, Demo FPGA
 
 ## Make Custom App
 
-```sh
-cd apps/apps/vadd/build
-make copy_app APP_NAME=toy
-cd ../../toy/build
-```
+  - In Terminal 3:
+  
+    ```sh
+    cd /tmp/fpga-webserver/apps/vadd/build
+    make copy_app APP_NAME=toy
+    cd ../../toy/build
+    ```
 
-  - Atom: Modify to subtract.
-  - `make launch`
-  - Open in Chrome, and show that it does a subtract.
+  - In Atom:
+    - Open /etc/fpga-webserver/apps/toy/fpga/src/toy_kernel.sv` & edit
+    - `make launch`
+  - In Chrome:
+    - Show that it does a subtract.

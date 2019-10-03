@@ -42,10 +42,9 @@ class WARPV_Example {
     // The FPGA interface. The first word of the first chunk identifies the packet type.
     // To keep it simple, there is a response chunk for every chunk sent.
     // Each type shows send format, then receive format.
-    this.IMEM_WRITE_TYPE = 1;  // {type, addr(instr-granular), data, ...} {type, addr(instr-granular), data, ...}
-    this.IMEM_READ_TYPE = 2;   // {type, addr, ...} {type, addr, data, ...}
-    this.HALT_TYPE = 3;        // {type, ...} {type, ...}
-    this.RUN_TYPE = 4;         // {type, ...} {type, ...}
+    this.IMEM_WRITE_TYPE = 1;  // {type, addr(instr-granular), data, ...} => {type, addr(instr-granular), data, ...}
+    this.IMEM_READ_TYPE = 2;   // {type, addr, ...} => {type, addr, data, ...}
+    this.RUN_TYPE = 4;         // {type, ...} => {type, CSR_CLAASRSP value, ...}
     
     this.IMEM_SIZE = 16;       // Number of entries/instructions in IMem.
     
@@ -53,6 +52,7 @@ class WARPV_Example {
     this.END_PROGRAM_LINE = "END_PROGRAM */";
     this.SV_BASE_CHARS = {b: 2, d: 10, h: 16};
     // Member Variables:
+    this.tracing = false;
     this.server = new fpgaServer();
     this.server.connect();
 
@@ -63,30 +63,37 @@ class WARPV_Example {
     this.server.ws.onmessage = (msg) => {
       try {
         let data = JSON.parse(msg.data);
-        let chunk_type = data[0][0];
-        if (chunk_type == this.IMEM_WRITE_TYPE) {
-          this.receiveWriteResponse(data);
-        }
-        else if (chunk_type == this.IMEM_READ_TYPE) {
-          this.receiveReadResponse(data);
-        }
-        else if (chunk_type == this.HALT_TYPE || chunk_type == this.IMEM_READ_TYPE) {
-          console.log(`Received response for type: ${chunk_type}.`);
-        }
-        else {
-          this.log(`Illegal chunk type: ${chunk_type}`);
+        if (data.hasOwnProperty('type')) {
+          this.log(`Received message: ${data.type}`);
+        } else {
+          let chunk_type = data[0][0];
+          if (chunk_type == this.IMEM_WRITE_TYPE) {
+            this.receiveWriteResponse(data);
+          }
+          else if (chunk_type == this.IMEM_READ_TYPE) {
+            this.receiveReadResponse(data);
+          }
+          else if (chunk_type == this.RUN_TYPE) {
+            let rsp = data[0][1];
+            console.log(`Received response for type ${chunk_type} with CSR value: ${rsp}.`);
+            $("#warpv-rsp").text(`${rsp}`);
+          }
+          else {
+            this.log(`Illegal chunk type: ${chunk_type}`);
+          }
         }
       } catch(err) {
         this.log(`Failed to parse returned json string: ${msg.data}`);
       }
     }
     
-    $('#assemble-button').click( (evt) => {
+    $('#run-button').click( (evt) => {
       // Disable button until assembly completes.
-      $('#assemble-button').prop("disabled", true);
+      $('#run-button').prop("disabled", true);
       $('#assembler-error-message').text('');
       $('#assembled-code').html('');
       $('#rx-data').text('');
+      $("#warpv-rsp").text("-");
       this.assemble();
 
       $.ajax({
@@ -100,15 +107,18 @@ class WARPV_Example {
           let chunks = this.verilogToChunks(response["top.m4out.tlv"]);
           // Send assembled binary to FPGA.
           this.server.sendChunks(chunks.length, chunks);
-          // Send read commanads to server to read each instruction from IMem..
+          // Send read commands to server to read each instruction from IMem.
           this.readIMem();
+          // Send command to run WARP-V core.
+          this.runWARPV();
         },
         failure: (response) => {
           this.log('Error calling SandPiper(TM) SaaS');
         },
         complete: () => {
-          // Done assembly. Re-enable button.
-          $('#assemble-button').prop("disabled", false);
+          // Done assembly.
+          // Re-enable button.
+          $('#run-button').prop("disabled", false);
         }
       });
     });
@@ -133,20 +143,32 @@ class WARPV_Example {
 // 5: offset
 // 6: store addr
 
-(ORI, r6, r0, 0)        //     store_addr = 0
-(ORI, r1, r0, 1)        //     cnt = 1
-(ORI, r2, r0, 1010)     //     ten = 10
-(ORI, r3, r0, 0)        //     out = 0
-(ADD, r3, r1, r3)       //  -> out += cnt
-(SW, r6, r3, 0)         //     store out at store_addr
-(ADDI, r1, r1, 1)       //     cnt ++
-(ADDI, r6, r6, 100)     //     store_addr++
-(BLT, r1, r2, 1111111110000) //  ^- branch back if cnt < 10
-(LW, r4, r6,   111111111100) //     load the final value into tmp
-(BGE, r1, r2, 1111111010100) //     TERMINATE by branching to -1
+(ORI,  r6, r0, 0)             //     store_addr = 0
+(ORI,  r1, r0, 1)             //     cnt = 1
+(ORI,  r2, r0, 1010)          //     ten = 10
+(ORI,  r3, r0, 0)             //     out = 0
+(ADD,  r3, r1, r3)            //  -> out += cnt
+(SW,   r6, r3, 0)             //     store out at store_addr
+(ADDI, r1, r1, 1)             //     cnt ++
+(ADDI, r6, r6, 100)           //     store_addr++
+(BLT,  r1, r2, 1111111110000) //  ^- branch back if cnt < 10
+(LW,   r4, r6,  111111111100) //     load the final value into tmp
+(CSRRW,r0, r4,  110000000000) // TERMINATE by writing CSR CLAASRSP
+(BGE,  r1, r2, 1111111010000) // TERMINATE by branching to -1
 `
     );
 
+    $('#trace-button').click( (evt) => {
+      if (this.tracing) {
+        this.tracing = false;
+        this.server.stopTracing();
+        $('#trace-button').text("Trace On");
+      } else {
+        this.tracing = true;
+        this.server.startTracing();
+        $('#trace-button').text("Trace Off");
+      }
+    });
   }
 
   assemble() {
@@ -284,6 +306,11 @@ ${this.END_PROGRAM_LINE}
     for (i = 0; i < this.IMEM_SIZE; i++) {
       this.server.sendChunks(1, [[this.IMEM_READ_TYPE, i]]);
     }
+  }
+  
+  // Send command to run WARP-V.
+  runWARPV() {
+    this.server.sendChunks(1, [[this.RUN_TYPE]]);
   }
 
   sendData(data) {

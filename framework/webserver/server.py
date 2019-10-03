@@ -89,7 +89,7 @@ class BasicFileHandler(tornado.web.StaticFileHandler):
 # {'type': 'MY_TYPE', 'payload': MY_PAYLOAD}
 # TODO: Change this to send type separately, so the JSON need not be parsed if passed through.
 # The application has a handler method for each type, registered via FPGAServerApplication.registerMessageHandler(type, handler), where
-# 'handler' is a method of the form: json_response = handler(self, payload)
+# 'handler' is a method of the form: json_response = handler(self, payload, type(string))
 class WSHandler(tornado.websocket.WebSocketHandler):
   def open(self):
     print('Webserver: New connection')
@@ -409,6 +409,10 @@ class FPGAServerApplication(tornado.web.Application):
         data = read_data_handler(self.socket, None, False)
         return data
     
+    def handleCommandMsg(self, data, type):
+        self.socket.send_string("command", type)
+        return {'type': type}
+    
 
     # Cleanup upon SIGTERM, SIGINT, SIGQUIT, SIGHUP.
     @staticmethod
@@ -535,6 +539,8 @@ class FPGAServerApplication(tornado.web.Application):
         self.message_handlers = {}
         self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
+        self.registerMessageHandler("START_TRACING", self.handleCommandMsg)
+        self.registerMessageHandler("STOP_TRACING", self.handleCommandMsg)
         
         # Report external URL for the web server.
         # Get Real IP Address using 3rd-party service.

@@ -29,13 +29,18 @@
   <textarea id="assembly-code" rows="30" cols="80"></textarea>
 </p>
 <p>
-  <button id="assemble-button">Assemble</button>
+  <button id="run-button">Run</button>(assemble, reset CPU, upload, and run)
   <span id="assembler-error-message" class="error"></span>
+</p>
+<p>
+  <button id="trace-button">Trace On</button>
 </p>
 <h2>Assembled Code</h2>
 <div id="assembled-code"></div>
-<h2>Response Data</h2>
+<h2>IMem Write Response</h2>
 <pre id="rx-data"></pre>
+<h2>WARP-V Response</h2>
+<p id="warpv-rsp">-</p>
 <h2>Instruction Memory</h2><h4>(as last read)</h4>
 <div id="imem"></div>
 <p id="message"></p>

@@ -56,6 +56,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "verilated_vcd_c.h"
 
 
+const int SIM_Kernel::MAX_PHASES = 10000;
+const int SIM_Kernel::MAX_TRACE_PHASES = 1000;
+
 SIM_Kernel::SIM_Kernel() {
   this->verilator_kernel = new VERILATOR_KERNEL;
   Verilated::traceEverOn(true);
@@ -78,6 +81,7 @@ void SIM_Kernel::enable_tracing() {
   verilator_kernel->trace (tfp, 99);
   tfp->open ("../out/sim/trace.vcd");
   tracing_enabled = true;
+  trace_phase_cnt = 0;
 }
 
 void SIM_Kernel::disable_tracing() {
@@ -89,22 +93,35 @@ void SIM_Kernel::save_trace() {
 }
 
 void SIM_Kernel::tick() {
-  verilator_kernel->reset = 0;
+  //verilator_kernel->reset = 0;
   verilator_kernel->clk = !verilator_kernel->clk;
   verilator_kernel->eval();
   if (tracing_enabled) {
-    tfp->dump (tick_cntr);
+    tfp->dump (phase_cnt);
+    trace_phase_cnt++;
+    
+    // A quick-n-dirty protection against kernels that don't complete.
+    // Close the trace and exit if phase_cnt > MAX.
+    if (trace_phase_cnt > MAX_TRACE_PHASES) {
+      save_trace();
+      cout << "Traced more than " << MAX_TRACE_PHASES << " phases. Exiting." << endl;
+      exit(1);
+    }
   }
-  tick_cntr++;
+  if (phase_cnt > MAX_PHASES) {
+      cout << "Kernel failed to complete within " << MAX_PHASES << " phases. Exiting." << endl;
+      exit(1);
+  }
+  phase_cnt++;
 }
 
 void SIM_Kernel::reset_kernel() {
   verilator_kernel->in_avail = 0;
   verilator_kernel->out_ready = 0;
+  verilator_kernel->reset = 1;
   //TODO: parameterize the reset duration
   for(int rst_cntr=0; rst_cntr<10; rst_cntr++) {
-  verilator_kernel->reset = 1;
-  tick();
+    tick();
   }
   verilator_kernel->reset = 0;
 }
@@ -127,9 +144,8 @@ void SIM_Kernel::write_kernel_data(input_struct * input, int data_size) {
 }
 
 
-
+// A data buffer is available to send.
 void SIM_Kernel::start_kernel() {
-
   verilator_kernel->clk = 0;
 
   unsigned int send_cntr=0;
@@ -150,7 +166,7 @@ void SIM_Kernel::start_kernel() {
     if(recv_cntr < resp_data_size && verilator_kernel->out_avail) {
       uint32_t * output = (uint32_t *)output_buff;
       for(int words = 0; words < HostApp::DATA_WIDTH_WORDS; words++) {
-        output[recv_cntr*HostApp::DATA_WIDTH_WORDS + words]  = verilator_kernel->out_data[words];
+        output[recv_cntr*HostApp::DATA_WIDTH_WORDS + words] = verilator_kernel->out_data[words];
       }
       recv_cntr++;
       //printf("Verilator recv_cntr: %d\n", recv_cntr);
@@ -160,7 +176,7 @@ void SIM_Kernel::start_kernel() {
       uint32_t * input = (uint32_t *)input_buff;
       verilator_kernel->in_avail = 1;
       for(int words = 0; words < HostApp::DATA_WIDTH_WORDS; words++) {
-        verilator_kernel->in_data[words]    = input[send_cntr*HostApp::DATA_WIDTH_WORDS + words];
+        verilator_kernel->in_data[words] = input[send_cntr*HostApp::DATA_WIDTH_WORDS + words];
       }
       if(verilator_kernel->in_ready) {
         //printf("Verilator send_cntr: %d\n", send_cntr);
