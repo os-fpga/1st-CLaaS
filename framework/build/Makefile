@@ -165,7 +165,15 @@ COMMA:= ,
 EMPTY:=
 SPACE:= $(EMPTY) $(EMPTY)
 
-REPO=$(shell git rev-parse --show-toplevel)
+# Path to this repo (relative or absolute). Makefiles outside of this repo must define this.
+FIRST_CLAAS_REPO ?=$(shell realpath --relative-to=. $$(git rev-parse --show-toplevel))
+
+# Absolute path to this repo.
+ABS_REPO=$(shell realpath "$(FIRST_CLAAS_REPO)")
+# Relative path to this repo.
+REPO=$(shell realpath "--relative-to=." "$(FIRST_CLAAS_REPO)")
+
+FRAMEWORK_DIR=$(REPO)/framework
 
 # Make sure init has been run.
 ifeq ($(shell ls "$(REPO)/terraform/terraform" 2> /dev/null),)
@@ -212,9 +220,9 @@ VERILATOR=$(shell which verilator)
 # Presumable verilator is /usr/local/bin/verilator or /usr/bin/verilator (but there is no check).
 VERILATOR_INCLUDE=/usr/share/verilator/include
 else
-VERILATOR=$(REPO)/local/verilator/bin/verilator
-VERILATOR_ROOT=$(REPO)/local/verilator
-VERILATOR_INCLUDE=$(REPO)/local/verilator/include
+VERILATOR=$(ABS_REPO)/local/verilator/bin/verilator
+VERILATOR_ROOT=$(ABS_REPO)/local/verilator
+VERILATOR_INCLUDE=$(ABS_REPO)/local/verilator/include
 endif
 ifneq ($(AWS_FPGA_REPO_DIR),)
 ifneq ($(findstring f1.,$(shell curl http://169.254.169.254/latest/meta-data/instance-type)),)
@@ -273,8 +281,7 @@ endif
 
 # Determine kernel name from current directory.
 KERNEL_NAME ?= $(shell realpath $$(pwd) | sed 's|^.*/\([^/]*\)/build$$|\1|')
-
-HW_SHELL_CONFIG_JSON ?=../../../framework/fpga/default_shell_config.json
+HW_SHELL_CONFIG_JSON ?=$(FRAMEWORK_DIR)/fpga/default_shell_config.json
 
 
 PORT ?= 8888
@@ -293,7 +300,7 @@ ifneq ($(AWS_PROFILE),default)
 WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(AWS_PROFILE)
 endif
 
-WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "../../../framework/webserver/default_server.py"; fi)
+WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
 LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> $(WEBSERVER_ARGS)
 
 
@@ -312,7 +319,6 @@ CC=g++
 
 
 HOST_DIR=../host
-FRAMEWORK_DIR=../../../framework
 FRAMEWORK_HOST_DIR=$(FRAMEWORK_DIR)/host
 
 EXTRA_C_SRC ?=
@@ -330,7 +336,7 @@ endif
 #Software (no FPGA) flags
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC) $(EXTRA_C_SRC)
 SW_HDRS ?= $(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS) $(EXTRA_C_HDRS)
-SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I../../../framework/host/json/include $(PROJ_SW_CFLAGS)
+SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I$(FRAMEWORK_DIR)/host/json/include $(PROJ_SW_CFLAGS)
 SW_LFLAGS ?= -L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
 
 #Host code
@@ -419,7 +425,7 @@ endif
 endif
 
 # If project has a launch command, use it, otherwise, use launch from framework.
-LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo ../../../framework/build/launch; fi)
+LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo $(FRAMEWORK_DIR)/build/launch; fi)
 ifdef LAUNCH_W
 LAUNCH_CMD_PARTIAL :=$(LAUNCH_CMD_PARTIAL) -w '$(LAUNCH_W)'
 endif
@@ -867,7 +873,7 @@ endif
 TF_ARGS3=-var 'instance_name=$(INSTANCE_NAME)' -var 'sdb_device_size=$(INSTANCE_STORAGE)'
 TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' -var 'aws_access_key_id=$(shell aws configure get aws_access_key_id --profile $(AWS_PROFILE))'
 TF_ARGS5=-var 'aws_secret_access_key=$(shell aws configure get aws_secret_access_key --profile $(AWS_PROFILE))' -var 'aws_profile=$(AWS_PROFILE)'
-TF_ARGS6=-var 'region=$(shell aws configure get region --profile $(AWS_PROFILE))' -var 'repo_dir=$(REPO)' -var 'git_url=$(GIT_URL)' -var 'git_branch=$(GIT_BRANCH)'
+TF_ARGS6=-var 'region=$(shell aws configure get region --profile $(AWS_PROFILE))' -var 'repo_dir=$(ABS_REPO)' -var 'git_url=$(GIT_URL)' -var 'git_branch=$(GIT_BRANCH)'
 ifeq ($(AUTO_APPROVE),true)
 TF_AUTO_APPROVE_ARG=--auto-approve
 else
@@ -893,11 +899,11 @@ define terraform
 	@mkdir -p '$(REPO)/tmp/$(SETUP)'
 	rm -f '$(REPO)/tmp/$(SETUP)/'*.* # '$(REPO)/tmp/$(SETUP)/.terraform/terraform.tfstate'
 	cd '$(REPO)/tmp/$(SETUP)' \
-	&& cp '$(REPO)/framework/terraform/ec2_instance.tf' . \
+	&& cp '$(ABS_REPO)/framework/terraform/ec2_instance.tf' . \
 	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' ec2_instance.tf \
 	&& sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' ec2_instance.tf \
 	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" ec2_instance.tf \
-	&& $(REPO)/terraform/terraform init && '$(REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS) |& tee terraform.log
+	&& $(ABS_REPO)/terraform/terraform init && '$(ABS_REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS) |& tee terraform.log
 endef
 .PHONY: static_accelerated_instance development_instance
 TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
@@ -945,7 +951,7 @@ endef
 .PHONY: desktop ssh
 desktop:
 	@# Call remmina using template.remmina configuration with "TBD" values substituted. (perl is used to substitute arbitrary literal text.)
-	$(call connect,Connecting via RDP using Remmina to,TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(REPO)/framework/build/template.remmina" > "$(REPO)/framework/out/tmp.remmina" && sed -i "s/^server=TBD/server=$$IPs/" "$(REPO)/framework/out/tmp.remmina" && remmina -c "$(REPO)/framework/out/tmp.remmina" &)
+	$(call connect,Connecting via RDP using Remmina to,TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(FRAMEWORK_DIR)/build/template.remmina" > "$(FRAMEWORK_DIR)/out/tmp.remmina" && sed -i "s/^server=TBD/server=$$IPs/" "$(FRAMEWORK_DIR)/out/tmp.remmina" && remmina -c "$(FRAMEWORK_DIR)/out/tmp.remmina" &)
 ssh:
 	$(call connect,Connecting via SSH to,ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" centos@$$IPs $(SSH_CMD);)
 ip:
