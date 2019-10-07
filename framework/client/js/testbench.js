@@ -50,11 +50,15 @@ class RawTestBench {
     // Attach handlers.
 
     this.server.ws.onmessage = (msg) => {
-      if (data.hasOwnProperty('type')) {   // HACK
-        // Presumably a TRACE message.
-        this.log(`Received message: ${data.type}`);
-      } else {
-        this.receiveData(msg);
+      try {
+        let data = JSON.parse(msg.data);
+        if (data.hasOwnProperty('type')) {
+          this.log(`Received message: ${data.type}`);
+        } else {
+          this.receiveData(msg);
+        }
+      } catch(err) {
+        this.log(`Failed to parse returned json string: ${msg.data}`);
       }
     }
 
