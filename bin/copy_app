@@ -21,7 +21,7 @@ then
   exit 1
 fi
 
-cp -r vadd "$app_name"
+cp -rP "$template_app_name" "$app_name"
 cd "$app_name"
 
 # Change file names.
