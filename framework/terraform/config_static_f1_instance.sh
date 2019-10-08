@@ -14,10 +14,10 @@ echo \
  && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys \
  && echo \
  && echo "Setting up cron job to start web server." \
- && sudo bash -c 'echo "@reboot centos /home/centos/src/project_data/fpga-webserver/framework/terraform/static_f1_reboot.sh" >> /etc/crontab' \
+ && sudo bash -c 'echo "@reboot centos /home/centos/src/project_data/repo/framework/terraform/static_f1_reboot.sh" >> /etc/crontab' \
  && echo \
  && echo "Running reboot script to pre-build and start web server for manual testing." \
- && /home/centos/src/project_data/fpga-webserver/framework/terraform/static_f1_reboot.sh \
+ && /home/centos/src/project_data/repo/framework/terraform/static_f1_reboot.sh \
  && echo \
  && echo "YAY!!! The web server has been launched." \
  && echo -e "\e[1m\e[33mYOU HAVE 3 MINUTES to test it out at http://$1 (<Ctrl>-click), then the machine will be shutdown, if not stopped manually (but check to be sure).\e[0m" \

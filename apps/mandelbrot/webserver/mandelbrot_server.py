@@ -344,3 +344,4 @@ if __name__ == "__main__":
     print("Mandelbrot webserver application starting.")
 
     application = MandelbrotApplication(args)
+    application.run()

@@ -29,7 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-# Includes SDAccel 2017.1 Makefile functionality and general functionality for fpga-webserver.
 #
 # Terminology (TODO: Move to README):
 #   1st CLaaS User Configuration:
@@ -818,7 +817,7 @@ debug_prints:
 # Platform Targets
 ###################################
 
-FIRST_CLAAS_REMOTE_REPO_DIR=/home/centos/src/project_data/fpga-webserver
+FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/centos/src/project_data/repo
 
 # Create a new Static Accelerated Instance. See Makefile header comments for usage info.
 # WARNING: This target launches a new instance. Be sure it is not left running!
@@ -855,8 +854,8 @@ endif
 SETUP=$(INSTANCE_NAME)
 S3_TF_KEY=tf_setups/$(SETUP)
 
-GIT_URL=$(shell git config --get remote.origin.url)
-GIT_BRANCH=$(shell git branch | grep \* | cut -d ' ' -f2)
+GIT_URL ?=$(shell git config --get remote.origin.url)
+GIT_BRANCH ?=$(shell git branch | grep \* | cut -d ' ' -f2)
 
 # Build up TF_ARGS (without evaluating)
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.

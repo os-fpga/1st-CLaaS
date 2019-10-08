@@ -106,7 +106,7 @@ variable "delete_storage_on_destroy" {
 # If this is overridden, the replacement script can call this default one.
 variable "config_instance_script" {
   type = string
-  default = "/home/centos/src/project_data/fpga-webserver/framework/terraform/config_instance_dummy.sh"
+  default = "/home/centos/src/project_data/repo/framework/terraform/config_instance_dummy.sh"
 }
 
 resource "tls_private_key" "temp" {
@@ -252,20 +252,19 @@ resource "aws_instance" "the_instance" {
     
     # Configure instance.
     provisioner "remote-exec" {
-      # Note: "sudo .../init" is required for F1 use, where server must be run as root.
       inline = [
         "echo && echo -e '\\e[32m\\e[1mSetting up remote instance.\\e[0m' && echo",
         "echo 'Cloning AWS-FPGA repo'",
         "git clone -q https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR",
-        "echo 'Cloning 1st CLaaS repo'",
-        "git clone -q -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/fpga-webserver\"",
-        "echo 'Running init'",
-        "/home/centos/src/project_data/fpga-webserver/init",
-        "sudo /home/centos/src/project_data/fpga-webserver/init",
+        "echo 'Cloning 1st CLaaS project repo'",  # 1st CLaaS repo or project repo using it.
+        "git clone -q -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/repo\"",
+        "ln -s /home/centos/src/project_data /home/centos/workdisk",
+        "ln -s /home/centos/src/project_data/repo /home/centos/repo",
+        # If project repo (1st CLaaS repo or one that uses it) contains ./init, run it.
+        "if [[ -e "/home/centos/src/project_data/repo/init" ]]; then echo 'Running init' && /home/centos/src/project_data/repo/init; fi",
+        #"sudo /home/centos/src/project_data/repo/init",
         "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
         "source ${var.config_instance_script} ${aws_instance.the_instance.public_ip}",
-        "ln -s /home/centos/src/project_data /home/centos/workdisk",
-        "ln -s /home/centos/src/project_data/fpga-webserver /home/centos/fpga-webserver",
       ]
     }
 }
