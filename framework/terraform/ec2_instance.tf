@@ -261,7 +261,7 @@ resource "aws_instance" "the_instance" {
         "ln -s /home/centos/src/project_data /home/centos/workdisk",
         "ln -s /home/centos/src/project_data/repo /home/centos/repo",
         # If project repo (1st CLaaS repo or one that uses it) contains ./init, run it.
-        "if [[ -e "/home/centos/src/project_data/repo/init" ]]; then echo 'Running init' && /home/centos/src/project_data/repo/init; fi",
+        "if [[ -e '/home/centos/src/project_data/repo/init' ]]; then echo 'Running init' && /home/centos/src/project_data/repo/init; fi",
         #"sudo /home/centos/src/project_data/repo/init",
         "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
         "source ${var.config_instance_script} ${aws_instance.the_instance.public_ip}",

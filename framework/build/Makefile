@@ -108,6 +108,8 @@
 #     Platform Target Variables:
 #        #    PASSWORD: (prompts as admin_pwd) might be used by web server to authenticate administrative actions from a client.
 #        #    LINUX_PASSWORD: Constructed instances will be assigned this Linux password. (Must not contain single/double quote or backslash.)
+#        #                    Note that RDP access uses LINUX_PASSWORD (because storing a password in Remmina config is not secure, and
+#        #                    I don't know how to configure the desktop to bypass the password prompt when ssh-tunnelled).
 #        #    INSTANCE_TYPE: Use c4 for testing without FPGA.
 #        #    INSTANCE_NAME: Name of the instance.
 #        #    INSTANCE_STORAGE: Size in GB of "sdb" storage on the instance. Defaults to 15, which is appropriate for Development Instance.
@@ -125,15 +127,15 @@
 #     # displayed in plain text on stdout. 
 #     # Each *_instance target has its own default values for INSTANCE_* variables.
 #     development_instance:
-#        > make PASSWORD=XXX development_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX LINUX_PASSWORD=XXX development_instance
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     f1_instance:
-#        > make PASSWORD=XXX f1_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX LINUX_PASSWORD=XXX f1_instance
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #        NOTE: This instance is allocated enough INSTANCE_STORAGE for development by default.
 #     static_accelerated_instance:
 #        By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
-#        > make PASSWORD=XXX PREBUILT=false/true static_accelerated_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX PREBUILT=false/true static_accelerated_instance
 #           # PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     For make launch, to associate an F1 instance, with this Content Web Server use:
@@ -211,7 +213,11 @@ AUTO_APPROVE=false
 # Chrome executable if there is one. Empty if not found and unspecified.
 CHROME=$(shell which google-chrome)
 
-# Characterize platform.
+
+#
+# Characterize platform (define $SUPPORTED_TARGETS)
+#
+
 VERILATOR=$(shell ls "$(REPO)/local/verilator" 2> /dev/null)
 ifeq ($(VERILATOR),)
 # No local verilator.
@@ -232,7 +238,6 @@ SUPPORTED_TARGETS :=hw_emu |$(SPACE)
 endif
 endif
 
-
 ifneq ($(VERILATOR),)
 # Verilator.
 SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim | sw |$(SPACE)
@@ -240,12 +245,15 @@ else
 SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 endif
 
+
+#
 # Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
+#
 
 TARGET=hw
 SPECIFIED_TARGET :=$(TARGET)
 BUILD_TARGET :=$(TARGET)
-# If specified TARGET is not supported, choose a different one.
+# If specified TARGET is not supported, downgrade.
 ifeq ($(findstring $(BUILD_TARGET) |,$(SUPPORTED_TARGETS)),)
 #If sim is not supported, downgrade to sw
 ifeq ($(BUILD_TARGET),sim)
@@ -253,6 +261,11 @@ BUILD_TARGET :=sw
 else
 # Downgrade to highest-level target.
 BUILD_TARGET :=$(firstword $(SUPPORTED_TARGETS))
+endif
+# But, allow hw_emu platform to build hw if explicitly requested.
+ifeq ($(BUILD_TARGET),hw_emu)
+ifeq ($(SPECIFIED_TARGET),hw)
+BUILD_TARGET :=hw
 endif
 endif
 ifeq ($(BUILD_TARGET),)
@@ -913,7 +926,7 @@ define make_instance
 	@echo 'This instance and its associated resources can be destroyed with:'
 	@echo '   > make destroy SETUP=$(SETUP)'
 	@# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
-	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password" && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
+	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password (final step, in case this fails)." && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
 endef
 ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:
