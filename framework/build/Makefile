@@ -268,6 +268,7 @@ ifeq ($(SPECIFIED_TARGET),hw)
 BUILD_TARGET :=hw
 endif
 endif
+endif
 ifeq ($(BUILD_TARGET),)
 $(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
 endif
