@@ -667,9 +667,9 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 	@# Add user's kernel source code to project.
 	@mkdir -p ../out/sv  # Must exist for add_kernel.tcl
 	@# Add sources to project.
-	echo 'remove_files *_example_adder.v' > '$(VIVADO_PROJ_SCRIPT)'
-	  && echo 'add_files ../fpga/src' >> '$(VIVADO_PROJ_SCRIPT)'
-		&& echo 'add_files ../out/sv' >> '$(VIVADO_PROJ_SCRIPT)'
+	echo 'remove_files *_example_adder.v' > '$(VIVADO_PROJ_SCRIPT)' \
+	  && echo 'add_files ../fpga/src' >> '$(VIVADO_PROJ_SCRIPT)' \
+		&& echo 'add_files ../out/sv' >> '$(VIVADO_PROJ_SCRIPT)' \
 		&& echo 'add_files $(FRAMEWORK_DIR)/fpga/src' >> '$(VIVADO_PROJ_SCRIPT)'
 	vivado -mode batch -nojournal -nolog -notrace -source '$(VIVADO_PROJ_SCRIPT)' '$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr'
 	@# Replace the adder example code with the user's kernel (including inner shell logic).
