@@ -734,7 +734,7 @@ $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	rm $(DEST_DIR)/*_afi_id.txt 2> /dev/null || true
 	rm -rf $(DEST_DIR)/to_aws 2> /dev/null || true
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
-	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -awsprofile=$(AWS_PROFILE)
+	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE)
 	# Waiting for AFI creation to complete.
 	# Get afi-<id> into a file in isolation.
 	grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt
