@@ -350,7 +350,7 @@ endif
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC) $(EXTRA_C_SRC)
 SW_HDRS ?= $(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS) $(EXTRA_C_HDRS)
 SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I$(FRAMEWORK_DIR)/host/json/include $(PROJ_SW_CFLAGS)
-SW_LFLAGS ?= -L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
+SW_LFLAGS ?= -L$(XILINX_XRT)/lib $(PROJ_SW_LFLAGS)
 
 #Host code
 HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/hw_kernel.c
@@ -358,7 +358,7 @@ HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/hw_kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I$(XILINX_XRT)/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Simulation flags
@@ -373,7 +373,7 @@ HOST_EXE=host
 
 #Kernel
 KERNEL_SRC=
-KERNEL_HDRS=
+# Flags for xocc (include -I <file> args).
 KERNEL_FLAGS=
 KERNEL_EXE=$(KERNEL_NAME)
 
@@ -389,10 +389,10 @@ KERNEL_ADDITIONAL_FLAGS=
 TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
 
 REPORT=
-ifeq (${BUILD_TARGET},hw)
+ifeq ($(BUILD_TARGET),hw)
 REPORT=--report system
 else
-ifeq (${BUILD_TARGET},hw_emu)
+ifeq ($(BUILD_TARGET),hw_emu)
 REPORT=--report estimate
 endif
 endif
@@ -545,7 +545,7 @@ ifneq ($(USE_PREBUILT), true)
 
 # TODO: Instead of this condition, define $(SW_SRC) and $(HOST_SRC) as $(SRC) conditionally, etc.
 ifneq ($(USE_XILINX),true)
-ifeq (${BUILD_TARGET},sw)
+ifeq ($(BUILD_TARGET),sw)
 #sw target
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
@@ -650,12 +650,18 @@ $(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
 # TODO: How do we configure the Vivado SDAccel project, including low-optimizations. Makefile or in repo or via instructions?
 IMPORTS_DIR=$(DEST_DIR)/$(KERNEL_NAME)_ex/imports
 VADD_SV=$(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
+VIVADO_PROJ_SCRIPT=$(DEST_DIR)/add_to_project.tcl
 $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 	@echo $(VIVADO_VERSION_MESSAGE)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
 	@# Add user's kernel source code to project.
 	@mkdir -p ../out/sv  # Must exist for add_kernel.tcl
-	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
+	@# Add sources to project.
+	echo 'remove_files *_example_adder.v' > '$(VIVADO_PROJ_SCRIPT)'
+	  && echo 'add_files ../fpga/src' >> '$(VIVADO_PROJ_SCRIPT)'
+		&& echo 'add_files ../out/sv' >> '$(VIVADO_PROJ_SCRIPT)'
+		&& echo 'add_files $(FRAMEWORK_DIR)/fpga/src' >> '$(VIVADO_PROJ_SCRIPT)'
+	vivado -mode batch -nojournal -nolog -notrace -source '$(VIVADO_PROJ_SCRIPT)' '$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr'
 	@# Replace the adder example code with the user's kernel (including inner shell logic).
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
 	mv $(VADD_SV).hacked $(VADD_SV)
@@ -690,11 +696,11 @@ $(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC) $(SV_FROM_TLV)
 	-rm $(XO_FILE) 2> /dev/null || true  # Seems to be necessary to remove the old .xo file for some reason.
 	@NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
-	echo "source $(DEST_DIR)/${KERNEL_NAME}_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} xilinx kernel ${KERNEL_NAME}$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/${KERNEL_NAME}.xo -kernel_name ${KERNEL_NAME} -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl
-	vivado -mode batch -source "$(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr"
+	echo "source $(DEST_DIR)/$(KERNEL_NAME)_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) xilinx kernel $(KERNEL_NAME)$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_NAME).xo -kernel_name $(KERNEL_NAME) -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl
+	vivado -mode batch -source "$(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
 
 edit_kernel: $(USER_KERNEL_ADDED_FILE)
-	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr" &
+	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr" &
 
 .PHONY: shell xo project edit_kernel
 shell: $(SHELL_REP)
@@ -702,10 +708,8 @@ xo: $(XO_FILE)
 project: $(USER_KERNEL_ADDED_FILE)
 
 
-# Transfer (push) FPGA files from build instance to F1 instance through S3.
-
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
@@ -845,19 +849,19 @@ ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_devel
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=c4.2xlarge
-	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_instance_dev.sh
+	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring f1_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_run
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_instance_dev.sh
+	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
 	INSTANCE_STORAGE=5
 	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_static_f1_instance.sh
+	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f1_instance.sh
 endif
 ifdef INSTANCE_NAME
   INSTANCE_NAME_FILTER=--filter 'Name=tag:Name,Values=$(INSTANCE_NAME)'
