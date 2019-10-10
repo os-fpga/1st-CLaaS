@@ -223,6 +223,12 @@ resource "aws_instance" "the_instance" {
     provisioner "local-exec" {
       command ="chmod 600 ${var.out_dir}/public_key.pem"
     }
+    
+    # Because of a Terraform bug (https://github.com/hashicorp/terraform/issues/16330).
+    # (What about privs? Should be 600?)
+    provisioner "remote-exec" {
+      inline = ["mkdir /home/centos/.aws"]
+    }
 
     provisioner "file" {
       source      = "${pathexpand(var.aws_config_path)}"
@@ -230,8 +236,8 @@ resource "aws_instance" "the_instance" {
     }
     
     provisioner "file" {
-    content     = "[${var.aws_profile}] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key}" 
-    destination = "/home/centos/.aws/credentials"
+      content     = "[${var.aws_profile}] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key}" 
+      destination = "/home/centos/.aws/credentials"
     }
     
     #provisioner "file" {
