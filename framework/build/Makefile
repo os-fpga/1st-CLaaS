@@ -250,31 +250,41 @@ endif
 # Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
 #
 
-TARGET=hw
-SPECIFIED_TARGET :=$(TARGET)
+# This one can be specified on command line, so it cannot be changed.
+TARGET :=default
+# We'll change this one.
 BUILD_TARGET :=$(TARGET)
-# If specified TARGET is not supported, downgrade.
-ifeq ($(findstring $(BUILD_TARGET) |,$(SUPPORTED_TARGETS)),)
-#If sim is not supported, downgrade to sw
+# A more explicit name for TARGET, and we never user TARGET again.
+SPECIFIED_TARGET :=$(TARGET)
+
+# Default BUILD_TARGET to hw or hw_emu depending on platform.
+ifeq ($(BUILD_TARGET),default)
+ifneq ($(findstring hw |,$(SUPPORTED_TARGETS)),)
+BUILD_TARGET :=hw
+else
+BUILD_TARGET :=hw_emu
+endif
+endif
+
+# If BUILD_TARGET is not supported, downgrade, but allow hw (if explicit, as ensured above) for hw_emu platforms. (Note that "hw" will match "hw_emu".)
+ifeq ($(findstring $(BUILD_TARGET),$(SUPPORTED_TARGETS)),)
+# Downgrade.
+# If sim is not supported, downgrade to sw.
 ifeq ($(BUILD_TARGET),sim)
 BUILD_TARGET :=sw
 else
 # Downgrade to highest-level target.
 BUILD_TARGET :=$(firstword $(SUPPORTED_TARGETS))
 endif
-# But, allow hw_emu platform to build hw if explicitly requested.
-ifeq ($(BUILD_TARGET),hw_emu)
-ifeq ($(SPECIFIED_TARGET),hw)
-BUILD_TARGET :=hw
-endif
-endif
-endif
-ifeq ($(BUILD_TARGET),)
+ifneq ($(SPECIFIED_TARGET),default)
 $(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
+endif
 endif
 $(info Using TARGET=$(BUILD_TARGET).  (Platform supports: | $(SUPPORTED_TARGETS)))
 
-# Characterize BUILD_TARGET.
+
+
+# Characterize TARGET.
 ifeq ($(BUILD_TARGET),hw)
 USE_XILINX=true
 endif
@@ -284,7 +294,7 @@ endif
 
 
 # Can only do PREBUILT=true w/ TARGET=hw.
-ifneq ($(TARGET),hw)
+ifneq ($(BUILD_TARGET),hw)
 	USE_PREBUILT=false
 else
 	USE_PREBUILT=$(PREBUILT)
