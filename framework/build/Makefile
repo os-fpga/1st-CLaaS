@@ -221,7 +221,7 @@ CHROME=$(shell which google-chrome)
 VERILATOR=$(shell ls "$(REPO)/local/verilator" 2> /dev/null)
 ifeq ($(VERILATOR),)
 # No local verilator.
-VERILATOR=$(shell which verilator)
+VERILATOR=$(shell which verilator 2> /dev/null)
 # Presumable verilator is /usr/local/bin/verilator or /usr/bin/verilator (but there is no check).
 VERILATOR_INCLUDE=/usr/share/verilator/include
 else
@@ -730,7 +730,7 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 ifneq ($(USE_PREBUILT), true)
 $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
-	rm $(DEST_DIR)/*_afi_id.txt
+	rm $(DEST_DIR)/*_afi_id.txt 2> /dev/null || true
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
 	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
 	# Waiting for AFI creation to complete.

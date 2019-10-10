@@ -51,7 +51,9 @@ fi
 # Install python libraries for user only so as not to affect system installs.
 echo "Installing Python packages for user $USER."
 sudo python3 -m pip install --upgrade pip
-python3 -m pip install --user --upgrade Pillow tornado awscli boto3  # imaging
+USER_PYTHON_PACKAGES=Pillow tornado awscli boto3
+python3 -m pip install --user --upgrade $USER_PYTHON_PACKAGES
+sudo python3 -m pip install --user --upgrade $USER_PYTHON_PACKAGES
 
 
 # Configure remmina to disble the tray icon (so, it isn't left running when launched via Makefile).
