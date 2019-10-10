@@ -740,7 +740,7 @@ $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	cd $(DEST_DIR) && $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE) \
 	  && grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt \
 	  && ls *_afi_id.txt | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt \
-	  && wait_for_afi.py --afi '$(KERNEL_NAME)_afi_id.txt'
+	  && wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
 	@# Delete S3 files to avoid charges.
 	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
 	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
