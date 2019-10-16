@@ -123,3 +123,13 @@ This is how I was able to generate an RTL kernel in SDAccel manually and run har
     - Tab "Arguments", check "Automatically add binary container(s) to arguments"
     - Click "Run" (or "Apply" and click green circle w/ play arrow).
 
+
+# Tips and Tricks
+
+## Verilog Development
+
+Use Vivado(TM) to develop your Verilog code (`make edit_kernel`). Vivado will show syntax errors (and more) as you type. If your code is clean in the editor you have a good chance of getting through synthesis and place-and-route. We've seen very misleading error messages on code that is not clean. For example, for `hw_emu` builds, we often see in `vivado.log`: `Cannot find design unit xil_defaultlib.emu_wrapper`, for which we have no explanation.
+
+## TL-Verilog
+
+TL-Verilog development cannot be done using Vivado, but SandPiper(TM) tends to generate clean Verilog, so you are unlikely to see downstream errors. As a last resort, you can always (`make edit_kernel`) to get feedback from Vivado about the generated Verilog. Of course, the Verilog is not source code, but if you are careful, you can make experimental edits and compile with that edited Verilog code. The code will be overwritten by a build if the .tlv source is edited.

@@ -75,15 +75,13 @@ m4+definitions(['
    m4_define(['M4_XILINX'], 0)
    
    m4_include_lib(['./kernel_module.tlvlib'])
-   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/master/fundamentals_lib.tlv'])
-   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/master/pipeflow_lib.tlv'])
-   //m4_include_lib(['./pipeflow.tlvlib'])
-   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/master/arrays.tlv'])
+   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/5a8c0387be80b2deccfcd1506299b36049e0663e/fundamentals_lib.tlv'])
+   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/5a8c0387be80b2deccfcd1506299b36049e0663e/pipeflow_lib.tlv'])
+   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/5a8c0387be80b2deccfcd1506299b36049e0663e/arrays.tlv'])
    m4_ifelse(M4_XILINX, 0,,['
-     m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/master/xilinx_macros.tlv'])
+     m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/5a8c0387be80b2deccfcd1506299b36049e0663e/xilinx_macros.tlv'])
    '])
-   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/warp-v/master/warp-v.tlv'])
-   //m4_include_lib(['./warp-v.tlvlib'])
+   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/warp-v/959bd7b75e5898b5c5b74b3ace144997d559ae4e/warp-v.tlv'])
    
    
    // TODO: Structure this for Makerchip editing, (like Mandelbrot).
