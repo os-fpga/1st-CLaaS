@@ -29,7 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-# Includes SDAccel 2017.1 Makefile functionality and general functionality for fpga-webserver.
 #
 # Terminology (TODO: Move to README):
 #   1st CLaaS User Configuration:
@@ -81,6 +80,7 @@
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
 #     copy_app: copy this app to a new app with name $(APP_NAME).
 #   Variables:
+#     AFI_PERMISSION=[public/private]: By default, AFIs are made public. Set this to "private" to prevent this.
 #     CONFIG_FILE: The 1st CLaaS user configuration file to use. ~/1st-CLaaS_config.mk by default. This is an
 #                     included Makefile that is expected to define:
 #        AWS_PROFILE: The AWS profile to use to access AWS resources (in AWS CLI commands, the '--profile' argument).
@@ -109,6 +109,8 @@
 #     Platform Target Variables:
 #        #    PASSWORD: (prompts as admin_pwd) might be used by web server to authenticate administrative actions from a client.
 #        #    LINUX_PASSWORD: Constructed instances will be assigned this Linux password. (Must not contain single/double quote or backslash.)
+#        #                    Note that RDP access uses LINUX_PASSWORD (because storing a password in Remmina config is not secure, and
+#        #                    I don't know how to configure the desktop to bypass the password prompt when ssh-tunnelled).
 #        #    INSTANCE_TYPE: Use c4 for testing without FPGA.
 #        #    INSTANCE_NAME: Name of the instance.
 #        #    INSTANCE_STORAGE: Size in GB of "sdb" storage on the instance. Defaults to 15, which is appropriate for Development Instance.
@@ -126,15 +128,15 @@
 #     # displayed in plain text on stdout. 
 #     # Each *_instance target has its own default values for INSTANCE_* variables.
 #     development_instance:
-#        > make PASSWORD=XXX development_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX LINUX_PASSWORD=XXX development_instance
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     f1_instance:
-#        > make PASSWORD=XXX f1_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX LINUX_PASSWORD=XXX f1_instance
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #        NOTE: This instance is allocated enough INSTANCE_STORAGE for development by default.
 #     static_accelerated_instance:
 #        By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
-#        > make PASSWORD=XXX PREBUILT=false/true static_accelerated_instance  # (or omit variables to be prompted.)
+#        > make PASSWORD=XXX PREBUILT=false/true static_accelerated_instance
 #           # PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #     For make launch, to associate an F1 instance, with this Content Web Server use:
@@ -207,16 +209,21 @@ S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
 
 
 AUTO_APPROVE=false
+AFI_PERMISSION=public
 
 
 # Chrome executable if there is one. Empty if not found and unspecified.
 CHROME=$(shell which google-chrome)
 
-# Characterize platform.
+
+#
+# Characterize platform (define $SUPPORTED_TARGETS)
+#
+
 VERILATOR=$(shell ls "$(REPO)/local/verilator" 2> /dev/null)
 ifeq ($(VERILATOR),)
 # No local verilator.
-VERILATOR=$(shell which verilator)
+VERILATOR=$(shell which verilator 2> /dev/null)
 # Presumable verilator is /usr/local/bin/verilator or /usr/bin/verilator (but there is no check).
 VERILATOR_INCLUDE=/usr/share/verilator/include
 else
@@ -233,7 +240,6 @@ SUPPORTED_TARGETS :=hw_emu |$(SPACE)
 endif
 endif
 
-
 ifneq ($(VERILATOR),)
 # Verilator.
 SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sim | sw |$(SPACE)
@@ -241,27 +247,46 @@ else
 SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 endif
 
-# Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
 
-TARGET=hw
-SPECIFIED_TARGET :=$(TARGET)
+#
+# Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
+#
+
+# This one can be specified on command line, so it cannot be changed.
+TARGET :=default
+# We'll change this one.
 BUILD_TARGET :=$(TARGET)
-# If specified TARGET is not supported, choose a different one.
-ifeq ($(findstring $(BUILD_TARGET) |,$(SUPPORTED_TARGETS)),)
-#If sim is not supported, downgrade to sw
+# A more explicit name for TARGET, and we never user TARGET again.
+SPECIFIED_TARGET :=$(TARGET)
+
+# Default BUILD_TARGET to hw or hw_emu depending on platform.
+ifeq ($(BUILD_TARGET),default)
+ifneq ($(findstring hw |,$(SUPPORTED_TARGETS)),)
+BUILD_TARGET :=hw
+else
+BUILD_TARGET :=hw_emu
+endif
+endif
+
+# If BUILD_TARGET is not supported, downgrade, but allow hw (if explicit, as ensured above) for hw_emu platforms. (Note that "hw" will match "hw_emu".)
+ifeq ($(findstring $(BUILD_TARGET),$(SUPPORTED_TARGETS)),)
+# Downgrade.
+# If sim is not supported, downgrade to sw.
 ifeq ($(BUILD_TARGET),sim)
 BUILD_TARGET :=sw
 else
 # Downgrade to highest-level target.
 BUILD_TARGET :=$(firstword $(SUPPORTED_TARGETS))
 endif
-endif
-ifeq ($(BUILD_TARGET),)
+ifneq ($(SPECIFIED_TARGET),default)
 $(info Your platform does not support TARGET=$(SPECIFIED_TARGET).)
+endif
 endif
 $(info Using TARGET=$(BUILD_TARGET).  (Platform supports: | $(SUPPORTED_TARGETS)))
 
-# Characterize BUILD_TARGET.
+
+
+# Characterize TARGET.
 ifeq ($(BUILD_TARGET),hw)
 USE_XILINX=true
 endif
@@ -271,7 +296,7 @@ endif
 
 
 # Can only do PREBUILT=true w/ TARGET=hw.
-ifneq ($(TARGET),hw)
+ifneq ($(BUILD_TARGET),hw)
 	USE_PREBUILT=false
 else
 	USE_PREBUILT=$(PREBUILT)
@@ -337,7 +362,7 @@ endif
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC) $(EXTRA_C_SRC)
 SW_HDRS ?= $(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS) $(EXTRA_C_HDRS)
 SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I$(FRAMEWORK_DIR)/host/json/include $(PROJ_SW_CFLAGS)
-SW_LFLAGS ?= -L${XILINX_XRT}/lib $(PROJ_SW_LFLAGS)
+SW_LFLAGS ?= -L$(XILINX_XRT)/lib $(PROJ_SW_LFLAGS)
 
 #Host code
 HOST_SRC=$(SW_SRC) $(FRAMEWORK_HOST_DIR)/hw_kernel.c
@@ -345,7 +370,7 @@ HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/hw_kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I${XILINX_XRT}/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I$(XILINX_XRT)/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Simulation flags
@@ -360,7 +385,7 @@ HOST_EXE=host
 
 #Kernel
 KERNEL_SRC=
-KERNEL_HDRS=
+# Flags for xocc (include -I <file> args).
 KERNEL_FLAGS=
 KERNEL_EXE=$(KERNEL_NAME)
 
@@ -376,10 +401,10 @@ KERNEL_ADDITIONAL_FLAGS=
 TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
 
 REPORT=
-ifeq (${BUILD_TARGET},hw)
+ifeq ($(BUILD_TARGET),hw)
 REPORT=--report system
 else
-ifeq (${BUILD_TARGET},hw_emu)
+ifeq ($(BUILD_TARGET),hw_emu)
 REPORT=--report estimate
 endif
 endif
@@ -444,6 +469,7 @@ endif
 TLV=$(shell ls ../fpga/src/*.tlv 2> /dev/null)
 SV_SRC=$(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
 VH_SRC=$(shell ls ../fpga/src/*.vh 2> /dev/null)
+FRAMEWORK_V_SRC=$(shell ls $(FRAMEWORK_DIR)/fpga/src/*.v $(FRAMEWORK_DIR)/fpga/src/*.sv $(FRAMEWORK_DIR)/fpga/src/*.vh 2> /dev/null)
 TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/null)
 SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
 SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
@@ -502,8 +528,8 @@ config:
 	$(call config_param,AWS_PROFILE)
 	@echo
 	@echo 'Have your AWS credentials ready (or create new via AWS Management Console: search "IAM", "users", select user, "Security Credentials", "Create access key").'
-	source $(CONFIG_FILE).tmp && NEW_AWS_PROFILE="$$AWS_PROFILE" && unset AWS_PROFILE && aws configure --profile "$$AWS_PROFILE"  # (aws configure doesn't work if $AWS_PROFILE doesn't already exist.)
-	source $(CONFIG_FILE).tmp && \
+	@source $(CONFIG_FILE).tmp && NEW_AWS_PROFILE="$$AWS_PROFILE" && unset AWS_PROFILE && aws configure --profile "$$AWS_PROFILE"  # (aws configure doesn't work if $AWS_PROFILE doesn't already exist.)
+	@source $(CONFIG_FILE).tmp && \
 	  REGION=$$(aws configure get region) && \
 	  if [[ ! $$REGION =~ (us-east-1|us-west-2|eu-west-1|us-gov-west-1) ]]; \
 	  then echo "Warning: Region $$REGION is not known to support F1. Valid regions w/ F1 include: 'us-east-1' (N. Virginia), 'us-west-2' (Oregon), 'eu-west-1' (Ireland), or 'us-gov-west-1' (GovCloud US). (Please update Makefile and create a pull request if you know differently.)"; \
@@ -532,7 +558,7 @@ ifneq ($(USE_PREBUILT), true)
 
 # TODO: Instead of this condition, define $(SW_SRC) and $(HOST_SRC) as $(SRC) conditionally, etc.
 ifneq ($(USE_XILINX),true)
-ifeq (${BUILD_TARGET},sw)
+ifeq ($(BUILD_TARGET),sw)
 #sw target
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
@@ -543,7 +569,7 @@ $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 else
 #sim target
-$(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC)
+$(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC) $(FRAMEWORK_V_SRC)
 	mkdir -p $(DEST_DIR)
 	$(VERILATOR) --cc --sv --trace -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator \
 	|| (STATUS=$$? && mv $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp.error && exit $$STATUS)  # to force re-run.
@@ -637,12 +663,16 @@ $(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
 # TODO: How do we configure the Vivado SDAccel project, including low-optimizations. Makefile or in repo or via instructions?
 IMPORTS_DIR=$(DEST_DIR)/$(KERNEL_NAME)_ex/imports
 VADD_SV=$(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
+VIVADO_PROJ_SCRIPT=$(DEST_DIR)/add_to_project.tcl
 $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 	@echo $(VIVADO_VERSION_MESSAGE)
 	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
 	@# Add user's kernel source code to project.
 	@mkdir -p ../out/sv  # Must exist for add_kernel.tcl
-	vivado -mode batch -nojournal -nolog -notrace -source "$(FRAMEWORK_DIR)/fpga/scripts/tcl/add_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
+	@# Add sources to project.
+	echo 'remove_files *_example_adder.v' > '$(VIVADO_PROJ_SCRIPT)' \
+	  && echo "add_files $$(ls $(SV_SRC) $(VH_SRC) $(FRAMEWORK_V_SRC) ../out/sv/*.v ../out/sv/*.sv ../out/sv/*.vh 2> /dev/null | tr "\n" " ")" >> '$(VIVADO_PROJ_SCRIPT)'
+	vivado -mode batch -nojournal -nolog -notrace -source '$(VIVADO_PROJ_SCRIPT)' '$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr'
 	@# Replace the adder example code with the user's kernel (including inner shell logic).
 	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
 	mv $(VADD_SV).hacked $(VADD_SV)
@@ -669,7 +699,7 @@ $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
 
 # Package the project as an .xo.
 # (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
-$(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC) $(SV_FROM_TLV)
+$(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC) $(SV_FROM_TLV) $(FRAMEWORK_V_SRC)
 	$(info $(VIVADO_VERSION_MESSAGE))
 	$(info "-----------------")
 	$(info "Packaging project")
@@ -677,11 +707,11 @@ $(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC) $(SV_FROM_TLV)
 	-rm $(XO_FILE) 2> /dev/null || true  # Seems to be necessary to remove the old .xo file for some reason.
 	@NEWLINE=$$'\n'; \
 	DEST_DIR=`realpath $(DEST_DIR)`; \
-	echo "source $(DEST_DIR)/${KERNEL_NAME}_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} xilinx kernel ${KERNEL_NAME}$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/${KERNEL_NAME}.xo -kernel_name ${KERNEL_NAME} -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/${KERNEL_NAME} -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl
-	vivado -mode batch -source "$(DEST_DIR)/${KERNEL_NAME}_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr"
+	echo "source $(DEST_DIR)/$(KERNEL_NAME)_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) xilinx kernel $(KERNEL_NAME)$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_NAME).xo -kernel_name $(KERNEL_NAME) -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl
+	vivado -mode batch -source "$(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
 
 edit_kernel: $(USER_KERNEL_ADDED_FILE)
-	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/${KERNEL_NAME}_ex.xpr" &
+	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr" &
 
 .PHONY: shell xo project edit_kernel
 shell: $(SHELL_REP)
@@ -689,10 +719,8 @@ xo: $(XO_FILE)
 project: $(USER_KERNEL_ADDED_FILE)
 
 
-# Transfer (push) FPGA files from build instance to F1 instance through S3.
-
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
@@ -703,16 +731,17 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 ifneq ($(USE_PREBUILT), true)
 $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	mkdir -p $(DEST_DIR)
-	rm $(DEST_DIR)/*_afi_id.txt
+	@# These files are created. Clean up any from old builds.
+	rm $(DEST_DIR)/*_afi_id.txt 2> /dev/null || true
+	rm -rf $(DEST_DIR)/to_aws 2> /dev/null || true
 	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
-	cd $(DEST_DIR); $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY)
-	# Waiting for AFI creation to complete.
-	# THESE COMMANDS ARE NOT DEBUGGED:
-	# Get afi-<id> into a file in isolation.
-	grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt
-	# Get timestamp used in generated files.
-	ls '_afi_id.txt' | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt
-	wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
+	@# Create bucket if it doesn't exist.
+	aws s3api create-bucket --bucket '$(S3_BUCKET)' --acl private > /dev/null && aws s3api wait bucket-exists --bucket '$(S3_BUCKET)'
+	# Create AFI and Wait for creation to complete. afi-<id> and <timestamp>_afi_id.txt are extracted into files for use.
+	cd $(DEST_DIR) && $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE) \
+	  && grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt \
+	  && ls *_afi_id.txt | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt \
+	  && wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
 	@# Delete S3 files to avoid charges.
 	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
 	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
@@ -797,9 +826,11 @@ ifeq ($(BUILD_TARGET), hw)
 .PHONY: prebuild
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 	# Name the AFI.
-	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --name "1st-CLaaS_$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
+	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --name "1st-CLaaS_$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
+ifeq ($(AFI_PERMISSION),public)
 	# Making AFI public.
-	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
+	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
+endif
 	# Populating /prebuilt dir.
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
 	cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
@@ -818,7 +849,7 @@ debug_prints:
 # Platform Targets
 ###################################
 
-FIRST_CLAAS_REMOTE_REPO_DIR=/home/centos/src/project_data/fpga-webserver
+FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/centos/src/project_data/repo
 
 # Create a new Static Accelerated Instance. See Makefile header comments for usage info.
 # WARNING: This target launches a new instance. Be sure it is not left running!
@@ -832,19 +863,19 @@ ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_devel
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=c4.2xlarge
-	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_instance_dev.sh
+	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring f1_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_run
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_instance_dev.sh
+	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
 	INSTANCE_STORAGE=5
 	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=${FIRST_CLAAS_REMOTE_REPO_DIR}/framework/terraform/config_static_f1_instance.sh
+	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f1_instance.sh
 endif
 ifdef INSTANCE_NAME
   INSTANCE_NAME_FILTER=--filter 'Name=tag:Name,Values=$(INSTANCE_NAME)'
@@ -855,8 +886,8 @@ endif
 SETUP=$(INSTANCE_NAME)
 S3_TF_KEY=tf_setups/$(SETUP)
 
-GIT_URL=$(shell git config --get remote.origin.url)
-GIT_BRANCH=$(shell git branch | grep \* | cut -d ' ' -f2)
+GIT_URL ?=$(shell git config --get remote.origin.url)
+GIT_BRANCH ?=$(shell git branch | grep \* | cut -d ' ' -f2)
 
 # Build up TF_ARGS (without evaluating)
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
@@ -914,7 +945,7 @@ define make_instance
 	@echo 'This instance and its associated resources can be destroyed with:'
 	@echo '   > make destroy SETUP=$(SETUP)'
 	@# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
-	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password" && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
+	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password (final step, in case this fails)." && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
 endef
 ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:

@@ -44,3 +44,4 @@ if __name__ == "__main__":
             FPGAServerApplication.defaultRoutes(),
             FPGAServerApplication.commandLineArgs()
         )
+    application.run()

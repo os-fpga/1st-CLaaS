@@ -38,15 +38,19 @@ class fpgaServer {
     this.f1_ip = false;
   }
   
-  connect() {
+  // Connect the websocket, and, optionally, call cb once the WebSocket is ready.
+  connect(cb) {
     this.ws = new WebSocket("ws://" + this.host + ":" + this.port + this.url_path);
+    if (cb) {
+      this.ws.onopen = cb;
+    }
   }
   
-  connectTo(host, port = 80, url_path = "/ws") {
+  connectTo(host, port = 80, url_path = "/ws", cb) {
     this.host = host;
     this.port = port;
     this.url_path = url_path;
-    this.connect();
+    this.connect(cb);
   }
   
   send(type, obj) {

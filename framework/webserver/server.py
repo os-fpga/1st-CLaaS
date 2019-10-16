@@ -106,9 +106,10 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     # in the message and produce a result
     #-result = self.application.handle_request(type, payload)
     try:
-        result = self.application.message_handlers[type](payload, type)
+        handler = self.application.message_handlers[type]
     except KeyError:
         print("Webserver: Unrecognized message type:", type)
+    result = handler(payload, type)
     
     # The result is sent back to the client
     print("Webserver: Responding with:", result)
@@ -541,7 +542,8 @@ class FPGAServerApplication(tornado.web.Application):
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
         self.registerMessageHandler("START_TRACING", self.handleCommandMsg)
         self.registerMessageHandler("STOP_TRACING", self.handleCommandMsg)
-        
+    
+    def run(self):
         # Report external URL for the web server.
         # Get Real IP Address using 3rd-party service.
         # Local IP: myIP = socket.gethostbyname(socket.gethostname())

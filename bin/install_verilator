@@ -17,6 +17,15 @@ fi
 mkdir -p local
 cd local
 
+if [[ -n "$(which apt-get 2> /dev/null)" ]]
+then
+  # Ubuntu
+  sudo apt-get install make autoconf g++ flex bison
+else [[ -n "$(which yum 2> /dev/null)" ]]
+  # Ubuntu
+  sudo yum install make autoconf g++ flex bison
+fi
+
 if [[ -e ./verilator ]]
 then
   echo "$(pwd)/verilator exists."
