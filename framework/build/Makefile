@@ -80,6 +80,7 @@
 #     shrink: remove some of the larger TARGET=hw build collateral files. (No "TARGET=hw" required.)
 #     copy_app: copy this app to a new app with name $(APP_NAME).
 #   Variables:
+#     AFI_PERMISSION=[public/private]: By default, AFIs are made public. Set this to "private" to prevent this.
 #     CONFIG_FILE: The 1st CLaaS user configuration file to use. ~/1st-CLaaS_config.mk by default. This is an
 #                     included Makefile that is expected to define:
 #        AWS_PROFILE: The AWS profile to use to access AWS resources (in AWS CLI commands, the '--profile' argument).
@@ -208,6 +209,7 @@ S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
 
 
 AUTO_APPROVE=false
+AFI_PERMISSION=public
 
 
 # Chrome executable if there is one. Empty if not found and unspecified.
@@ -825,8 +827,10 @@ ifeq ($(BUILD_TARGET), hw)
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 	# Name the AFI.
 	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --name "1st-CLaaS_$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
+ifeq ($(AFI_PERMISSION),public)
 	# Making AFI public.
 	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
+endif
 	# Populating /prebuilt dir.
 	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
 	cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
