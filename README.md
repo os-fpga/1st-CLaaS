@@ -2,12 +2,14 @@
 
 ![1st CLaaS](doc/img/1stCLaaS.png)
 
+
+
 # The 1st CLaaS Framework
 
 #### CLaaS: Custom Logic as a Service
 
 ![fpga-webserver header](doc/img/header.png)
-
+ 
 ## *- Unleashing the 3rd wave of cloud computing!*
 
   - Wave 1: CPUs
