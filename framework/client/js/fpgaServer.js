@@ -53,14 +53,13 @@ class fpgaServer {
     this.connect(cb);
   }
   
-  send(type, obj) {
+  send(type, payload) {
     // Prevent the user from using types reserved by the framework.
     if (typeof type === "string" && type.startsWith("~")) {
       console.log(`Refusing to send to FPGA using type "${type}" which is reserved by the framework.`);
     } else {
       // Wrap user object as expected by FPGA server.
-      obj = { "type": type, "payload": obj };
-      this.ws.send(JSON.stringify(obj));
+      this.ws.send(JSON.stringify({ "type": type, "payload": payload }));
     }
   }
   
