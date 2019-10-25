@@ -165,36 +165,6 @@ Hmmmm... We haven't given that much thought yet. Just say something nice, and we
 
 
 
-# To Do
-
-(File issues. Repo is going to move; just waiting for that.)
-
-  - Provide automation for provisioning a compatible "local" platform. 
-  - remove host from prebuilts (to support usage model where C++ is edited, but kernel is prebuilt).
-  - Also fix `make push` and `make pull`. (Huh, `make pull` is missing.) Support a model where the repo is not used on the F1 instance, just push/pull contents. Or get rid of push/pull, and rely on prebuilt and git push/pull?
-  - The latest SDx version is 2018.3. Instructions need to be updated since 2018.2. (It's 2019. Why are updates happening a year late?) Here are some issues observed w/ 2018.3:
-  
-  ```
-  source ../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/rtl_kernel_wiz.tcl -notrace
-  ../../../framework/host/kernel.c: In member function ‘void Kernel::initialize_platform()’:
-  ../../../framework/host/kernel.c:143:14: warning: ‘_cl_command_queue* clCreateCommandQueue(cl_context, cl_device_id, cl_command_queue_properties, cl_int*)’ is deprecated (declared at /usr/include/CL/cl.h:1443) [-Wdeprecated-declarations]
-     commands = clCreateCommandQueue(context, device_id, 0, &err);
-                ^
-  ../../../framework/host/kernel.c:143:62: warning: ‘_cl_command_queue* clCreateCommandQueue(cl_context, cl_device_id, cl_command_queue_properties, cl_int*)’ is deprecated (declared at /usr/include/CL/cl.h:1443) [-Wdeprecated-declarations]
-     commands = clCreateCommandQueue(context, device_id, 0, &err);
-                                                                ^
-  ../../../framework/host/kernel.c: In member function ‘void Kernel::start_kernel()’:
-  ../../../framework/host/kernel.c:259:9: warning: ‘cl_int clEnqueueTask(cl_command_queue, cl_kernel, cl_uint, _cl_event* const*, _cl_event**)’ is deprecated (declared at /usr/include/CL/cl.h:1457) [-Wdeprecated-declarations]
-     err = clEnqueueTask(commands, kernel, 0, NULL, NULL);
-           ^
-  ../../../framework/host/kernel.c:259:54: warning: ‘cl_int clEnqueueTask(cl_command_queue, cl_kernel, cl_uint, _cl_event* const*, _cl_event**)’ is deprecated (declared at /usr/include/CL/cl.h:1457) [-Wdeprecated-declarations]
-     err = clEnqueueTask(commands, kernel, 0, NULL, NULL);
-                                                        ^
-  ```
-  
-  These are non-fatal. Maybe `-lxilinxopencl` is no longer needed?
-
-
 # Immediate Issues
 
 
