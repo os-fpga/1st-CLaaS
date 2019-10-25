@@ -147,8 +147,8 @@ And paste this SSH key into the settings of your other account (e.g. gitlab).
 ```sh
 cd ~/workdisk
 git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
-git clone https://github.com/alessandrocomodi/fpga-webserver
-cd fpga-webserver
+git clone https://github.com/stevehoover/1st-CLaaS
+cd 1st-CLaaS
 source ./init
 ```
 

@@ -29,8 +29,8 @@ To configure your local environment, including installation of tools for AWS dev
 
 ```sh
 cd <wherever you would like to work>
-git clone https://github.com/alessandrocomodi/fpga-webserver
-cd fpga-webserver
+git clone https://github.com/stevehoover/1st-CLaaS
+cd 1st-CLaaS
 ./init   # This will require sudo password entry, and you may be asked to update your $PATH.)
 ```
 

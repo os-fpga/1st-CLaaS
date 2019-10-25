@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 # This script hacks the Xilinx vector add example produced by the rtl_kernel_wizard into an inner shell for the user kernel
-# for this fpga-webserver infrastructure.
+# for this 1st-CLaaS infrastructure.
 # The file mandelbrot_example_vadd.sv is provided in STDIN and STDOUT is the hacked version.
 # $1 is the name of the kernel.
 

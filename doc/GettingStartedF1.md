@@ -181,7 +181,7 @@ xeyes  # Hopefully, you see some eyes now.
 Open a new terminal in your remote desktop. Each time you do so, you must:
 
 ```sh
-cd ~/fpga-webserver  # (~/fpga-webserver is a symbolic link.)
+cd ~/1st-CLaaS  # (~/1st-CLaaS is a symbolic link.)
 source sdaccel_setup
 ```
 
@@ -191,7 +191,7 @@ source sdaccel_setup
 As you did on your local machine, you can run Mandelbrot in simulation.
 
 ```sh
-cd ~/fpga-webserver/apps/mandelbrot/build
+cd ~/1st-CLaaS/apps/mandelbrot/build
 make TARGET=sim launch
 ```
 
@@ -204,7 +204,7 @@ On this instance, you can also run the Xilinx "hardware emulation" (`hw_emu`) mo
 On your Development Instance, build the host application and Amazon FPGA Image (AFI) that the host application will load onto the FPGA. But it would take close to an hour to build the AFI, so below, we are specifying `PREBUILT=true` to utilize a prebuilt public AFI referenced in the repository.
 
 ```sh
-cd ~/fpga-webserver/apps/mandelbrot/build
+cd ~/1st-CLaaS/apps/mandelbrot/build
 make PREBUILT=true launch   # Note: Since this instance supports TARGET=hw_emu, this mode will be the default.
 ```
 
@@ -238,7 +238,7 @@ make f1_instance
 ```
 
 ```sh
-make ssh SSH_CMD='source fpga-webserver/sdaccel_setup && cd fpga-webserver/app/mandelbrot/build && make launch PREBUILT=true'   # TARGET=hw is the default on F1.
+make ssh SSH_CMD='source 1st-CLaaS/sdaccel_setup && cd 1st-CLaaS/app/mandelbrot/build && make launch PREBUILT=true'   # TARGET=hw is the default on F1.
 ```
 
 As before, open `http://<IP>:8888` in your browser (using the new IP). Now you can select renderer "FPGA", and navigate at FPGA speed. (Try "velocity" nagivation mode.)

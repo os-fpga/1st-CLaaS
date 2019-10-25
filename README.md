@@ -8,7 +8,7 @@
 
 #### CLaaS: Custom Logic as a Service
 
-![fpga-webserver header](doc/img/header.png)
+![1st-CLaaS header](doc/img/header.png)
  
 ## *- Unleashing the 3rd wave of cloud computing!*
 
@@ -38,7 +38,7 @@ For optimization and deployment of your custom kernel using AWS F1 with Xilinx t
 
 # FPGA-Webserver Project Overview
 
-![fpga-webserver header](doc/img/simple.png)
+![1st-CLaaS header](doc/img/simple.png)
 
 With 1st CLaaS, you can stream bits directly to and from your custom FPGA kernel using standard web protocols (WebSockets or REST). In the simplest use case, all software is client-side in the web browser, and all server logic and data storage is implemented in the FPGA. Your kernel uses a very simple interface to stream the data, and it can be developed in Verilog (or any language compilable to Verilog).
 
@@ -103,7 +103,7 @@ By providing the web server, host application code, and kernel shell logic to st
   - web development, and
   - logic design
 
-![fpga-webserver header](doc/img/./simplify.png)
+![1st-CLaaS header](doc/img/./simplify.png)
 <small><small>[CC BY-SA 2.0, <a href="http://www.lumaxart.com/" target="_blank" atom_fix="_">LuMaxArt</a>, modified]</small></small>
 
 Infrastructure development overhead is reduced from several person-months down to hours.
@@ -129,7 +129,7 @@ Reducing the problem to web and RTL development is not the finish line for us. 1
 
 This repository is generally working, and the initial development push is winding down.
 
-A working <a href="https://github.com/alessandrocomodi/fpga-webserver/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
+A working <a href="https://github.com/stevehoover/1st-CLaaS/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
 
 Anything and everything is subject to change at this point, especially with respect to the interface provided by the framework for applications to build upon. So, you should build on a specific version of the framework and expect to do some debugging if you choose to upgrade by pulling from master.
 

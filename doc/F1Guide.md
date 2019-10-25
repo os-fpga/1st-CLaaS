@@ -96,7 +96,7 @@ These are WIP notes:
 
 This is how I was able to generate an RTL kernel in SDAccel manually and run hardware emulation. This is scripted as part of the build process, but not with the ability to run in SDAccel. These are notes to help figure that out.
 
- - `cd ~/workdisk/fpga-webserver`
+ - `cd ~/workdisk/1st-CLaaS`
  - `source sdaccel_setup`
  - `sdx`
  - `echo $AWS_PLATFORM` (You will need to know this path.)

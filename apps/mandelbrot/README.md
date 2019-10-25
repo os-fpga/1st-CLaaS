@@ -36,7 +36,7 @@ Launch the main web server:
 
 ```
 make ssh
-cd fpga-webserver/apps/mandelbrot
+cd 1st-CLaaS/apps/mandelbrot
 make config  # Enter AWS keys, region, etc.
 make PASSWORD=XXX INSTANCE=i-XXX live
 ```

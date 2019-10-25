@@ -81,12 +81,13 @@ then
   then
     if [[ -e "$HOME/.bashrc" ]]
     then
-      if [[ $( grep fpga-webserver "$HOME/.bashrc" > /dev/null 2>&1 )$? != 0 ]]
+      if [[ $( grep fpga-webserver "$HOME/.bashrc" > /dev/null 2>&1 )$? != 0 ||
+            $( grep 1st-CLaaS "$HOME/.bashrc" > /dev/null 2>&1 )$? != 0 ]]
       then
         echo "INFO: Strange, it looks like ~/.bashrc has already been modified, but 'aws' command is not currently in \$PATH. Might need to add ~/.local/bin to your \$PATH manually."
       else
         echo >> "$HOME/.bashrc"
-        echo "export PATH=\$PATH:$HOME/.local/bin  # Added by fpga-webserver repository." >> ~/.bashrc
+        echo "export PATH=\$PATH:$HOME/.local/bin  # Added by 1st-CLaaS repository." >> ~/.bashrc
         echo "==================================="
         echo "Modified ~/.bashrc to add ~/.local/bin to path, and sourcing ~/.bashrc."
         echo "==================================="

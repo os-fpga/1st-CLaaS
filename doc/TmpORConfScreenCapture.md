@@ -3,22 +3,22 @@
 ## Prep
 
   ```sh
-  cd /tmp/fpga-webserver/apps/mandelbrot/build
+  cd /tmp/1st-CLaaS/apps/mandelbrot/build
   make destroy SETUP=1st-CLaaS_mandelbrot_accelerator
-  rm -rf /tmp/fpga-webserver
+  rm -rf /tmp/1st-CLaaS
   ```
   
   - Terminals:
     - Terminal 1 in /tmp `*** Part 1: Install and Run ***`
-    - Terminal 2 contains command `*** Part 2: FPGA ***`, `cd /tmp/fpga-webserver/apps/mandelbrot/build`.
-    - Terminal 3 contains command `*** Part 3: Custom Kernel ***`, `cd /tmp/fpga-webserver/apps/vadd/build`.
+    - Terminal 2 contains command `*** Part 2: FPGA ***`, `cd /tmp/1st-CLaaS/apps/mandelbrot/build`.
+    - Terminal 3 contains command `*** Part 3: Custom Kernel ***`, `cd /tmp/1st-CLaaS/apps/vadd/build`.
   - Chrome window with EC2 Console and new tab (open).
   - Note: [---] waiting for machine; [...] waiting for presenter
 
 ## Terminal 1: Clone/Init; run Mandelbrot (sim)
 
   - In Chrome:
-    - New tab. Search "fpga-webserver". Click repo link.
+    - New tab. Search "1st-CLaaS". Click repo link.
     - Open "Getting Started".
     - Copy 3-lines of clone/cd/init and paste into Terminal 1. [-]
   - In Terminal 1, make launch:
@@ -33,7 +33,7 @@
 
 ## Terminal 2: Build F1 and Demo
   - In Terminal 2, make static_accelerated_instance:
-    - <Enter> to `cd /tmp/fpga-webserver/apps/mandelbrot/build`
+    - <Enter> to `cd /tmp/1st-CLaaS/apps/mandelbrot/build`
       `make static_accelerated_instance PREBUILT=true`
       [Create F1 instance. AWS already set up.]
     - Wait. Type "yes".
@@ -48,13 +48,13 @@
   - In Terminal 3:
   
     ```sh
-    cd /tmp/fpga-webserver/apps/vadd/build
+    cd /tmp/1st-CLaaS/apps/vadd/build
     make copy_app APP_NAME=toy
     cd ../../toy/build
     ```
 
   - In Atom:
-    - Open /etc/fpga-webserver/apps/toy/fpga/src/toy_kernel.sv` & edit
+    - Open /etc/1st-CLaaS/apps/toy/fpga/src/toy_kernel.sv` & edit
     - `make launch`
   - In Chrome:
     - Show that it does a subtract.
