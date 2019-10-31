@@ -165,9 +165,6 @@ Hmmmm... We haven't given that much thought yet. Just say something nice, and we
 
 
 
-# Immediate Issues
-
-
 # Legal
 
 *All trademarks cited within this repository are the property of their respective owners.*
