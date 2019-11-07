@@ -212,13 +212,19 @@ resource "aws_instance" "the_instance" {
     
     # Save TLS keys.
     provisioner "local-exec" {
-      command ="mkdir -p ${var.out_dir} && echo \"${tls_private_key.temp.private_key_pem}\" > ${var.out_dir}/private_key.pem"
+      environment = {
+        PRIVATE_KEY_PEM = "${tls_private_key.temp.private_key_pem}"
+      }
+      command ="mkdir -p ${var.out_dir} && echo \"$PRIVATE_KEY_PEM\" > ${var.out_dir}/private_key.pem"
     }
     provisioner "local-exec" {
       command ="chmod 600 ${var.out_dir}/private_key.pem"
     }
     provisioner "local-exec" {
-      command ="echo \"${tls_private_key.temp.public_key_pem}\" > ${var.out_dir}/public_key.pem"
+      environment = {
+        PUBLIC_KEY_PEM = "${tls_private_key.temp.public_key_pem}"
+      }
+      command ="echo \"$PUBLIC_KEY_PEM\" > ${var.out_dir}/public_key.pem"
     }
     provisioner "local-exec" {
       command ="chmod 600 ${var.out_dir}/public_key.pem"

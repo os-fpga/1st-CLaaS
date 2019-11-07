@@ -54,7 +54,9 @@
 # Optional args:
 #   -p <port>: The port number on which to launch. 8888 by default.
 #   -c <compile-command>: The compile command used to rebuilt when upgraded.
-#   -w <web-server-command>: The command to launch the web server. '<<PORT>>' will be substituted with the port number.
+#   -w <web-server-command>: The command to launch the web server.
+#             '<<PORT>>' will be substituted with the port number;
+#             '<<PASSWORD>>' will be substituted with $LAUNCH_PASSWORD;
 #   -o: Launch webserver in one-shot mode, where it will kill the launch process when the websocket is closed (browser tab is closed).
 
 # Must be launched from the projects 'build' directory because:
@@ -163,6 +165,8 @@ launch () {
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
   # Launch.
   echo "Launching web server as: $CMD"
+  # Substitute <<PASSWORD>>.
+  CMD=${CMD/<<PASSWORD>>/$LAUNCH_PASSWORD}
   if [[ $USE_XILINX = "false" ]];
   then
     $CMD &

@@ -56,7 +56,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "verilated_vcd_c.h"
 
 
-const int SIM_Kernel::MAX_PHASES = 10000;
+const int SIM_Kernel::MAX_PHASES = 100000000;
 const int SIM_Kernel::MAX_TRACE_PHASES = 1000;
 
 SIM_Kernel::SIM_Kernel() {

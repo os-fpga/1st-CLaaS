@@ -105,8 +105,12 @@
 #   Eg:
 #     make host TARGET=hw_emu
 #
-#   Platform Targets (for constructing EC2 instances):
-#     Platform Target Variables:
+#   Instance/Setup Targets:
+#     Instance targets are used for creating, destroying, and managing EC2 instances.
+#     EC2 instances should be managed using these targets rather than manually via the EC2 Management Console
+#     so that associated resources are created/destroyed together.
+#
+#     Instance Target Variables:
 #        #    PASSWORD: (prompts as admin_pwd) might be used by web server to authenticate administrative actions from a client.
 #        #    LINUX_PASSWORD: Constructed instances will be assigned this Linux password. (Must not contain single/double quote or backslash.)
 #        #                    Note that RDP access uses LINUX_PASSWORD (because storing a password in Remmina config is not secure, and
@@ -127,14 +131,14 @@
 #     # Note that the admin password and AWS profile's keys are stored in plain text on the created instance. They are also
 #     # displayed in plain text on stdout. 
 #     # Each *_instance target has its own default values for INSTANCE_* variables.
-#     development_instance:
+#     development_instance (from framework/build):
 #        > make PASSWORD=XXX LINUX_PASSWORD=XXX development_instance
 #        WARNING: This launches a new instance. Be sure it is not left running!
-#     f1_instance:
+#     f1_instance (from framework/build):
 #        > make PASSWORD=XXX LINUX_PASSWORD=XXX f1_instance
 #        WARNING: This launches a new instance. Be sure it is not left running!
 #        NOTE: This instance is allocated enough INSTANCE_STORAGE for development by default.
-#     static_accelerated_instance:
+#     static_accelerated_instance (from app/xxx/build):
 #        By default to create a new Static Accelerated Instance, for an application, to be associated with the Content Web Server, use:
 #        > make PASSWORD=XXX PREBUILT=false/true static_accelerated_instance
 #           # PREBUILT: (prompts as use_prebuilt_afi) provided to 'make live' of the F1 (or C4 for debug) instance.
@@ -166,6 +170,8 @@ SHELL=/bin/bash
 COMMA:= ,
 EMPTY:=
 SPACE:= $(EMPTY) $(EMPTY)
+# $(SINGLE_QUOTE) is used to avoid syntax highlighting issues in Atom.
+SINGLE_QUOTE:= '
 
 # Path to this repo (relative or absolute). Makefiles outside of this repo must define this.
 FIRST_CLAAS_REPO ?=$(shell realpath --relative-to=. $$(git rev-parse --show-toplevel))
@@ -203,6 +209,11 @@ include $(CONFIG_FILE)
 else
 $(info 1st CLaaS Configuration file "$(CONFIG_FILE)" can be configured interactively using "make config".)
 endif
+endif
+# Invalidate default passwords if -n flag is given to prevent password from appearing in output. (LINUX_PASSWORD shouldn't be defaulted anyway.)
+ifneq ($(subst n,,$(MAKEFLAGS)),$(MAKEFLAGS))
+PASSWORD :=XXXXX
+LINUX_PASSWORD :=YYYYY
 endif
 
 S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
@@ -314,12 +325,15 @@ PORT ?= 8888
 
 # Python Web Server Command
 
+
 WEBSERVER_ARGS :=
+LAUNCH_PASSWORD :=
 ifdef INSTANCE
 WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --instance $(INSTANCE)
 endif
 ifdef PASSWORD
-WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password $(PASSWORD)
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password <<PASSWORD>>
+LAUNCH_PASSWORD :=LAUNCH_PASSWORD=' {{{$(PASSWORD)}}} '
 endif
 ifneq ($(AWS_PROFILE),default)
 WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(AWS_PROFILE)
@@ -494,6 +508,17 @@ BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
 HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
 endif
 
+
+# It's best not to expose passwords in the output. (Even though the user has access, there might be someone peeping.)
+# This macro recognizes " {{{secret}}} " as a secret. It is echoed to the terminal as "*****" and replaced
+# with "secret" to execute the command.
+# Usage: $(call with_secret,$(COMMAND))
+define with_secret
+	@# Echo command without secrets (requires proper quoting)
+	@echo '$(subst $(SPACE)*****$(SPACE),*****,$(patsubst {{{%}}},*****,$(subst $(SINGLE_QUOTE),'"$(SINGLE_QUOTE)"',$1)))'
+	@$(subst }}}$(SPACE),,$(subst $(SPACE){{{,,$1))
+endef
+
 .PHONY: nothing
 nothing:
 	@echo "No target specified. Nothing built."
@@ -507,7 +532,7 @@ clean:
 shrink:
 	rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
 
-	
+
 
 # User configuration.
 define config_param
@@ -542,6 +567,7 @@ config:
 	@# For convenience, also store the full bucket name.
 	@source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
 	@echo 'EC2 instances will be initialized with an administrative password. This password may be used by optional administrative features of 1st-CLaaS web servers. Choose a default.'
+	@echo "(This default PASSWORD is accessible to $USER and root users.)"
 	$(call config_param,PASSWORD)
 	@chmod 600 $(CONFIG_FILE).tmp
 	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
@@ -792,7 +818,7 @@ endif
 	# TODO: What about copying the launch script? It this is changed, will that affect the running server?
 	# TODO: Not sure it's necessary to set make vars. These might pass through as environment vars.
 	@echo "Launching production server in the background"
-	$(LAUNCH_CMD)
+	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
 	-rm ../live/$(BUILD_TARGET)/dead
 	touch ../live/$(BUILD_TARGET)/live
 	@echo "Went live!!!   (Stop with 'make dead' or restart with 'make live' again.)"
@@ -812,14 +838,14 @@ build: $(BUILD_TARGETS)
 LAUNCH_CHECK=@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
 launch: $(BUILD_TARGETS)
 	$(LAUNCH_CHECK)
-	$(LAUNCH_CMD)
+	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
 
 # An un-documented target to launch the web server and open Chrome to test it.
 # Requires $(CHROME) and works only for applications that open the websocket.
 chrome: $(BUILD_TARGETS)
 	$(LAUNCH_CHECK)
 	@# Launch Chrome in background and webserver in foreground in "one-shot" mode (exit when websocket is closed).
-	$(CHROME) -app='http:localhost:8888' & $(LAUNCH_CMD_PARTIAL) -p $(PORT) -o $(BUILD_TARGET) '$(HOST_CMD)'
+	$(call with_secret,$(LAUNCH_PASSWORD) $(CHROME) -app='http:localhost:8888' & $(LAUNCH_CMD_PARTIAL) -p $(PORT) -o $(BUILD_TARGET) '$(HOST_CMD)')
 
 
 ifeq ($(BUILD_TARGET), hw)
@@ -846,7 +872,7 @@ debug_prints:
 
 
 ###################################
-# Platform Targets
+# Instance Targets
 ###################################
 
 FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/centos/src/project_data/repo
@@ -892,19 +918,19 @@ GIT_BRANCH ?=$(shell git branch | grep \* | cut -d ' ' -f2)
 # Build up TF_ARGS (without evaluating)
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
 ifdef PASSWORD
-	TF_ARGS1=-var 'admin_pwd=$(PASSWORD)'
+	TF_ARGS1=-var 'admin_pwd= {{{$(PASSWORD)}}} '
 else
-	TF_ARGS1=-var 'admin_pwd=$(shell echo $$RANDOM)'
+	TF_ARGS1=-var 'admin_pwd= {{{$(shell echo $$RANDOM)}}} '
 endif
-ifeq ($(USE_PREBUILT),true)
+ifeq ($(PREBUILT),true)
 	TF_ARGS2=-var 'use_prebuilt_afi=true'
 else
 	TF_ARGS2=
 endif
 TF_ARGS3=-var 'instance_name=$(INSTANCE_NAME)' -var 'sdb_device_size=$(INSTANCE_STORAGE)'
-TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' -var 'aws_access_key_id=$(shell aws configure get aws_access_key_id --profile $(AWS_PROFILE))'
-TF_ARGS5=-var 'aws_secret_access_key=$(shell aws configure get aws_secret_access_key --profile $(AWS_PROFILE))' -var 'aws_profile=$(AWS_PROFILE)'
-TF_ARGS6=-var 'region=$(shell aws configure get region --profile $(AWS_PROFILE))' -var 'repo_dir=$(ABS_REPO)' -var 'git_url=$(GIT_URL)' -var 'git_branch=$(GIT_BRANCH)'
+TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' -var "aws_access_key_id=$$(aws configure get aws_access_key_id --profile $(AWS_PROFILE))"
+TF_ARGS5=-var "aws_secret_access_key=$$(aws configure get aws_secret_access_key --profile $(AWS_PROFILE))" -var 'aws_profile=$(AWS_PROFILE)'
+TF_ARGS6=-var "region=$$(aws configure get region --profile $(AWS_PROFILE))" -var 'repo_dir=$(ABS_REPO)' -var 'git_url=$(GIT_URL)' -var 'git_branch=$(GIT_BRANCH)'
 ifeq ($(AUTO_APPROVE),true)
 TF_AUTO_APPROVE_ARG=--auto-approve
 else
@@ -933,8 +959,8 @@ define terraform
 	&& cp '$(ABS_REPO)/framework/terraform/ec2_instance.tf' . \
 	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' ec2_instance.tf \
 	&& sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' ec2_instance.tf \
-	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" ec2_instance.tf \
-	&& $(ABS_REPO)/terraform/terraform init && '$(ABS_REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS) |& tee terraform.log
+	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" ec2_instance.tf
+	$(call with_secret,cd '$(REPO)/tmp/$(SETUP)' &&  $(ABS_REPO)/terraform/terraform init && '$(ABS_REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS) |& tee terraform.log)
 endef
 .PHONY: static_accelerated_instance development_instance
 TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
@@ -945,6 +971,7 @@ define make_instance
 	@echo 'This instance and its associated resources can be destroyed with:'
 	@echo '   > make destroy SETUP=$(SETUP)'
 	@# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
+	@# Do so without echoing command to avoid password in output (though, most-likely, it was typed in the first place).
 	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password (final step, in case this fails)." && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
 endef
 ifneq ($(KERNEL_NAME),framework)
