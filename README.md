@@ -152,14 +152,14 @@ Anything and everything is subject to change at this point, especially with resp
 # Acclaim and Further Information
 
   - 1st CLaaS has caught the eye of the open-source silicon community. It has been written up in a number of online publications:
-    - Google recognized 1st CLaaS as a game-changer from among 1,134 completed Google Summer of Code 2019 projects with this <a href="https://opensource.googleblog.com/2019/09/unleashing-open-source-silicon.html" target="_ blank">post in their Google Open Source Blog</a>.
+    - Google recognized 1st CLaaS as a game-changer from among 1,134 successfully-completed Google Summer of Code 2019 projects with this <a href="https://opensource.googleblog.com/2019/09/unleashing-open-source-silicon.html" target="_ blank">post in their Google Open Source Blog</a>.
     - <a href="https://abopen.com/news/1st-claas-and-google-summer-of-code-work-to-open-the-floodgates-of-free-and-open-source-silicon/">AB Open reported</a> on the Google post.
     - Gareth Halfacree reported on <a href="https://medium.com/librecores/el-correo-libre-issue-20-161dd5e3b9f9">1st CLaaS in El Correo Libre</a>.
   - 1st CLaaS has been presented at several conferences:
-    - A short <a href="https://drive.google.com/open?id=1TAUxoCZ3SQpYha5HjXYNDSqQsSvG_ejD" target="_ blank">invited talk</a> at VSDOpen 2018, by Steve Hoover, about cloud FPGAs and the impact they will have on open-source hardware and the silicon industry as a whole provides context and motivation for this project.
-    - And a follow-up invited talk by Steve in VSDOpen 2019 provides an update following the initial implementation of 1st CLaaS. For a small price, the entire <a href="https://www.udemy.com/course/vsdopen2019-vlsi-online-conference/" target="_ blank">VSDOpen 2019 conference</a> is available online.
-    - Akos Hadnagy presented <a href="https://www.youtube.com/watch?v=RklNlgQ8AMo" target="_ blank">1st CLaaS at ORConf 2019</a>.
-  - Here's a write-up on [how 1st CLaaS came to be](doc/Story.md).
+    - An invited talk, called "Unleashing Open-Source Silicon" by Steve Hoover in VSDOpen 2019. (<a href="https://www.youtube.com/watch?v=olMu-reXpDY&t=577s" target="_ blank">video</a>, <a href="https://7d23d460-2749-400d-b005-324f0112e947.filesusr.com/ugd/a8abed_49b0b24a022e43df92ab88af28ad8260.pdf" target="_ blank">slides</a>, <a href="https://www.udemy.com/course/vsdopen2019-vlsi-online-conference/" target="_ blank">all of VSDOpen 2019</a>)
+    - A similar <a href="https://www.youtube.com/watch?v=FARF48mjTjI" target="_ blank">invited talk at VSDOpen 2018</a> by Steve Hoover when 1st CLaaS was merely potential.
+    - A talk by Akos Hadnagy on <a href="https://www.youtube.com/watch?v=RklNlgQ8AMo" target="_ blank">1st CLaaS at ORConf 2019</a>.
+  - Here's a write-up from Steve Hoover on [how 1st CLaaS came to be](doc/Story.md).
   - Akos Hadnagy's provided a [2019 Google Summer of Code Summary](https://www.linkedin.com/pulse/paving-way-fpga-accelerated-web-applications-%25C3%25A1kos-hadnagy/?trackingId=2nssE2INjhEAeFTh7IWUuA%3D%3D).
 
 
