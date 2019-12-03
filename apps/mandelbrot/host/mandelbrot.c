@@ -385,7 +385,7 @@ MandelbrotImage::coord_t MandelbrotImage::getZoomDepth() {
   coord_t zoom = req_pix_size / pix_y_fit;
   if (verbosity > 3)
     cout << "{Zoom info: " << pix_y_fit << ", " << zoom << "}. ";
-    return log(scale_per_depth, zoom);
+  return log(scale_per_depth, zoom);
 }
 
 inline void MandelbrotImage::meldWithColor(color_t &color, color_t color2, float amount, bool cap) {
