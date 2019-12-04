@@ -35,7 +35,7 @@ import sys
 import os
 import signal
 import re
-sys.path.append('../../../framework/webserver')
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/../../../framework/webserver'))
 from server import *
 import unicodedata
 
