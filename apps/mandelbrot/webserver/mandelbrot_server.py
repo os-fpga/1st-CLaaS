@@ -309,7 +309,7 @@ class MandelbrotApplication(FPGAServerApplication):
             self.associateEC2Instance()
         routes = self.defaultRoutes(ip=True)  # ip route is used by framework as a ping for F1.
         routes.extend(
-            [ (r"/redeploy", RedeployHandler),
+            [ #(r"/redeploy", RedeployHandler),
               #(r'/hw', GetRequestHandler),
               (r'/(img)', ImageHandler),
               (r'/observe_img/(?P<tag>[^\/]+)', ObserveImageHandler),
