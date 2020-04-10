@@ -1,0 +1,31 @@
+{
+  "name": "1st-claas",
+  "version": "1.0.0",
+  "description": "1st CLaaS framework for hosting FPGA logic as a microservice for a new world of FPGA-accelerated web and cloud applications.",
+  "main": "none",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stevehoover/1st-CLaaS.git"
+  },
+  "keywords": [
+    "FPGA",
+    "microservice",
+    "hardware",
+    "acceleration",
+    "high-performance",
+    "computing",
+    "RedwoodEDA"
+  ],
+  "author": "Steve Hoover",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/stevehoover/1st-CLaaS/issues"
+  },
+  "homepage": "https://github.com/stevehoover/1st-CLaaS#README.md"
+}
