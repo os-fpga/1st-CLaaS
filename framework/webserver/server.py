@@ -380,6 +380,7 @@ class FPGAServerApplication(tornado.web.Application):
               (r'/ws', WSHandler),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/css"}),
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/js"}),
+              (r"/public/(.*)",   BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/public"}),
               (r"/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/html"}),
               (r"/(.*\.ico)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/html"})
             ]

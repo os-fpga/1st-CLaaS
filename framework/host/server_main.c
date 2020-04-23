@@ -292,7 +292,7 @@ void HostApp::processTraffic() {
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 
     uint64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
-    printf("Kernel execution time GET_IMAGE: %ld [us]\n", delta_us);
+    printf("Kernel execution time %s: %ld [us]\n", msg, delta_us);
   }
 }
 
