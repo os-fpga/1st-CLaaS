@@ -93,6 +93,7 @@ Enter information, using:
   - your AWS access keys created and region selected above
   - default output format: `json`
   - an S3_USER and S3_BUCKET_TAG of your choice, used only to create a unique bucket name (global address for AWS data storage).
+  - if desired, a default administrative webserver password (as described).
 
 This creates:
 
@@ -112,7 +113,7 @@ The command below uses <a href="https://www.terraform.io/" target="_blank" atom_
 
 > **IMPORTANT:** Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options, though plentiful, seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. We have found it important to always refresh the page before changing machine state. And, be sure your instance transitions to "stopped" state (or, according to AWS support, charging stops at "stopping" state).
 
-You must choose a password for your new instance (which must not contain single/double quotes nor backslash). Obviously, since you are typing it here in plain text, be sure it is not visible to wandering eyes, and perhaps run `clear` after command completion.
+You must choose a Linux password for your new instance (which must not contain single/double quotes nor backslash). Obviously, since you are typing it here in plain text, be sure it is not visible to wandering eyes, and perhaps run `clear` after command completion.
 
 ```sh
 make development_instance LINUX_PASSWORD=<password-for-your-instance>

@@ -58,7 +58,7 @@ CHUNK_SIZE    = 4096
 
 class Socket():
 
-    VERBOSITY = 10   # 0-10 (quiet-loud)
+    VERBOSITY = 0   # 0-10 (quiet-loud)
 
     # Socket with host defines
     SOCKET        = "SOCKET"
@@ -111,7 +111,7 @@ class Socket():
             traceback.print_stack()
         #print("Python: recv'ed:", ret)
         return ret
-        
+
     def close(self):
         self.sock.close()
 
@@ -146,7 +146,7 @@ def read_data_handler(sock, header=None, b64=True):
   # Decode data size
   (size,) = struct.unpack("I", response)
   size = socket.ntohl(size)
-  print("Size: ", size)
+  print("Python: Size: ", size)
 
   ### Receive chunks of data from host ###
   data = b''

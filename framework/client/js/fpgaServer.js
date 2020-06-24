@@ -1,22 +1,22 @@
 // BSD 3-Clause License
-// 
+//
 // Copyright (c) 2018, alessandrocomodi
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the copyright holder nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,8 +28,12 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// A class representing the websocket connection with the FPGA microservice.
+//
+// TODO: A subset of the methods of this class support a "1-to-1" model where each message sent has a corresponding
+// message response. (This is the default behavior if the web server and host application are not customized.)
 class fpgaServer {
-  
+
   constructor() {
     this.host = location.hostname;
     this.port = location.port;
@@ -37,22 +41,40 @@ class fpgaServer {
     this.f1_state = "stopped";
     this.f1_ip = false;
   }
-  
+
   // Connect the websocket, and, optionally, call cb once the WebSocket is ready.
   connect(cb) {
+
+    /* TODO:
+    // For 1-to-1. Called
+    this._ws_handler = function(resolve, reject, message) {
+
+    }
+
+    // Each sent message gets a corresponding in-order response. This FIFO array holds pending messages.
+    // [0] is the oldest message (next response).
+    // Each element holds: {
+    //   resolve: function(data) The function to call to resolve the sendMessage(..) promise.
+    //   reject: function(err) The function to call to reject the sendMessage(..) promise.
+    //   function (resolve, reject, obj) Callback function that will
+    //   id: `${object.cnt}:${object.prob}:${object.rid}`
+    // }
+    this.pendingObjects = [];
+    */
+
     this.ws = new WebSocket("ws://" + this.host + ":" + this.port + this.url_path);
     if (cb) {
       this.ws.onopen = cb;
     }
   }
-  
+
   connectTo(host, port = 80, url_path = "/ws", cb) {
     this.host = host;
     this.port = port;
     this.url_path = url_path;
     this.connect(cb);
   }
-  
+
   send(type, payload) {
     // Prevent the user from using types reserved by the framework.
     if (typeof type === "string" && type.startsWith("~")) {
@@ -62,15 +84,15 @@ class fpgaServer {
       this.ws.send(JSON.stringify({ "type": type, "payload": payload }));
     }
   }
-  
+
   startTracing() {
     this.ws.send(JSON.stringify({ "type": "START_TRACING", payload: {} }));
   }
-  
+
   stopTracing() {
     this.ws.send(JSON.stringify({ "type": "STOP_TRACING", payload: {} }));
   }
-  
+
   // This is the API currently exposed for sending data.
   // Args:
   //   - resp_size: The number of chunks that must be returned in response. (The need to provide this is an artifact of the current implementation.)
@@ -88,8 +110,15 @@ class fpgaServer {
           data: chunks
     }));
   }
-  
-  
+
+
+
+
+  // ========================
+  // F1 Instance Management
+  //
+  // TODO: This should be in a different class.
+
   // Reset the EC2 instance time bomb, and, optionally, callback upon response. The callback is passed the response JSON.
   resetEC2TimeBomb(fed_cb) {
     $.ajax({
@@ -112,7 +141,7 @@ class fpgaServer {
       }
     });
   }
-  
+
   // Begin pinging the EC2 instance time bomb. this.f1_state must be "running" or "pending", and this method does not perform
   // the initial reset. This should be called, followed by another action which resets (like a start_ec2_instance AJAX request).
   beginEC2TimeBomb() {
@@ -130,7 +159,7 @@ class fpgaServer {
         }
       }, this.time_bomb_reset * 1000);
     }
-    
+
     if (this.f1_state != "running" && this.f1_state != "pending") {
       console.log("Bug: Starting time bomb resetting when f1_state is: " + this.f1_state);
     }
@@ -139,7 +168,7 @@ class fpgaServer {
       scheduleEC2TimeBombReset();
     }
   }
-  
+
   // Support for controls to start/stop an FPGA.
   // Server can enable listening to:
   //   /start_fpga (POST): Start FPGA, and return JSON of the form: {"ip": "...", "message": "..."}.
@@ -159,7 +188,7 @@ class fpgaServer {
   //
   // Args:
   //   time_bomb_reset: Period between time bomb resets in seconds.
-  
+
   // Mimic EC2 F1 instance state as defined by the EC2 lifecycle.
   // Instance is static, so states cycle among: "stopped", "pending", "running", "stopping" (or "unknown").
   f1StateCB() {}  // A callback for f1 state change that can be overridden.
@@ -190,7 +219,7 @@ class fpgaServer {
       $("#start-fpga-button").prop("disabled", true);
       $("#fpga-message").text("Starting...");
       this.beginEC2TimeBomb();
-      
+
       // Handle any failing cases for starting F1.
       let startFailed = (msg) => {
         // Go to "stopped" state.
@@ -263,5 +292,5 @@ class fpgaServer {
       $('#start-fpga-button').prop("disabled", false);
     });
   }
-  
+
 }

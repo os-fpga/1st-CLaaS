@@ -40,7 +40,7 @@ variable "region" {
   type = string
 }
 # TODO: Region is hardcoded in files/aws_config/config.
-# Instead, create the file using remote-exec and "cat", using the variable.
+#       Instead, create the file using remote-exec and "cat", using the variable.
 # TODO: Also, automate creation of aws_config.tfvars from AWS config file.
 
 
@@ -128,7 +128,7 @@ provider "aws" {
 
 data "aws_ami" "instance_ami" {
 most_recent = true
-owners = ["679593333241"] 
+owners = ["679593333241"]
 
   filter {
       name   = "name"
@@ -144,7 +144,7 @@ owners = ["679593333241"]
 resource "aws_security_group" "allow_webdev_80_ssh_rdp" {
     name        = "for_${var.instance_name}"
     description = "Allow HTTP inbound traffic (devel and production), SSH, and RDP"
-  
+
     ingress {
       from_port   = 80
       to_port     = 80
@@ -205,11 +205,11 @@ resource "aws_instance" "the_instance" {
       volume_size = var.sdb_device_size
       delete_on_termination = var.delete_storage_on_destroy
     }
-  
+
     tags = {
       Name = "${var.instance_name}"
     }
-    
+
     # Save TLS keys.
     provisioner "local-exec" {
       environment = {
@@ -229,7 +229,7 @@ resource "aws_instance" "the_instance" {
     provisioner "local-exec" {
       command ="chmod 600 ${var.out_dir}/public_key.pem"
     }
-    
+
     # Because of a Terraform bug (https://github.com/hashicorp/terraform/issues/16330).
     # (What about privs? Should be 600?)
     provisioner "remote-exec" {
@@ -240,28 +240,28 @@ resource "aws_instance" "the_instance" {
       source      = "${pathexpand(var.aws_config_path)}"
       destination = "/home/centos/.aws/config"
     }
-    
+
     provisioner "file" {
-      content     = "[${var.aws_profile}] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key}" 
+      content     = "[${var.aws_profile}] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key}"
       destination = "/home/centos/.aws/credentials"
     }
-    
+
     #provisioner "file" {
     #  source      = "${var.repo_dir}/framework/terraform/clone_repos.sh"
     #  destination = "/home/centos/clone_repos.sh"
     #}
-    
+
     # A private configuration file controlling the behavior of this instance.
     # Note: This contains a plain-text password, accessible to anyone with access to the machine.
     provisioner "file" {
       content     = "KERNEL_NAME=${var.kernel}; ADMIN_PWD=${var.admin_pwd}; USE_PREBUILT_AFI=${var.use_prebuilt_afi}"
       destination = "/home/centos/server_config.sh"
     }
-    
+
     #provisioner "remote-exec" {
     #  inline = ["source '/home/centos/clone_repos.sh'"]
     #}
-    
+
     # Configure instance.
     provisioner "remote-exec" {
       inline = [

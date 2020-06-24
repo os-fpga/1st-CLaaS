@@ -30,7 +30,7 @@ then
 elif [[ -n "$(which yum 2> /dev/null)" ]]
 then
   # CentOS
-  
+
   # For Python:
   sudo yum makecache
   sudo yum -y install yum-utils
@@ -40,11 +40,11 @@ then
   # To look like Ubuntu, we need python3 and pip3.
   sudo ln -s /usr/bin/python3.5 /usr/bin/python3
   sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
-  
+
   sudo yum -y install $COMMON_PACKAGES  #  python-tornado python-imaging redundant w/ pip install?
-  
+
   ## bash lives at /usr/bin/bash in CentOS, but in /bin/bash for Ubuntu. Create /bin/bash.
-  #sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment. 
+  #sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment.
 fi
 
 
@@ -81,8 +81,8 @@ then
   then
     if [[ -e "$HOME/.bashrc" ]]
     then
-      if [[ $( grep fpga-webserver "$HOME/.bashrc" > /dev/null 2>&1 )$? != 0 ||
-            $( grep 1st-CLaaS "$HOME/.bashrc" > /dev/null 2>&1 )$? != 0 ]]
+      if ( grep fpga-webserver "$HOME/.bashrc" > /dev/null 2>&1 ) ||
+         ( grep 1st-CLaaS "$HOME/.bashrc" > /dev/null 2>&1 )
       then
         echo "INFO: Strange, it looks like ~/.bashrc has already been modified, but 'aws' command is not currently in \$PATH. Might need to add ~/.local/bin to your \$PATH manually."
       else
@@ -92,7 +92,7 @@ then
         echo "Modified ~/.bashrc to add ~/.local/bin to path, and sourcing ~/.bashrc."
         echo "==================================="
         source "$HOME/.bashrc"
-        if [[ $( which aws > /dev/null 2>&1 )$? != 0 ]]
+        if ( ! which aws > /dev/null 2>&1 )
         then
           echo "WARNING: Still cannot find 'aws' command."
         fi
