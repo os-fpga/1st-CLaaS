@@ -59,6 +59,7 @@ import tornado.ioloop
 import tornado.web
 import socket
 from socket import error as socket_error
+import ssl
 import sys
 import time
 import subprocess
@@ -503,7 +504,7 @@ class FPGAServerApplication(tornado.web.Application):
     @staticmethod
     def commandLineArgs(flags=[], params={}):
         # Apply implicit args. ("password" is from EC2Args(), but the Makefile will provide it from configuration parameters, whether used or not.)
-        ret = {"port": 8888, "password": None, "oneshot": None}
+        ret = {"port": 8888, "password": None, "oneshot": None, "ssl_crt_file": None, "ssl_key_file": None}
         ret.update(params)
         arg_list = flags
         # Apply implicit flags (currently none).
@@ -513,7 +514,7 @@ class FPGAServerApplication(tornado.web.Application):
         try:
             opts, remaining = getopt.getopt(sys.argv[1:], "", arg_list)
         except getopt.GetoptError:
-            print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout <sec>] [--password <password>] [--profile <aws-profile>]' % (sys.argv[0]))
+            print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout <sec>] [--password <password>] [--profile <aws-profile>] [--ssl_crt_file <ssl-crt-file> --ssl_key_file <ssl-key_file>]' % (sys.argv[0]))
             sys.exit(2)
         # Strip leading dashes.
         for opt, arg in opts:
@@ -535,7 +536,16 @@ class FPGAServerApplication(tornado.web.Application):
     
         self.socket = Socket()
         
-        server = tornado.httpserver.HTTPServer(self)
+        self.use_ssl = self.args['ssl_key_file'] != None and self.args['ssl_crt_file'] != None
+        if self.use_ssl:
+            self.ssl_key_file = self.args['ssl_key_file']
+            self.ssl_crt_file = self.args['ssl_crt_file']
+            ssl_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            ssl_ctx.load_cert_chain(self.ssl_crt_file,
+                                    self.ssl_key_file)
+            server = tornado.httpserver.HTTPServer(self, ssl_options=ssl_ctx)
+        else:
+            server = tornado.httpserver.HTTPServer(self)
         FPGAServerApplication.server = server
         server.listen(self.port)
         self.message_handlers = {}

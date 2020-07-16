@@ -91,6 +91,9 @@
 #           Any of these three may optionally be provided as configurtion variables.
 #           The resulting S3_BUCKET_NAME must be a globally-unique (across all AWS users). It is used to store
 #                information about AWS resources that are in use ("setups" managed using Terraform via this Makefile).
+#        For secure server (https/wss), define:
+#           SSL_CRT_FILE=<file>: File containing SSL certificate (.crt)
+#           SSL_KEY_FILE=<file>: File containing SSL key (.key)
 #     PORT: The port on which to launch the web server.
 #     TARGET=[hw, hw_emu, sim, sw] (determined by platform by default)
 #             hw: F1 FPGA.
@@ -337,6 +340,11 @@ LAUNCH_PASSWORD :=LAUNCH_PASSWORD=' {{{$(PASSWORD)}}} '
 endif
 ifneq ($(AWS_PROFILE),default)
 WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(AWS_PROFILE)
+endif
+ifdef SSL_CRT_FILE
+ifdef SSL_KEY_FILE
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --ssl_crt_file='$(SSL_CRT_FILE)' --ssl_key_file='$(SSL_KEY_FILE)'
+endif
 endif
 
 WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
@@ -965,6 +973,8 @@ endef
 .PHONY: static_accelerated_instance development_instance
 TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
 define make_instance
+	@# Instance will be initialized with 1st-CLaaS repo cloned from remote, but there is an issue if the remote is not using https: ssh will require interactive verification which hangs script.
+	@if [[ ! '$(GIT_URL)' =~ ^https: ]]; then echo -e '\e[91m\e[1m1st CLaaS repo must use "https" protocol, but is "$(GIT_URL)". Provide git repo to use on remote instance, e.g. "GIT_URL=https://github.com/xxx/1st-CLaaS.git", or use "git remote set-url origin https:..."./\e[0m' && false; fi
 	@if ! git status | grep 'working directory clean' > /dev/null; then echo && echo -e '\e[91m\e[1mInstance construction can have unexpected behavior when working directory is not clean.\e[0m' && echo && sleep 2; fi
 	@echo 'Instance will be initialized based on latest "$(GIT_BRANCH)" branch.' && echo
 	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
