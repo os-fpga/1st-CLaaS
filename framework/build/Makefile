@@ -132,7 +132,7 @@
 #        #    TF_ARGS: (opt) Additional arguments for Terraform.
 #     # The following *_instance targets exist. These targets must be used as the only target in the make command.
 #     # Note that the admin password and AWS profile's keys are stored in plain text on the created instance. They are also
-#     # displayed in plain text on stdout. 
+#     # displayed in plain text on stdout.
 #     # Each *_instance target has its own default values for INSTANCE_* variables.
 #     development_instance (from framework/build):
 #        > make PASSWORD=XXX LINUX_PASSWORD=XXX development_instance
@@ -574,8 +574,8 @@ config:
 	$(call config_param,S3_BUCKET_TAG)
 	@# For convenience, also store the full bucket name.
 	@source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
-	@echo 'EC2 instances will be initialized with an administrative password. This password may be used by optional administrative features of 1st-CLaaS web servers. Choose a default.'
-	@echo "(This default PASSWORD is accessible to $USER and root users.)"
+	@echo 'EC2 instances can be initialized with an administrative password. This password may be used by optional administrative features of 1st-CLaaS web servers. Choose a default or leave blank to require explicit password on launch when needed.'
+	@echo "WARNING: This default PASSWORD is accessible to $(USER) and root users."
 	$(call config_param,PASSWORD)
 	@chmod 600 $(CONFIG_FILE).tmp
 	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
@@ -875,7 +875,7 @@ endif
 .PHONY: debug_prints
 debug_prints:
 	$(info host path: $(DEST_DIR)/$(HOST_EXE))
-	
+
 
 
 

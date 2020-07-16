@@ -208,7 +208,7 @@ void HostApp::processTraffic() {
             kernel.writeKernelData(int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
             if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
-            
+
             kernel.start_kernel();
             if (verbosity > 2) {cout << "Started kernel." << endl;}
 
@@ -242,7 +242,7 @@ void HostApp::processTraffic() {
             //s += "}";
 
             // Respond.
-            cout_line() << "Responding with: " << s << endl;
+            if (verbosity > 5) {cout_line() << "Responding with: " << s << endl;}
             socket_send("DATA response", s);
 
           } free(int_resp_data_p); free(int_data_p);
@@ -292,7 +292,7 @@ void HostApp::processTraffic() {
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 
     uint64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
-    printf("Kernel execution time %s: %ld [us]\n", msg, delta_us);
+    printf("Kernel execution time %s: %ld [us]\n", msg.c_str(), delta_us);
   }
 }
 
@@ -383,7 +383,7 @@ void HostApp::init_platform(char * response) {
   }
   if(!kernel.initialized) {
     kernel.initialize_platform();
-    
+
     if (kernel.status)
       sprintf(response, "Error: could not initialize platform");
     else

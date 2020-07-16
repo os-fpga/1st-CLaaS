@@ -99,7 +99,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
   def on_message(self, message):
     msg = json.loads(message)
     response = {}
-    print("Webserver: ws.on_message:", message)
+    #print("Webserver: ws.on_message:", message)
     type = msg['type']
     payload = msg['payload']
 
@@ -111,9 +111,9 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     except KeyError:
         print("Webserver: Unrecognized message type:", type)
     result = handler(payload, type)
-    
+
     # The result is sent back to the client
-    print("Webserver: Responding with:", result)
+    #print("Webserver: Responding with:", result)
     self.write_message(result)
 
   def on_close(self):
@@ -151,12 +151,12 @@ class IPReqHandler(ReqHandler):
             ip = ""
         #ip_str = socket.gethostbyname(socket.gethostname())
         self.write(ip)
-        
+
 """
 EC2 Action Handlers
 """
 class EC2Handler(ReqHandler):
-    
+
     def ping(self):
         status = 0
         args = [FPGAServerApplication.framework_webserver_dir + "/../aws/ec2_time_bomb", "reset", FPGAServerApplication.ec2_time_bomb_filename]
@@ -193,46 +193,46 @@ class StartEC2InstanceHandler(EC2Handler):
     # Handles starting the EC2 instance.
     def post(self):
         resp = {}
-        
+
         # Get request parameters.
         password = self.get_argument('pwd')
-        
+
         try:
             # Check password.
             if password != FPGAServerApplication.ec2_instance_password and FPGAServerApplication.ec2_instance_password != "":
                 # Invalid passord.
                 raise RuntimeError("Invalid password")
-            
+
             # As a safety check, make sure the time bomb is running for the instance.
             out = subprocess.check_output(['/bin/bash', '-c', "[[ -e '" + FPGAServerApplication.ec2_time_bomb_filename + "' ]] && ps --no-header -q $(cat '" + FPGAServerApplication.ec2_time_bomb_filename + "') -o comm="], universal_newlines=True)
             if not re.match('^ec2_', out):
                 raise RuntimeError("Unable to find time bomb process for " + FPGAServerApplication.ec2_time_bomb_filename + ".")
-                
+
             # Reset the time bomb.
             if self.ping():
                 # Time bomb reset failed, so don't bother starting the instance.
                 raise RuntimeError("Unable to reset time bomb: " + FPGAServerApplication.ec2_time_bomb_filename + ".")
-            
+
         except BaseException as e:
             msg = "Couldn't set up for EC2 instance because of exception: " + str(e)
             resp = {"message": msg}
             print("Webserver: " + msg)
-        
+
         if not "message" in resp:
             # So far, so good.
-                
+
             try:
                 # Start instance.
-                
+
                 # First wait a second to be sure the time bombs reset and a bomb doesn't detonate as we start the instance.
                 time.sleep(1)
                 # Note: The instance must be constructed to launch the web server at reboot (@reboot in crontab, for example).
                 #       It must be able to safely cleanup any lingering garbage from when it was last stopped.
                 FPGAServerApplication.awsEc2Cli(['start-instances'])
-            
+
                 # Wait for instance to start.
                 FPGAServerApplication.awsEc2Cli(['wait', 'instance-running', '--no-paginate'])
-                
+
                 # Get IP address.
                 out = FPGAServerApplication.awsEc2Cli(['describe-instances', '--query', 'Reservations[*].Instances[*].PublicIpAddress'])
                 m = re.match(r'^(\d+\.\d+\.\d+\.\d+)$', out)
@@ -256,12 +256,12 @@ class StartEC2InstanceHandler(EC2Handler):
                     print("Caught exception: " + str(e))
                     raise RuntimeError("Failed to launch web server on EC2 instance with command: " + ' '.join(args))
                 """
-                
+
             except BaseException as e:
                 msg = "Couldn't initialize instance because of exception: " + str(e)
                 resp = {"message": msg}
                 print("Webserver: " + msg)
-                
+
                 # Stop server. Note that there might be other users of the instance, but something seems wrong with it, so
                 # tear it down, now.
                 try:
@@ -282,20 +282,20 @@ class StartEC2InstanceHandler(EC2Handler):
 class FPGAServerApplication(tornado.web.Application):
     cleanup_handler_called = False
     clean_exit_called = False
-    
+
     # These can be set by calling associateEC2Instance() to associate an EC2 instance with this web server.
     ec2_time_bomb_script = None
     ec2_time_bomb_filename = None
     ec2_time_bomb_timeout = 120
     ec2_instance_id = None
     ec2_profile = None
-    
+
     app_dir = os.getcwd() + "/.."
     framework_webserver_dir = os.path.dirname(__file__)
     framework_client_dir = os.path.dirname(__file__) + "/../client"
     if dir == "":
         dir = "."
-        
+
     # A derived class can be call this in its __init__(..) prior to this class's __init__(..) to associate an
     # AWS EC2 Instance with this web server based on command-line arguments by starting a time bomb.
     def associateEC2Instance(self):
@@ -304,7 +304,7 @@ class FPGAServerApplication(tornado.web.Application):
         timeout = self.args["ec2_time_bomb_timeout"]
         password = self.args["password"]
         profile = self.args["profile"]
-        
+
         ret = False
         # Create time bomb.
         time_bomb_dir = FPGAServerApplication.app_dir + "/webserver/ec2_time_bombs"
@@ -321,7 +321,7 @@ class FPGAServerApplication(tornado.web.Application):
                 pass
             subprocess.check_call(args)   # Note that subprocess.check_output(args, universal_newlines=True) cannot be used because subprocess remains running and connected to stdout.
             print('*** EC2 Instance Time Bomb %s Started ***' % (time_bomb_file))
-            
+
             FPGAServerApplication.ec2_time_bomb_script = script
             FPGAServerApplication.ec2_instance_id = ec2_instance
             FPGAServerApplication.ec2_time_bomb_filename = time_bomb_file
@@ -335,7 +335,7 @@ class FPGAServerApplication(tornado.web.Application):
         except BaseException as e:
             print("Webserver: FPGAServerApplication failed to start time bomb for EC2 instance %s with exception: %s" % (ec2_instance, str(e)))
         return ret
-    
+
     # Issue an aws ec2 command via CLI. (It would be better to use boto3, but it is blocking.)
     # --instance_ids ..., --output text, and --profile ... args are appended to the end of the provided args.
     # Return stdout.
@@ -364,7 +364,7 @@ class FPGAServerApplication(tornado.web.Application):
             print("Webserver: " + err_str)
             raise RuntimeError(err_str)
         return ret
-    
+
     # Return an array containing default routes into ../client/{html,css,js}
     # Args:
     #   ip: Truthy to include /ip route.
@@ -392,30 +392,30 @@ class FPGAServerApplication(tornado.web.Application):
             #routes.append( (r'/stop_ec2_instance', StopEC2InstanceHandler) )
             routes.append( (r"/reset_ec2_time_bomb", TimeBombHandler) )
         return routes
-    
-    
+
+
     # Register a message handler.
-    # 
+    #
     def registerMessageHandler(self, type, handler):
         self.message_handlers[type] = handler
-    
-    
+
+
     # Handler for GET_IMAGE.
     def handleGetImage(self, payload, type):
         print("Webserver: handleGetImage:", payload)
         response = get_image(self.socket, "GET_IMAGE", payload, True)
         return {'type': 'user', 'png': response}
-        
+
     def handleDataMsg(self, data, type):
         self.socket.send_string("command", type)
         self.socket.send_string("data", data)
         data = read_data_handler(self.socket, None, False)
         return data
-    
+
     def handleCommandMsg(self, data, type):
         self.socket.send_string("command", type)
         return {'type': type}
-    
+
 
     # Cleanup upon SIGTERM, SIGINT, SIGQUIT, SIGHUP.
     @staticmethod
@@ -426,7 +426,7 @@ class FPGAServerApplication(tornado.web.Application):
             tornado.ioloop.IOLoop.instance().add_callback_from_signal(FPGAServerApplication.cleanExit)
         else:
             print("Webserver: Duplicate call to Signal handler.")
-        
+
     # Clean up upon exiting.
     @staticmethod
     def cleanExit():
@@ -437,7 +437,7 @@ class FPGAServerApplication(tornado.web.Application):
                     FPGAServerApplication.application.socket.close()
                 except Exception as e:
                     print("Failed to close socket:", e)
-                
+
                 MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 1
                 if FPGAServerApplication.ec2_time_bomb_filename:
                     print("Webserver: Stopping EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
@@ -445,7 +445,7 @@ class FPGAServerApplication(tornado.web.Application):
                         out = subprocess.check_output([FPGAServerApplication.ec2_time_bomb_script, "done", FPGAServerApplication.ec2_time_bomb_filename], universal_newlines=True)
                     except:
                         print("Webserver: Failed to stop EC2 time bomb", FPGAServerApplication.ec2_time_bomb_filename)
-            
+
                 print('Webserver: Stopping http server.')
                 FPGAServerApplication.server.stop()
 
@@ -456,7 +456,7 @@ class FPGAServerApplication(tornado.web.Application):
 
                 # If there is nothing pending in io_loop, stop, otherwise wait and repeat until timeout.
                 # TODO: Had to disable "nothing pending" check, so this is just a fixed timeout now.
-                #       Monitor this to see if a solution pops up: https://gist.github.com/mywaiting/4643396  
+                #       Monitor this to see if a solution pops up: https://gist.github.com/mywaiting/4643396
                 def stop_loop():
                     now = time.time()
                     if now < deadline: # and (io_loop._callbacks or io_loop._timeouts):
@@ -465,7 +465,7 @@ class FPGAServerApplication(tornado.web.Application):
                         io_loop.stop()
                         print('Webserver: Shutdown')
                 stop_loop()
-                
+
                 # As an added safety measure, let's wait for the EC2 instance to stop.
                 if FPGAServerApplication.ec2_time_bomb_filename:
                     print("Webserver: Waiting for associated EC2 instance (" + FPGAServerApplication.ec2_instance_id + ") to stop.")
@@ -475,8 +475,8 @@ class FPGAServerApplication(tornado.web.Application):
                 print("Webserver: Duplicate call to cleanExit().")
         except Exception as e:
             print("Failed to exit cleanly. Exception", e)
-    
-        
+
+
     # Return arguments dict that can be .update()d to application constructor arg to provide arguments for
     # associateEC2Instance().
     # Command-line args are:
@@ -521,21 +521,22 @@ class FPGAServerApplication(tornado.web.Application):
             opt = re.sub(r'^-*', '', opt)
             ret[opt] = arg
         return ret
-        
+
     # Params:
     #   routes: {list of tuples} as for Tornado. Can pass defaultRoutes().
     #   args: from commandLineArgs() (generally).
     def __init__(self, routes, args):
         self.args = args
-        
+
         self.port = int(self.args['port'])
-        
+
         FPGAServerApplication.application = self
-        
+
         super(FPGAServerApplication, self).__init__(routes)
-    
+
         self.socket = Socket()
         
+        # Launch server (with SSL or not)
         self.use_ssl = self.args['ssl_key_file'] != None and self.args['ssl_crt_file'] != None
         if self.use_ssl:
             self.ssl_key_file = self.args['ssl_key_file']
@@ -553,7 +554,7 @@ class FPGAServerApplication(tornado.web.Application):
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
         self.registerMessageHandler("START_TRACING", self.handleCommandMsg)
         self.registerMessageHandler("STOP_TRACING", self.handleCommandMsg)
-    
+
     def run(self):
         # Report external URL for the web server.
         # Get Real IP Address using 3rd-party service.
@@ -570,11 +571,10 @@ class FPGAServerApplication(tornado.web.Application):
         signal.signal(signal.SIGQUIT, FPGAServerApplication.cleanupHandler)
         signal.signal(signal.SIGTERM, FPGAServerApplication.cleanupHandler)
         signal.signal(signal.SIGHUP,  FPGAServerApplication.cleanupHandler)
-            
+
         try:
             # Starting web server
             tornado.ioloop.IOLoop.instance().start()
         except BaseException as e:
             print("Webserver: Exiting due to exception:", e)
             #FPGAServerApplication.cleanExit(e)
-            
