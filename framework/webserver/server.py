@@ -92,8 +92,10 @@ class BasicFileHandler(tornado.web.StaticFileHandler):
 # The application has a handler method for each type, registered via FPGAServerApplication.registerMessageHandler(type, handler), where
 # 'handler' is a method of the form: json_response = handler(self, payload, type(string))
 class WSHandler(tornado.websocket.WebSocketHandler):
-  def open(self):
-    print('Webserver: New connection')
+  def open(self, token=None):
+    self.token = token
+    self.application.newConnection(self)
+    
 
   # This function activates whenever there is a new message incoming from the WebSocket
   def on_message(self, message):
@@ -110,7 +112,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         handler = self.application.message_handlers[type]
     except KeyError:
         print("Webserver: Unrecognized message type:", type)
-    result = handler(payload, type)
+    result = handler(payload, type, self)
 
     # The result is sent back to the client
     #print("Webserver: Responding with:", result)
@@ -379,6 +381,7 @@ class FPGAServerApplication(tornado.web.Application):
               (r"/framework/(.*\.html)", BasicFileHandler, {"path": FPGAServerApplication.framework_client_dir + "/html"}),
               (r"/()", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/html", "default_filename": "index.html"}),
               (r'/ws', WSHandler),
+              (r'/ws/(.*)', WSHandler),
               (r"/css/(.*\.css)", BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/css"}),
               (r"/js/(.*\.js)",   BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/js"}),
               (r"/public/(.*)",   BasicFileHandler, {"path": FPGAServerApplication.app_dir + "/client/public"}),
@@ -401,21 +404,26 @@ class FPGAServerApplication(tornado.web.Application):
 
 
     # Handler for GET_IMAGE.
-    def handleGetImage(self, payload, type):
+    def handleGetImage(self, payload, type, ws):
         print("Webserver: handleGetImage:", payload)
         response = get_image(self.socket, "GET_IMAGE", payload, True)
         return {'type': 'user', 'png': response}
 
-    def handleDataMsg(self, data, type):
+    def handleDataMsg(self, data, type, ws):
         self.socket.send_string("command", type)
         self.socket.send_string("data", data)
         data = read_data_handler(self.socket, None, False)
         return data
 
-    def handleCommandMsg(self, data, type):
+    def handleCommandMsg(self, data, type, ws):
         self.socket.send_string("command", type)
         return {'type': type}
 
+    # Called when a new WebSocket connection is made.
+    # Args:
+    #   ws: The WSHandler representing the WebSocket.
+    def newConnection(self, ws):
+        print('Webserver: New connection')
 
     # Cleanup upon SIGTERM, SIGINT, SIGQUIT, SIGHUP.
     @staticmethod
