@@ -107,7 +107,6 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
     # The request is passed to a request handler which will process the information contained
     # in the message and produce a result
-    #-result = self.application.handle_request(type, payload)
     try:
         handler = self.application.message_handlers[type]
     except KeyError:

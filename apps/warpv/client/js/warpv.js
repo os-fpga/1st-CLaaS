@@ -112,7 +112,7 @@ class WARPV_Example {
           // Send command to run WARP-V core.
           this.runWARPV();
         },
-        failure: (response) => {
+        error: (response) => {
           this.log('Error calling SandPiper(TM) SaaS');
         },
         complete: () => {
@@ -123,7 +123,7 @@ class WARPV_Example {
       });
     });
     
-    $("#warpv-url").val("https://raw.githubusercontent.com/stevehoover/warp-v/master/warp-v.tlv");
+    $("#warpv-url").val("https://raw.githubusercontent.com/stevehoover/warp-v_includes/5100bc4424dd272ffd495dcb7d9653fb6b200e88/risc-v_defs.tlv");
     
     $("#assembly-code").val(
 `
@@ -186,19 +186,16 @@ class WARPV_Example {
     this.tlv =
 `\\m4_TLV_version 1d: tl-x.org
 \\SV
-m4_include_url(['${$("#warpv-url").val()}'])
+m4_include_lib(['${$("#warpv-url").val()}'])
 
-// A big hack to convince the latest WARP-V to assemble the given code into parseable output.
-// This is all very sensitive to changes.
-// Redefine some of the assembler macros to produce bits rather than SV definitions.
-m4_define(['m4_op5'],
-          ['m4_define(['OP5_$3'], ['5'b$1'])'])
-m4_define(['m4_instr_func'],
-          ['m4_define(['$5_INSTR_FUNCT3'], ['3'b$4'])'])
-m4_define(['m4_instr'],
-          ['m4_define(m4_argn($#, $@)['_INSTR_OPCODE'], ['7'b$4['']11'])m4_instr$1(m4_shift($@))'])
-
-   m4+riscv_gen([''])
+// TODO: This is likely to change in revisions of WARP-V, and there's no automation to check it.
+m4+definitions(['
+   m4_define_vector(['M4_WORD'], 32)
+   m4_define(['M4_EXT_I'], 1)
+   
+   m4_define(['M4_NUM_INSTRS'], 0)   // TODO: Delete when using next rev of risc-v_defs.tlv.
+   m4_echo(m4tlv_riscv_gen__body())
+'])
 
 // =============
 // Assembly Code
