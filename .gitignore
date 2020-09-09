@@ -16,8 +16,10 @@ apps/mandelbrot/build/cast
 /tmp
 **/log/
 **/out/
+node_modules
 
 __pycache__
 
 # Used by scripts to remember the active F1 instance IP address.
 .ec2_ip
+

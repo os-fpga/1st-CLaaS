@@ -27,5 +27,9 @@
   "bugs": {
     "url": "https://github.com/stevehoover/1st-CLaaS/issues"
   },
-  "homepage": "https://github.com/stevehoover/1st-CLaaS#README.md"
+  "homepage": "https://github.com/stevehoover/1st-CLaaS#README.md",
+  "dependencies": {
+    "create-react-app": "^3.4.1",
+    "global": "^4.4.0"
+  }
 }
