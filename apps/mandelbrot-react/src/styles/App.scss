@@ -1,16 +1,23 @@
 .option-card {
-	width: 200px;
+	min-width: 200px;
 	font-weight: 400;
-	margin: 30px;
+	margin: 5px;
 
 	.card {
 		background: #faf9f9;
-		min-height: 200px;
-		padding: 5px 0px 10px 10px;
+		min-height: 250px;
+		padding: 10px;
 	}
 }
 
 .title {
+	text-align: left;
 	margin-bottom: 10px;
 	font-size: 26px;
+}
+
+.slider {
+	width: 85% !important;
+	display: inline-block !important;
+	margin-bottom: 5px;
 }

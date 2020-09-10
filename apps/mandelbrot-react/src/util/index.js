@@ -30,3 +30,20 @@ export const colorsAr = [
 	{ label: 'Gradual Gradient' },
 	{ label: 'Rainbow' },
 ]
+
+export const textureAr = [
+	{ label: 'Darken', checked: false, all: true },
+	{ label: 'Smooth', checked: false },
+	{ label: 'String_lights', checked: false },
+	{ label: 'Fanciful', checked: false },
+	{ label: 'Shadow', checked: false },
+	{ label: 'Rounded_edges', checked: false },
+]
+
+export const edgeAr = [
+	{ label: 'Curved' },
+	{ label: 'Bumpy' },
+	{ label: 'Villi' },
+]
+
+export const motionAr = [{ label: 'Position' }, { label: 'Velocity' }]
