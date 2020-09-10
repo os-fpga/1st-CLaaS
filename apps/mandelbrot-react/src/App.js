@@ -6,6 +6,7 @@ import Slider from '@material-ui/core/Slider'
 import FormGroup from '@material-ui/core/FormGroup'
 import RadioGroup from '@material-ui/core/RadioGroup'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
+import { ResizableBox } from 'react-resizable'
 
 import OptionCard from './components/OptionCard'
 
@@ -25,7 +26,14 @@ const App = () => {
 	const [threeD, setThreeD] = useState(threeDAr[0].label)
 	const [theme, setTheme] = useState(themeAr[0].label)
 	const [colors, setColors] = useState(colorsAr[0].label)
-	const [texture, setTexture] = useState([])
+	const [texture, setTexture] = useState({
+		Darken: false,
+		Smooth: false,
+		StringLights: false,
+		Fanciful: false,
+		Shadow: false,
+		RoundedEdges: false,
+	})
 	const [adjustments, setAdjustments] = useState({
 		Depth: 30,
 		Morph1: 30,
@@ -55,35 +63,111 @@ const App = () => {
 		</div>
 	)
 
-	// const CheckboxForm = (title, state, setState, array) => {
-	// 	return (
-	// 		<div>
-	// 			<div className='title'>{title}</div>
-	// 			<FormGroup>
-	// 				<FormControlLabel
-	// 					control={
-	// 						<Checkbox
-	// 							checked={state['Darken']}
-	// 							onChange={e =>
-	// 								setState({ ...state, [e.target.name]: e.target.checked })
-	// 							}
-	// 							name='Darken'
-	// 						/>
-	// 					}
-	// 					label='Darken'
-	// 				/>
-	// 				{array.map({ label, checked, all } => {
-	// 					renderer !== ''
-	// 			})}
-	// 			</FormGroup>
-	// 		</div>
-	// 	)
-	// }
+	const renderTextureForm = (
+		<OptionCard>
+			<div className='title'>Textures</div>
+			<FormGroup>
+				<FormControlLabel
+					control={
+						<Checkbox
+							checked={texture['Darken']}
+							onChange={e =>
+								setTexture({ ...texture, [e.target.name]: e.target.checked })
+							}
+							name='Darken'
+						/>
+					}
+					label='Darken'
+				/>
+
+				{renderer === 'C++' && (
+					<>
+						{' '}
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={texture['Smooth']}
+									onChange={e =>
+										setTexture({
+											...texture,
+											[e.target.name]: e.target.checked,
+										})
+									}
+									name='Smooth'
+								/>
+							}
+							label='Smooth'
+						/>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={texture['StringLights']}
+									onChange={e =>
+										setTexture({
+											...texture,
+											[e.target.name]: e.target.checked,
+										})
+									}
+									name='StringLights'
+								/>
+							}
+							label='String lights'
+						/>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={texture['Fanciful']}
+									onChange={e =>
+										setTexture({
+											...texture,
+											[e.target.name]: e.target.checked,
+										})
+									}
+									name='Fanciful'
+								/>
+							}
+							label='Fanciful'
+						/>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={texture['Shadow']}
+									onChange={e =>
+										setTexture({
+											...texture,
+											[e.target.name]: e.target.checked,
+										})
+									}
+									name='Shadow'
+								/>
+							}
+							label='Shadow'
+						/>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={texture['RoundedEdges']}
+									onChange={e =>
+										setTexture({
+											...texture,
+											[e.target.name]: e.target.checked,
+										})
+									}
+									name='RoundedEdges'
+								/>
+							}
+							label='Rounded edges'
+						/>
+					</>
+				)}
+			</FormGroup>
+		</OptionCard>
+	)
 
 	return (
 		<Fragment>
 			<div>
-				<Grid container alignItems='center'>
+				<Grid container alignItems='flex-start'>
 					<Grid item>
 						<OptionCard>
 							{RadioForm('Renderer', renderer, setRenderer, rendererAr)}
@@ -115,6 +199,8 @@ const App = () => {
 					) : (
 						''
 					)}
+
+					{renderTextureForm}
 
 					{renderer === 'C++' ? (
 						<Grid item>
@@ -174,6 +260,16 @@ const App = () => {
 						</OptionCard>
 					</Grid>
 				</Grid>
+			</div>
+			<div>
+				<ResizableBox
+					className='box'
+					width={200}
+					height={200}
+					minConstraints={[150, 150]}
+				>
+					<span className='box'></span>
+				</ResizableBox>
 			</div>
 		</Fragment>
 	)
