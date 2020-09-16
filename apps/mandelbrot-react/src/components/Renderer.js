@@ -18,11 +18,15 @@ export const renderers = [
 ]
 
 const Renderer = () => {
-	const { renderer, setRenderer } = store()
+	const { renderer, setRenderer, tiled, toggleTiled } = store()
 
 	return (
 		<OptionCard>
 			<div className='title'>Renderer</div>
+
+			<label>
+				<input type='checkbox' checked={tiled} onChange={toggleTiled} /> Tiled
+			</label>
 
 			<form>
 				{renderers.map(({ label, value }, idx) => (
