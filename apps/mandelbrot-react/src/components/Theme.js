@@ -2,7 +2,7 @@ import React from 'react'
 import OptionCard from './OptionCard'
 import store from '../store'
 
-export const themes = [
+const themes = [
 	{
 		value: 0,
 		label: 'Customize',
@@ -13,7 +13,7 @@ export const themes = [
 	},
 ]
 
-const Renderer = () => {
+const Theme = () => {
 	const { theme, setTheme } = store()
 
 	return (
@@ -40,4 +40,4 @@ const Renderer = () => {
 	)
 }
 
-export default Renderer
+export default Theme

@@ -2,7 +2,7 @@ import React from 'react'
 import OptionCard from './OptionCard'
 import store from '../store'
 
-export const renderers = [
+const renderers = [
 	{
 		value: 'python',
 		label: 'Python',

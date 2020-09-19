@@ -17,7 +17,7 @@ export const threeDs = [
 	// },
 ]
 
-const Renderer = () => {
+const ThreeD = () => {
 	const { three_d, setThreeD } = store()
 
 	return (
@@ -44,4 +44,4 @@ const Renderer = () => {
 	)
 }
 
-export default Renderer
+export default ThreeD

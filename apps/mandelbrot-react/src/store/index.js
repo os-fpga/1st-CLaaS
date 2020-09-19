@@ -7,11 +7,12 @@ const useStore = create(set => ({
 	tiled: false,
 	three_d: false,
 	theme: 0,
+	colors: 2,
+	darken: true,
+	texture: 0,
 	x: 0,
 	y: 0,
 	brighten: 0,
-	colors: 2,
-	darken: true,
 	edge: 0,
 	eye_adjust: 0,
 	eye_sep: 0,
@@ -23,7 +24,6 @@ const useStore = create(set => ({
 	pix_y: 0.015625,
 	test_flags: 0,
 	test_vars: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	texture: 0,
 	var1: 0,
 	var2: 0,
 
@@ -39,7 +39,13 @@ const useStore = create(set => ({
 
 	setThreeD: e => set({ three_d: e.target.value === 'true' }), // set 3-D options
 
-	setTheme: e => set({ theme: parseInt(e.target.value) }),
+	setTheme: e => set({ theme: parseInt(e.target.value) }), // set Theme
+
+	setColors: e => set({ colors: parseInt(e.target.value) }),
+
+	toggleDarken: () => set(store => ({ ...store, darken: !store.darken })),
+
+	setTexture: texture => set({ texture }),
 }))
 
 export default useStore
