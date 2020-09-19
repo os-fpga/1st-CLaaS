@@ -21,8 +21,6 @@ const Texture = () => {
 		}
 	}
 
-	console.log(texture, darken)
-
 	return (
 		<OptionCard>
 			<div className='title'>Renderer</div>

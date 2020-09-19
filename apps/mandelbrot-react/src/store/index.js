@@ -46,6 +46,12 @@ const useStore = create(set => ({
 	toggleDarken: () => set(store => ({ ...store, darken: !store.darken })),
 
 	setTexture: texture => set({ texture }),
+
+	setSize: (width, height) => set({ width, height }),
+
+	setXY: (x, y) => set({ x, y }),
+
+	setPix: pix => set({ pix_x: pix, pix_y: pix }),
 }))
 
 export default useStore
