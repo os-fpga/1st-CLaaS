@@ -20,8 +20,8 @@ const useStore = create(set => ({
 	modes: 66,
 	offset_h: 0,
 	offset_w: 0,
-	pix_x: 0.015625,
-	pix_y: 0.015625,
+	pix_x: 0.00003326324361985342,
+	pix_y: 0.00003326324361985342,
 	test_flags: 0,
 	test_vars: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	var1: 0,
@@ -51,7 +51,8 @@ const useStore = create(set => ({
 
 	setXY: (x, y) => set({ x, y }),
 
-	setPix: pix => set({ pix_x: pix, pix_y: pix }),
+	setPix: pix =>
+		set(state => ({ pix_x: state.pix_x + pix, pix_y: state.pix_x + pix })),
 }))
 
 export default useStore
