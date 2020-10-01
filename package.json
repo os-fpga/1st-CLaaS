@@ -27,5 +27,11 @@
   "bugs": {
     "url": "https://github.com/stevehoover/1st-CLaaS/issues"
   },
-  "homepage": "https://github.com/stevehoover/1st-CLaaS#README.md"
+  "homepage": "https://github.com/stevehoover/1st-CLaaS#README.md",
+  "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "create-react-app": "^3.4.1",
+    "global": "^4.4.0",
+    "node-sass": "^4.14.1"
+  }
 }
