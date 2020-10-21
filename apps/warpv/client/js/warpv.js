@@ -45,16 +45,16 @@ class WARPV_Example {
     this.IMEM_WRITE_TYPE = 1;  // {type, addr(instr-granular), data, ...} => {type, addr(instr-granular), data, ...}
     this.IMEM_READ_TYPE = 2;   // {type, addr, ...} => {type, addr, data, ...}
     this.RUN_TYPE = 4;         // {type, ...} => {type, CSR_CLAASRSP value, ...}
-    
+
     this.IMEM_SIZE = 16;       // Number of entries/instructions in IMem.
-    
+
     this.BEGIN_PROGRAM_LINE = "/* BEGIN PROGRAM";
     this.END_PROGRAM_LINE = "END_PROGRAM */";
     this.SV_BASE_CHARS = {b: 2, d: 10, h: 16};
     // Member Variables:
     this.tracing = false;
     this.server = new fpgaServer();
-    this.server.connect();
+    this.server.connect({onopen: function () {console.log("hi");}, onclose: function () {console.log("closed");}, onerror: function () {console.log("error");}});
 
     this.source_instrs = null;  // An array for the parsed source code, where each entry is an extracted instruction as a parenthetical expression.
 
@@ -86,7 +86,7 @@ class WARPV_Example {
         this.log(`Failed to parse returned json string: ${msg.data}`);
       }
     }
-    
+
     $('#run-button').click( (evt) => {
       // Disable button until assembly completes.
       $('#run-button').prop("disabled", true);
@@ -122,9 +122,9 @@ class WARPV_Example {
         }
       });
     });
-    
+
     $("#warpv-url").val("https://raw.githubusercontent.com/stevehoover/warp-v_includes/5100bc4424dd272ffd495dcb7d9653fb6b200e88/risc-v_defs.tlv");
-    
+
     $("#assembly-code").val(
 `
 // /=====================\\
@@ -181,8 +181,8 @@ class WARPV_Example {
         this.source_instrs.push(m[1]);
       }
     }
-    
-    
+
+
     this.tlv =
 `\\m4_TLV_version 1d: tl-x.org
 \\SV
@@ -192,7 +192,7 @@ m4_include_lib(['${$("#warpv-url").val()}'])
 m4+definitions(['
    m4_define_vector(['M4_WORD'], 32)
    m4_define(['M4_EXT_I'], 1)
-   
+
    m4_define(['M4_NUM_INSTRS'], 0)   // TODO: Delete when using next rev of risc-v_defs.tlv.
    m4_echo(m4tlv_riscv_gen__body())
 '])
@@ -209,7 +209,7 @@ ${this.END_PROGRAM_LINE}
 `;
     //console.log(this.tlv);
   }
-  
+
   // Process the top.vs content into chunks to send to the FPGA.
   verilogToChunks(verilog) {
     let instr_cnt = 0;
@@ -232,7 +232,7 @@ ${this.END_PROGRAM_LINE}
     do {
       line = verilog_lines[i];
       if (line == this.END_PROGRAM_LINE) {break;}
-      
+
       // Process line, pushing a single-value array onto ret.
       let value32 = 0;  // The value of the SV expression.
       let error = false;
@@ -287,24 +287,24 @@ ${this.END_PROGRAM_LINE}
       let instr_el = $(`<p id="debug-instr-${instr_cnt}" class="${error ? "error" : ""}"></p>`);
       instr_el.text(`${this.source_instrs[instr_cnt]}: ${line}: 32'h${value32.toString(16)}`);
       $("#assembled-code").append(instr_el);
-      
+
       i++;
       instr_cnt++;
       if (i >= verilog_lines.length) {
         assemblerError("Parse error: Failed to find end of program.");
       }
     } while (i < verilog_lines.length && true);
-    
+
     return ret;
   }
-  
+
   readIMem() {
     let i;
     for (i = 0; i < this.IMEM_SIZE; i++) {
       this.server.sendChunks(1, [[this.IMEM_READ_TYPE, i]]);
     }
   }
-  
+
   // Send command to run WARP-V.
   runWARPV() {
     this.server.sendChunks(1, [[this.RUN_TYPE]]);
@@ -333,7 +333,7 @@ ${this.END_PROGRAM_LINE}
       this.log(`Failed to display program load response.`);
     }
   }
-  
+
   receiveReadResponse(data) {
     try {
       data = data[0];
@@ -347,7 +347,7 @@ ${this.END_PROGRAM_LINE}
       this.log(`Failed to process IMem read response.`);
     }
   }
-  
+
   log(msg) {
     $("#message").text(msg);
   }

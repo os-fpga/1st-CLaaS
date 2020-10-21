@@ -42,7 +42,10 @@ class fpgaServer {
     this.f1_ip = false;
   }
 
-  // Connect the websocket, and, optionally, call cb once the WebSocket is ready.
+  // Connect the websocket.
+  // Params:
+  //   cb: (opt) callback once the WebSocket is ready (WebSocket.onopen) or a set of callbacks for
+  //       the WebSocket of the form {onopen: function(), onclose: function(), onerror: function()}.
   connect(cb) {
 
     /* TODO:
@@ -63,8 +66,22 @@ class fpgaServer {
     */
 
     this.ws = new WebSocket("ws://" + this.host + ":" + this.port + this.url_path);
+
+    // Apply WebSocket callbacks.
     if (cb) {
-      this.ws.onopen = cb;
+      if (typeof cb === 'object' && cb !== null) {
+          if ('onopen' in cb) {
+            this.ws.onopen = cb.onopen;
+          }
+          if ('onclose' in cb) {
+            this.ws.onclose = cb.onclose;
+          }
+          if ('onerror' in cb) {
+            this.ws.onerror = cb.onerror;
+          }
+      } else {
+        this.ws.onopen = cb;
+      }
     }
   }
 
