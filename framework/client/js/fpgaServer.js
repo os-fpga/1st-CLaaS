@@ -34,19 +34,29 @@
 // message response. (This is the default behavior if the web server and host application are not customized.)
 class fpgaServer {
 
-  constructor() {
-    this.host = location.hostname;
-    this.port = location.port;
-    this.url_path = "/ws";
+  // Params:
+  //   ws_url: (opt) if given, connect to the given WebSocket URL;
+  //           o.w. one of the connect* functions must be called explicitly.
+  //   cp: (opt) if ws_url is given, the cb arg for connectURL(..).
+  constructor(ws_url, cb) {
     this.f1_state = "stopped";
     this.f1_ip = false;
+    if (ws_url) {
+      this.connectURL(ws_url, cb);
+    } else {
+      this.host = location.hostname;
+      this.port = location.port;
+      this.url_path = "/ws";
+    }
   }
 
   // Connect the websocket.
   // Params:
+  //   ws_url: The URL of the websocket to which to connect.
   //   cb: (opt) callback once the WebSocket is ready (WebSocket.onopen) or a set of callbacks for
   //       the WebSocket of the form {onopen: function(), onclose: function(), onerror: function()}.
-  connect(cb) {
+  connectURL(ws_url, cb) {
+    this.url = ws_url;
 
     /* TODO:
     // For 1-to-1. Called
@@ -65,7 +75,7 @@ class fpgaServer {
     this.pendingObjects = [];
     */
 
-    this.ws = new WebSocket("ws://" + this.host + ":" + this.port + this.url_path);
+    this.ws = new WebSocket(ws_url);
 
     // Apply WebSocket callbacks.
     if (cb) {
@@ -84,6 +94,15 @@ class fpgaServer {
       }
     }
   }
+
+  // Connect the websocket.
+  // Params:
+  //   cb: (opt) callback once the WebSocket is ready (WebSocket.onopen) or a set of callbacks for
+  //       the WebSocket of the form {onopen: function(), onclose: function(), onerror: function()}.
+  connect(cb) {
+    this.connectURL("ws://" + this.host + ":" + this.port + this.url_path, cb);
+  }
+
 
   connectTo(host, port = 80, url_path = "/ws", cb) {
     this.host = host;
