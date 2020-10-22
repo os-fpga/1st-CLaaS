@@ -54,7 +54,7 @@ class fpgaServer {
   // Params:
   //   ws_url: The URL of the websocket to which to connect.
   //   cb: (opt) callback once the WebSocket is ready (WebSocket.onopen) or a set of callbacks for
-  //       the WebSocket of the form {onopen: function(), onclose: function(), onerror: function()}.
+  //       the WebSocket of the form {onopen: function(), onmessage: function(msg), onclose: function(), onerror: function()}.
   connectURL(ws_url, cb) {
     this.url = ws_url;
 
@@ -83,6 +83,9 @@ class fpgaServer {
           if ('onopen' in cb) {
             this.ws.onopen = cb.onopen;
           }
+          if ('onmessage' in cb) {
+            this.ws.onmessage = cb.onmessage;
+          }
           if ('onclose' in cb) {
             this.ws.onclose = cb.onclose;
           }
@@ -98,7 +101,7 @@ class fpgaServer {
   // Connect the websocket.
   // Params:
   //   cb: (opt) callback once the WebSocket is ready (WebSocket.onopen) or a set of callbacks for
-  //       the WebSocket of the form {onopen: function(), onclose: function(), onerror: function()}.
+  //       the WebSocket of the form {onopen: function(), onmessage: function(msg), onclose: function(), onerror: function()}.
   connect(cb) {
     this.connectURL("ws://" + this.host + ":" + this.port + this.url_path, cb);
   }
