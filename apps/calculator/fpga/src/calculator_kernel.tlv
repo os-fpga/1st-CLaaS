@@ -12,13 +12,14 @@ m4+definitions([''])  // A hack to reset line alignment to address the fact that
       @0
          $data[31:0] = >>1$output;
       @1
-         //$reset = *reset;
+         // Calculator logic
          
          
-         // YOUR CODE HERE
-         $val1[31:0] = >>2$output;
+         // Extract input fields from input data
+         $val1[31:0] = >>1$output;
          $val2[31:0] = /trans$data[31:0];
          $op[2:0] = /trans$data[34:32];
+
          //counter
          $counter = $reset?0:(>>1$counter+1);
          $valid = $reset || $counter;
@@ -33,7 +34,7 @@ m4+definitions([''])  // A hack to reset line alignment to address the fact that
             $mem[31:0] = 
                $reset ? 0:
                ($op[2:0]==3'b101)
-                  ? >>2$mem[31:0] : >>2$output;
+                  ? >>1$mem[31:0] : >>1$output;
             
             
             $output[31:0] = 
@@ -47,7 +48,7 @@ m4+definitions([''])  // A hack to reset line alignment to address the fact that
                ($op[2:0]==3'b011)
                   ? $quot[31:0] :
                ($op[2:0]==3'b100)
-                  ? >>2$mem[31:0] : $val1[31:0];
+                  ? >>1$mem[31:0] : $val1[31:0];
             
             
    |out
@@ -62,6 +63,7 @@ m4+definitions([''])  // A hack to reset line alignment to address the fact that
          //`BOGUS_USE($op $rand $ready)
          `BOGUS_USE($ready)
          
+         // Extract output data to the output field
          /trans@0$data = |in@1$output;
    
    m4+rename_flow(/top, |in, @0, |out, @0, /trans)
