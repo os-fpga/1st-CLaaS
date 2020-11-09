@@ -95,7 +95,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
   def open(self, token=None):
     self.token = token
     self.application.newConnection(self)
-    
+
 
   # This function activates whenever there is a new message incoming from the WebSocket
   def on_message(self, message):
@@ -414,6 +414,9 @@ class FPGAServerApplication(tornado.web.Application):
         data = read_data_handler(self.socket, None, False)
         return data
 
+    def handlePing(self, data, type, ws):
+        return {'type': type}
+
     def handleCommandMsg(self, data, type, ws):
         self.socket.send_string("command", type)
         return {'type': type}
@@ -542,7 +545,7 @@ class FPGAServerApplication(tornado.web.Application):
         super(FPGAServerApplication, self).__init__(routes)
 
         self.socket = Socket()
-        
+
         # Launch server (with SSL or not)
         self.use_ssl = self.args['ssl_key_file'] != None and self.args['ssl_crt_file'] != None
         if self.use_ssl:
@@ -559,6 +562,7 @@ class FPGAServerApplication(tornado.web.Application):
         self.message_handlers = {}
         self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
+        self.registerMessageHandler("PING", self.handlePing)
         self.registerMessageHandler("START_TRACING", self.handleCommandMsg)
         self.registerMessageHandler("STOP_TRACING", self.handleCommandMsg)
 

@@ -39,6 +39,8 @@ class fpgaServer {
   //           o.w. one of the connect* functions must be called explicitly.
   //   cp: (opt) if ws_url is given, the cb arg for connectURL(..).
   constructor(ws_url, cb) {
+    this.reconnect_cnt = 0;
+    this.reconnect_time = null;
     this.f1_state = "stopped";
     this.f1_ip = false;
     if (ws_url) {
@@ -77,23 +79,76 @@ class fpgaServer {
 
     this.ws = new WebSocket(ws_url);
 
+    // Set callbacks for ws.
+
+    let onopen = null;
+    let onclose = null;
+    // Default onerror function that reports to console.
+    this.ws.onerror = function(evt) {
+      console.log(`WebSocket error.`);
+    }
     // Apply WebSocket callbacks.
     if (cb) {
       if (typeof cb === 'object' && cb !== null) {
           if ('onopen' in cb) {
-            this.ws.onopen = cb.onopen;
+            onopen = cb.onopen;
           }
           if ('onmessage' in cb) {
             this.ws.onmessage = cb.onmessage;
           }
           if ('onclose' in cb) {
-            this.ws.onclose = cb.onclose;
+            onclose = cb.onclose;
           }
           if ('onerror' in cb) {
             this.ws.onerror = cb.onerror;
           }
       } else {
-        this.ws.onopen = cb;
+        onopen = cb;
+      }
+      // Set this.ws.onopen to include behavior for keeping the websocket alive.
+      let ping_ms = 20000;
+      let keepAlive = () => {
+        if (this.ws.readyState == this.ws.OPEN) {
+          try {
+            this.ping();
+          } catch {
+            console.log("Ping failed.");
+          }
+          console.log("Pinged.");
+        }
+        // Ping again if the websocket is still open (or connecting)
+        if (this.ws.readyState == this.ws.OPEN ||
+            this.ws.readyState == this.ws.CONNECTING) {
+          setTimeout(keepAlive, ping_ms);
+        }
+      }
+      this.ws.onopen = () => {
+        setTimeout(keepAlive, ping_ms);
+        if (onopen) {
+          onopen();
+        }
+      }
+      // Set onclose to attempt to silently reconnect before calling user's onclose.
+      this.ws.onclose = () => {
+        try {
+          // See if it's okay to reconnect.
+          this.reconnect_cnt++;
+          if (this.reconnect_cnt > 10) {
+            this.reconnect_cnt = 0;
+            let now = new Date();
+            if (this.reconnect_time && (now < this.reconnect_time + 2000)) {
+              throw new Error("Reconnected numerous times in small window of time.");
+            }
+            this.reconnect_time = new Date();
+          }
+          console.log("Attempting to reconnect to WebSocket.");
+          this.connectURL(this.url);
+        } catch (e) {
+          console.log(`WebSocket closed and couldn't reconnect. Error: ${e.message}`);
+          if (onclose) {
+            onclose();
+          }
+        }
       }
     }
   }
@@ -122,6 +177,10 @@ class fpgaServer {
       // Wrap user object as expected by FPGA server.
       this.ws.send(JSON.stringify({ "type": type, "payload": payload }));
     }
+  }
+
+  ping() {
+    this.ws.send(JSON.stringify({ "type": "PING", payload: {} }));
   }
 
   startTracing() {
