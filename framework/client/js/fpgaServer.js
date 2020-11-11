@@ -59,6 +59,7 @@ class fpgaServer {
   //       the WebSocket of the form {onopen: function(), onmessage: function(msg), onclose: function(), onerror: function()}.
   connectURL(ws_url, cb) {
     this.url = ws_url;
+    this.connect_cb = cb;
 
     /* TODO:
     // For 1-to-1. Called
@@ -142,7 +143,7 @@ class fpgaServer {
             this.reconnect_time = new Date();
           }
           console.log("Attempting to reconnect to WebSocket.");
-          this.connectURL(this.url);
+          this.connectURL(this.url, this.connect_cb);
         } catch (e) {
           console.log(`WebSocket closed and couldn't reconnect. Error: ${e.message}`);
           if (onclose) {
