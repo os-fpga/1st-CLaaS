@@ -40,7 +40,7 @@ class fpgaServer {
   //   cp: (opt) if ws_url is given, the cb arg for connectURL(..).
   constructor(ws_url, cb) {
     this.reconnect_cnt = 0;
-    this.reconnect_time = null;
+    this.reconnect_time = new Date().getTime();
     this.f1_state = "stopped";
     this.f1_ip = false;
     if (ws_url) {
@@ -57,7 +57,8 @@ class fpgaServer {
   //   ws_url: The URL of the websocket to which to connect.
   //   cb: (opt) callback once the WebSocket is ready (WebSocket.onopen) or a set of callbacks for
   //       the WebSocket of the form {onopen: function(), onmessage: function(msg), onclose: function(), onerror: function()}.
-  connectURL(ws_url, cb) {
+  connectURL(ws_url, cb, reconnect = false) {
+    // Record connection info in case it is necessary to attempt to reconnect.
     this.url = ws_url;
     this.connect_cb = cb;
 
@@ -91,18 +92,18 @@ class fpgaServer {
     // Apply WebSocket callbacks.
     if (cb) {
       if (typeof cb === 'object' && cb !== null) {
-          if ('onopen' in cb) {
-            onopen = cb.onopen;
-          }
-          if ('onmessage' in cb) {
-            this.ws.onmessage = cb.onmessage;
-          }
-          if ('onclose' in cb) {
-            onclose = cb.onclose;
-          }
-          if ('onerror' in cb) {
-            this.ws.onerror = cb.onerror;
-          }
+        if (('onopen' in cb) && ! reconnect) {
+          onopen = cb.onopen;
+        }
+        if ('onmessage' in cb) {
+          this.ws.onmessage = cb.onmessage;
+        }
+        if ('onclose' in cb) {
+          onclose = cb.onclose;
+        }
+        if ('onerror' in cb) {
+          this.ws.onerror = cb.onerror;
+        }
       } else {
         onopen = cb;
       }
@@ -134,16 +135,20 @@ class fpgaServer {
         try {
           // See if it's okay to reconnect.
           this.reconnect_cnt++;
-          if (this.reconnect_cnt > 10) {
+          if (this.reconnect_cnt > 3) {
             this.reconnect_cnt = 0;
             let now = new Date();
-            if (this.reconnect_time && (now < this.reconnect_time + 2000)) {
+            if (now.getTime() < this.reconnect_time + 10000) {
               throw new Error("Reconnected numerous times in small window of time.");
+            } else {
+              console.log("There seems to be some network instability.");
             }
-            this.reconnect_time = new Date();
+            this.reconnect_time = new Date().getTime();
           }
-          console.log("Attempting to reconnect to WebSocket.");
-          this.connectURL(this.url, this.connect_cb);
+          console.log("WebSocket closed. Attempting to reconnect. Traffic may have been dropped.");
+          setTimeout(
+            () => {this.connectURL(this.url, this.connect_cb, true);},
+            (this.reconnect_cnt - 1) * 300);
         } catch (e) {
           console.log(`WebSocket closed and couldn't reconnect. Error: ${e.message}`);
           if (onclose) {
