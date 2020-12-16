@@ -7,6 +7,15 @@ It includes an About page with general project information.
 
 ## Development
 
+## Active Development
+
+FractalValley has gotten a lot of attention from students, especially for Google Summer of Code. .Several students began work to develop better sites and then found paying gigs:
+  - [Dharak Savalia's Mandelbrot front-end](https://github.com/dharaksavalia/Mandelbrot)
+  - [Meet's Fractal component](https://github.com/meetcric/mandelbrot-fractal-custom)
+  - [Meet's FrontEnd](https://github.com/meetcric/mandelbrot-fractals)
+  - [Sanjeet's Front End](https://github.com/sanjeetiitr/fpga-webserver-fractalvalley)
+  - [Faizan](https://github.com/stevehoover/1st-CLaaS/commits/master/apps/mandelbrot-react) (within this repo)
+
 ### Integration
 
 There is no continuous integration testing. Just open it locally and test manually before making a pull request.
