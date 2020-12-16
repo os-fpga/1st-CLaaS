@@ -1,3 +1,5 @@
+This directory contains an intended replacement for `/mandelbrot`, but it remains incomplete. See the `readme.md` in `/mandelbrot`.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
