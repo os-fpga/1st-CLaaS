@@ -127,7 +127,7 @@ Reducing the problem to web and RTL development is not the finish line for us. 1
 
 # Use Cases
 
-Commercially, 1st CLaaS is used by ThroughPuter, Inc. to provide dynamic classification of streaming data.
+Commercially, 1st CLaaS is used by <a href="https://throughputer.com" target="_blank" atom_fix="_">ThroughPuter, Inc.</a> to provide dynamic classification of streaming data.
 
 1st CLaaS renders realtime fractals for <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
 
