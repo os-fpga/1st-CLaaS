@@ -125,11 +125,17 @@ Reducing the problem to web and RTL development is not the finish line for us. 1
 
 
 
+# Use Cases
+
+Commercially, 1st CLaaS is used by ThroughPuter, Inc. to provide dynamic classification of streaming data.
+
+1st CLaaS renders realtime fractals for <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
+
+
+
 # Status
 
 This repository is generally working, and the initial development push is winding down.
-
-A working <a href="https://github.com/stevehoover/1st-CLaaS/tree/master/apps/mandelbrot" target="_ blank">Mandelbrot explorer</a> is included. This demo is hosted at <a href="http://fractalvalley.net" target="_blank" atom_fix="_">FractalValley.net</a>.
 
 Anything and everything is subject to change at this point, especially with respect to the interface provided by the framework for applications to build upon. So, you should build on a specific version of the framework and expect to do some debugging if you choose to upgrade by pulling from master.
 
