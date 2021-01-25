@@ -60,14 +60,11 @@ class Socket():
 
     VERBOSITY = 0   # 0-10 (quiet-loud)
 
-    # Socket with host defines
-    SOCKET        = "SOCKET"
-
     # Connect on construction.
-    def __init__(self):
+    def __init__(self, filename):
         # Opening socket with host
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        server_address = (self.SOCKET)
+        server_address = (filename)
 
         connected = False
         cnt = 0

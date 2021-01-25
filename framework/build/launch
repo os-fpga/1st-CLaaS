@@ -56,7 +56,10 @@
 #   -c <compile-command>: The compile command used to rebuilt when upgraded.
 #   -w <web-server-command>: The command to launch the web server.
 #             '<<PORT>>' will be substituted with the port number;
+#             '<<SOCKET>>' will be substituted with the socket number;
 #             '<<PASSWORD>>' will be substituted with $LAUNCH_PASSWORD;
+#   -k <killme-file>: The "killme" file to create (which, when source'd will kill the microservice).
+#   -s <socket-file>: The file to use for the socket.
 #   -o: Launch webserver in one-shot mode, where it will kill the launch process when the websocket is closed (browser tab is closed).
 
 # Must be launched from the projects 'build' directory because:
@@ -77,18 +80,22 @@ SCRIPT_CMD="launch $*"
 PORT="8888"
 HOST_PID=""
 COMPILE_CMD=""
-LAUNCH_WEBSERVER_CMD='python3 ../../../framework/webserver/default_server.py --port=<<PORT>>'
+LAUNCH_WEBSERVER_CMD='python3 ../../../framework/webserver/default_server.py --port=<<PORT>> --socket=<<SOCKET>>'
+KILLME="killme"
+SOCKET="SOCKET"
 ONESHOT_ARG=' '
 
 # Read command line options
 
-while getopts "p:h:c:w:o" opt
+while getopts "p:h:c:w:k:s:o" opt
   do
     case "${opt}" in
       p) PORT=${OPTARG};;
       h) HOST_PID=${OPTARG};;
       c) COMPILE_CMD="${OPTARG}";;
       w) LAUNCH_WEBSERVER_CMD="${OPTARG}";;
+      k) KILLME="${OPTARG}";;
+      s) SOCKET="${OPTARG}";;
       o) ONESHOT_ARG=" --oneshot=$$"
     esac
   done
@@ -163,6 +170,7 @@ launch () {
 
   # Substitute <<PORT>>.
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
+  CMD=${CMD/<<SOCKET>>/$SOCKET}
   # Launch.
   echo "Launching web server as: $CMD"
   # Substitute <<PASSWORD>>.
@@ -176,7 +184,7 @@ launch () {
   export SERVER_PID=$!
 
   # Create a script to teardown the application by sending SIGINT to this process.
-  echo "kill $$ || echo 'Webserver process $$ no longer running.'" > killme   # TODO: Would be good to confirm that this is the right process.
+  echo "kill $$ || echo 'Webserver process $$ no longer running.'" > "$KILLME"   # TODO: Would be good to confirm that this is the right process.
 }
 
 # Tear down.
@@ -190,7 +198,7 @@ teardown () {
       kill $HOST_PID
     fi
     kill $SERVER_PID
-    rm SOCKET   # Needed? Doesn't even work.
+    rm "$SOCKET"   # Needed? Doesn't even work.
   else
     # Processes are invoked through sudo and bash and don't seem to be killed with their parent.
     HOST_PID2=`ps --ppid $HOST_PID -o pid=`
@@ -205,7 +213,7 @@ teardown () {
   
   # Done with "killme" script, created by this script.
   # This script might currently be in use, but it seems to be okay to delete it?
-  rm killme
+  rm "$KILLME"
   
   # Wait for child processes to finish first (to avoid output after exit)
   wait $HOST_PID >& /dev/null

@@ -103,6 +103,9 @@ public:
   ostream & cout_line() {return(cout << "C++: ");}
   ostream & cerr_line() {return(cerr << "C++ Error: ");}
 
+  // The default body of the main function for the server.
+  // argv if OPENCL:
+  //   [-s socket-name] [xclbin-name-if-OPENCL]
   int server_main(int argc, char const *argv[], const char *kernel_name);
 
   // Main method for processing traffic from/to the client.
@@ -131,6 +134,7 @@ public:
   static const int verbosity = 0; // 0: no debug messages; 10: all debug messages.
 
 protected:
+  string socket_filename = "SOCKET"; // The name of the socket file.
   int socket;  // The ID of the socket connected to the web server.
 
   /*

@@ -510,11 +510,12 @@ class FPGAServerApplication(tornado.web.Application):
     #           by passing flags=None and params=<value of args after command-line processing>.
     #           Implicit params are:
     #              "port" (8888): Socket on which web server will listen.
+    #              "socket" ("SOCKET"): Socket file name.
     # Return: {dict} The parameters/arguments. When a command-line arg is not given, it will have default value. A flag will not exist if not given, or have "" value if given.
     @staticmethod
     def commandLineArgs(flags=[], params={}):
         # Apply implicit args. ("password" is from EC2Args(), but the Makefile will provide it from configuration parameters, whether used or not.)
-        ret = {"port": 8888, "password": None, "oneshot": None, "ssl_crt_file": None, "ssl_key_file": None}
+        ret = {"port": 8888, "socket": "SOCKET", "password": None, "oneshot": None, "ssl_crt_file": None, "ssl_key_file": None}
         ret.update(params)
         arg_list = flags
         # Apply implicit flags (currently none).
@@ -524,7 +525,7 @@ class FPGAServerApplication(tornado.web.Application):
         try:
             opts, remaining = getopt.getopt(sys.argv[1:], "", arg_list)
         except getopt.GetoptError:
-            print('Usage: %s [--port #] [--instance i-#] [--ec2_time_bomb_timeout <sec>] [--password <password>] [--profile <aws-profile>] [--ssl_crt_file <ssl-crt-file> --ssl_key_file <ssl-key_file>]' % (sys.argv[0]))
+            print('Usage: %s [--port #] [--socket socket-file] [--instance i-#] [--ec2_time_bomb_timeout <sec>] [--password <password>] [--profile <aws-profile>] [--ssl_crt_file <ssl-crt-file> --ssl_key_file <ssl-key_file>]' % (sys.argv[0]))
             sys.exit(2)
         # Strip leading dashes.
         for opt, arg in opts:
@@ -539,12 +540,13 @@ class FPGAServerApplication(tornado.web.Application):
         self.args = args
 
         self.port = int(self.args['port'])
+        self.socket_filename = self.args['socket']
 
         FPGAServerApplication.application = self
 
         super(FPGAServerApplication, self).__init__(routes)
 
-        self.socket = Socket()
+        self.socket = Socket(self.socket_filename)
 
         # Launch server (with SSL or not)
         self.use_ssl = self.args['ssl_key_file'] != None and self.args['ssl_crt_file'] != None

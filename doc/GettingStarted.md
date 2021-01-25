@@ -92,7 +92,7 @@ make copy_app APP_NAME=toy
 
 ### Web Client Application
 
-The web client is defined by the HTML, CSS, and JS content in `<repo>/apps/toy/client/`. In this case `<repo>/apps/toy/client/html/index.html` simply links to `<repo>/framework/client/html/testbench.html` to utilize the default test bench provided by the framework that you accessed for `vadd`. If you would like to modify the web client code, you can copy `<repo>/framework/client/*/testbench.*` into `<repo>/apps/toy/client` as a simple starting point. To develop a real application, you may have your own thoughts about the framework you would like to use. You can use what you like. Develop in a separate repo, or keep it in the same repo so it is consistently version controlled. If you would like `make launch` to start your web serer, provide `LAUNCH_W=<cmd>` in the application `Makefile`.
+The web client is defined by the HTML, CSS, and JS content in `<repo>/apps/toy/client/`. In this case `<repo>/apps/toy/client/html/index.html` simply links to `<repo>/framework/client/html/testbench.html` to utilize the default test bench provided by the framework that you accessed for `vadd`. If you would like to modify the web client code, you can copy `<repo>/framework/client/*/testbench.*` into `<repo>/apps/toy/client` as a simple starting point. To develop a real application, you may have your own thoughts about the framework you would like to use. You can use what you like. Develop in a separate repo, or keep it in the same repo so it is consistently version controlled.
 
 
 ### Custom Kernel

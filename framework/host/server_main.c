@@ -59,13 +59,26 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
 {
 //TODO else ifndef OPENCL
 #ifdef OPENCL
-  if (argc != 2) {
-    printf("Usage: %s xclbin\n", argv[0]);
+  string opencl_arg_str = " xclbin";
+  int opencl_arg_cnt = 1;
+#else
+  string opencl_arg_str = "";
+  int opencl_arg_cnt = 0;
+#endif
+  // Poor-mans arg parsing.
+  int argn = 1;
+  if (strcmp(argv[1], "-s") == 0) {
+    socket_filename = argv[2];
+    argn += 2;
+  }
+  if (argc != argn + opencl_arg_cnt) {
+    printf("Usage: %s [-s socket] %s\n", argv[0], opencl_arg_str.c_str());
     return EXIT_FAILURE;
   }
 
+#ifdef OPENCL
   // Name of the .xclbin binary file and the name of the Kernel passed as arguments
-  const char *xclbin = argv[1];
+  const char *xclbin = argv[argn + opencl_arg_cnt - 1];
 #endif
 
   // Socket-related variables
@@ -95,8 +108,8 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   }
 
   address.sun_family = AF_UNIX;
-  unlink(SOCKET);
-  strncpy(address.sun_path, SOCKET, sizeof(address.sun_path)-1);
+  unlink(socket_filename.c_str());
+  strncpy(address.sun_path, socket_filename.c_str(), sizeof(address.sun_path)-1);
 
   // Binding to the UNIX SOCKET
   if (bind(server_fd, (struct sockaddr *)&address,

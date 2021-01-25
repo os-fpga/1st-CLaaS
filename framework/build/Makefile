@@ -105,6 +105,8 @@
 #     WAVES=[true] or default to false behavior. True to generate waveforms. (xocc )
 #     VALGRIND=[true] or default to false behavior. True to use Valgrind to identify memory leaks in the host application.
 #     NOHUP=true: Can be used with 'launch' target to launch in background and stay running after the shell exits. (This is implied by 'make live').
+#     LAUNCH_ID: Used by launch, live, and dead targets. If unassigned, these targets assume a single running microservice.
+#                A unique identifier can be provided in this variable for these targets to enable unique instances.
 #   Eg:
 #     make host TARGET=hw_emu
 #
@@ -348,7 +350,7 @@ endif
 endif
 
 WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
-LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> $(WEBSERVER_ARGS)
+LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
 
 
 
@@ -439,15 +441,6 @@ BUILD_DIR_NAME = prebuilt
 OUT_DIR_NAME = prebuilt_out
 endif
 
-# 'live' target.
-ifeq ($(MAKECMDGOALS),live)
-NOHUP=true
-PORT=80
-HOST_EXE_PATH=../live/$(BUILD_TARGET)/$(HOST_EXE)
-else
-HOST_EXE_PATH=$(BUILD_DIR)/$(HOST_EXE)
-endif
-
 #Assign DEST_DIR as <BUILD_TARGET>/<TARGET_DEVICE>, or just <BUILD_TARGET> for sw build (w/ no target device).
 ifneq ($(USE_XILINX),true)
 DEST_DIR=../$(OUT_DIR_NAME)/$(BUILD_TARGET)
@@ -471,16 +464,61 @@ $(error XILINX_XRT is not set. Please source the SDx settings64.{csh,sh} first)
 endif
 endif
 
-# If project has a launch command, use it, otherwise, use launch from framework.
-LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo $(FRAMEWORK_DIR)/build/launch; fi)
-ifdef LAUNCH_W
-LAUNCH_CMD_PARTIAL :=$(LAUNCH_CMD_PARTIAL) -w '$(LAUNCH_W)'
-endif
-ifdef NOHUP
-# Run in background to continue if the shell exits; log to webserver.log and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
-LAUNCH_CMD=nohup $(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)' &> webserver.log < /dev/null &
+
+# For instance-specific targets (launch/live/dead)
+
+# Prevent conflicts between launch and live targets.
+ifeq ($(MAKECMDGOALS), launch)
+DEFAULT_SOCKET=SOCKET
+DEFAULT_KILLME=./kill_launch
 else
-LAUNCH_CMD=$(LAUNCH_CMD_PARTIAL) -p $(PORT) $(BUILD_TARGET) '$(HOST_CMD)'
+DEFAULT_SOCKET=LIVE_SOCKET
+DEFAULT_KILLME=./killme
+endif
+
+# Interpret the LAUNCH_ID
+# KILLME: The name of the killme file for this microservice.
+# WEBSERVER_LOG: The path to the log file for this microservice (./log/*).
+# LAUNCH_DIR: directory from which microservice is launched and where is creates files.
+ifdef LAUNCH_ID
+LAUNCH_LOCAL_DIR=id-$(LAUNCH_ID)/
+LAUNCH_DIR=../live/$(BUILD_TARGET)/id-$(LAUNCH_ID)
+KILLME=./killme-$(LAUNCH_ID)
+WEBSERVER_LOG=log/id-$(LAUNCH_ID).log
+LAUNCH_ID_ARG_STR=$(SPACE)LAUNCH_ID=$(LAUNCH_ID)
+SOCKET=SOCKET-$(LAUNCH_ID)
+else
+LAUNCH_ID=.
+LAUNCH_LOCAL_DIR=
+LAUNCH_DIR=../live/$(BUILD_TARGET)
+KILLME=$(DEFAULT_KILLME)
+WEBSERVER_LOG=log/webserver.log
+LAUNCH_ID_ARG_STR=LAUNCH_ID=
+SOCKET=$(DEFAULT_SOCKET)
+endif
+
+# 'live' target.
+ifeq ($(MAKECMDGOALS),live)
+NOHUP=true
+PORT=80
+HOST_EXE_PATH=$(LAUNCH_DIR)/$(HOST_EXE)
+else
+HOST_EXE_PATH=$(BUILD_DIR)/$(HOST_EXE)
+endif
+
+ifeq ($(MAKECMDGOALS),dead)
+ALREADY_DEAD=else echo "There doesn't appear to be anything to kill.";
+endif
+
+
+# If project has a launch command, use it, otherwise, use launch from framework.
+LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo $(FRAMEWORK_DIR)/build/launch; fi) -w '$(LAUNCH_W)'
+LAUNCH_ARGS=-p $(PORT) -s $(SOCKET) -k '$(KILLME)' $(BUILD_TARGET) '$(HOST_CMD)'
+ifdef NOHUP
+# Run in background to continue if the shell exits; log output and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
+LAUNCH_CMD=nohup $(LAUNCH_CMD_PARTIAL) $(LAUNCH_ARGS) &> $(WEBSERVER_LOG) < /dev/null &
+else
+LAUNCH_CMD=$(LAUNCH_CMD_PARTIAL) $(LAUNCH_ARGS)
 endif
 
 
@@ -503,17 +541,18 @@ else
 VALGRIND_PREFIX=
 endif
 
+HOST_ARGS=-s $(SOCKET)
 ifneq ($(USE_XILINX),true)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE)
-HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH)
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS)
 endif
 ifeq ($(BUILD_TARGET),hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
+HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
 endif
 ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_XCLBIN)
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
 endif
 
 
@@ -648,7 +687,7 @@ endif
 	mv ../out/sv/$*/out/*.sv ../out/sv
 	# Vivado requires includes to be of .vh files, so change file name.
 	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
-	cd ../out/sv && sed -i s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv
+	cd ../out/sv && sed -i -e s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv
 
 
 
@@ -812,40 +851,44 @@ endif
 
 # For production use of port 80.
 # Run is done in its own directory to avoid socket collision with development.
-# ../live/$(BUILD_TARGET)/live indicates that the server is live.
-# ../live/$(BUILD_TARGET)/dead indicates that the server is dead.
+# $(LAUNCH_DIR)/live indicates that the server is live.
+# $(LAUNCH_DIR)/dead indicates that the server is dead.
 
 .PHONY: live dead
 
-live: ../live/$(BUILD_TARGET)/live
-../live/$(BUILD_TARGET)/live: ../live/$(BUILD_TARGET)/dead $(BUILD_TARGETS)
-	cp $(BUILD_DIR)/$(HOST_EXE) ../live/$(BUILD_TARGET)
+# TODO: "live" target runs in its own directory. We've since added support for LAUNCH_ID, which provides a generic separation
+#       of microservices. This could be used instead.
+live: $(LAUNCH_DIR)/live
+$(LAUNCH_DIR)/live: $(LAUNCH_DIR)/dead $(BUILD_TARGETS)
+	@# Copy executables to launch dir to avoid impact from active development. Not sure how necessary this is.
+	@cp $(BUILD_DIR)/$(HOST_EXE) $(LAUNCH_DIR)
 ifeq ($(USE_XILINX),true)
-	cp $(HOST_XCLBIN) ../live/$(BUILD_TARGET)
+	@cp $(HOST_XCLBIN) $(LAUNCH_DIR)
 endif
-	# TODO: What about copying the launch script? It this is changed, will that affect the running server?
-	# TODO: Not sure it's necessary to set make vars. These might pass through as environment vars.
+	@# TODO: What about copying the launch script? If this is changed, will that affect the running server?
+	@# TODO: Not sure it's necessary to set make vars. These might pass through as environment vars.
 	@echo "Launching production server in the background"
 	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
-	-rm ../live/$(BUILD_TARGET)/dead
-	touch ../live/$(BUILD_TARGET)/live
-	@echo "Went live!!!   (Stop with 'make dead' or restart with 'make live' again.)"
+	-rm $(LAUNCH_DIR)/dead
+	touch $(LAUNCH_DIR)/live
+	@echo "Went live!!!   (Stop with 'make$(LAUNCH_ID_ARG_STR) dead' or restart by reexecuting this command.)"
 
-dead: ../live/$(BUILD_TARGET)/dead
-../live/$(BUILD_TARGET)/dead:
-	if [[ -e killme ]]; then source killme > /dev/null 2>&1 && echo "Giving web server time to exit gracefully." && sleep 7; fi
-	@mkdir -p ../live/$(BUILD_TARGET)
-	rm -rf ../live/$(BUILD_TARGET)/*
-	@touch ../live/$(BUILD_TARGET)/dead
+dead: $(LAUNCH_DIR)/dead
+$(LAUNCH_DIR)/dead:
+	if [[ -e $(KILLME) ]]; then source $(KILLME) > /dev/null 2>&1 && echo "Giving web server time to exit gracefully." && sleep 7; $(ALREADY_DEAD) fi
+	@mkdir -p $(LAUNCH_DIR) log
+	rm -rf $(LAUNCH_DIR)/*
+	@touch $(LAUNCH_DIR)/dead
 
 
 
 PHONY: build launch
 build: $(BUILD_TARGETS)
 
-LAUNCH_CHECK=@if [ -e killme ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source killme', or, if not running, 'rm killme', and try again." && false; fi
+LAUNCH_CHECK=@if [ -e $(KILLME) ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source $(KILLME)', or, if not running, 'rm $(KILLME)', and try again." && false; fi
 launch: $(BUILD_TARGETS)
 	$(LAUNCH_CHECK)
+	@mkdir -p $(LAUNCH_DIR)
 	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
 
 # An un-documented target to launch the web server and open Chrome to test it.

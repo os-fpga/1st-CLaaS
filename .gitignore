@@ -2,7 +2,7 @@
 **/webserver/*.pyc
 **/webserver/ec2_time_bombs/
 **/apps/*/live/
-**/apps/*/build/webserver.log
+**/apps/*/build/log/
 apps/mandelbrot/build/video
 apps/mandelbrot/build/cast
 **.tfstate
