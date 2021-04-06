@@ -23,7 +23,8 @@ then
   sudo apt-get install make autoconf g++ flex bison
 else [[ -n "$(which yum 2> /dev/null)" ]]
   # Ubuntu
-  sudo yum install make autoconf g++ flex bison
+  sudo yum install make autoconf flex bison which -y
+  sudo yum groupinstall 'Development Tools'  -y
 fi
 
 if [[ -e ./verilator ]]
