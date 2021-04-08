@@ -675,7 +675,7 @@ sv: $(SV_FROM_TLV)
 	mkdir -p ../out/sv/$*
 ifeq ($(SANDPIPER),)
 	@# Run SandPiper(TM) SaaS Edition on TLV files.
-	cd ../out/sv/$* && sandpiper -i ../../$< $(SP_INC_FILES) -o $*.sv --outdir out --iArgs --sv_url_inc
+	cd ../out/sv/$* && yes | sandpiper -i ../../$< $(SP_INC_FILES) -o $*.sv --outdir out --iArgs --sv_url_inc
 else
 	@# Use local SandPiper, given by $(SANDPIPER)
 	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
