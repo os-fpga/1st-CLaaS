@@ -532,7 +532,7 @@ VH_SRC=$(shell ls ../fpga/src/*.vh 2> /dev/null)
 FRAMEWORK_V_SRC=$(shell ls $(FRAMEWORK_DIR)/fpga/src/*.v $(FRAMEWORK_DIR)/fpga/src/*.sv $(FRAMEWORK_DIR)/fpga/src/*.vh 2> /dev/null)
 TLVLIB=$(shell ls ../fpga/src/*.tlvlib 2> /dev/null)
 SV_FROM_TLV=$(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
-SP_CURL_FILES=$(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
+SP_INC_FILES=$(patsubst ../fpga/src/%.tlvlib,-F ../../../fpga/src/%.tlvlib,$(TLVLIB))
 
 
 ifeq ($(VALGRIND),true)
@@ -675,15 +675,12 @@ sv: $(SV_FROM_TLV)
 	mkdir -p ../out/sv/$*
 ifeq ($(SANDPIPER),)
 	@# Run SandPiper(TM) SaaS Edition on TLV files.
-	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
-	cd ../out/sv/$* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
-	cat ../out/sv/$*/out/stdout
+	cd ../out/sv/$* && sandpiper -i ../../$< $(SP_INC_FILES) -o $*.sv --outdir out --iArgs --sv_url_inc
 else
 	@# Use local SandPiper, given by $(SANDPIPER)
 	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
 	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 endif
-	(( $$(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
 	mv ../out/sv/$*/out/*.sv ../out/sv
 	# Vivado requires includes to be of .vh files, so change file name.
 	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
