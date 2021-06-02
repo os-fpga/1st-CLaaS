@@ -217,7 +217,7 @@ m4_kernel_module_def($1)
       
       
 \SV
-m4_makerchip_module_with_random_kernel_tb(warpv, ['assign passed = cyc_cnt > 20;']) // Provide the name the top module for 1st CLaaS in $3 param
+m4_makerchip_module_with_random_kernel_tb(manycore, ['assign passed = cyc_cnt > 20;']) // Provide the name the top module for 1st CLaaS in $3 param
 m4+definitions([''])  // A hack to reset line alignment to address the fact that the above macro is multi-line. 
 \TLV
    
