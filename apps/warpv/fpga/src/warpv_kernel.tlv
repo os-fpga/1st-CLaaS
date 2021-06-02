@@ -1,4 +1,70 @@
-\m4_TLV_version 1d: tl-x.org
+\m4_TLV_version 1d --noline --debugSigs: tl-x.org
+\SV
+// -----------------------------------------------------------------------------
+// Copyright (c) 2019, Steven F. Hoover
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 
+//     * Redistributions of source code must retain the above copyright notice,
+//       this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * The name Steven F. Hoover
+//       may not be used to endorse or promote products derived from this software
+//       without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// -----------------------------------------------------------------------------
+
+// For Xilinx: \m4_TLV_version 1d --fmtFlatSignals --bestsv --noline: tl-x.org
+
+// Overview:
+// ========
+//
+// This kernel, in it's current form, instantiates a single WARP-V RISC-V CPU. It accepts input traffic
+// (via 1st CLaaS WebSocket) to:
+//   o load instruction memory (IMem)
+//   o reset the CPU (but not the data memory (DMem)) and run the program, which must produce a result value via CSR write
+//
+// API:
+//
+// The following chunks are supported:
+//   o IMEM_WRITE: {..., data, addr, type} =>    // addr is instruction-granular
+//                 {..., data, addr, type}
+//        Write a single IMem instruction word.
+//   o IMEM_READ:  {...,       addr, type} =>
+//                 {..., data, addr, type}
+//        Read a single IMem instruction word.
+//   o RUN:        {...,            type} =>
+//                 {..., CSR_value, type}
+//        Reset the CPU and execute the program from PC=0 until the CLAASRSP CSR is written,
+//        returning the value written to the CSR in a single chunk.
+//
+// Microarchitecture:
+// =================
+//
+// This kernel utilizes the tlv_flow_lib to create a short back-pressured pipeline from kernel input to
+// kernel output. IMEM_READ/WRITE transactions traverse this as follows.
+// Stages:
+//   |kernel_in0@1: kernel input and transit
+//   |kernel_in1@1 / |kernel1@1 (same unless RUN): mux PC and kernel input addr, and rd/wr addr decode
+//   |kernel2@1: array data out and transit
+//   |kernel3@1: transit and encode kernel output data
+// RUN transactions run the program as an m4+wait_for in |kernel1@1.
+// and the CSR write injects into the kernel output.
+// Kernel interaction with IMem is a backpressured pipeline.
+
 m4+definitions(['
 // --------------------------------------------------------------------
 //
