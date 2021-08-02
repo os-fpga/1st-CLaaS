@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- A generic test bench that apps can use for testing the kernel -->
+
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous">
+  <link rel="stylesheet" href="/css/manycore.css">
+  <script src="/framework/js/fpgaServer.js"></script>
+  <script src="/js/manycore.js"></script>
+  <title>1st CLaaS WARP-V Example</title>
+</head>
+
+<body>
+
+<h1>1st CLaaS WARP-V Example</h1>
+<h2>Assemble based on this WARP-V code</h2>
+<p>
+  <textarea id="warpv-url" rows="1" cols="80"></textarea>
+</p>
+<h2>Assembly Code</h2>
+<p>
+  <textarea id="assembly-code" rows="30" cols="80"></textarea>
+</p>
+<p>
+  <button id="run-button">Run</button>(assemble, reset CPU, upload, and run)
+  <span id="assembler-error-message" class="error"></span>
+</p>
+<p>
+  <button id="trace-button">Trace On</button>
+</p>
+<h2>Assembled Code</h2>
+<div id="assembled-code"></div>
+<h2>IMem Write Response</h2>
+<pre id="rx-data"></pre>
+<h2>WARP-V Response</h2>
+<p id="warpv-rsp">-</p>
+<h2>Instruction Memory</h2><h4>(as last read)</h4>
+<div id="imem"></div>
+<p id="message"></p>
+
+
+</body>
+</html>
