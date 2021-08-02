@@ -78,7 +78,7 @@ m4+definitions(['
    m4_def(EXT_M, 0)
    m4_def(EXT_F, 0)
    m4_def(EXT_B, 0)
-   m4_def(NUM_CORES, 2)
+   m4_def(NUM_CORES, 5)
    m4_def(NUM_VCS, 2)
    m4_def(NUM_PRIOS, 2)
    m4_def(MAX_PACKET_SIZE, 8)
@@ -110,7 +110,7 @@ m4+definitions(['
    m4_ifelse(M4_XILINX, 0,,['
      m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_flow_lib/5a8c0387be80b2deccfcd1506299b36049e0663e/xilinx_macros.tlv'])
    '])
-   m4_include_lib(['https://raw.githubusercontent.com/stevehoover/warp-v/8aad0ac7f5856f59f2335d6321c6c8619474904c/warp-v.tlv'])
+   m4_include_lib(['https://raw.githubusercontent.com/vineetjain07/warp-v/multicore/warp-v.tlv'])
 
    m4_define_csr(['claasrsp'], 12'hC00, ['32, VAL, 0'], ['32'b0'], ['{32{1'b1}}'], 0)
 
