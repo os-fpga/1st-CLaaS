@@ -95,16 +95,25 @@ class WARPV_Example {
       $('#rx-data').text('');
       $("#warpv-rsp").text("-");
       this.assemble();
-
+      
+      var var_data = {     
+         "args": "-i test.tlv -o test.sv --iArgs --m4out out/m4out --fmtNoSource",
+         "responseType": "json",
+         "sv_url_inc": true,
+         "files": {
+          "test.tlv": this.tlv
+         } 
+         }
+         
       $.ajax({
         type: "POST",
-        url: 'http://saas.makerchip.com/sandpiper/json',
-        data: { tlv: JSON.stringify( {"!top.tlv": this.tlv} ) },
-        //contentType: "application/json; charset=utf-8",
+        url: 'https://faas.makerchip.com/function/sandpiper-faas',
+        data: JSON.stringify(var_data),
+        contentType: "text/plain; charset=utf-8",
         dataType: "json",
         success: (response) => {
           // Process SandPiper output to extract assembled data.
-          let chunks = this.verilogToChunks(response["top.m4out.tlv"]);
+          let chunks = this.verilogToChunks(response["out/m4out"]);
           // Send assembled binary to FPGA.
           this.server.sendChunks(chunks.length, chunks);
           // Send read commands to server to read each instruction from IMem.
