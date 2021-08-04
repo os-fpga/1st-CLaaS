@@ -677,7 +677,7 @@ ifeq ($(SANDPIPER),)
 	@# Run SandPiper(TM) SaaS Edition on TLV files.
 	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
 	cd ../out/sv/$*
-	sandpiper-saas -i ../fpga/src/$*.tlv -o $*.sv --outdir ../out/sv/$*/out/ --sv_url_inc --iArgs --default_includes 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
+	sandpiper-saas -i ../fpga/src/$*.tlv -o $*.sv --outdir ../out/sv/$*/out/ --sv_url_inc --iArgs 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 else
 	@# Use local SandPiper, given by $(SANDPIPER)
 	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
