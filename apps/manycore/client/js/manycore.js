@@ -109,7 +109,7 @@ class WARPV_Example {
         type: "POST",
         url: 'https://faas.makerchip.com/function/sandpiper-faas',
         data: JSON.stringify(var_data), // Converts in JSON format
-        contentType: "text/plain; charset=utf-8",
+        contentType: "text/plain; charset=utf-8", // needed as default is of form-data type "application/x-www-form-urlencoded"
         dataType: "json",
         success: (response) => {
           // Process SandPiper output to extract assembled data.
