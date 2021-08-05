@@ -34,12 +34,10 @@ then
   # For Python:
   sudo yum makecache
   sudo yum -y install yum-utils
-  sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm
+  sudo yum -y install https://repo.ius.io/ius-release-el7.rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm # new URLs by IUS "https://ius.io/setup"
   sudo yum makecache
-  sudo yum -y install python35u python35u-pip
+  sudo yum -y install python3 # this will install python3.6 version
   # To look like Ubuntu, we need python3 and pip3.
-  sudo ln -s /usr/bin/python3.5 /usr/bin/python3
-  sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
 
   sudo yum -y install $COMMON_PACKAGES  #  python-tornado python-imaging redundant w/ pip install?
 
