@@ -21,11 +21,13 @@ git submodule update --init --recursive
 echo "Installing linux packages."
 mkdir -p local
 COMMON_PACKAGES='make inotify-tools bc remmina jq perl unzip'  # python-tornado removed -- redundant w/ pip install of tornado
+DEBUG_PACKAGES='vim htop tmux'
 if [[ -n "$(which apt-get 2> /dev/null)" ]]
 then
   # Ubuntu
   sudo apt-get update
   sudo apt-get -y install g++ python3 python3-pip python3-pil $COMMON_PACKAGES
+  sudo apt -y install $DEBUG_PACKAGES
   #sudo python3 -m pip install Pillow
 elif [[ -n "$(which yum 2> /dev/null)" ]]
 then
@@ -34,14 +36,13 @@ then
   # For Python:
   sudo yum makecache
   sudo yum -y install yum-utils
-  sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm
+  sudo yum -y install https://repo.ius.io/ius-release-el7.rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm # new URLs by IUS "https://ius.io/setup"
   sudo yum makecache
-  sudo yum -y install python35u python35u-pip
+  sudo yum -y install python3 # this will install python3.6 version
   # To look like Ubuntu, we need python3 and pip3.
-  sudo ln -s /usr/bin/python3.5 /usr/bin/python3
-  sudo ln -s /usr/bin/pip3.5 /usr/bin/pip3
 
   sudo yum -y install $COMMON_PACKAGES  #  python-tornado python-imaging redundant w/ pip install?
+  sudo yum -y install $DEBUG_PACKAGES 
 
   ## bash lives at /usr/bin/bash in CentOS, but in /bin/bash for Ubuntu. Create /bin/bash.
   #sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment.

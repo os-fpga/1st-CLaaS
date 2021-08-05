@@ -96,10 +96,10 @@ class WARPV_Example {
       $("#warpv-rsp").text("-");
       this.assemble();
       
+      // Fields as required by Sandpiper microservice API.
       var var_data = {     
-         "args": "-i test.tlv -o test.sv --iArgs --m4out out/m4out --fmtNoSource",
+         "args": "-i test.tlv -o test.sv --iArgs --m4out out/m4out --fmtNoSource", 
          "responseType": "json",
-         "sv_url_inc": true,
          "files": {
           "test.tlv": this.tlv
          } 
@@ -108,8 +108,8 @@ class WARPV_Example {
       $.ajax({
         type: "POST",
         url: 'https://faas.makerchip.com/function/sandpiper-faas',
-        data: JSON.stringify(var_data),
-        contentType: "text/plain; charset=utf-8",
+        data: JSON.stringify(var_data), // Converts in JSON format
+        contentType: "text/plain; charset=utf-8", // needed as default is of form-data type "application/x-www-form-urlencoded"
         dataType: "json",
         success: (response) => {
           // Process SandPiper output to extract assembled data.
