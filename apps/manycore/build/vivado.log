@@ -2,8 +2,8 @@
 # Vivado v2018.3_AR73068_op (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:36:41 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
-# Start of session at: Thu Aug  5 22:18:57 2021
-# Process ID: 20042
+# Start of session at: Sun Aug  8 04:06:13 2021
+# Process ID: 1480
 # Current directory: /home/centos/src/project_data/repo/apps/manycore/build
 # Command line: vivado -mode batch -source ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/manycore_ex/package_source_kernel.tcl ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/manycore_ex/manycore_ex.xpr
 # Log file: /home/centos/src/project_data/repo/apps/manycore/build/vivado.log
@@ -16,7 +16,7 @@ INFO: [IP_Flow 19-234] Refreshing IP repositories
 INFO: [IP_Flow 19-1704] No user IP repositories specified
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/home/centos/src/project_data/aws-fpga/patches/AR73068_Vivado_2018_3_preliminary_rev1/vivado/data/ip'.
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/opt/Xilinx/Vivado/2018.3.op2405991/data/ip'.
-open_project: Time (s): cpu = 00:00:04 ; elapsed = 00:00:09 . Memory (MB): peak = 1435.488 ; gain = 4.027 ; free physical = 115095 ; free virtual = 139774
+open_project: Time (s): cpu = 00:00:03 ; elapsed = 00:00:08 . Memory (MB): peak = 1435.488 ; gain = 4.027 ; free physical = 11789 ; free virtual = 34773
 source ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/manycore_ex/package_source_kernel.tcl
 # source ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/manycore_ex/imports/package_kernel.tcl
 ## set kernel_name    "manycore"
@@ -128,4 +128,4 @@ INFO: [IP_Flow 19-5107] Inferred bus interface 'ap_rst_n_2' of definition 'xilin
 INFO: [IP_Flow 19-4728] Bus Interface 'ap_clk_2': Added interface parameter 'ASSOCIATED_RESET' with value 'ap_rst_n_2'.
 # package_xo -xo_path /home/centos/src/project_data/repo/apps/manycore/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/manycore_ex/sdx_imports/manycore.xo -kernel_name manycore -ip_directory /home/centos/src/project_data/repo/apps/manycore/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/manycore_ex/manycore -kernel_xml /home/centos/src/project_data/repo/apps/manycore/out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/manycore_ex/imports/kernel.xml
 WARNING: [Vivado 12-4404] The CPU emulation flow in XOCC is only supported when using a packaged XO file that contains C-model files, none were found.
-INFO: [Common 17-206] Exiting Vivado at Thu Aug  5 22:19:15 2021...
+INFO: [Common 17-206] Exiting Vivado at Sun Aug  8 04:06:29 2021...
