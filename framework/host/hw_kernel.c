@@ -142,7 +142,7 @@ void HW_Kernel::initialize_platform() {
   }
 
   // Creation a command commands
-  commands = clCreateCommandQueueWithProperties(context, device_id, 0, &err);
+  commands = clCreateCommandQueue(context, device_id, 0, &err);
   if (!commands) {
     perror("Error: Failed to create a command commands!\nTest failed\n");
     return;
@@ -289,7 +289,7 @@ void HW_Kernel::write_kernel_data(input_struct * input, int data_size) {
 
 void HW_Kernel::start_kernel() {
   int err;
-  err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, 1, 1, 0, NULL, NULL);  // https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clEnqueueTask.html
+  err = clEnqueueTask(commands, kernel, 0, NULL, NULL);
   if (err) {
     perror("Error: Failed to execute kernel!\nTest failed\n");
     return;
