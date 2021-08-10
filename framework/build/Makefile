@@ -426,10 +426,10 @@ TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
 
 REPORT=
 ifeq ($(BUILD_TARGET),hw)
-REPORT=-R system
+REPORT= -R2 --report_level system
 else
 ifeq ($(BUILD_TARGET),hw_emu)
-REPORT=-R estimate
+REPORT= -R2 --report_level estimate
 endif
 endif
 
@@ -792,7 +792,8 @@ project: $(USER_KERNEL_ADDED_FILE)
 
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cp sdaccel.ini ../out/hw_emu/*/
+	cd $(DEST_DIR);	$(XOCC) --platform $(AWS_PLATFORM) --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
