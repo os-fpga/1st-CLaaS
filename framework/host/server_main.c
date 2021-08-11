@@ -49,7 +49,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "server_main.h"
 #include "mandelbrot.h"
-#include <ctime>
 
 using namespace std;
 using namespace lodepng;
@@ -135,7 +134,6 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
     kernel.reset_kernel();
   #endif
 
-  time_t sec1,sec2;
 
   // Main HOST loop
   // Currently START_KERNEL wont be working as web-scoket terminates
@@ -154,20 +152,14 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
         if (verbosity > 5) {cout << "." << flush;}
         loop_cnt = 0;
       }
-      sec1 = time(NULL);
-      cout << sec1 << " check1" << endl;
-      // processTraffic();
+
       processTraffic(xclbin, kernel_name);
-      sec2 = time(NULL);
-      cout << sec2 << " check2" << endl;
-      cout << "LOOP COUNT  "<< loop_cnt << endl;
     }
   }
 
   return 0;
 }
 
-// void HostApp::processTraffic() {
 void HostApp::processTraffic(const char *xclbin, const char *kernel_name) {
   int command;
 
@@ -616,3 +608,4 @@ int HostApp::get_command(const char * command) {
   else
     return -1;
 }
+
