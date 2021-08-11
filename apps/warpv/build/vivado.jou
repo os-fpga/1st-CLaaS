@@ -2,8 +2,8 @@
 # Vivado v2018.3 (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:36:41 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
-# Start of session at: Wed Aug 11 04:22:11 2021
-# Process ID: 4136
+# Start of session at: Wed Aug 11 06:45:55 2021
+# Process ID: 16028
 # Current directory: /home/vj07/Desktop/sdx/1st-CLaaS/apps/warpv/build
 # Command line: vivado -mode batch -source ../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/package_source_kernel.tcl ../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/warpv_ex.xpr
 # Log file: /home/vj07/Desktop/sdx/1st-CLaaS/apps/warpv/build/vivado.log

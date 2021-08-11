@@ -138,6 +138,7 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   time_t sec1,sec2;
 
   // Main HOST loop
+  // Currently START_KERNEL wont be working as web-scoket terminates
   while (true) {
     if ((socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
       printf("%d\n", socket);
@@ -149,15 +150,14 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
     while(true) {
       //cout << "C++ Main loop" << endl;
       loop_cnt++;
-      if (loop_cnt > 20) {
-        kernel.clean_kernel();
-        exit(1);
+      if (loop_cnt > 10000) {
         if (verbosity > 5) {cout << "." << flush;}
         loop_cnt = 0;
       }
       sec1 = time(NULL);
       cout << sec1 << " check1" << endl;
-      processTraffic();
+      // processTraffic();
+      processTraffic(xclbin, kernel_name);
       sec2 = time(NULL);
       cout << sec2 << " check2" << endl;
       cout << "LOOP COUNT  "<< loop_cnt << endl;
@@ -167,7 +167,8 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   return 0;
 }
 
-void HostApp::processTraffic() {
+// void HostApp::processTraffic() {
+void HostApp::processTraffic(const char *xclbin, const char *kernel_name) {
   int command;
 
   string msg = socket_recv_string("command");
