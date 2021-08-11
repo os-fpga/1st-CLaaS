@@ -371,7 +371,7 @@ ifeq ($(BUILD_TARGET),sw)
 #sw target
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
-	cp sdaccel.ini ../out/$(BUILD_TARGET)/*/
+	cp sdaccel.ini $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 # Host for debug.
 $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
@@ -381,8 +381,7 @@ $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 else
 #sim target
 $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC) $(FRAMEWORK_V_SRC)
-	mkdir -p $(DEST_DIR)
-	cp sdaccel.ini ../out/$(BUILD_TARGET)/*/
+	cp sdaccel.ini $(DEST_DIR)
 	$(VERILATOR) --cc --sv --trace --top-module $(KERNEL_NAME)_kernel -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator \
 	|| (STATUS=$$? && mv $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp.error && exit $$STATUS)  # to force re-run.
 $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp
@@ -399,8 +398,7 @@ else
 #hw and hw_emu target
 $(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
-	cp sdaccel.ini ../out/$(BUILD_TARGET)/*/
-	cp sdaccel.ini ../out/$(BUILD_TARGET)/*
+	cp sdaccel.ini $(DEST_DIR)
 	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 endif
 
@@ -533,8 +531,6 @@ xo: $(XO_FILE)
 BUILD_DIR_vadd = $(BUILD_DIR)/vadd
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cp sdaccel.ini ../out/hw_emu/*/
-	mkdir -p ../out/hw_emu/*/plz/
 	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --dk protocol:all:all --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link --temp_dir ./_x/plz/ --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 endif

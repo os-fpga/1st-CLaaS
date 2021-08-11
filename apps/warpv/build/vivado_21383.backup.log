@@ -2,8 +2,8 @@
 # Vivado v2018.3 (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:36:41 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
-# Start of session at: Wed Aug 11 08:15:36 2021
-# Process ID: 26273
+# Start of session at: Wed Aug 11 07:43:05 2021
+# Process ID: 21383
 # Current directory: /home/vj07/Desktop/sdx/1st-CLaaS/apps/warpv/build
 # Command line: vivado -mode batch -source ../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/package_source_kernel.tcl ../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/warpv_ex.xpr
 # Log file: /home/vj07/Desktop/sdx/1st-CLaaS/apps/warpv/build/vivado.log
@@ -15,7 +15,7 @@ Finished scanning sources
 INFO: [IP_Flow 19-234] Refreshing IP repositories
 INFO: [IP_Flow 19-1704] No user IP repositories specified
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/tools/Xilinx/Vivado/2018.3/data/ip'.
-open_project: Time (s): cpu = 00:00:05 ; elapsed = 00:00:05 . Memory (MB): peak = 1373.066 ; gain = 4.027 ; free physical = 378 ; free virtual = 1932
+open_project: Time (s): cpu = 00:00:05 ; elapsed = 00:00:05 . Memory (MB): peak = 1373.066 ; gain = 4.027 ; free physical = 369 ; free virtual = 2021
 source ../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/package_source_kernel.tcl
 # source ../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/imports/package_kernel.tcl
 ## set kernel_name    "warpv"
@@ -127,4 +127,4 @@ INFO: [IP_Flow 19-5107] Inferred bus interface 'ap_rst_n_2' of definition 'xilin
 INFO: [IP_Flow 19-4728] Bus Interface 'ap_clk_2': Added interface parameter 'ASSOCIATED_RESET' with value 'ap_rst_n_2'.
 # package_xo -xo_path /home/vj07/Desktop/sdx/1st-CLaaS/apps/warpv/out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/sdx_imports/warpv.xo -kernel_name warpv -ip_directory /home/vj07/Desktop/sdx/1st-CLaaS/apps/warpv/out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/warpv -kernel_xml /home/vj07/Desktop/sdx/1st-CLaaS/apps/warpv/out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/warpv_ex/imports/kernel.xml
 WARNING: [Vivado 12-4404] The CPU emulation flow in XOCC is only supported when using a packaged XO file that contains C-model files, none were found.
-INFO: [Common 17-206] Exiting Vivado at Wed Aug 11 08:15:59 2021...
+INFO: [Common 17-206] Exiting Vivado at Wed Aug 11 07:43:24 2021...
