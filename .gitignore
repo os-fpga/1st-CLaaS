@@ -16,6 +16,7 @@ apps/mandelbrot/build/cast
 /tmp
 **/log/
 **/out/
+.vscode
 node_modules
 
 __pycache__
