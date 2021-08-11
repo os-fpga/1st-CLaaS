@@ -1,0 +1,14 @@
+make launch --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/vj07/Desktop/sdx/1st-CLaaS/framework/build'
+Using TARGET=hw.  (Platform supports: | hw | hw_emu | sim | sw | )
+mkdir -p ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0
+cp sdaccel.ini ../out/hw/*/
+cp sdaccel.ini ../out/hw/*
+g++ ../../framework/host/server_main.c ../host/default_main.c ../host/hw_kernel.c ../host/server_main.c ../host/sim_kernel.c  ../../framework/host/hw_kernel.c -g -Wall -O3 -std=c++11 -I../host -I../../framework/host -I../../framework/host/json/include  -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I/opt/xilinx/xrt/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=/tools/Xilinx/SDx/2018.3/platforms/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm -D KERNEL=framework -L/opt/xilinx/xrt/lib  -lxilinxopencl -o ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host
+if [ -e ./kill_launch ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source ./kill_launch', or, if not running, 'rm ./kill_launch', and try again." && false; fi
+mkdir -p ../live/hw
+# Echo command without secrets (requires proper quoting)
+echo './launch -w '"'"'python3 ../../framework/webserver/default_server.py --port=<<PORT>> --socket=<<SOCKET>> '"'"' -p 8888 -s SOCKET -k '"'"'./kill_launch'"'"' hw '"'"' ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host -s SOCKET '"'"''
+./launch -w 'python3 ../../framework/webserver/default_server.py --port=<<PORT>> --socket=<<SOCKET>> ' -p 8888 -s SOCKET -k './kill_launch' hw ' ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host -s SOCKET '
+make: Leaving directory '/home/vj07/Desktop/sdx/1st-CLaaS/framework/build'
+ 

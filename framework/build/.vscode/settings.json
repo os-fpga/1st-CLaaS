@@ -1,0 +1,11 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/vj07/Desktop/sdx/1st-CLaaS/framework/out/hw/xilinx_aws-vu9p-f1-04261818_dynamic_5_0",
+            "binaryPath": "/home/vj07/Desktop/sdx/1st-CLaaS/framework/out/hw/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/host",
+            "binaryArgs": []
+        }
+    ]
+}

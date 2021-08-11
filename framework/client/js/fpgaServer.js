@@ -197,6 +197,14 @@ class fpgaServer {
     this.ws.send(JSON.stringify({ "type": "STOP_TRACING", payload: {} }));
   }
 
+  startKernel() {
+    this.ws.send(JSON.stringify({ "type": "START_KERNEL", payload: {} }));
+  }
+
+  cleanKernel() {
+    this.ws.send(JSON.stringify({ "type": "CLEAN_KERNEL", payload: {} }));
+  }
+
   // This is the API currently exposed for sending data.
   // Args:
   //   - resp_size: The number of chunks that must be returned in response. (The need to provide this is an artifact of the current implementation.)

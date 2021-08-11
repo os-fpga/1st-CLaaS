@@ -1,0 +1,907 @@
+make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+Using TARGET=hw.  (Platform supports: | hw | hw_emu | sim | sw | )
+ 
+make: *** No rule to make target 'all'.  Stop.
+ 
+# GNU Make 4.1
+# Built for x86_64-pc-linux-gnu
+# Copyright (C) 1988-2014 Free Software Foundation, Inc.
+# License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+# This is free software: you are free to change and redistribute it.
+# There is NO WARRANTY, to the extent permitted by law.
+
+# Make data base, printed on Wed Aug 11 04:04:57 2021
+
+# Variables
+
+# 'override' directive
+GNUMAKEFLAGS := 
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# automatic
+?F = $(notdir $?)
+# environment
+DESKTOP_SESSION = ubuntu
+# makefile (from 'Makefile', line 173)
+HOST_HDRS = $(SW_HDRS) $(FRAMEWORK_HOST_DIR)/hw_kernel.h
+# default
+.SHELLFLAGS := -c
+# makefile (from 'Makefile', line 234)
+DEST_SUBDIR = $(BUILD_TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
+# environment
+SNAP_COMMON = /var/snap/code/common
+# environment
+XDG_SESSION_TYPE = x11
+# environment
+VSCODE_LOG_NATIVE = false
+# makefile (from 'Makefile', line 31)
+CHROME = $(shell which google-chrome)
+# makefile (from 'Makefile', line 68)
+TARGET := default
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# makefile (from 'Makefile', line 437)
+KERNEL_SV := ../out/sv/framework_kernel.sv
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# environment
+XAUTHORITY = /run/user/1000/gdm/Xauthority
+# environment
+GDMSESSION = ubuntu
+# environment
+XMODIFIERS = @im=ibus
+# makefile (from 'Makefile', line 232)
+PERIOD := :
+# makefile
+CURDIR := /home/vj07/Desktop/sdx/1st-CLaaS/framework/build
+# makefile (from 'Makefile', line 72)
+SPECIFIED_TARGET := default
+# makefile (from 'Makefile', line 1)
+SHELL = /bin/bash
+# environment
+SNAP_DATA = /var/snap/code/71
+# makefile (from 'Makefile', line 457)
+SHELL_REP = $(DEST_DIR)/$(KERNEL_NAME)_ex/imports/kernel.xml
+# environment
+VTE_VERSION = 5202
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-gb","availableLanguages":{},"_languagePackSupport":true}
+# makefile (from 'Makefile', line 114)
+USE_PREBUILT = $(PREBUILT)
+# makefile (from 'Makefile', line 193)
+KERNEL_EXE = $(KERNEL_NAME)
+# makefile (from 'Makefile', line 157)
+PROJ_SW_LFLAGS = 
+# environment
+_ = /usr/bin/make
+# makefile (from 'Makefile', line 315)
+TLVLIB = $(shell ls ../fpga/src/*.tlvlib 2> /dev/null)
+# environment
+JOURNAL_STREAM = 9:24063
+# environment
+XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
+# environment
+SNAP_INSTANCE_NAME = code
+# environment
+SNAP_ARCH = amd64
+# makefile (from 'Makefile', line 47)
+VERILATOR_ROOT = $(ABS_REPO)/local/verilator
+# environment
+LESSOPEN = | /usr/bin/lesspipe %s
+# makefile (from 'Makefile', line 279)
+SOCKET = $(DEFAULT_SOCKET)
+# makefile (from 'Makefile', line 313)
+VH_SRC = $(shell ls ../fpga/src/*.vh 2> /dev/null)
+# makefile (from 'Makefile', line 1)
+MAKEFILE_LIST :=  Makefile
+# makefile (from 'Makefile', line 274)
+LAUNCH_LOCAL_DIR = 
+# automatic
+@F = $(notdir $@)
+# makefile (from 'Makefile', line 121)
+HW_SHELL_CONFIG_JSON = $(FRAMEWORK_DIR)/fpga/default_shell_config.json
+# environment
+IM_CONFIG_PHASE = 2
+# makefile (from 'Makefile', line 217)
+BUILD_DIR_NAME = out
+# makefile (from 'Makefile', line 165)
+SW_SRC = $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC) $(EXTRA_C_SRC)
+# environment
+USERNAME = vj07
+# makefile (from 'Makefile', line 184)
+SIM_LFLAGS = $(SW_LFLAGS)
+# environment
+XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+# makefile (from 'Makefile', line 477)
+IMPORTS_DIR = $(DEST_DIR)/$(KERNEL_NAME)_ex/imports
+# environment
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=6e5fdbd7ad157dcf167448976112fe8c
+# environment
+VSCODE_VERBOSE_LOGGING = true
+# makefile (from 'Makefile', line 317)
+SP_CURL_FILES = $(patsubst ../fpga/src/%.tlvlib,-F 'files[]=@../../../fpga/src/%.tlvlib',$(TLVLIB))
+# makefile (from 'Makefile', line 218)
+OUT_DIR_NAME = out
+# environment
+MANAGERPID = 1169
+# environment
+SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
+# makefile (from 'Makefile', line 145)
+XOCC = xocc
+# makefile (from 'Makefile', line 479)
+VIVADO_PROJ_SCRIPT = $(DEST_DIR)/add_to_project.tcl
+# environment
+CLUTTER_IM_MODULE = xim
+# makefile (from 'Makefile', line 3)
+COMMA := ,
+# environment
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-d89a122c-2eb3-4db5-9401-cb546aa9867b.sock
+# makefile (from 'Makefile', line 288)
+HOST_EXE_PATH = $(BUILD_DIR)/$(HOST_EXE)
+# environment
+VSCODE_CWD = /home/vj07/Desktop/sdx/1st-CLaaS/framework/build
+# environment
+GSETTINGS_SCHEMA_DIR = /snap/code/71/usr/share/glib-2.0/schemas
+# makefile (from 'Makefile', line 166)
+SW_HDRS = $(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS) $(EXTRA_C_HDRS)
+# makefile (from 'Makefile', line 326)
+HOST_ARGS = -s $(SOCKET)
+# default
+MAKE_HOST := x86_64-pc-linux-gnu
+# environment
+PATH = /opt/xilinx/xrt/bin:/home/vj07/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/tools/Xilinx/Vivado/2018.3/bin:/tools/Xilinx/SDK/2018.3/bin:/tools/Xilinx/SDx/2018.3/bin:/home/vj07/.local/bin
+# makefile (from 'Makefile', line 273)
+LAUNCH_ID = .
+# makefile (from 'Makefile', line 478)
+VADD_SV = $(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
+# makefile (from 'Makefile', line 7)
+SINGLE_QUOTE := '
+# environment
+GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
+# makefile (from 'Makefile', line 180)
+SIM_SRC = $(SW_SRC) $(FRAMEWORK_HOST_DIR)/sim_kernel.c
+# environment
+SESSION_MANAGER = local/vj07-VB:@/tmp/.ICE-unix/1208,unix/vj07-VB:/tmp/.ICE-unix/1208
+# makefile (from 'Makefile', line 77)
+BUILD_TARGET := hw
+# environment
+XDG_RUNTIME_DIR = /run/user/1000
+# environment
+GDK_PIXBUF_MODULE_FILE = /home/vj07/snap/code/common/.cache/gdk-pixbuf-loaders.cache
+# makefile (from 'Makefile', line 150)
+FRAMEWORK_HOST_DIR = $(FRAMEWORK_DIR)/host
+# environment
+TEXTDOMAIN = im-config
+# environment
+SNAP = /snap/code/71
+# makefile (from 'Makefile', line 209)
+REPORT = -R2 --report_level system
+# makefile (from 'Makefile', line 156)
+PROJ_SW_CFLAGS = 
+# makefile (from 'Makefile', line 278)
+LAUNCH_ID_ARG_STR = LAUNCH_ID=
+# environment
+SNAP_VERSION = 379476f0
+# environment
+XDG_MENU_PREFIX = gnome-
+# environment
+VSCODE_LOG_STACK = false
+# environment
+DISABLE_WAYLAND = 1
+# makefile (from 'Makefile', line 183)
+SIM_CFLAGS = $(SW_CFLAGS) -std=c++11 -lpthread -DVL_THREADED=1 -D KERNEL_AVAIL -D KERNEL=$(KERNEL_NAME) -D VERILATOR_KERNEL=V$(KERNEL_NAME)_kernel
+# environment
+VSCODE_CRASH_REPORTER_START_OPTIONS = {"companyName":"Microsoft","productName":"VSCode","submitURL":"appcenter://code?aid=fba07a4d-84bd-4fc8-a125-9640fc8ce171&uid=bd89a916-bd4a-45d3-bb18-a7068e1df71d&iid=bd89a916-bd4a-45d3-bb18-a7068e1df71d&sid=bd89a916-bd4a-45d3-bb18-a7068e1df71d","uploadToServer":true}
+# makefile (from 'Makefile', line 124)
+PORT = 8888
+# environment
+INVOCATION_ID = 053c48a0a77b4383a844035b05d41779
+# environment
+GDK_PIXBUF_MODULEDIR = /snap/code/71/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+# default
+.FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
+# makefile (from 'Makefile', line 182)
+SIM_HDRS = $(SW_HDRS) $(FRAMEWORK_HOST_DIR)/sim_kernel.h
+# environment
+LS_COLORS = rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:
+# environment
+XDG_SESSION_DESKTOP = ubuntu
+# environment
+SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
+# makefile (from 'Makefile', line 455)
+XO_FILE = $(DEST_DIR)/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_EXE).xo
+# automatic
+%F = $(notdir $%)
+# environment
+DISPLAY = :0
+# makefile (from 'Makefile', line 275)
+LAUNCH_DIR = ../live/$(BUILD_TARGET)
+# makefile (from 'Makefile', line 277)
+WEBSERVER_LOG = log/webserver.log
+# makefile (from 'Makefile', line 167)
+SW_CFLAGS = -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I$(FRAMEWORK_DIR)/host/json/include $(PROJ_SW_CFLAGS)
+# environment
+GTK_IM_MODULE = ibus
+# makefile (from 'Makefile', line 4)
+EMPTY := 
+# environment
+VSCODE_PIPE_LOGGING = true
+# environment
+SNAP_INSTANCE_KEY = 
+# makefile (from 'Makefile', line 459)
+USER_KERNEL_ADDED_FILE = $(DEST_DIR)/$(KERNEL_NAME)_ex/kernel_added.flag
+# environment
+PWD = /home/vj07/Desktop/sdx/1st-CLaaS/framework/build
+# makefile (from 'Makefile', line 196)
+KERNEL_LDCLFLAGS = --nk $(KERNEL_NAME):1 --xp param:compiler.preserveHlsOutput=1 --max_memory_ports $(KERNEL_NAME) --memory_port_data_width $(KERNEL_NAME):512 
+# makefile (from 'Makefile', line 48)
+VERILATOR_INCLUDE = $(ABS_REPO)/local/verilator/include
+# environment
+XDG_SEAT = seat0
+# environment
+SSH_AGENT_PID = 1340
+# makefile (from 'Makefile', line 201)
+KERNEL_ADDITIONAL_FLAGS = 
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
+# environment
+GTK_MODULES = gail:atk-bridge
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/services/extensions/node/extensionHostProcess
+# environment
+HOME = /home/vj07
+# environment
+LD_LIBRARY_PATH = /opt/xilinx/xrt/lib:/tools/Xilinx/SDx/2018.3/runtime/lib/x86_64:
+# makefile (from 'Makefile', line 314)
+FRAMEWORK_V_SRC = $(shell ls $(FRAMEWORK_DIR)/fpga/src/*.v $(FRAMEWORK_DIR)/fpga/src/*.sv $(FRAMEWORK_DIR)/fpga/src/*.vh 2> /dev/null)
+# makefile (from 'Makefile', line 297)
+LAUNCH_CMD_PARTIAL := ./launch -w 'python3 ../../framework/webserver/default_server.py --port=<<PORT>> --socket=<<SOCKET>> '
+# environment
+LESSCLOSE = /usr/bin/lesspipe %s %s
+# environment
+VSCODE_CLI = 1
+# environment
+VSCODE_CODE_CACHE_PATH = /home/vj07/.config/Code/CachedData/379476f0e13988d90fab105c5c19e7abc8b1dea8
+# makefile (from 'Makefile', line 142)
+LAUNCH_W = python3 $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
+# environment
+LOGNAME = vj07
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+# environment
+SNAP_REAL_HOME = /home/vj07
+# environment
+SNAP_CONTEXT = uCbx-xvv3VN1EvkF1r7ahKG7-S9IgqeElbuoS5kNqwiG4EkStW-w
+# makefile (from 'Makefile', line 46)
+VERILATOR = $(ABS_REPO)/local/verilator/bin/verilator
+# makefile (from 'Makefile', line 168)
+SW_LFLAGS = -L$(XILINX_XRT)/lib $(PROJ_SW_LFLAGS)
+# environment
+ELECTRON_NO_ATTACH_CONSOLE = 1
+# environment
+ 
+SNAP_USER_COMMON = /home/vj07/snap/code/common
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# default
+MAKE_VERSION := 4.1
+# environment
+GNOME_DESKTOP_SESSION_ID = this-is-deprecated
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# environment
+XDG_VTNR = 1
+# makefile (from 'Makefile', line 303)
+LAUNCH_CMD = $(LAUNCH_CMD_PARTIAL) $(LAUNCH_ARGS)
+# environment
+MAKELEVEL := 0
+# environment
+COLORTERM = truecolor
+# default
+MAKE = $(MAKE_COMMAND)
+# default
+MAKECMDGOALS := all
+# environment
+QT_IM_MODULE = xim
+# environment
+SNAP_USER_DATA = /home/vj07/snap/code/71
+# makefile (from 'Makefile', line 177)
+HOST_LFLAGS = $(SW_LFLAGS) -lxilinxopencl
+# environment
+SHLVL = 3
+# makefile (from 'Makefile', line 146)
+CC = g++
+# makefile (from 'Makefile', line 103)
+USE_XILINX = true
+# environment
+GNOME_SHELL_SESSION_MODE = ubuntu
+# makefile (from 'Makefile', line 236)
+BUILD_DIR = ../$(BUILD_DIR_NAME)/$(DEST_SUBDIR)
+# environment
+XDG_SESSION_ID = 1
+# environment
+USER = vj07
+# environment
+SNAP_REVISION = 71
+# makefile
+.DEFAULT_GOAL := nothing
+# makefile (from 'Makefile', line 204)
+TARGET_DEVICE = xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
+# environment
+XDG_CURRENT_DESKTOP = Unity
+# makefile (from 'Makefile', line 17)
+FRAMEWORK_DIR = $(REPO)/framework
+# makefile (from 'Makefile', line 246)
+XILINX_SDX = /tools/Xilinx/SDx/2018.3
+# makefile (from 'Makefile', line 152)
+EXTRA_C_SRC = 
+# makefile (from 'Makefile', line 141)
+WEBSERVER_PY = $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
+# automatic
+%D = $(patsubst %/,%,$(dir $%))
+# makefile (from 'Makefile', line 257)
+DEFAULT_SOCKET = LIVE_SOCKET
+# makefile (from 'Makefile', line 346)
+define with_secret
+	@# Echo command without secrets (requires proper quoting)
+	@echo '$(subst $(SPACE)*****$(SPACE),*****,$(patsubst {{{%}}},*****,$(subst $(SINGLE_QUOTE),'"$(SINGLE_QUOTE)"',$1)))'
+	@$(subst }}}$(SPACE),,$(subst $(SPACE){{{,,$1))
+endef
+# default
+MAKE_COMMAND := make
+# makefile (from 'Makefile', line 120)
+KERNEL_NAME = $(shell realpath $$(pwd) | sed 's|^.*/\([^/]*\)/build$$|\1|')
+# makefile (from 'Makefile', line 171)
+HOST_SRC = $(SW_SRC) $(FRAMEWORK_HOST_DIR)/hw_kernel.c
+# default
+.VARIABLES := 
+# automatic
+*F = $(notdir $*)
+# environment
+LANGUAGE = en_IN:en
+# makefile (from 'Makefile', line 229)
+AWS_PLATFORM = /tools/Xilinx/SDx/2018.3/platforms/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
+# environment
+VSCODE_IPC_HOOK = /run/user/1000/vscode-f8e6a97e-1.59.0-main.sock
+# makefile (from 'Makefile', line 57)
+SUPPORTED_TARGETS := hw | hw_emu | sim | sw | 
+# makefile (from 'Makefile', line 15)
+REPO = $(shell realpath "--relative-to=." "$(FIRST_CLAAS_REPO)")
+# makefile (from 'Makefile', line 10)
+FIRST_CLAAS_REPO = $(shell realpath --relative-to=. $$(git rev-parse --show-toplevel))
+# makefile
+MAKEFLAGS = pqrR
+# makefile (from 'Makefile', line 316)
+SV_FROM_TLV = $(patsubst ../fpga/src/%.tlv,../out/sv/%.sv,$(TLV))
+# makefile (from 'Makefile', line 153)
+EXTRA_C_HDRS = 
+# environment
+MFLAGS = -pqrR
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# environment
+BREAKPAD_DUMP_LOCATION = /home/vj07/.config/Code/exthost Crash Reports
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# environment
+GDK_BACKEND = x11
+# makefile (from 'Makefile', line 176)
+HOST_CFLAGS = $(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I$(XILINX_XRT)/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
+# automatic
++F = $(notdir $+)
+# makefile (from 'Makefile', line 149)
+HOST_DIR = ../host
+# makefile (from 'Makefile', line 258)
+DEFAULT_KILLME = ./killme
+# makefile (from 'Makefile', line 130)
+WEBSERVER_ARGS := 
+# environment
+QT_ACCESSIBILITY = 1
+# makefile (from 'Makefile', line 323)
+VALGRIND_PREFIX = 
+# environment
+TEXTDOMAINDIR = /usr/share/locale/
+# makefile (from 'Makefile', line 37)
+AWS_FPGA_REPO_DIR = /home/vj07/Desktop/sdx/aws-fpga
+# default
+MAKEFILES := 
+# environment
+SNAP_COOKIE = uCbx-xvv3VN1EvkF1r7ahKG7-S9IgqeElbuoS5kNqwiG4EkStW-w
+# makefile (from 'Makefile', line 235)
+DEST_DIR = ../$(OUT_DIR_NAME)/$(DEST_SUBDIR)
+# environment
+VSCODE_BROWSER_CODE_LOADING = bypassHeatCheck
+# automatic
+<F = $(notdir $<)
+# makefile (from 'Makefile', line 190)
+KERNEL_SRC = 
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# makefile (from 'Makefile', line 154)
+PROJ_C_SRC = $(shell ls ../host/*.c ../host/*.cpp ../host/*.C ../host/*.cxx 2> /dev/null)
+# makefile (from 'Makefile', line 311)
+TLV = $(shell ls ../fpga/src/*.tlv 2> /dev/null)
+# makefile (from 'Makefile', line 233)
+UNDERSCORE := _
+# environment
+SNAP_NAME = code
+# makefile (from 'Makefile', line 13)
+ABS_REPO = $(shell realpath "$(FIRST_CLAAS_REPO)")
+# environment
+LC_ALL = C
+# environment
+DBUS_STARTER_BUS_TYPE = session
+# makefile (from 'Makefile', line 533)
+BUILD_DIR_vadd = $(BUILD_DIR)/vadd
+# makefile (from 'Makefile', line 298)
+LAUNCH_ARGS = -p $(PORT) -s $(SOCKET) -k '$(KILLME)' $(BUILD_TARGET) '$(HOST_CMD)'
+# environment
+QT4_IM_MODULE = xim
+# environment
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/4cd00cd2_f3c4_4b09_aba9_bfc6c3210e49
+# automatic
+^F = $(notdir $^)
+# makefile (from 'Makefile', line 599)
+LAUNCH_CHECK = @if [ -e $(KILLME) ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source $(KILLME)', or, if not running, 'rm $(KILLME)', and try again." && false; fi
+# makefile (from 'Makefile', line 192)
+KERNEL_FLAGS = 
+# environment
+GNOME_TERMINAL_SERVICE = :1.69
+# default
+SUFFIXES := 
+# makefile (from 'Makefile', line 5)
+SPACE := $(subst ,, )
+# environment
+SNAP_REEXEC = 
+# environment
+CHROME_DESKTOP = code-url-handler.desktop
+# makefile (from 'Makefile', line 155)
+PROJ_C_HDRS = $(shell ls ../host/*.h ../host/*.hpp ../host/*.H ../host/*.hxx 2> /dev/null)
+# environment
+WINDOWPATH = 1
+# makefile (from 'Makefile', line 337)
+HOST_CMD = $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
+# default
+.INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
+# makefile (from 'Makefile', line 336)
+BUILD_TARGETS = $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
+# default
+.RECIPEPREFIX := 
+# makefile (from 'Makefile', line 448)
+VIVADO_VERSION_MESSAGE = Note: Kernel construction assumes Vivado v2018.3
+# makefile (from 'Makefile', line 187)
+HOST_EXE = host
+# environment
+XILINX_XRT = /opt/xilinx/xrt
+# makefile (from 'Makefile', line 312)
+SV_SRC = $(shell ls ../fpga/src/*.sv ../fpga/src/*.v 2> /dev/null)
+# environment
+LANG = C
+# environment
+TERM = xterm-256color
+# makefile (from 'Makefile', line 276)
+KILLME = $(DEFAULT_KILLME)
+# makefile (from 'Makefile', line 131)
+LAUNCH_PASSWORD := 
+# environment
+VSCODE_PID = 1945
+# environment
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=6e5fdbd7ad157dcf167448976112fe8c
+# variable set hash-table stats:
+# Load=234/1024=23%, Rehash=0, Collisions=72/771=9%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+# ../fpga/src (device 2049, inode 1180259): No files, no impossibilities so far.
+# . (device 2049, inode 1180233): 7 files, no impossibilities.
+
+# 7 files, no impossibilities in 2 directories.
+
+# Implicit Rules
+
+../out/sv/%.sv: ../fpga/src/%.tlv ../fpga/src/kernel_module.tlvlib
+#  recipe to execute (from 'Makefile', line 415):
+	rm -rf ../out/sv/$*
+	mkdir -p ../out/sv/$*/out
+	@# Run SandPiper(TM) SaaS Edition on TLV files.
+	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
+	cd ../out/sv/$*
+	yes | sandpiper-saas -i ../fpga/src/$*.tlv -o $*.sv --outdir ../out/sv/$*/out/ --sv_url_inc --iArgs 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
+	(( $$(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
+	mv ../out/sv/$*/out/*.sv ../out/sv
+	# Vivado requires includes to be of .vh files, so change file name.
+	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
+	cd ../out/sv && sed -i -e s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv
+
+# 1 implicit rules, 0 (0.0%) terminal.
+
+# Files
+
+# Not a target:
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host_debug:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../host/sim_kernel.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+PHONY: build launch
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/rtl_kernel_wiz.tcl: ../../framework/fpga/scripts/produce_tcl_file.py ../../framework/fpga/default_shell_config.json
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 452):
+	mkdir -p $(DEST_DIR)
+	python3 "$(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py" "$(HW_SHELL_CONFIG_JSON)" "$(DEST_DIR)/rtl_kernel_wiz.tcl"
+
+# Not a target:
+../host/protocol.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+all:
+#  Command line target.
+#  Implicit rule search has been done.
+#  File does not exist.
+#  File has not been updated.
+
+xo: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/sdx_imports/framework.xo ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework.xo
+ 
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+# Not a target:
+../../framework/host/protocol.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+.PHONY: nothing clean shrink sv shell xo project edit_kernel host xo xclbin emulation build launch debug_prints copy_app
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../host/server_main.c:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../../framework/host/server_main.c:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../host/kernel.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+project:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+# Not a target:
+../../framework/fpga/src/clk_gate.sv:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+emulation:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+# Not a target:
+Makefile:
+#  Implicit rule search has been done.
+#  Last modified 2021-08-11 01:47:03.787152738
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+../host/server_main.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+sv:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+# Not a target:
+../../framework/host/server_main.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+build: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host: ../../framework/host/server_main.c ../host/default_main.c ../host/hw_kernel.c ../host/server_main.c ../host/sim_kernel.c ../../framework/host/hw_kernel.c ../../framework/host/protocol.h ../../framework/host/server_main.h ../host/hw_kernel.h ../host/kernel.h ../host/protocol.h ../host/server_main.h ../host/sim_kernel.h ../../framework/host/hw_kernel.h
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 401):
+	mkdir -p $(DEST_DIR)
+	cp sdaccel.ini ../out/$(BUILD_TARGET)/*/
+	cp sdaccel.ini ../out/$(BUILD_TARGET)/*
+	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
+
+host_debug: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host_debug
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+xclbin: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework.xclbin
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+debug_prints:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 616):
+	$(info host path: $(DEST_DIR)/$(HOST_EXE))
+
+# Not a target:
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework.xo:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+edit_kernel: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/kernel_added.flag
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 527):
+	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr" &
+
+shrink:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 363):
+	rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
+
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/kernel_added.flag: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/imports/kernel.xml
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 481):
+	@echo $(VIVADO_VERSION_MESSAGE)
+	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
+	@# Add user's kernel source code to project.
+	@mkdir -p ../out/sv  # Must exist for add_kernel.tcl
+	@# Add sources to project.
+	echo 'remove_files *_example_adder.v' > '$(VIVADO_PROJ_SCRIPT)' \
+	  && echo "add_files $$(ls $(SV_SRC) $(VH_SRC) $(FRAMEWORK_V_SRC) ../out/sv/*.v ../out/sv/*.sv ../out/sv/*.vh 2> /dev/null | tr "\n" " ")" >> '$(VIVADO_PROJ_SCRIPT)'
+	vivado -mode batch -nojournal -nolog -notrace -source '$(VIVADO_PROJ_SCRIPT)' '$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr'
+	@# Replace the adder example code with the user's kernel (including inner shell logic).
+	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
+	mv $(VADD_SV).hacked $(VADD_SV)
+	@# Also make the following edit to hook up ctrl_length arg (which must be specified in <shell-config>.json).
+	#@grep 'LP_DEFAULT_LENGTH_IN_BYTES;' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
+	#sed -i 's/=\s*LP_DEFAULT_LENGTH_IN_BYTES;/; assign ctrl_xfer_size_in_bytes = ctrl_length;/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
+	@# And stitch args through hierarchy.
+	@grep '( *ctrl_xfer_size_in_bytes *),' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
+	sed -i 's/( *ctrl_xfer_size_in_bytes *),/(ctrl_length), .resp_addr_offset (write_mem), .resp_xfer_size_in_bytes (resp_length),/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
+	@# Remove unused vadd example file.
+	rm "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.v"
+	# Hacked Xilinx template project without errors.
+	@# Signify successful completion for Make.
+	touch "$(USER_KERNEL_ADDED_FILE)"
+
+nothing:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 354):
+	@echo "No target specified. Nothing built."
+
+# Not a target:
+../fpga/src/clk_gate.sv:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/imports/kernel.xml: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/rtl_kernel_wiz.tcl
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 464):
+	@echo $(VIVADO_VERSION_MESSAGE)
+	vivado -mode batch -nojournal -nolog -notrace -source "$(DEST_DIR)/rtl_kernel_wiz.tcl" -tclargs $(KERNEL_NAME) "$(DEST_DIR)"
+
+copy_app:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 621):
+	if [[ -n '$(APP_NAME)' ]]; then $(REPO)/bin/copy_app '$(KERNEL_NAME)' '$(APP_NAME)'; else echo -e '\e[91m\e[1mAPP_NAME must be provided.\e[0m'; fi
+
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/sdx_imports/framework.xo: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/kernel_added.flag ../fpga/src/clk_gate.sv ../../framework/fpga/src/clk_gate.sv ../../framework/fpga/src/sandpiper.vh ../../framework/fpga/src/sandpiper_gen.vh ../../framework/fpga/src/sp_default.vh
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 516):
+	$(info $(VIVADO_VERSION_MESSAGE))
+	$(info "-----------------")
+	$(info "Packaging project")
+	$(info "-----------------")
+	-rm $(XO_FILE) 2> /dev/null || true  # Seems to be necessary to remove the old .xo file for some reason.
+	@NEWLINE=$$'\n'; \
+	DEST_DIR=`realpath $(DEST_DIR)`; \
+	echo "source $(DEST_DIR)/$(KERNEL_NAME)_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) xilinx kernel $(KERNEL_NAME)$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_NAME).xo -kernel_name $(KERNEL_NAME) -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl
+	vivado -mode batch -source "$(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
+
+chrome: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 609):
+	$(LAUNCH_CHECK)
+	@# Launch Chrome in background and webserver in foreground in "one-shot" mode (exit when websocket is closed).
+
+# Not a target:
+../host/default_main.c:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+clean:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 358):
+	sudo rm -rf ../out
+
+# Not a target:
+../../framework/fpga/src/sp_default.vh:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../../framework/fpga/default_shell_config.json:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+host: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+# Not a target:
+../host/hw_kernel.c:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../../framework/host/hw_kernel.c:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+shell: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/imports/kernel.xml
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework.xclbin: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/framework_ex/sdx_imports/framework.xo
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 536):
+	cp sdaccel.ini ../out/hw_emu/*/
+ 
+	mkdir -p ../out/hw_emu/*/plz/
+	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --dk protocol:all:all --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link --temp_dir ./_x/plz/ --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+
+# Not a target:
+../../framework/fpga/src/sandpiper.vh:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../../framework/fpga/scripts/produce_tcl_file.py:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../host/sim_kernel.c:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../host/hw_kernel.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+../../framework/fpga/src/sandpiper_gen.vh:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+launch: ../out/hw/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/host
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 602):
+	$(LAUNCH_CHECK)
+	@mkdir -p $(LAUNCH_DIR)
+	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
+
+# Not a target:
+../../framework/host/hw_kernel.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# files hash-table stats:
+# Load=52/1024=5%, Rehash=0, Collisions=8/134=6%
+# VPATH Search Paths
+
+# No 'vpath' search paths.
+
+# No general ('VPATH' variable) search path.
+
+# strcache buffers: 1 (0) / strings = 63 / storage = 1485 B / avg = 23 B
+# current buf: size = 8162 B / used = 1485 B / count = 63 / avg = 23 B
+
+# strcache performance: lookups = 133 / hit rate = 52%
+# hash-table stats:
+# Load=63/8192=1%, Rehash=0, Collisions=4/133=3%
+# Finished Make data base on Wed Aug 11 04:04:57 2021
+
+ 

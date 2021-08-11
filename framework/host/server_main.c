@@ -137,6 +137,7 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
 
   time_t sec1,sec2;
 
+  // Main HOST loop
   while (true) {
     if ((socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
       printf("%d\n", socket);
@@ -149,17 +150,17 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
       //cout << "C++ Main loop" << endl;
       loop_cnt++;
       if (loop_cnt > 20) {
-	kernel.clean_kernel();
-	break;
+        kernel.clean_kernel();
+        exit(1);
         if (verbosity > 5) {cout << "." << flush;}
         loop_cnt = 0;
       }
-	sec1 = time(NULL);
+      sec1 = time(NULL);
       cout << sec1 << " check1" << endl;
       processTraffic();
-	sec2 = time(NULL);
-	cout << sec2 << " check2" << endl;
-	cout << "LOOP COUNT  "<< loop_cnt << endl;
+      sec2 = time(NULL);
+      cout << sec2 << " check2" << endl;
+      cout << "LOOP COUNT  "<< loop_cnt << endl;
     }
   }
 
@@ -272,6 +273,27 @@ void HostApp::processTraffic() {
           exit(1);
         }
         break;
+      }
+      case START_KERNEL_N: // To initialize platform and start kerenel again
+      {
+        #ifdef OPENCL
+          init_platform(NULL);
+          init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
+          if (verbosity > 3) {cout_line() << "KERNEL STARTED" << endl;}
+        #endif
+        #ifdef KERNEL_AVAIL
+          kernel.reset_kernel();
+        #endif
+        break;
+      }
+      case CLEAN_KERNEL_N:
+      {
+        #ifdef KERNEL_AVAIL
+        if (verbosity > 1) {cout_line() << "Clean Kernel" << endl;}
+        kernel.clean_kernel(); // Shutdown and clean-up
+        #endif
+        // break;
+        exit(1);
       }
       case START_TRACING_N:
       {
