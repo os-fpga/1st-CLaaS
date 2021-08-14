@@ -153,14 +153,14 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
         loop_cnt = 0;
       }
 
-      processTraffic(xclbin, kernel_name);
+      processTraffic();
     }
   }
 
   return 0;
 }
 
-void HostApp::processTraffic(const char *xclbin, const char *kernel_name) {
+void HostApp::processTraffic() {
   int command;
 
   string msg = socket_recv_string("command");
@@ -221,15 +221,15 @@ void HostApp::processTraffic(const char *xclbin, const char *kernel_name) {
             #ifdef KERNEL_AVAIL
             // Process in FPGA.
             kernel.writeKernelData(int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
-            if (verbosity > 2) {cout << "Wrote kernel.process trafiic " << endl;}
+            if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
 
             kernel.start_kernel();
             if (verbosity > 2) {cout << "Started kernel." << endl;}
 
-            if (verbosity > 2) {cout << "Reading kernel dataTRA (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
+            if (verbosity > 2) {cout << "Reading kernel data (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
             kernel.read_kernel_data((int *)int_resp_data_p, resp_size * DATA_WIDTH_BYTES);
-            if (verbosity > 3) {cout << "Read kernel datagg (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
+            if (verbosity > 3) {cout << "Read kernel data (" << resp_size * DATA_WIDTH_BYTES << " bytes)." << endl;}
             #else
             // Fake the kernel.
             fakeKernel(size * DATA_WIDTH_BYTES, int_data_p, resp_size * DATA_WIDTH_BYTES, int_resp_data_p);
@@ -269,15 +269,16 @@ void HostApp::processTraffic(const char *xclbin, const char *kernel_name) {
       }
       case START_KERNEL_N: // To initialize platform and start kerenel again
       {
-        #ifdef OPENCL
-          init_platform(NULL);
-          init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
-          if (verbosity > 3) {cout_line() << "KERNEL STARTED" << endl;}
-        #endif
-        #ifdef KERNEL_AVAIL
-          kernel.reset_kernel();
-        #endif
-        break;
+        //#ifdef OPENCL
+        //  init_platform(NULL);
+        //  init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
+        //  if (verbosity > 3) {cout_line() << "KERNEL STARTED" << endl;}
+        //#endif
+        //#ifdef KERNEL_AVAIL
+        //  kernel.reset_kernel();
+        //#endif
+        //break;
+	exit(1);
       }
       case CLEAN_KERNEL_N:
       {
@@ -551,7 +552,7 @@ void HostApp::handle_get_image(int ** data_array_p, input_struct * input_p) {
           endl;
   }
   kernel.write_kernel_data(input_p, DATA_WIDTH_BYTES);  // sizeof(input_struct));  TODO: I used full data width, but the structure is smaller.
-  if (verbosity > 2) {cout << "Wrote kernel................." << endl;}
+  if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
   // check timing
   struct timespec start, end;
@@ -566,9 +567,9 @@ void HostApp::handle_get_image(int ** data_array_p, input_struct * input_p) {
   int data_bytes = input_p->width * input_p->height * (int)sizeof(int);
   *data_array_p = (int *) malloc(data_bytes);
 
-  if (verbosity > 2) {cout << "Reading kernel data. (" << data_bytes << " bytes)." << endl;}
+  if (verbosity > 2) {cout << "Reading kernel data (" << data_bytes << " bytes)." << endl;}
   kernel.read_kernel_data(*data_array_p, data_bytes);
-  if (verbosity > 3) {cout << "Read kernel data.. (" << data_bytes << " bytes)." << endl;}
+  if (verbosity > 3) {cout << "Read kernel data (" << data_bytes << " bytes)." << endl;}
 
   if (verbosity > 2) {
     // getting end time
@@ -608,4 +609,3 @@ int HostApp::get_command(const char * command) {
   else
     return -1;
 }
-

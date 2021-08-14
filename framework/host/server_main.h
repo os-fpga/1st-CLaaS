@@ -109,7 +109,7 @@ public:
   int server_main(int argc, char const *argv[], const char *kernel_name);
 
   // Main method for processing traffic from/to the client.
-  void processTraffic(const char *xclbin, const char *kernel_name);
+  void processTraffic();
 
   /*
   ** Data structure to handle a array of doubles and its size to have a dynamic behaviour

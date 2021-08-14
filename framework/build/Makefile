@@ -423,7 +423,6 @@ KERNEL_ADDITIONAL_FLAGS=
 
 #Device to be used
 TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
-# TARGET_DEVICE=xilinx_aws-vu9p-f1-04261818_dynamic_5_0
 
 REPORT=
 ifeq ($(BUILD_TARGET),hw)
@@ -641,7 +640,7 @@ $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 # Host for debug.
 $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
-	cp sdaccel.ini ../out/$(BUILD_TARGET)/*/
+	cp sdaccel.ini $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 else
 #sim target
@@ -658,6 +657,7 @@ $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 #	mkdir -p $(DEST_DIR)
+#	cp sdaccel.ini $(DEST_DIR)
 #	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 endif
 else
@@ -797,7 +797,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --dk protocol:all:all --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link --temp_dir ./_x/report_dir/ --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
@@ -1087,3 +1087,4 @@ list_setups:
 .PHONY: copy_app
 copy_app:
 	if [[ -n '$(APP_NAME)' ]]; then $(REPO)/bin/copy_app '$(KERNEL_NAME)' '$(APP_NAME)'; else echo -e '\e[91m\e[1mAPP_NAME must be provided.\e[0m'; fi
+	
