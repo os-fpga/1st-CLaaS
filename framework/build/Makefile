@@ -419,7 +419,11 @@ KERNEL_LDCLFLAGS=--nk $(KERNEL_NAME):1 \
 	--max_memory_ports $(KERNEL_NAME) \
 	--memory_port_data_width $(KERNEL_NAME):512 \
 
-KERNEL_ADDITIONAL_FLAGS=
+KERNEL_ADDITIONAL_FLAGS= --xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY}={rebuilt} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE}={AlternateRoutability} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.GATED_CLOCK_CONVERSION}={off} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.BUFG}={12} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT}={500} \
 
 #Device to be used
 TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
@@ -797,7 +801,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:

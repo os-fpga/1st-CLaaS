@@ -1,4 +1,5 @@
-\m4_TLV_version 1d --noline --debugSigs --compiler verilator: tl-x.org
+//\m4_TLV_version 1d --fmtFlatSignals --debugSigs --bestsv --noline: tl-x.org
+\m4_TLV_version 1d --noline --debugSigs: tl-x.org
 \SV
 // -----------------------------------------------------------------------------
 // Copyright (c) 2019, Steven F. Hoover
@@ -331,7 +332,7 @@ m4+definitions([''])  // A hack to reset line alignment to address the fact that
                $addr[M4_IMEM_INDEX_RANGE] = $in_data[(1 * M4_INSTR_CNT) + M4_IMEM_INDEX_MAX:(1 * M4_INSTR_CNT)];
                $instr[M4_INSTR_RANGE] = $in_data[(3 * M4_INSTR_CNT) - 1: 2 * M4_INSTR_CNT];
    
-   /core[1:0]
+   /M4_CORE_HIER
       // Mux from |kernel_in1@1 and |fetch@M4_FETCH_STAGE. TODO: No exclusivity check.
       |imem
          @1
