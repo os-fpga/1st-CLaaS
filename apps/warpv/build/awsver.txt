@@ -9,7 +9,7 @@
   "instanceId" : "i-06157a7afe221b791",
   "instanceType" : "c4.2xlarge",
   "kernelId" : null,
-  "pendingTime" : "2021-08-15T05:00:59Z",
+  "pendingTime" : "2021-08-16T19:18:01Z",
   "privateIp" : "172.31.23.12",
   "ramdiskId" : null,
   "region" : "us-east-1",

@@ -1,0 +1,212 @@
+#-----------------------------------------------------------
+# xsim v2018.3.op (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:36:41 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Mon Aug 16 19:51:03 2021
+# Process ID: 27277
+# Current directory: /home/centos/src/project_data/repo/apps/warpv/out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/.run/27212/hw_em/device0/binary_0/behav_waveform/xsim
+# Command line: xsim -log simulate.log -mode tcl -source {xsim.dir/emu_wrapper_behav/xsim_script.tcl}
+# Log file: /home/centos/src/project_data/repo/apps/warpv/out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/.run/27212/hw_em/device0/binary_0/behav_waveform/xsim/simulate.log
+# Journal file: /home/centos/src/project_data/repo/apps/warpv/out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/.run/27212/hw_em/device0/binary_0/behav_waveform/xsim/xsim.jou
+#-----------------------------------------------------------
+source xsim.dir/emu_wrapper_behav/xsim_script.tcl
+# xsim {emu_wrapper_behav} -wdb {xilinx_aws-vu9p-f1-04261818_dynamic_5_0-0-warpv.wdb} -autoloadwcfg -tclbatch {emu_wrapper.tcl} -key {Behavioral:sim_1:Functional:emu_wrapper} -protoinst {protoinst_files/emu.protoinst} -protoinst {./dr_behav.protoinst}
+Vivado Simulator 2018.3
+INFO: [Wavedata 42-565] Reading protoinst file protoinst_files/emu.protoinst
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/M01_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m01_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m01_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m01_couplers/auto_cc/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m01_couplers/auto_cc/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m01_couplers/m01_regslice/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/m01_couplers/m01_regslice/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/s00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/s00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/xbar/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/xbar/M01_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_axilite_user/xbar/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/S01_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/m00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/m00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/auto_cc/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/auto_cc/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/s01_data_fifo/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/s01_data_fifo/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/s01_regslice/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/s01_couplers/s01_regslice/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/xbar/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/xbar/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem0/xbar/S01_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem1/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem1/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem1/s00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem1/s00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem2/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem2/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem2/s00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem2/s00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem3/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem3/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem3/s00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_ddrmem3/s00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/M01_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/M02_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/M03_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m00_couplers/auto_cc/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m00_couplers/auto_cc/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m01_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m01_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m01_couplers/auto_cc/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m01_couplers/auto_cc/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m02_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m02_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m02_couplers/auto_cc/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m02_couplers/auto_cc/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m03_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m03_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m03_couplers/auto_cc/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/m03_couplers/auto_cc/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/s00_couplers/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/s00_couplers/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/s00_couplers/auto_us/M_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/s00_couplers/auto_us/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/xbar/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/xbar/M01_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/xbar/M02_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/xbar/M03_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//interconnect_aximm_host/xbar/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//sdaccel_generic_pcie_0/C0_DDR_SAXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//sdaccel_generic_pcie_0/C1_DDR_SAXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//sdaccel_generic_pcie_0/C2_DDR_SAXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//sdaccel_generic_pcie_0/C3_DDR_SAXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//sdaccel_generic_pcie_0/M_AXI_CTRL
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//sim_accel_mon_0/MON_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//sim_axi_perf_mon2_0/MON_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//to_delete_kernel_ctrl/S00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//warpv_1/m00_axi
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//warpv_1/s_axi_control
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//xdma_dummy/M00_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//xilmonitor_ddrmem0/mon_axi
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//xilmonitor_ddrmem1/mon_axi
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//xilmonitor_ddrmem2/mon_axi
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//xilmonitor_ddrmem3/mon_axi
+INFO: [Wavedata 42-564]   Found protocol instance at /emu_wrapper/emu_i//xilmonitor_warpv_1_m00_axi/mon_axi
+INFO: [Wavedata 42-565] Reading protoinst file ./dr_behav.protoinst
+WARNING: [Wavedata 42-559] Protocol instance "/emu_wrapper/emu_i//sim_axi_perf_mon2_0/MON_AXI" was created but is non-functional for the following reason(s):
+Interface requires a basic set of either write signals or read signals but is missing required signals from both sets.
+    Missing from the write set: AWADDR, AWVALID, AWREADY, WDATA, WVALID, WREADY
+    Missing from the read set: ARADDR, ARVALID, ARREADY, RDATA, RRESP, RVALID, RREADY
+
+Time resolution is 1 ps
+source emu_wrapper.tcl
+## log_wave -r *
+WARNING: [Simtcl 6-197] One or more HDL objects could not be logged because of object type or size limitations.  To see details please rerun the command with -verbose (-v).
+## if { [info exists ::env(SDX_WAVEFORM) ] } {
+##   if {[file exists $::env(SDX_WAVEFORM)] == 1} {
+##     open_wave_config $::env(SDX_WAVEFORM)
+##   }
+## }
+## if { [file exists preprocess_profile.tcl] } {
+##   source -notrace preprocess_profile.tcl
+## }
+## puts "We are running Simulator for infinite time. Added some default signals in the waveform. You can pause simulation and add signals and then resume the simulaion again."
+We are running Simulator for infinite time. Added some default signals in the waveform. You can pause simulation and add signals and then resume the simulaion again.
+## puts ""
+
+## puts "Stopping at breakpoint in simulator also stops the host code execution"
+Stopping at breakpoint in simulator also stops the host code execution
+## puts ""
+
+## if { [info exists ::env(SDX_LAUNCH_WAVEFORM_GUI) ] } {
+##   run 1ns
+## } else {
+##   run all
+## }
+
+Info: (I804) /IEEE_Std_1666/deprecated: sc_sensitive_pos is deprecated use sc_sensitive << with pos() instead
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+
+Warning: (W506) illegal characters: emu_wrapper.emu_i.sdaccel_generic_pcie_0 substituted by emu_wrapper_emu_i_sdaccel_generic_pcie_0
+In file: sc_object.cpp:262
+
+Warning: (W569) sc_module(const char*), sc_module(const std::string&) have been deprecated, use sc_module(const sc_module_name&): emu_wrapper.emu_i.sdaccel_generic_pcie_0
+In file: sc_module.cpp:243
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+WARNING: Behavioral models for independent clock FIFO configurations do not model synchronization delays. The behavioral models are functionally correct, and will represent the behavior of the configured FIFO. See the FIFO Generator User Guide for more information.
+
+Info: (I804) /IEEE_Std_1666/deprecated: sc_sensitive_pos is deprecated use sc_sensitive << with pos() instead
+
+Info: (I804) /IEEE_Std_1666/deprecated: You can turn off warnings about
+             IEEE 1666 deprecated features by placing this method call as the
+             first statement in your sc_main() function:
+
+  sc_report_handler::set_actions("/IEEE_Std_1666/deprecated", SC_DO_NOTHING);
+
+
+Info: [XPM_MEMORY 20-1] MEMORY_PRIMITIVE (0) instructs Vivado Synthesis to choose the memory primitive type. Depending on their values, other XPM_MEMORY parameters may preclude the choice of certain memory primitive types. Review XPM_MEMORY documentation and parameter values to understand any limitations, or set MEMORY_PRIMITIVE to a different value. emu_wrapper.emu_i.warpv_1.inst.inst_example.inst_example_vadd_m00_axi.inst_axi_read_master.gen_fifo.inst_rd_xpm_fifo_async.gnuram_async_fifo.xpm_fifo_base_inst.gen_sdpram.xpm_memory_base_inst.config_drc
+Time: 1 ps  Iteration: 0  Process: /emu_wrapper/emu_i/warpv_1/inst/inst_example/inst_example_vadd_m00_axi/inst_axi_read_master/gen_fifo.inst_rd_xpm_fifo_async/gnuram_async_fifo.xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/Initial285_3250  File: /wrk/2018.3/nightly/2018_12_06_2405991/packages/customer/vivado/data/ip/xpm/xpm_memory/hdl/xpm_memory.sv
+Warning: Vivado Simulator does not currently support the SystemVerilog Assertion syntax used within XPM_CDC.  Messages related to potential misuse will not be reported.
+Time: 1 ps  Iteration: 0  Process: /emu_wrapper/emu_i/warpv_1/inst/inst_example/inst_example_vadd_m00_axi/inst_ctrl_constant_kernel_clk/Initial1025_3354  File: /wrk/2018.3/nightly/2018_12_06_2405991/packages/customer/vivado/data/ip/xpm/xpm_cdc/hdl/xpm_cdc.sv
+Warning: [XPM_MEMORY 30-16] MEMORY_SIZE (1024), WRITE_DATA_WIDTH_A (32), and ADDR_WIDTH_A (32) together imply that the addressable range exceeds the memory size for this configuration which uses port A write operations. emu_wrapper.emu_i.warpv_1.inst.inst_example.inst_example_vadd_m00_axi.inst_adder.xpm_memory_sdpram_inst.xpm_memory_base_inst.config_drc
+Time: 1 ps  Iteration: 0  Process: /emu_wrapper/emu_i/warpv_1/inst/inst_example/inst_example_vadd_m00_axi/inst_adder/xpm_memory_sdpram_inst/xpm_memory_base_inst/Initial285_3640  File: /wrk/2018.3/nightly/2018_12_06_2405991/packages/customer/vivado/data/ip/xpm/xpm_memory/hdl/xpm_memory.sv
+Warning: [XPM_MEMORY 30-19] MEMORY_SIZE (1024), READ_DATA_WIDTH_B (32), and ADDR_WIDTH_B (32) together imply that the addressable range exceeds the memory size for this configuration which uses port B read operations. emu_wrapper.emu_i.warpv_1.inst.inst_example.inst_example_vadd_m00_axi.inst_adder.xpm_memory_sdpram_inst.xpm_memory_base_inst.config_drc
+Time: 1 ps  Iteration: 0  Process: /emu_wrapper/emu_i/warpv_1/inst/inst_example/inst_example_vadd_m00_axi/inst_adder/xpm_memory_sdpram_inst/xpm_memory_base_inst/Initial285_3640  File: /wrk/2018.3/nightly/2018_12_06_2405991/packages/customer/vivado/data/ip/xpm/xpm_memory/hdl/xpm_memory.sv
+Warning: [XPM_MEMORY 30-25] MESSAGE_CONTROL (1) specifies simulation message reporting, but any potential collisions reported for this configuration should be further investigated in netlist timing simulations for improved accuracy. emu_wrapper.emu_i.warpv_1.inst.inst_example.inst_example_vadd_m00_axi.inst_adder.xpm_memory_sdpram_inst.xpm_memory_base_inst.config_drc
+Time: 1 ps  Iteration: 0  Process: /emu_wrapper/emu_i/warpv_1/inst/inst_example/inst_example_vadd_m00_axi/inst_adder/xpm_memory_sdpram_inst/xpm_memory_base_inst/Initial285_3640  File: /wrk/2018.3/nightly/2018_12_06_2405991/packages/customer/vivado/data/ip/xpm/xpm_memory/hdl/xpm_memory.sv
+Warning: MESSAGE_CONTROL (1) specifies simulation message reporting, but this release of XPM_MEMORY only reports messages for true dual port RAM and simple dual port RAM configurations which specify auto or block memory primitive types.
+Time: 1 ps  Iteration: 0  Process: /emu_wrapper/emu_i/warpv_1/inst/inst_example/inst_example_vadd_m00_axi/inst_adder/xpm_memory_sdpram_inst/xpm_memory_base_inst/Initial3191_3645  File: /wrk/2018.3/nightly/2018_12_06_2405991/packages/customer/vivado/data/ip/xpm/xpm_memory/hdl/xpm_memory.sv
+Warning: Vivado Simulator does not currently support the SystemVerilog Assertion syntax used within XPM_MEMORY. Memory collisions will not be reported.
+Time: 1 ps  Iteration: 0  Process: /emu_wrapper/emu_i/warpv_1/inst/inst_example/inst_example_vadd_m00_axi/inst_adder/xpm_memory_sdpram_inst/xpm_memory_base_inst/Initial3191_3645  File: /wrk/2018.3/nightly/2018_12_06_2405991/packages/customer/vivado/data/ip/xpm/xpm_memory/hdl/xpm_memory.sv
+
+Warning: (W509) module construction not properly completed: did you forget to add a sc_module_name parameter to your module constructor?: module 'emu_wrapper_emu_i_sdaccel_generic_pcie_0'
+In file: sc_module.cpp:403
+End of simulation
+$finish called at time : 36963542 ps
+
+Info: /OSCI/SystemC: Simulation stopped by user.
+run: Time (s): cpu = 00:00:03 ; elapsed = 00:01:00 . Memory (MB): peak = 1506.312 ; gain = 76.031 ; free physical = 2867 ; free virtual = 27865
+## if { [file exists profile.tcl] } {
+##   source -notrace profile.tcl
+## }
+Waiting for protocol analyzers to complete...
+Done!
+## if { [info exists ::env(SDX_LAUNCH_WAVEFORM_BATCH) ] } {
+## quit
+## }
+INFO: [Common 17-206] Exiting xsim at Mon Aug 16 19:52:16 2021...

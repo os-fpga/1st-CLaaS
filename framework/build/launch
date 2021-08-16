@@ -157,7 +157,7 @@ launch () {
     then
         $HOST &
     else
-        sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
+        sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; source /home/centos/src/project_data/repo/framework/build/scripts.sh ; $HOST" &
     fi
     export HOST_PID=$!
   fi
