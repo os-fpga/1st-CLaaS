@@ -32,7 +32,7 @@ then
   echo "$(pwd)/verilator exists."
   echo "To reinstall, first 'rm -rf $(pwd)/verilator'."
 else
-  curl https://www.veripool.org/ftp/verilator-4.018.tgz | tar -zx
+  curl https://www.veripool.org/ftp/verilator-4.210.tgz | tar -zx
   mv verilator* verilator  # So path is not version-dependent.
   cd verilator
   ./configure
