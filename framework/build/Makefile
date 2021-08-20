@@ -801,7 +801,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link --optimize 1 --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link --optimize 2 --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
