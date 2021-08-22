@@ -1,5 +1,4 @@
-//\m4_TLV_version 1d --fmtFlatSignals --debugSigs --bestsv --noline: tl-x.org
-\m4_TLV_version 1d --noline --debugSigs: tl-x.org
+\m4_TLV_version 1d --fmtFlatSignals --debugSigs --bestsv --noline --compiler verilator: tl-x.org
 \SV
 // -----------------------------------------------------------------------------
 // Copyright (c) 2019, Steven F. Hoover
@@ -79,7 +78,7 @@ m4+definitions(['
    m4_def(EXT_M, 0)
    m4_def(EXT_F, 0)
    m4_def(EXT_B, 0)
-   m4_def(NUM_CORES, 5)
+   m4_def(NUM_CORES, 2)
    m4_def(NUM_VCS, 2)
    m4_def(NUM_PRIOS, 2)
    m4_def(MAX_PACKET_SIZE, 8)
