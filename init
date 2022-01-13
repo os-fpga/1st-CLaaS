@@ -25,7 +25,7 @@ if [[ -n "$(which apt-get 2> /dev/null)" ]]
 then
   # Ubuntu
   sudo apt-get update
-  sudo apt-get -y install g++ python3 python3-pip python3-pil $COMMON_PACKAGES
+  sudo apt-get -y install curl g++ python3 python3-pip python3-pil $COMMON_PACKAGES
   #sudo python3 -m pip install Pillow
 elif [[ -n "$(which yum 2> /dev/null)" ]]
 then
@@ -33,7 +33,7 @@ then
 
   # For Python:
   sudo yum makecache
-  sudo yum -y install yum-utils
+  sudo yum -y install yum-utils curl
   sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm
   sudo yum makecache
   sudo yum -y install python35u python35u-pip
