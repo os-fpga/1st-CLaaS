@@ -36,7 +36,7 @@ else
   mv verilator* verilator  # So path is not version-dependent.
   cd verilator
   ./configure
-  make
+  make -j$(nproc)
 fi
 
 if [[ "$arg1" == "global" ]]

@@ -596,7 +596,7 @@ config:
 	@echo 'Enter AWS profile to associate with your 1st CLaaS work. If desired, create a new IAM user via the AWS Management Console.'
 	@ if [[ -e '~/.aws/config' && -e '~/.aws/credentials' ]];\
 	  then echo 'Known (already-configured via "aws configure" AWS profiles (if any):';\
-	       grep '\[profile' ~/.aws/config | sed 's/^\[profile \(.*\)\]$/\1/';\
+		   grep '\[profile' ~/.aws/config | sed 's/^\[profile \(.*\)\]$/\1/';\
 	  fi
 	$(call config_param,AWS_PROFILE)
 	@echo
@@ -674,15 +674,14 @@ endif
 sv: $(SV_FROM_TLV)
 ../out/sv/%.sv: ../fpga/src/%.tlv $(TLVLIB)
 	rm -rf ../out/sv/$*
-	mkdir -p ../out/sv/$*
+	mkdir -p ../out/sv/$*/out
 ifeq ($(SANDPIPER),)
 	@# Run SandPiper(TM) SaaS Edition on TLV files.
 	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
-	cd ../out/sv/$* && curl -F 'top.tlv=@../../$<' $(SP_CURL_FILES) http://saas.makerchip.com/sandpiper | tar -zx
-	cat ../out/sv/$*/out/stdout
+	cd ../out/sv/$*
+	yes | sandpiper-saas -i ../fpga/src/$*.tlv -o $*.sv --outdir ../out/sv/$*/out/ --sv_url_inc --iArgs 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 else
 	@# Use local SandPiper, given by $(SANDPIPER)
-	mkdir ../out/sv/$*/out  # As would be produced by SandPiper SaaS.
 	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 endif
 	(( $$(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
@@ -939,7 +938,7 @@ FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/centos/src/project_data/repo
 INSTANCE_TYPE=UNDEFINED
 INSTANCE_CONFIG_SCRIPT=UNDEFINED
 ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
-	INSTANCE_NAME=1st-CLaaS_devel
+	INSTANCE_NAME=manycore
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=c4.2xlarge
 	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
