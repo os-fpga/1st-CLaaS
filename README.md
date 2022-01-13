@@ -162,7 +162,7 @@ Anything and everything is subject to change at this point, especially with resp
     - <a href="https://abopen.com/news/1st-claas-and-google-summer-of-code-work-to-open-the-floodgates-of-free-and-open-source-silicon/">AB Open reported</a> on the Google post.
     - Gareth Halfacree reported on <a href="https://medium.com/librecores/el-correo-libre-issue-20-161dd5e3b9f9">1st CLaaS in El Correo Libre</a>.
   - 1st CLaaS has been presented at several conferences:
-    - An invited talk, called "Unleashing Open-Source Silicon" by Steve Hoover in VSDOpen 2019. (<a href="https://www.youtube.com/watch?v=olMu-reXpDY&t=577s" target="_ blank">video</a>, <a href="https://7d23d460-2749-400d-b005-324f0112e947.filesusr.com/ugd/a8abed_49b0b24a022e43df92ab88af28ad8260.pdf" target="_ blank">slides</a>, <a href="https://www.udemy.com/course/vsdopen2019-vlsi-online-conference/" target="_ blank">all of VSDOpen 2019</a>)
+    - An invited talk, called "Unleashing Open-Source Silicon" by Steve Hoover in VSDOpen 2019. (<a href="https://www.youtube.com/watch?v=olMu-reXpDY" target="_ blank">video</a>, <a href="https://7d23d460-2749-400d-b005-324f0112e947.filesusr.com/ugd/a8abed_49b0b24a022e43df92ab88af28ad8260.pdf" target="_ blank">slides</a>, <a href="https://www.udemy.com/course/vsdopen2019-vlsi-online-conference/" target="_ blank">all of VSDOpen 2019</a>)
     - A similar <a href="https://www.youtube.com/watch?v=FARF48mjTjI" target="_ blank">invited talk at VSDOpen 2018</a> by Steve Hoover when 1st CLaaS was merely potential.
     - A talk by Akos Hadnagy on <a href="https://www.youtube.com/watch?v=RklNlgQ8AMo" target="_ blank">1st CLaaS at ORConf 2019</a>.
   - Here's a write-up from Steve Hoover on [how 1st CLaaS came to be](doc/Story.md).
