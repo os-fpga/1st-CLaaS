@@ -35,6 +35,7 @@ RESULT_STRING = TEST PASSED
 VPP := v++ 
 SDCARD := sd_card
 
+
 # include $(ABS_COMMON_REPO)/common/includes/opencl/opencl.mk
 include config.mk
 
@@ -43,8 +44,8 @@ LDFLAGS += $(opencl_LDFLAGS)
 
 ############################## Setting up Host Variables ##############################
 #Include Required Host Source Files
-CXXFLAGS += -I$(ABS_COMMON_REPO)/common/includes/xcl2
-HOST_SRCS += $(ABS_COMMON_REPO)/common/includes/xcl2/xcl2.cpp src/host.cpp 
+CXXFLAGS += -I ../../host/xcl2
+HOST_SRCS += ../../host/xcl2.cpp src/host.cpp 
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 

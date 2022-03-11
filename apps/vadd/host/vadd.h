@@ -43,22 +43,37 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **
 ** Author: Alessandro Comodi, Politecnico di Milano
 **
+** TODO: There's still a lot of image-specific content here. Partition cleanly.
 */
 
+// THIS CODE NOT YET ENABLED
+// ERROR
 
-#include <cstdlib>
+#ifndef VADD_H
+#define VADD_H
+
+#include <string>
+#include <time.h>
 
 
-void HostApp::fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer) {
-  if (bytes_out != bytes_in) {
-    cerr_line() << "VAdd fakeServer expects bytes_out (" << bytes_out << ") == bytes_in (" << bytes_in << "). Exiting." << endl;
-    exit(1);
-  }
-  if (bytes_in & 0x3) {
-    cerr_line() << "VAdd fakeKernel expects uint32's, but received " << bytes_in << " bytes." << endl;
-  }
-  
-  for (int i = 0, uint32 * in = (uint32 *)in_buffer, uint32 * out = (uint32 *)out_buffer; i < bytes_in >> 2; i++, in++, out++) {
-    *out = *in + 1;
-  }
-}
+#include "server_main.h"
+#include <plasma/client.h>
+#include "arrow/util/logging.h"
+using namespace plasma;
+using namespace std;
+
+
+std::vector<uint, aligned_allocator<uint> > input_string(2*GENOME_SIZE * MAX_GENOME_LEN);
+std::map<char, uint> _char_to_bits { {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}};
+
+// ---------------------------------------------------------------------------------------------------------
+class HostVAddApp : public HostApp {
+
+public:
+  // Without OpenCL, define fake vadd kernel behavior for testing the client.
+  // Othersize, default passthrough behavior is fine.
+  // void fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer);
+};
+
+
+#endif
