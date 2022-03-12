@@ -94,6 +94,7 @@ void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len)
 
 void HostVAddApp::init_platform(const char* xclbin){
     auto devices = xcl::get_xil_devices();
+    cout << "SIZE: " << devices.size() << "\n";
 
     // read_binary_file() is a utility API which will load the binaryFile
     // and will return the pointer to file buffer.
