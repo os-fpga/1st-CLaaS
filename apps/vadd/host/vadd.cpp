@@ -128,9 +128,9 @@ void HostVAddApp::clean_kernel() {
 }
 
 
-void HostVAddApp::fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer) {
+// void HostVAddApp::fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer) {
 
-}
+// }
 
 
 
