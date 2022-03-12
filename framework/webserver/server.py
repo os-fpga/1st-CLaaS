@@ -494,9 +494,9 @@ class FPGAServerApplication(tornado.web.Application):
     def handlePing(self, data, type, ws):
         return {'type': type}
 
-    def handleCommandMsg(self, data, type, ws):
-        self.socket.send_string("command", type)
-        return {'type': type}
+    # def handleCommandMsg(self, data, type, ws):
+    #     self.socket.send_string("command", type)
+    #     return {'type': type}
 
     # Called when a new WebSocket connection is made.
     # Args:
@@ -623,7 +623,7 @@ class FPGAServerApplication(tornado.web.Application):
 
         super(FPGAServerApplication, self).__init__(routes)
 
-        self.socket = Socket(self.socket_filename)
+        # self.socket = Socket(self.socket_filename)
 
         # Launch server (with SSL or not)
         self.use_ssl = self.args['ssl_key_file'] != None and self.args['ssl_crt_file'] != None
