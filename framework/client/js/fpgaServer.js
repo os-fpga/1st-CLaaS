@@ -201,9 +201,14 @@ class fpgaServer {
   // Args:
   //   - resp_size: The number of chunks that must be returned in response. (The need to provide this is an artifact of the current implementation.)
   //   - chunks: An array of arrays of up to 16 32-bit signed or unsigned integer values. Chunks with fewer than 16 values will be padded w/ 0 values.
+  
   sendChunks(resp_size, chunks) {
+
+    console.log("Chunck: ", chunks)
+
     chunks.forEach( (el) => {
       // Pad the chunks.
+
       for (let i = el.length; i < 16; i++) {
         el[i] = 0;
       };

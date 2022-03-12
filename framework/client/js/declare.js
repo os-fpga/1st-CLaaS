@@ -1,0 +1,1 @@
+var jsonstr = [{"data": "TGTCGTCATAGCCGTT"}] 
