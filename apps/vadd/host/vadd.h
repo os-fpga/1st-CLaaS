@@ -58,13 +58,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "server_main.h"
 #include "xcl2.hpp"
-// #include <plasma/client.h>
-// #include "arrow/util/logging.h"
+#include <plasma/client.h>
+#include "arrow/util/logging.h"
 #include <bitset>
 #include <vector>
 #include <map>
 
-// using namespace plasma;
+using namespace plasma;
 using namespace std;
 
 #define DATA_SIZE 256
