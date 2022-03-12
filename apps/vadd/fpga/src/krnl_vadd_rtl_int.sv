@@ -253,7 +253,7 @@ assign size = ((state[0]==0) ? 32'd1 : 32'd1);
 
 initial begin
   $dumpfile("value.vcd");
-  $monitor ("[$monitor] time=%0t address=0x%0h data_read=0x%0h", $time, m_axi_gmem_ARADDR, rd_tdata);
+  $monitor ("[$monitor] add=0x%0h val=0x%0h data=0x%0h", m_axi_gmem_AWADDR, wr_fifo_tvalid_n, wr_fifo_tdata);
 end
 
 // AXI4 Read Master
