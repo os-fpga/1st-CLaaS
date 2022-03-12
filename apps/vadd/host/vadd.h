@@ -75,9 +75,9 @@ class HostVAddApp : public HostApp {
 
 public:
 cl_int err;
-cl::CommandQueue q;
+cl::CommandQueue commands;
 cl::Context context;
-cl::Kernel krnl_vadd;
+cl::Kernel kernel;
 cl::Program program;
 void init_platform(const char* xclbin);
 void init_kernel();
