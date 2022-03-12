@@ -63,13 +63,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace plasma;
 using namespace std;
 
+#define DATA_SIZE 256
 const unsigned int MAX_GENOME_LEN = 256;
 const unsigned int GENOME_SIZE = 2;
 const unsigned int IN_MEM_SIZE = 2*MAX_GENOME_LEN*GENOME_SIZE;
 const unsigned int OUT_MEM_SIZE = MAX_GENOME_LEN*20;
 std::vector<uint, aligned_allocator<uint> > input_string(2*GENOME_SIZE * MAX_GENOME_LEN);
 std::map<char, uint> _char_to_bits { {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}};
-std::vector<uint8_t, aligned_allocator<uint8_t> > source_hw_results(size);
+std::vector<uint8_t, aligned_allocator<uint8_t> > source_hw_results(DATA_SIZE);
 // ---------------------------------------------------------------------------------------------------------
 class HostVAddApp : public HostApp {
 
@@ -79,6 +80,8 @@ cl::CommandQueue commands;
 cl::Context context;
 cl::Kernel kernel;
 cl::Program program;
+cl::Buffer buffer_r1;
+cl::Buffer buffer_w;
 void init_platform(const char* xclbin);
 void init_kernel();
 void write_data();

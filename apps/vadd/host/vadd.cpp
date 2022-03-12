@@ -82,10 +82,10 @@ void HostVAddApp::init_platform(const char* xclbin){
 }
 void HostVAddApp::init_kernel(){
   OCL_CHECK(err, kernel = cl::Kernel(program, "krnl_vadd_rtl", &err));
-  OCL_CHECK(err, cl::Buffer buffer_r1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
+  OCL_CHECK(err, buffer_r1 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
                                         input_string.data(), &err));
   std::cout << "-2" << std::endl;
-  OCL_CHECK(err, cl::Buffer buffer_w(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, OUT_MEM_SIZE,
+  OCL_CHECK(err, buffer_w = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, OUT_MEM_SIZE,
                                       source_hw_results.data(), &err));
 
   // Set the Kernel Arguments
@@ -105,26 +105,26 @@ void HostVAddApp::write_data(){
 
 void HostVAddApp::start_kernel() {
   int err;
-  OCL_CHECK(err, err = commands.enqueueTask(krnl_vadd));
+  OCL_CHECK(err, err = commands.enqueueTask(kernel));
   std::cout << "2" << std::endl;
 
   // Copy Result from Device Global Memory to Host Local Memory
   OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_w}, CL_MIGRATE_MEM_OBJECT_HOST));
   std::cout << "3" << std::endl;
   OCL_CHECK(err, err = commands.finish());
-  status = 0;
+  // int status = 0;
 }
 
 
 void HostVAddApp::clean_kernel() {
   // This has to be modified by the user if the number (or name) of arguments is different
-  clReleaseMemObject(read_mem);
-  clReleaseMemObject(write_mem);
+  // clReleaseMemObject(buffer_r1);
+  // clReleaseMemObject(buffer_w);
 
-  clReleaseProgram(program);
-  clReleaseKernel(kernel);
-  clReleaseCommandQueue(commands);
-  clReleaseContext(context);
+  // clReleaseProgram(program);
+  // clReleaseKernel(kernel);
+  // clReleaseCommandQueue(commands);
+  // clReleaseContext(context);
 }
 
 
