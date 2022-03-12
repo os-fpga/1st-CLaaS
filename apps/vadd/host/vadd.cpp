@@ -47,6 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include <cstdlib>
+#include "vadd.h"
 
 
 void HostVAddApp::init_platform(){
