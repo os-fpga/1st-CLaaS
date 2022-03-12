@@ -137,6 +137,7 @@ std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << st
 void HostVAddApp::init_platform(const char* xclbin){
     auto devices = xcl::get_xil_devices();
     cout << "SIZE: " << devices.size() << "\n";
+    std::vector<uint8_t, aligned_allocator<uint8_t> > source_hw_results(1024);
 
     // read_binary_file() is a utility API which will load the binaryFile
     // and will return the pointer to file buffer.
@@ -234,57 +235,37 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 #endif
   // Poor-mans arg parsing.
   int argn = 1;
-  // if (strcmp(argv[1], "-s") == 0) {
-  //   socket_filename = argv[2];
-  //   argn += 2;
-  // }
-  // if (argc != argn + opencl_arg_cnt) {
-  //   printf("Usage: %s [-s socket] %s\n", argv[0], opencl_arg_str.c_str());
-  //   return EXIT_FAILURE;
-  // }
+  std::string binaryFile = argv[1];
 
-// #ifdef OPENCL
-  // Name of the .xclbin binary file and the name of the Kernel passed as arguments
-  const char *xclbin = argv[1];
-  cout << xclbin << " END\n";
-// #endif
-  cl::CommandQueue q;
-  cl::Context context;
-  cl::Kernel krnl_vadd;
-  // #ifdef OPENCL
-    // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
-  // init_platform(xclbin);
-    // init_kernel();  // TODO: FIX size.
-  // #endif
-
-  #ifdef KERNEL_AVAIL
-    // kernel.reset_kernel();
-  #endif
-
-    int loop_cnt = 0;
-    // processTraffic();
+    cl_int err;
+    auto size = DATA_SIZE;
+    // Allocate Memory in Host Memory
+    auto vector_size_bytes = sizeof(int) * size;
+    std::vector<uint8_t, aligned_allocator<uint8_t> > source_hw_results(1024);
+    std::vector<int, aligned_allocator<int> > source_sw_results(size);
 
 
+    // OPENCL HOST CODE AREA START
+    // Create Program and Kernel
     auto devices = xcl::get_xil_devices();
 
     // read_binary_file() is a utility API which will load the binaryFile
     // and will return the pointer to file buffer.
-    auto fileBuf = xcl::read_binary_file(xclbin);
+    auto fileBuf = xcl::read_binary_file(binaryFile);
     cl::Program::Binaries bins{{fileBuf.data(), fileBuf.size()}};
     bool valid_device = false;
     for (unsigned int i = 0; i < devices.size(); i++) {
         auto device = devices[i];
         // Creating Context and Command Queue for selected Device
         OCL_CHECK(err, context = cl::Context(device, nullptr, nullptr, nullptr, &err));
-        OCL_CHECK(err, q = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
+        OCL_CHECK(err, commands = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
 
         std::cout << "Trying to program device[" << i << "]: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
-        cl::Program program(context, {device}, bins, nullptr, &err);
+        program = cl::Program(context, {device}, bins, nullptr, &err);
         if (err != CL_SUCCESS) {
             std::cout << "Failed to program device[" << i << "] with xclbin file!\n";
         } else {
             std::cout << "Device[" << i << "]: program successful!\n";
-            OCL_CHECK(err, krnl_vadd = cl::Kernel(program, "krnl_vadd_rtl", &err));
             valid_device = true;
             break; // we break because we found a valid device
         }
@@ -299,56 +280,26 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
     // send_data2(output);
     std::cout << "sent" << std::endl;
     // Allocate Buffer in Global Memory
-    OCL_CHECK(err, cl::Buffer buffer_r1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
-                                        input_string.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_r2(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, vector_size_bytes,
-    //                                     source_input2.data(), &err));
-    std::cout << "-2" << std::endl;
-    OCL_CHECK(err, cl::Buffer buffer_w(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, OUT_MEM_SIZE,
-                                       source_hw_results.data(), &err));
+        // for(int j = 32*i; j < 32; j++){
+        //     std::cout<< output_string[j];
+        // }
+        // std::cout << "\n";
+        // if (source_hw_results[i] != source_sw_results[i]) {
+        //     std::cout << "Error: Result mismatch" << std::endl;
+        //     std::cout << "i = " << i << " Software result = " << source_sw_results[i]
+        //               << " Device result = " << source_hw_results[i] << std::endl;
+        //     match = 1;
+        //     break;
+        // }
+    // }
 
-    // Set the Kernel Arguments
-    OCL_CHECK(err, err = krnl_vadd.setArg(0, buffer_r1));
-    std::cout << "-1" << std::endl;
-    // OCL_CHECK(err, err = krnl_vadd.setArg(1, buffer_r2));
-    OCL_CHECK(err, err = krnl_vadd.setArg(1, buffer_w));
-    std::cout << "0" << std::endl;
-    OCL_CHECK(err, err = krnl_vadd.setArg(2, 64)); //2*GENOME_SIZE * MAX_GENOME_LEN
-
-    // Copy input data to device global memory
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_r1}, 0 /* 0 means from host*/));
-    std::cout << "1" << std::endl;
-    // Launch the Kernel
-    OCL_CHECK(err, err = q.enqueueTask(krnl_vadd));
-    std::cout << "2" << std::endl;
-
-    // Copy Result from Device Global Memory to Host Local Memory
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_w}, CL_MIGRATE_MEM_OBJECT_HOST));
-    std::cout << "3" << std::endl;
-    OCL_CHECK(err, err = q.finish());
-
-    // OPENCL HOST CODE AREA END
-
-    // Compare the results of the Device to the simulation
-    int match = 0;
-    std::cout << "Result:\n";
-    for (int i = 0; i < 64; i++) {
-        for (int j = 0; j < 16; j++) {
-            std::bitset<8> set(source_hw_results[i*16+j]);
-            // std::bitset<32> set2(output_string[i]);
-            std::cout << std::dec << int(source_hw_results[i*16+j]) << " ";
-            // std::cout << "SW: " << set2 << "\n";
-        }
-        std::cout << "\n";
-    }
-    
   // }
-
+  processTraffic();
   return 0;
 }
 
 
-// void HostVAddApp::processTraffic() {
+void HostVAddApp::processTraffic() {
 
 //   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //   /////////////////////////////////////////// PLASMA - GET THE OBJECT /////////////////////////////////////
@@ -553,7 +504,53 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 
 //       // Disconnect the Plasma client.
 //       ARROW_CHECK_OK(client.Disconnect());
-// }
+
+    OCL_CHECK(err, kernel = cl::Kernel(program, "krnl_vadd_rtl", &err));
+    OCL_CHECK(err, cl::Buffer buffer_r1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
+                                        input_string.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_r2(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, vector_size_bytes,
+    //                                     source_input2.data(), &err));
+    std::cout << "-2" << std::endl;
+    OCL_CHECK(err, cl::Buffer buffer_w(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, OUT_MEM_SIZE,
+                                       source_hw_results.data(), &err));
+
+    // Set the Kernel Arguments
+    OCL_CHECK(err, err = kernel.setArg(0, buffer_r1));
+    std::cout << "-1" << std::endl;
+    // OCL_CHECK(err, err = krnl_vadd.setArg(1, buffer_r2));
+    OCL_CHECK(err, err = kernel.setArg(1, buffer_w));
+    std::cout << "0" << std::endl;
+    OCL_CHECK(err, err = kernel.setArg(2, 64)); //2*GENOME_SIZE * MAX_GENOME_LEN
+
+    // Copy input data to device global memory
+    OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_r1}, 0 /* 0 means from host*/));
+    std::cout << "1" << std::endl;
+    // Launch the Kernel
+    OCL_CHECK(err, err = commands.enqueueTask(kernel));
+    std::cout << "2" << std::endl;
+
+    // Copy Result from Device Global Memory to Host Local Memory
+    OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_w}, CL_MIGRATE_MEM_OBJECT_HOST));
+    std::cout << "3" << std::endl;
+    OCL_CHECK(err, err = commands.finish());
+
+    // OPENCL HOST CODE AREA END
+
+    // Compare the results of the Device to the simulation
+    int match = 0;
+    std::cout << "Result:\n";
+    for (int i = 0; i < 64; i++) {
+        for (int j = 0; j < 16; j++) {
+            std::bitset<8> set(source_hw_results[i*16+j]);
+            // std::bitset<32> set2(output_string[i]);
+            std::cout << std::dec << int(source_hw_results[i*16+j]) << " ";
+            // std::cout << "SW: " << set2 << "\n";
+        }
+        std::cout << "\n";
+    }
+        std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl;
+
+}
 
 int main(int argc, char const *argv[])
 {
