@@ -32,7 +32,7 @@
 #
 # *******************************************************************************/
 
-set path_to_hdl "./src/hdl"
+set path_to_hdl "../fpga/src"
 set path_to_packaged "./packaged_kernel_${suffix}"
 set path_to_tmp_project "./tmp_kernel_pack_${suffix}"
 

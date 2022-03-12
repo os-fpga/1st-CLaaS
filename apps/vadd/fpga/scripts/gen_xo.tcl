@@ -46,7 +46,7 @@ set device    [lindex $::argv 4]
 
 set suffix "${krnl_name}_${target}_${device}"
 
-source -notrace ./scripts/package_kernel.tcl
+source -notrace ../fpga/scripts/package_kernel.tcl
 
 if {[file exists "${xoname}"]} {
     file delete -force "${xoname}"
