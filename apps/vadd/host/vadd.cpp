@@ -270,9 +270,9 @@ void HostVAddApp::processTraffic() {
   test_data[15] = 3;
 
   // Check that the data agrees with what was written in the other process.
-  for (int64_t i = 0; i < 16; i++) {
-      cout << ARROW_CHECK(rcv_data1[i] == static_cast<uint8_t>(test_data[i]));
-  }
+  // for (int64_t i = 0; i < 16; i++) {
+  //     cout << ARROW_CHECK(rcv_data1[i] == static_cast<uint8_t>(test_data[i]));
+  // }
 
   cout << endl;
 
@@ -316,9 +316,9 @@ void HostVAddApp::processTraffic() {
   send_data(rcv_data1, rcv_data_size1, rcv_data2, rcv_data_size2);
 
   // Check that the data agrees with what was written in the other process.
-  for (int64_t i = 0; i < 16; i++) {
-      cout << ARROW_CHECK(rcv_data2[i] == static_cast<uint8_t>(test_data[i]));
-  }
+  // for (int64_t i = 0; i < 16; i++) {
+  //     cout << ARROW_CHECK(rcv_data2[i] == static_cast<uint8_t>(test_data[i]));
+  // }
 
   cout << endl;
 

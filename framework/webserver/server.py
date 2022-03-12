@@ -457,7 +457,7 @@ class FPGAServerApplication(tornado.web.Application):
 
         # Create an object buffer2.
         object_id = plasma.ObjectID(20 * b"e")
-        object_size = 16
+        object_size = 64
         buffer2 = memoryview(client.create(object_id, object_size))
 
 
@@ -472,7 +472,7 @@ class FPGAServerApplication(tornado.web.Application):
         y = json.loads(data)
         print("Data:", y['data'])
         z = y['data'][1]
-        for i in range(16):
+        for i in range(64):
             print("Data:", z[i])
             if (z[i] == 'A'):
                 buffer2[i] = 0
