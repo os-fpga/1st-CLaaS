@@ -51,7 +51,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // #include "mandelbrot.h"
 
 using namespace std;
-using namespace lodepng;
+// using namespace lodepng;
 
 
 
