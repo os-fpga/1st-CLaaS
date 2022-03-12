@@ -539,15 +539,72 @@ void HostVAddApp::processTraffic() {
     // Compare the results of the Device to the simulation
     int match = 0;
     std::cout << "Result:\n";
+    int max = 0, maxi = 0, maxj = 0;
+
     for (int i = 0; i < 64; i++) {
         for (int j = 0; j < 16; j++) {
             std::bitset<8> set(source_hw_results[i*16+j]);
             // std::bitset<32> set2(output_string[i]);
             std::cout << std::dec << int(source_hw_results[i*16+j]) << " ";
+
+            if(source_hw_results[i*16+j] > max){
+              maxi = i;
+              maxj = j;
+            }
             // std::cout << "SW: " << set2 << "\n";
         }
         std::cout << "\n";
     }
+
+    vector<int> v1;
+    vector<int> v2;
+    int curri=maxi, currj=maxj;
+    while(source_hw_results[curri*16+currj] > 0){
+      int i = 0;
+      int d0 = 0, d1 = 0, d2 = 0;
+      if(curri > 0 && currj > 0){
+        d0 = source_hw_results[(curri-1)*16+(currj-1)]);
+      }
+      else if(curri == 0 && currj == 0){
+        break;
+      }
+      else if(curri == 0){
+        d2 = source_hw_results[(curri)*16+(currj-1)]);
+      }
+      else if(currj == 0){
+        d1 = source_hw_results[(curri-1)*16+(currj)]);
+      }
+      else{
+        d1 = source_hw_results[(curri-1)*16+(currj)]);
+        d2 = source_hw_results[(curri)*16+(currj-1)]);
+      }
+      if(d0 == 0 && d1 == 0 && d2 == 0){
+        break;
+      } else if( d0 > d1 && d0 > d2){
+        v1.insert(0, rcv_data1[currj]);
+        v2.insert(0, rcv_data2[curri]);
+        curri -= 1;
+        currj -= 1;
+      } else if( d1 > d2 ){
+        v1.insert(0, 4);
+        v2.insert(0, rcv_data2[curri]);
+        curri -= 1;
+      } else{
+        v1.insert(0, rcv_data1[currj]);
+        v2.insert(0, 4);
+        curri -= 1;
+      }
+    }
+
+    for(const auto& value: v1){
+      cout << value << " ";
+    }
+    cout << "\n";
+    for(const auto& value: v2){
+      cout << value << " ";
+    }
+
+
         std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl;
 
 }
