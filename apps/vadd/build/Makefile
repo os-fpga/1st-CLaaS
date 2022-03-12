@@ -396,7 +396,7 @@ build: $(BUILD_TARGETS)
 LAUNCH_CHECK=@if [ -e $(KILLME) ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source $(KILLME)', or, if not running, 'rm $(KILLME)', and try again." && false; fi
 launch: $(BUILD_TARGETS) 
 	$(LAUNCH_CHECK)
-	XCL_EMULATION_MODE=$(TARGET) $(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
+	XCL_EMULATION_MODE=$(TARGET) $(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin &
 	@mkdir -p $(LAUNCH_DIR)
 	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
 
