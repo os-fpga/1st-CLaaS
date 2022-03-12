@@ -95,11 +95,11 @@ def read_data_handler(header=None, b64=True):
   [buffer2] = client2.get_buffers([object_id2])
 
   view2 = memoryview(buffer2)
-  print("Plasma Data from Host App to Web Server: ", chr(view2[0]), chr(view2[1]), chr(view2[2]),  chr(view2[3]),  chr(view2[4]),  
-  chr(view2[5]),  chr(view2[6]), chr(view2[7]), chr(view2[8]), chr(view2[9]), chr(view2[10]), chr(view2[11]), chr(view2[12]), 
-  chr(view2[13]), chr(view2[14]), chr(view2[15]),  chr(view2[16]),  chr(view2[17]),  chr(view2[18]),  chr(view2[19]), chr(view2[20]),
-  chr(view2[21]), chr(view2[22]), chr(view2[23]), chr(view2[24]), chr(view2[25]), chr(view2[26]), chr(view2[27]), chr(view2[28]),
-  chr(view2[29]), chr(view2[30]), chr(view2[31]), chr(view2[32]))
+  print("Plasma Data from Host App to Web Server: ")#, chr(view2[0]), chr(view2[1]), chr(view2[2]),  chr(view2[3]),  chr(view2[4]),  
+  # chr(view2[5]),  chr(view2[6]), chr(view2[7]), chr(view2[8]), chr(view2[9]), chr(view2[10]), chr(view2[11]), chr(view2[12]), 
+  # chr(view2[13]), chr(view2[14]), chr(view2[15]),  chr(view2[16]),  chr(view2[17]),  chr(view2[18]),  chr(view2[19]), chr(view2[20]),
+  # chr(view2[21]), chr(view2[22]), chr(view2[23]), chr(view2[24]), chr(view2[25]), chr(view2[26]), chr(view2[27]), chr(view2[28]),
+  # chr(view2[29]), chr(view2[30]), chr(view2[31]), chr(view2[32]))
 
   data1 = []
   for i in range(16):
