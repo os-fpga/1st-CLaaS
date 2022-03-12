@@ -202,6 +202,7 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 #ifdef OPENCL
   // Name of the .xclbin binary file and the name of the Kernel passed as arguments
   const char *xclbin = argv[1];
+  cout << xclbin << " END\n";
 #endif
 
   #ifdef OPENCL
