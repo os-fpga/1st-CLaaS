@@ -50,7 +50,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vadd.h"
 
 
-void send_data(uint8_t *S, uint8_t S_len, uint8_t *T, uint8_t T_len){
+void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len){
     // Process in FPGA.
     // assert(strlen(S) < GENOME_SIZE * MAX_GENOME_LEN);
     // assert(strlen(T)  < GENOME_SIZE * MAX_GENOME_LEN);
