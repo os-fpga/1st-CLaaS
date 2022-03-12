@@ -74,6 +74,11 @@ std::map<char, uint> _char_to_bits { {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}};
 class HostVAddApp : public HostApp {
 
 public:
+cl_int err;
+cl::CommandQueue q;
+cl::Context context;
+cl::Kernel krnl_vadd;
+cl::Program program;
 void init_platform();
 void init_kernel(const char *xclbin, const char *kernel_name, int memory_size);
 void write_data();
