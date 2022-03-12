@@ -392,33 +392,33 @@ void HostVAddApp::processTraffic() {
       //Mutable it
       auto d = data->mutable_data();
 
-      char test_data[16];
+      char test_data2[16];
 
       // we get this from yeshu
-      test_data[0] = 'T';
-      test_data[1] = 'G';
-      test_data[2] = 'T';
-      test_data[3] = 'C';
+      test_data2[0] = 'T';
+      test_data2[1] = 'G';
+      test_data2[2] = 'T';
+      test_data2[3] = 'C';
 
-      test_data[4] = 'G';
-      test_data[5] = 'T';
-      test_data[6] = 'C';
-      test_data[7] = 'A';
+      test_data2[4] = 'G';
+      test_data2[5] = 'T';
+      test_data2[6] = 'C';
+      test_data2[7] = 'A';
 
-      test_data[8] = 'T';
-      test_data[9] = 'A';
-      test_data[10] = 'G';
-      test_data[11] = 'C';
+      test_data2[8] = 'T';
+      test_data2[9] = 'A';
+      test_data2[10] = 'G';
+      test_data2[11] = 'C';
 
-      test_data[12] = 'C';
-      test_data[13] = 'G';
-      test_data[14] = 'T';
-      test_data[15] = 'T';
+      test_data2[12] = 'C';
+      test_data2[13] = 'G';
+      test_data2[14] = 'T';
+      test_data2[15] = 'T';
 
 
       // Write some data for the Plasma object.
       for (int64_t i = 0; i < 16; i++) {
-          d[i] = static_cast<uint8_t>(test_data[i]);
+          d[i] = static_cast<uint8_t>(test_data2[i]);
       }
 
       // Seal the object. This makes it available for all clients.
