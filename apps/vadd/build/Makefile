@@ -178,7 +178,7 @@ PORT ?= 8888
 AWS_PROFILE=default
 S3_USER=$(USER)
 S3_BUCKET_TAG=default
-BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
+BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin emconfig
 
 ifndef AWS_PLATFORM
 $(info WARNING: AWS_PLATFORM is not set. Making assumptions.)
