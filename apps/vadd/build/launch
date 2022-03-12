@@ -172,6 +172,8 @@ launch () {
   CMD=${LAUNCH_WEBSERVER_CMD/<<PORT>>/$PORT}
   CMD=${CMD/<<SOCKET>>/$SOCKET}
   # Launch.
+  python3 -m pip install pyarrow
+  # echo "python: ${which python3}"
   echo "Launching web server as: $CMD"
   # Substitute <<PASSWORD>>.
   CMD=${CMD/<<PASSWORD>>/$LAUNCH_PASSWORD}
