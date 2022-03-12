@@ -50,6 +50,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef HEADER_HW_KERNEL
 
+#include <CL/opencl.h>
 #ifdef KERNEL_AVAIL
 #include "kernel.h"
 #endif
