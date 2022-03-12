@@ -53,6 +53,10 @@ import sys
 import time
 import traceback
 
+import pyarrow.plasma as plasma
+
+import json
+
 # Socket with host messages defines
 CHUNK_SIZE    = 4096
 
@@ -123,9 +127,11 @@ def get_image(sock, header, payload, b64=True):
   # Handshake with host application
   #print("Header: ", header)
   sock.send_string("command", header)
+  #payload = "Azin&Iqra" + payload
+  #sock.send_string("data", payload)
   sock.send_string("image params", payload)
-
   image = read_data_handler(sock, None, b64)
+  #print("Testing 2", payload)
   return image
 
 ### This function reads data from the FPGA memory
@@ -140,10 +146,53 @@ def read_data_handler(sock, header=None, b64=True):
   # Receive integer data size from host
   response = sock.recv("size", 4)
 
-  # Decode data size
-  (size,) = struct.unpack("I", response)
-  size = socket.ntohl(size)
-  print("Python: Size: ", size)
+########################################################################################################
+########################################### PLASMA - GET OBJ ###########################################
+########################################################################################################
+
+
+  # Create a different client. Note that this second client could be
+  # created in the same or in a separate, concurrent Python session.
+  client2 = plasma.connect("/tmp/plasma")
+
+  # Get the object in the second client. This blocks until the object has been sealed.
+  object_id2 = plasma.ObjectID(20 * b"w")
+  print("Object ID (Web Server) ", object_id2)
+  [buffer2] = client2.get_buffers([object_id2])
+
+  view2 = memoryview(buffer2)
+  print("Plasma Data from Host App to Web Server: ", chr(view2[0]), chr(view2[1]), chr(view2[2]),  chr(view2[3]),  chr(view2[4]),  
+  chr(view2[5]),  chr(view2[6]), chr(view2[7]), chr(view2[8]), chr(view2[9]), chr(view2[10]), chr(view2[11]), chr(view2[12]), 
+  chr(view2[13]), chr(view2[14]), chr(view2[15]))
+
+  string_data = ""
+
+  for i in range(16):
+    string_data = string_data + chr(view2[i])
+
+  dictionary = [{'data': string_data}]
+
+  print("Dictionary'd Data: ", dictionary)
+
+  f = open("../../../framework/client/js/declare.js", "w")
+
+  jsonobj = json.dumps(dictionary)
+
+  f.write("var jsonstr = {} ".format(jsonobj))
+
+  f.close() 
+
+  # sys.stdout = open('../../../framework/client/js/declare.js', 'w')
+
+  # print("var jsonstr = '{}' ".format(jsonobj) ) 
+
+
+  # # Decode data size
+  # (size,) = struct.unpack("I", response)
+  # size = socket.ntohl(size)
+  # print("Python: Size: ", size)
+
+  size = 3
 
   ### Receive chunks of data from host ###
   data = b''

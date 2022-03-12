@@ -173,6 +173,42 @@ SPACE:= $(EMPTY) $(EMPTY)
 # $(SINGLE_QUOTE) is used to avoid syntax highlighting issues in Atom.
 SINGLE_QUOTE:= '
 
+
+PORT ?= 8888
+
+
+# Python Web Server Command
+
+
+WEBSERVER_ARGS :=
+LAUNCH_PASSWORD :=
+ifdef INSTANCE
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --instance $(INSTANCE)
+endif
+ifdef PASSWORD
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --password <<PASSWORD>>
+LAUNCH_PASSWORD :=LAUNCH_PASSWORD=' {{{$(PASSWORD)}}} '
+endif
+ifneq ($(AWS_PROFILE),default)
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --profile $(AWS_PROFILE)
+endif
+ifdef SSL_CRT_FILE
+ifdef SSL_KEY_FILE
+WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --ssl_crt_file='$(SSL_CRT_FILE)' --ssl_key_file='$(SSL_KEY_FILE)'
+endif
+endif
+
+WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
+LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
+LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo $(FRAMEWORK_DIR)/build/launch; fi) -w '$(LAUNCH_W)'
+LAUNCH_ARGS=-p $(PORT) -s $(SOCKET) -k '$(KILLME)' $(BUILD_TARGET) '$(HOST_CMD)'
+ifdef NOHUP
+# Run in background to continue if the shell exits; log output and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
+LAUNCH_CMD=nohup $(LAUNCH_CMD_PARTIAL) $(LAUNCH_ARGS) &> $(WEBSERVER_LOG) < /dev/null &
+else
+LAUNCH_CMD=$(LAUNCH_CMD_PARTIAL) $(LAUNCH_ARGS)
+endif
+
 # Path to this repo (relative or absolute). Makefiles outside of this repo must define this.
 FIRST_CLAAS_REPO ?=$(shell realpath --relative-to=. $$(git rev-parse --show-toplevel))
 
