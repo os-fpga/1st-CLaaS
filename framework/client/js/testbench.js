@@ -142,8 +142,8 @@ class RawTestBench {
         // console.log(myArray)
         // console.log(typeof(myArray))
 
-        $("#rx-data-result").text("Result:");
-        $("#rx-data").text(jsonstr[0]['data']);
+        $("#rx-data1").text(jsonstr[0]['data1']);
+        $("#rx-data2").text(jsonstr[0]['data2']);
 
 
         let data = JSON.parse(msg.data);
