@@ -40,7 +40,7 @@ SDCARD := sd_card
 include opencl.mk
 include config.mk
 
-CXXFLAGS += $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11
+CXXFLAGS += $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11 -O3 `pkg-config --cflags --libs plasma`
 LDFLAGS += $(opencl_LDFLAGS)
 
 ############################## Setting up Host Variables ##############################
