@@ -276,7 +276,7 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
         exit(EXIT_FAILURE);
     }
     std::cout << "-3" << std::endl;
-    // send_data(genomeS, genomeT);
+    send_data(genomeS, genomeT);
     // send_data2(output);
     std::cout << "sent" << std::endl;
     // Allocate Buffer in Global Memory
