@@ -329,17 +329,17 @@ void HostVAddApp::processTraffic() {
     // size_t size = data_json["size"];
     // size_t resp_size = data_json["resp_size"];
     // cout << "Data JSON" << data_json << endl;
-    // uint32_t * int_data_p = (uint32_t *)malloc(size * DATA_WIDTH_BYTES);
-    // uint32_t * int_resp_data_p = (uint32_t *)malloc(resp_size * DATA_WIDTH_BYTES); {
+    uint32_t * int_data_p = (uint32_t *)malloc(size * DATA_WIDTH_BYTES);
+    uint32_t * int_resp_data_p = (uint32_t *)malloc(resp_size * DATA_WIDTH_BYTES); {
       // With these data arrays...
 
       // Initial data for arrays (debug only).
-      // for (uint i = 0; i < size * DATA_WIDTH_UINT32; i++) {
-      //   int_data_p[i] = 0xDEADBEEF;
-      // }
-      // for (uint i = 0; i < resp_size * DATA_WIDTH_UINT32; i++) {
-      //   int_resp_data_p[i] = 0xBEEFCAFE;
-      // }
+      for (uint i = 0; i < size * DATA_WIDTH_UINT32; i++) {
+        int_data_p[i] = 0xDEADBEEF;
+      }
+      for (uint i = 0; i < resp_size * DATA_WIDTH_UINT32; i++) {
+        int_resp_data_p[i] = 0xBEEFCAFE;
+      }
 
       // Send data to FPGA, or do fake FPGA processing.
       // #ifdef KERNEL_AVAIL

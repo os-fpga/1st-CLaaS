@@ -60,10 +60,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "xcl2.hpp"
 #include <plasma/client.h>
 #include "arrow/util/logging.h"
-#include <bitset>
-#include <vector>
-#include <map>
-
 using namespace plasma;
 using namespace std;
 
