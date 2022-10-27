@@ -66,7 +66,7 @@ void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len)
             }
         }
         input_string[i] = value;
-	      std::cout << std::hex << &input_string[i]  << " " << std::hex  << value << std::endl;
+	      // std::cout << std::hex << &input_string[i]  << " " << std::hex  << value << std::endl;
     }
     for(uint i = 0 ; i < T_len/16; i+=1){
         // std::cout << "loop 2: " << i << std::endl;
@@ -80,7 +80,7 @@ void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len)
             }
         }
         input_string[i+64] = value;
-      std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << std::endl;
+      //std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << std::endl;
     }
     std::cout << sizeof(uint);
     for(uint i = 0; i < 3; i++){
