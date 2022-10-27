@@ -51,7 +51,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <sys/time.h>
 #include "kernel.h"
-#include "hw_kernel.h"
 #include <CL/opencl.h>
 
 #include "server_main.h"
