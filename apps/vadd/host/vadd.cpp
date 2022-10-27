@@ -189,18 +189,18 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 #endif
   // Poor-mans arg parsing.
   int argn = 1;
-  // if (strcmp(argv[1], "-s") == 0) {
-  //   socket_filename = argv[2];
-  //   argn += 2;
-  // }
-  // if (argc != argn + opencl_arg_cnt) {
-  //   printf("Usage: %s [-s socket] %s\n", argv[0], opencl_arg_str.c_str());
-  //   return EXIT_FAILURE;
-  // }
+  if (strcmp(argv[1], "-s") == 0) {
+    socket_filename = argv[2];
+    argn += 2;
+  }
+  if (argc != argn + opencl_arg_cnt) {
+    printf("Usage: %s [-s socket] %s\n", argv[0], opencl_arg_str.c_str());
+    return EXIT_FAILURE;
+  }
 
 #ifdef OPENCL
   // Name of the .xclbin binary file and the name of the Kernel passed as arguments
-  const char *xclbin = argv[1];
+  const char *xclbin = argv[argn + opencl_arg_cnt - 1];
 #endif
 
   #ifdef OPENCL
