@@ -61,11 +61,11 @@ void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len)
             // std::cout << "loop 1.1: " << j << std::endl;
             // value <<= 2;
             value |= (S[i*16+j]) << 2*j;
-            if(i*16 + j + 1 == strlen(S)){
-                break;
-            }
+            // if(i*16 + j + 1 == strlen(S)){
+            //     break;
+            // }
         }
-        input_string[i] = value;
+        // input_string[i] = value;
 	      // std::cout << std::hex << &input_string[i]  << " " << std::hex  << value << std::endl;
     }
     for(uint i = 0 ; i < T_len/16; i+=1){
@@ -75,17 +75,17 @@ void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len)
             // std::cout << "loop 2.1: " << j << std::endl;
             // value <<= 2;
             value |= T[i*16+j] << 2*j;
-            if(i*16 + j + 1 == strlen(T)){
-                break;
-            }
+            // if(i*16 + j + 1 == strlen(T)){
+            //     break;
+            // }
         }
-        input_string[i+64] = value;
+        // input_string[i+64] = value;
       //std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << std::endl;
     }
     std::cout << sizeof(uint);
-    for(uint i = 0; i < 3; i++){
-        std::cout << std::hex << input_string[i];
-    } 
+    // for(uint i = 0; i < 3; i++){
+    //     std::cout << std::hex << input_string[i];
+    // } 
 
 //   kernel.writeKernelData(&input_string, IN_MEM_SIZE, OUT_MEM_SIZE);
   std::cout << "Wrote kernel." << std::endl;
