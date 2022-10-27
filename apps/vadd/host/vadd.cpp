@@ -553,7 +553,7 @@ void HostVAddApp::processTraffic() {
             }
             // std::cout << "SW: " << set2 << "\n";
         }
-        std::cout << "\n " << i << "\n";
+        std::cout << "\n";
     }
 
     vector<uint8_t> v1;
@@ -564,7 +564,6 @@ void HostVAddApp::processTraffic() {
     while(source_hw_results[curri*16+currj] > 0){
       int i = 0;
       int d0 = 0, d1 = 0, d2 = 0;
-      std::cout << curri << " " << currj << "\n";
       if(curri > 0 && currj > 0){
         d0 = source_hw_results[(curri-1)*16+(currj-1)];
       }
