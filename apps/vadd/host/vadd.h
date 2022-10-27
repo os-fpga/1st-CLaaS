@@ -58,29 +58,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "server_main.h"
 #include "xcl2.hpp"
-// #include <plasma/client.h>
-// #include "arrow/util/logging.h"
+#include <plasma/client.h>
+#include "arrow/util/logging.h"
 #include <bitset>
 #include <vector>
 #include <map>
 
-// using namespace plasma;
+using namespace plasma;
 using namespace std;
 
-#define DATA_SIZE 256
+#define DATA_SIZE 1024
 char *genomeS = "TGTTACGGCCCCCCCC";
 char *genomeT = "GGTTGACTAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG";
-char *output =  "CCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGGTTTTTTTTTTTTTTTTGGGGGGGGGGGGGGGGCCCCCCCCCCCCCCCCGGGGGGGGGGGGGGGG";
 const unsigned int MAX_GENOME_LEN = 256;
 const unsigned int GENOME_SIZE = 2;
 const unsigned int IN_MEM_SIZE = 2*MAX_GENOME_LEN*GENOME_SIZE;
-const unsigned int OUT_MEM_SIZE = MAX_GENOME_LEN*8;
+const unsigned int OUT_MEM_SIZE = MAX_GENOME_LEN*20;
 std::vector<uint, aligned_allocator<uint> > input_string(2*GENOME_SIZE * MAX_GENOME_LEN);
-std::vector<uint, aligned_allocator<uint> > output_string(GENOME_SIZE * MAX_GENOME_LEN);
-std::vector<uint8_t, aligned_allocator<uint8_t> > source_hw_results(1024);
-std::map<char, uint> _char_to_bits { {'A', 0}, {'C', 1}, {'T', 2}, {'G', 3}};
-
-
+std::map<char, uint> _char_to_bits { {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}};
+std::vector<uint8_t, aligned_allocator<uint8_t> > source_hw_results(DATA_SIZE);
 // ---------------------------------------------------------------------------------------------------------
 class HostVAddApp : public HostApp {
 
