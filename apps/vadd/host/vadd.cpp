@@ -326,9 +326,9 @@ void HostVAddApp::processTraffic() {
     cout << "Does it reach here " << endl;
     const int DATA_WIDTH_UINT32 = DATA_WIDTH_BYTES / 4;
     // Allocate in/out data buffers.
-    // size_t size = data_json["size"];
-    // size_t resp_size = data_json["resp_size"];
-    // cout << "Data JSON" << data_json << endl;
+    size_t size = data_json["size"];
+    size_t resp_size = data_json["resp_size"];
+    cout << "Data JSON" << data_json << endl;
     uint32_t * int_data_p = (uint32_t *)malloc(size * DATA_WIDTH_BYTES);
     uint32_t * int_resp_data_p = (uint32_t *)malloc(resp_size * DATA_WIDTH_BYTES); {
       // With these data arrays...
@@ -344,7 +344,7 @@ void HostVAddApp::processTraffic() {
       // Send data to FPGA, or do fake FPGA processing.
       // #ifdef KERNEL_AVAIL
       // Process in FPGA.
-      write_data();
+      write_data(int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
       if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
 
