@@ -131,8 +131,8 @@ most_recent = true
 owners = ["679593333241"]
 
   filter {
-      name   = "name"
-      values = ["FPGA Developer AMI - 1.6.0-40257ab5-6688-4c95-97d1-e251a40fd1fc-ami-0b1edf08d56c2da5c.4"]
+      name   = "image-id"
+      values = ["ami-075fdcdc326141760"]
   }
 
   filter {

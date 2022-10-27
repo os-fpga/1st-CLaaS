@@ -241,7 +241,8 @@ ifeq ($(VERILATOR),)
 # No local verilator.
 VERILATOR=$(shell which verilator 2> /dev/null)
 # Presumable verilator is /usr/local/bin/verilator or /usr/bin/verilator (but there is no check).
-VERILATOR_INCLUDE=/usr/share/verilator/include
+# Find the include directory relative to the binary.
+VERILATOR_INCLUDE=$(subst bin/verilator,share/verilator/include,$(VERILATOR))
 else
 VERILATOR=$(ABS_REPO)/local/verilator/bin/verilator
 VERILATOR_ROOT=$(ABS_REPO)/local/verilator
@@ -647,6 +648,7 @@ $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_
 	$(VERILATOR) --cc --sv --trace --top-module $(KERNEL_NAME)_kernel -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator \
 	|| (STATUS=$$? && mv $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp.error && exit $$STATUS)  # to force re-run.
 $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp
+	@[[ -e "$(VERILATOR_INCLUDE)" ]] || ! echo "Verilator include directory not found at '$(VERILATOR_INCLUDE)'."
 	cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
 	@# For multithreaded, include on command line: $(VERILATOR_INCLUDE)/verilated_threads.cpp
 	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) $(VERILATOR_INCLUDE)/verilated.cpp $(VERILATOR_INCLUDE)/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I $(VERILATOR_INCLUDE) -o $(DEST_DIR)/$(HOST_EXE)
