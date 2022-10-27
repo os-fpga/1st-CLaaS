@@ -405,13 +405,17 @@ class FPGAServerApplication(tornado.web.Application):
 
 
     # Handler for GET_IMAGE.
-    # def handleGetImage(self, payload, type, ws):
-    #     print("Webserver: handleGetImage:", payload)
-    #     response = get_image(self.socket, "GET_IMAGE", payload, True)
-    #     return {'type': 'user', 'png': response}
+    def handleGetImage(self, payload, type, ws):
+        print("Webserver: handleGetImage:", payload)
+        response = get_image(self.socket, "GET_IMAGE", payload, True)
+        return {'type': 'user', 'png': response}
 
     def handleDataMsg(self, data, type, ws):
-        print("Data from the Client to Web Server: ", data)        
+        self.socket.send_string("command", type)
+        print("Data from the Client to Web Server: ", data)
+        self.socket.send_string("data", data)
+        
+        
 
         ########################################################################################################
         ########################################### PLASMA - WRITE TO OBJ ######################################
@@ -488,7 +492,7 @@ class FPGAServerApplication(tornado.web.Application):
 
         print("OBJID2 ", object_id)
 
-        data = read_data_handler(None, False)
+        data = read_data_handler(self.socket, None, False)
         return data
 
     def handlePing(self, data, type, ws):
@@ -639,11 +643,11 @@ class FPGAServerApplication(tornado.web.Application):
         FPGAServerApplication.server = server
         server.listen(self.port)
         self.message_handlers = {}
-        # self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
+        self.registerMessageHandler("GET_IMAGE", self.handleGetImage)
         self.registerMessageHandler("DATA_MSG", self.handleDataMsg)
-        # self.registerMessageHandler("PING", self.handlePing)
-        # self.registerMessageHandler("START_TRACING", self.handleCommandMsg)
-        # self.registerMessageHandler("STOP_TRACING", self.handleCommandMsg)
+        self.registerMessageHandler("PING", self.handlePing)
+        self.registerMessageHandler("START_TRACING", self.handleCommandMsg)
+        self.registerMessageHandler("STOP_TRACING", self.handleCommandMsg)
 
     def run(self):
         # Report external URL for the web server.
