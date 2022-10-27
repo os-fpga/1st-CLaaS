@@ -50,48 +50,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vadd.h"
 
 
-void send_data(uint8_t *S, uint8_t S_len, uint8_t *T, uint8_t T_len){
-    // Process in FPGA.
-    // assert(strlen(S) < GENOME_SIZE * MAX_GENOME_LEN);
-    // assert(strlen(T)  < GENOME_SIZE * MAX_GENOME_LEN);
-    for(uint i = 0 ; i < S_len/16; i+=1){
-        // std::cout << "loop 1: " << i << std::endl;
-        uint value = 0;
-        for(int j = 0; j < 16; j++){
-            // std::cout << "loop 1.1: " << j << std::endl;
-            // value <<= 2;
-            value |= (S[i*16+j]) << 2*j;
-            // if(i*16 + j + 1 == strlen(S)){
-            //     break;
-            // }
-        }
-        // input_string[i] = value;
-	      // std::cout << std::hex << &input_string[i]  << " " << std::hex  << value << std::endl;
-    }
-    for(uint i = 0 ; i < T_len/16; i+=1){
-        // std::cout << "loop 2: " << i << std::endl;
-        uint value = 0;
-        for(int j = 0; j < 16; j++){
-            // std::cout << "loop 2.1: " << j << std::endl;
-            // value <<= 2;
-            value |= T[i*16+j] << 2*j;
-            // if(i*16 + j + 1 == strlen(T)){
-            //     break;
-            // }
-        }
-        // input_string[i+64] = value;
-      //std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << std::endl;
-    }
-    std::cout << sizeof(uint);
-    // for(uint i = 0; i < 3; i++){
-    //     std::cout << std::hex << input_string[i];
-    // } 
-
-//   kernel.writeKernelData(&input_string, IN_MEM_SIZE, OUT_MEM_SIZE);
-  std::cout << "Wrote kernel." << std::endl;
-}
-
-
 void HostVAddApp::init_platform(const char* xclbin){
     auto devices = xcl::get_xil_devices();
 
