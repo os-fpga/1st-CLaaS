@@ -50,7 +50,6 @@ import struct
 import base64
 import socket
 import sys
-sys.path.append('/home/centos/.local/lib/python3.6/site-packages')
 import time
 import traceback
 
