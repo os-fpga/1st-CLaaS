@@ -175,19 +175,8 @@ SINGLE_QUOTE:= '
 
 
 PORT ?= 8888
-AWS_PROFILE=default
-S3_USER=$(USER)
-S3_BUCKET_TAG=default
-BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
 
-ifeq ($(TARGET),hw_emu)
-BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
-endif
-ifeq ($(TARGET),hw)
-BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
-endif
+
 # Python Web Server Command
 
 
@@ -263,6 +252,10 @@ FRAMEWORK_DIR=$(REPO)/framework
 
 CONFIG_FILE=$(HOME)/1st-CLaaS_config.mk
 
+# Default config.
+AWS_PROFILE=default
+S3_USER=$(USER)
+S3_BUCKET_TAG=default
 
 ifneq ($(MAKECMDGOALS),config)
 ifneq ($(shell ls '$(CONFIG_FILE)' 2> /dev/null),)
@@ -283,6 +276,7 @@ S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
 AUTO_APPROVE=false
 AFI_PERMISSION=public
 
+BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
 
 # include ../../../framework/build/Makefile
 define with_secret
