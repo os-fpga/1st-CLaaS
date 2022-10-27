@@ -206,11 +206,11 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
   cout << xclbin << " END\n";
 // #endif
 
-  // #ifdef OPENCL
+  #ifdef OPENCL
     // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
-  init_platform(xclbin);
+    init_platform(xclbin);
     // init_kernel();  // TODO: FIX size.
-  // #endif
+  #endif
 
   #ifdef KERNEL_AVAIL
     // kernel.reset_kernel();
