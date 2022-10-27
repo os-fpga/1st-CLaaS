@@ -37,7 +37,7 @@ VPP := v++
 SDCARD := sd_card
 
 
-include opencl.mk
+# include $(ABS_COMMON_REPO)/common/includes/opencl/opencl.mk
 include config.mk
 
 CXXFLAGS += $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11
