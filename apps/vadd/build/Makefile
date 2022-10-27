@@ -209,7 +209,7 @@ WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --ssl_crt_file='$(SSL_CRT_FILE)' --ssl_key_fi
 endif
 endif
 
-WEBSERVER_PY ?= $(shell if [[ -e "../../../framework/webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../../../framework/webserver/$(KERNEL_NAME)_server.py"; else echo "../../../framework/webserver/default_server.py"; fi)
+WEBSERVER_PY ?= $(shell if [[ -e "../../framework/webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../../framework/webserver/$(KERNEL_NAME)_server.py"; else echo "../../framework/webserver/default_server.py"; fi)
 LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
 
 ifeq ($(MAKECMDGOALS), launch)
