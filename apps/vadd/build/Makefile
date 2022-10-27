@@ -246,7 +246,7 @@ S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
 AUTO_APPROVE=false
 AFI_PERMISSION=public
 
-BUILD_TARGETS=$(EXECUTABLE) $(BINARY_CONTAINERS)
+BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
 
 # include ../../../framework/build/Makefile
 define with_secret
