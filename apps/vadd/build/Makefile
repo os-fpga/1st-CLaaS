@@ -10,11 +10,10 @@ PROJ_SW_CFLAGS=-I../../mandelbrot/host
 
 ############################## Setting up Project Variables ##############################
 # Points to top directory of Git repository
-FIRST_CLAAS_REPO ?=$(shell realpath --relative-to=. $$(git rev-parse --show-toplevel))
-# Absolute path to this repo.
-ABS_COMMON_REPO=$(shell realpath "$(FIRST_CLAAS_REPO)")
-# Relative path to this repo.
-REPO=$(shell realpath "--relative-to=." "$(FIRST_CLAAS_REPO)")
+MK_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+COMMON_REPO ?= $(shell bash -c 'export MK_PATH=$(MK_PATH); echo $${MK_PATH%rtl_kernels/rtl_vadd/*}')
+PWD = $(shell readlink -f .)
+ABS_COMMON_REPO = $(shell readlink -f $(COMMON_REPO))
 
 TARGET := hw
 HOST_ARCH := x86
@@ -45,8 +44,8 @@ LDFLAGS += $(opencl_LDFLAGS)
 
 ############################## Setting up Host Variables ##############################
 #Include Required Host Source Files
-CXXFLAGS += -I$(ABS_COMMON_REPO)/apps/vadd/host/xcl2
-HOST_SRCS += $(ABS_COMMON_REPO)/apps/vadd/host/xcl2/xcl2.cpp $(ABS_COMMON_REPO)/apps/vadd/host/vadd.cpp 
+CXXFLAGS += -I../../host/xcl2
+HOST_SRCS += ../../host/xcl2/xcl2.cpp ../../host/vadd.cpp 
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 
