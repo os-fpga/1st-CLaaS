@@ -44,8 +44,8 @@ LDFLAGS += $(opencl_LDFLAGS)
 
 ############################## Setting up Host Variables ##############################
 #Include Required Host Source Files
-CXXFLAGS += -I../../host/xcl2
-HOST_SRCS += ../../host/xcl2.cpp ../../host/vadd.cpp 
+CXXFLAGS += -I ../../host/xcl2
+HOST_SRCS += ../../host/xcl2.cpp src/host.cpp 
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 
