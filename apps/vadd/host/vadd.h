@@ -63,10 +63,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace plasma;
 using namespace std;
 
-const unsigned int MAX_GENOME_LEN = 256;
-const unsigned int GENOME_SIZE = 2;
-const unsigned int IN_MEM_SIZE = 2*MAX_GENOME_LEN*GENOME_SIZE;
-const unsigned int OUT_MEM_SIZE = MAX_GENOME_LEN*20;
+
 std::vector<uint, aligned_allocator<uint> > input_string(2*GENOME_SIZE * MAX_GENOME_LEN);
 std::map<char, uint> _char_to_bits { {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}};
 
@@ -74,13 +71,6 @@ std::map<char, uint> _char_to_bits { {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}};
 class HostVAddApp : public HostApp {
 
 public:
-void init_platform();
-void init_kernel(const char *xclbin, const char *kernel_name, int memory_size);
-void write_data();
-void start_kernel();
-void clean_kernel();
-int server_main(int argc, char const *argv[], const char *kernel_name);
-void processTraffic();
   // Without OpenCL, define fake vadd kernel behavior for testing the client.
   // Othersize, default passthrough behavior is fine.
   // void fakeKernel(size_t bytes_in, void * in_buffer, size_t bytes_out, void * out_buffer);
