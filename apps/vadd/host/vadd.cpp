@@ -558,27 +558,27 @@ void HostVAddApp::processTraffic() {
 
     vector<uint8_t> v1;
     vector<uint8_t> v2;
-    auto it1 = v1.begin();
-    auto it2 = v2.begin();
+    it1 = v1.begin();
+    it2 = v2.begin();
     int curri=maxi, currj=maxj;
     while(source_hw_results[curri*16+currj] > 0){
       int i = 0;
       int d0 = 0, d1 = 0, d2 = 0;
       if(curri > 0 && currj > 0){
-        d0 = source_hw_results[(curri-1)*16+(currj-1)];
+        d0 = source_hw_results[(curri-1)*16+(currj-1)]);
       }
       else if(curri == 0 && currj == 0){
         break;
       }
       else if(curri == 0){
-        d2 = source_hw_results[(curri)*16+(currj-1)];
+        d2 = source_hw_results[(curri)*16+(currj-1)]);
       }
       else if(currj == 0){
-        d1 = source_hw_results[(curri-1)*16+(currj)];
+        d1 = source_hw_results[(curri-1)*16+(currj)]);
       }
       else{
-        d1 = source_hw_results[(curri-1)*16+(currj)];
-        d2 = source_hw_results[(curri)*16+(currj-1)];
+        d1 = source_hw_results[(curri-1)*16+(currj)]);
+        d2 = source_hw_results[(curri)*16+(currj-1)]);
       }
       if(d0 == 0 && d1 == 0 && d2 == 0){
         break;
