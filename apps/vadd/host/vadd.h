@@ -67,9 +67,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace plasma;
 using namespace std;
 
-#define DATA_SIZE 1024
-char *genomeS = "TGTTACGGCCCCCCCC";
-char *genomeT = "GGTTGACTAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG";
+#define DATA_SIZE 256
 const unsigned int MAX_GENOME_LEN = 256;
 const unsigned int GENOME_SIZE = 2;
 const unsigned int IN_MEM_SIZE = 2*MAX_GENOME_LEN*GENOME_SIZE;

@@ -50,80 +50,38 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vadd.h"
 
 
-// void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len){
-//     // Process in FPGA.
-//     // assert(strlen(S) < GENOME_SIZE * MAX_GENOME_LEN);
-//     // assert(strlen(T)  < GENOME_SIZE * MAX_GENOME_LEN);
-//     for(uint i = 0 ; i < S_len/16; i+=1){
-//         // std::cout << "loop 1: " << i << std::endl;
-//         uint value = 0;
-//         for(int j = 0; j < 16; j++){
-//             // std::cout << "loop 1.1: " << j << std::endl;
-//             // value <<= 2;
-//             value |= (S[i*16+j]) << 2*j;
-//             // if(i*16 + j + 1 == strlen(S)){
-//             //     break;
-//             // }
-//         }
-//         // input_string[i] = value;
-// 	      // std::cout << std::hex << &input_string[i]  << " " << std::hex  << value << std::endl;
-//     }
-//     for(uint i = 0 ; i < T_len/16; i+=1){
-//         // std::cout << "loop 2: " << i << std::endl;
-//         uint value = 0;
-//         for(int j = 0; j < 16; j++){
-//             // std::cout << "loop 2.1: " << j << std::endl;
-//             // value <<= 2;
-//             value |= T[i*16+j] << 2*j;
-//             // if(i*16 + j + 1 == strlen(T)){
-//             //     break;
-//             // }
-//         }
-//         // input_string[i+64] = value;
-//       //std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << std::endl;
-//     }
-//     std::cout << sizeof(uint);
-//     // for(uint i = 0; i < 3; i++){
-//     //     std::cout << std::hex << input_string[i];
-//     // } 
-
-// //   kernel.writeKernelData(&input_string, IN_MEM_SIZE, OUT_MEM_SIZE);
-//   std::cout << "Wrote kernel." << std::endl;
-// }
-
-
-void send_data(char *S, char *T){
+void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len){
     // Process in FPGA.
-    assert(strlen(S) < GENOME_SIZE * MAX_GENOME_LEN);
-    assert(strlen(T)  < GENOME_SIZE * MAX_GENOME_LEN);
-    for(uint i = 0 ; i < strlen(S)/16; i+=1){
+    // assert(strlen(S) < GENOME_SIZE * MAX_GENOME_LEN);
+    // assert(strlen(T)  < GENOME_SIZE * MAX_GENOME_LEN);
+    for(uint i = 0 ; i < S_len/16; i+=1){
         // std::cout << "loop 1: " << i << std::endl;
         uint value = 0;
         for(int j = 0; j < 16; j++){
             // std::cout << "loop 1.1: " << j << std::endl;
             // value <<= 2;
-            value |= (_char_to_bits.at(S[i*16+j])) << 2*j;
-            if(i*16 + j + 1 == strlen(S)){
-                break;
-            }
+            value |= (S[i*16+j]) << 2*j;
+            // if(i*16 + j + 1 == strlen(S)){
+            //     break;
+            // }
         }
-        input_string[i] = value;
-	std::cout << std::hex << &input_string[i]  << " " << std::hex  << value << std::endl;
+        // input_string[i] = value;
+	      // std::cout << std::hex << &input_string[i]  << " " << std::hex  << value << std::endl;
     }
-    for(uint i = 0 ; i < strlen(T)/16; i+=1){
+    for(uint i = 0 ; i < T_len/16; i+=1){
         // std::cout << "loop 2: " << i << std::endl;
         uint value = 0;
         for(int j = 0; j < 16; j++){
             // std::cout << "loop 2.1: " << j << std::endl;
             // value <<= 2;
-            value |= _char_to_bits.at(T[i*16+j]) << 2*j;
-            if(i*16 + j + 1 == strlen(T)){
-                break;
-            }
+            value |= T[i*16+j] << 2*j;
+            // if(i*16 + j + 1 == strlen(T)){
+            //     break;
+            // }
         }
-        input_string[i+64] = value;
-std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << std::endl;
-}
+        // input_string[i+64] = value;
+      //std::cout << std::hex << &input_string[i+64]  << " " << std::hex  << value << std::endl;
+    }
     std::cout << sizeof(uint);
     // for(uint i = 0; i < 3; i++){
     //     std::cout << std::hex << input_string[i];
@@ -198,7 +156,6 @@ void HostVAddApp::start_kernel() {
   OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_w}, CL_MIGRATE_MEM_OBJECT_HOST));
   std::cout << "3" << std::endl;
   OCL_CHECK(err, err = commands.finish());
-  std::cout << "6" << std::endl;
   // int status = 0;
 }
 
@@ -248,12 +205,10 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
   const char *xclbin = argv[1];
   cout << xclbin << " END\n";
 // #endif
-  cl::CommandQueue q;
-  cl::Context context;
-  cl::Kernel krnl_vadd;
+
   // #ifdef OPENCL
     // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
-  // init_platform(xclbin);
+  init_platform(xclbin);
     // init_kernel();  // TODO: FIX size.
   // #endif
 
@@ -262,85 +217,7 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
   #endif
 
     int loop_cnt = 0;
-    // processTraffic();
-
-
-    auto devices = xcl::get_xil_devices();
-
-    // read_binary_file() is a utility API which will load the binaryFile
-    // and will return the pointer to file buffer.
-    auto fileBuf = xcl::read_binary_file(xclbin);
-    cl::Program::Binaries bins{{fileBuf.data(), fileBuf.size()}};
-    bool valid_device = false;
-    for (unsigned int i = 0; i < devices.size(); i++) {
-        auto device = devices[i];
-        // Creating Context and Command Queue for selected Device
-        OCL_CHECK(err, context = cl::Context(device, nullptr, nullptr, nullptr, &err));
-        OCL_CHECK(err, q = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
-
-        std::cout << "Trying to program device[" << i << "]: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
-        cl::Program program(context, {device}, bins, nullptr, &err);
-        if (err != CL_SUCCESS) {
-            std::cout << "Failed to program device[" << i << "] with xclbin file!\n";
-        } else {
-            std::cout << "Device[" << i << "]: program successful!\n";
-            OCL_CHECK(err, krnl_vadd = cl::Kernel(program, "krnl_vadd_rtl", &err));
-            valid_device = true;
-            break; // we break because we found a valid device
-        }
-    }
-    std::cout << "lol" << std::endl;
-    if (!valid_device) {
-        std::cout << "Failed to program any device found, exit!\n";
-        exit(EXIT_FAILURE);
-    }
-    std::cout << "-3" << std::endl;
-    send_data(genomeS, genomeT);
-    send_data2(output);
-    std::cout << "sent" << std::endl;
-    // Allocate Buffer in Global Memory
-    OCL_CHECK(err, cl::Buffer buffer_r1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
-                                        input_string.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_r2(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, vector_size_bytes,
-    //                                     source_input2.data(), &err));
-    std::cout << "-2" << std::endl;
-    OCL_CHECK(err, cl::Buffer buffer_w(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, OUT_MEM_SIZE,
-                                       source_hw_results.data(), &err));
-
-    // Set the Kernel Arguments
-    OCL_CHECK(err, err = krnl_vadd.setArg(0, buffer_r1));
-    std::cout << "-1" << std::endl;
-    // OCL_CHECK(err, err = krnl_vadd.setArg(1, buffer_r2));
-    OCL_CHECK(err, err = krnl_vadd.setArg(1, buffer_w));
-    std::cout << "0" << std::endl;
-    OCL_CHECK(err, err = krnl_vadd.setArg(2, 64)); //2*GENOME_SIZE * MAX_GENOME_LEN
-
-    // Copy input data to device global memory
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_r1}, 0 /* 0 means from host*/));
-    std::cout << "1" << std::endl;
-    // Launch the Kernel
-    OCL_CHECK(err, err = q.enqueueTask(krnl_vadd));
-    std::cout << "2" << std::endl;
-
-    // Copy Result from Device Global Memory to Host Local Memory
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_w}, CL_MIGRATE_MEM_OBJECT_HOST));
-    std::cout << "3" << std::endl;
-    OCL_CHECK(err, err = q.finish());
-
-    // OPENCL HOST CODE AREA END
-
-    // Compare the results of the Device to the simulation
-    int match = 0;
-    std::cout << "Result:\n";
-    for (int i = 0; i < 64; i++) {
-        for (int j = 0; j < 16; j++) {
-            std::bitset<8> set(source_hw_results[i*16+j]);
-            // std::bitset<32> set2(output_string[i]);
-            std::cout << std::dec << int(source_hw_results[i*16+j]) << " ";
-            // std::cout << "SW: " << set2 << "\n";
-        }
-        std::cout << "\n";
-    }
+    processTraffic();
     
   // }
 
