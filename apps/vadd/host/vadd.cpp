@@ -550,7 +550,6 @@ void HostVAddApp::processTraffic() {
             if(source_hw_results[i*16+j] > max){
               maxi = i;
               maxj = j;
-              max = source_hw_results[i*16+j];
             }
             // std::cout << "SW: " << set2 << "\n";
         }
