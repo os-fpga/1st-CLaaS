@@ -555,8 +555,8 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 //       ARROW_CHECK_OK(client.Disconnect());
 // }
 
-int main(int argc, char const *argv[])
-{
-  //cout << "Hello from host application.\n";
-  (new HostVAddApp())->server_main(argc, argv, "vadd");
-}
+// int main(int argc, char const *argv[])
+// {
+//   //cout << "Hello from host application.\n";
+//   (new HostVAddApp())->server_main(argc, argv, "vadd");
+// }
