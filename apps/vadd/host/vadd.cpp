@@ -582,7 +582,6 @@ void HostVAddApp::processTraffic() {
         d1 = source_hw_results[(curri-1)*16+(currj)];
         d2 = source_hw_results[(curri)*16+(currj-1)];
       }
-      std::cout << d0 << " " << d1 << " " << d2 << "\n";
       if(d0 == 0 && d1 == 0 && d2 == 0){
         break;
       } else if( d0 > d1 && d0 > d2){
