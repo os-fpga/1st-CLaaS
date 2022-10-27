@@ -180,18 +180,13 @@ S3_USER=$(USER)
 S3_BUCKET_TAG=default
 BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
 
-ifndef AWS_PLATFORM
-$(info WARNING: AWS_PLATFORM is not set. Making assumptions.)
-AWS_PLATFORM=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
-endif
-
 ifeq ($(TARGET),hw_emu)
 BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
-HOST_CMD=XCL_EMULATION_MODE=$(TARGET) $(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
+HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
 endif
 ifeq ($(TARGET),hw)
 BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
-HOST_CMD=XCL_EMULATION_MODE=$(TARGET) $(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
 endif
 # Python Web Server Command
 
