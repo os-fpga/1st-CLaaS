@@ -2,19 +2,19 @@
 
 ## Demo
 
-The Mandelbrot example is hosted [here](http://fractalvalley.net), by [Steve Hoover](mailto:stevehoover@redwoodeda.com), without hardware acceleration.
+The Mandelbrot example is hosted [here](http://fractalvalley.net), by [Steve Hoover](mailto:steve.hoover@redwoodeda.com), without hardware acceleration.
 It includes an About page with general project information.
 
 ## Development
 
 ## Active Development
 
-FractalValley has gotten a lot of attention from students, especially for Google Summer of Code. .Several students began work to develop better sites and then found paying gigs:
+FractalValley has gotten a lot of attention from students, especially for Google Summer of Code. Several students began work to develop better sites and then found paying gigs:
   - [Dharak Savalia's Mandelbrot front-end](https://github.com/dharaksavalia/Mandelbrot)
   - [Meet's Fractal component](https://github.com/meetcric/mandelbrot-fractal-custom)
   - [Meet's FrontEnd](https://github.com/meetcric/mandelbrot-fractals)
   - [Sanjeet's Front End](https://github.com/sanjeetiitr/fpga-webserver-fractalvalley)
-  - [Faizan](https://github.com/stevehoover/1st-CLaaS/commits/master/apps/mandelbrot-react) (within this repo)
+  - [Faizan](/commits/master/apps/mandelbrot-react) (within this repo)
 
 ### Integration
 
@@ -24,7 +24,7 @@ There is no continuous integration testing. Just open it locally and test manual
 
 #### fractalvalley.net
 
-Steve holds the button to redeploy your changes at http://fractalvalley.net. If he forgets, please [let him know](mailto:stevehoover@redwoodeda.com).
+Steve holds the button to redeploy your changes at http://fractalvalley.net. If he forgets, please [let him know](mailto:steve.hoover@redwoodeda.com).
 
 #### Your own site
 
@@ -62,7 +62,7 @@ To debug using GDB inside Atom.
 
 ### TO DO
 
-General TO DO items are kept here, where as the issue tracker is used for more specific items. Contact [Steve](mailto:stevehoover@redwoodeda.com) for more details if you are interested in working on any of these items.
+General TO DO items are kept here, where as the issue tracker is used for more specific items. Contact [Steve](mailto:steve.hoover@redwoodeda.com) for more details if you are interested in working on any of these items.
 
 #### Web Design
 
