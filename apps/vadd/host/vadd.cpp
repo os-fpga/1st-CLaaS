@@ -556,10 +556,8 @@ void HostVAddApp::processTraffic() {
         std::cout << "\n";
     }
 
-    vector<uint8_t> v1;
-    vector<uint8_t> v2;
-    it1 = v1.begin();
-    it2 = v2.begin();
+    vector<int> v1;
+    vector<int> v2;
     int curri=maxi, currj=maxj;
     while(source_hw_results[curri*16+currj] > 0){
       int i = 0;
@@ -583,17 +581,17 @@ void HostVAddApp::processTraffic() {
       if(d0 == 0 && d1 == 0 && d2 == 0){
         break;
       } else if( d0 > d1 && d0 > d2){
-        v1.insert(it1, rcv_data1[currj]);
-        v2.insert(it2, rcv_data2[curri]);
+        v1.insert(0, rcv_data1[currj]);
+        v2.insert(0, rcv_data2[curri]);
         curri -= 1;
         currj -= 1;
       } else if( d1 > d2 ){
-        v1.insert(it1, 4);
-        v2.insert(it2, rcv_data2[curri]);
+        v1.insert(0, 4);
+        v2.insert(0, rcv_data2[curri]);
         curri -= 1;
       } else{
-        v1.insert(it1, rcv_data1[currj]);
-        v2.insert(it2, 4);
+        v1.insert(0, rcv_data1[currj]);
+        v2.insert(0, 4);
         curri -= 1;
       }
     }
