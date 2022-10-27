@@ -50,12 +50,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vadd.h"
 
 
-void HostVAddApp::init_platform(const char* xclbin){
+void HostVAddApp::init_platform(){
     auto devices = xcl::get_xil_devices();
 
     // read_binary_file() is a utility API which will load the binaryFile
     // and will return the pointer to file buffer.
-    auto fileBuf = xcl::read_binary_file(xclbin);
+    auto fileBuf = xcl::read_binary_file(binaryFile);
     cl::Program::Binaries bins{{fileBuf.data(), fileBuf.size()}};
     bool valid_device = false;
     for (unsigned int i = 0; i < devices.size(); i++) {
@@ -80,7 +80,7 @@ void HostVAddApp::init_platform(const char* xclbin){
         exit(EXIT_FAILURE);
     }
 }
-void HostVAddApp::init_kernel(){
+void HostVAddApp::init_kernel(const char *xclbin, const char *kernel_name, int memory_size){
   OCL_CHECK(err, kernel = cl::Kernel(program, "krnl_vadd_rtl", &err));
   OCL_CHECK(err, cl::Buffer buffer_r1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
                                         input_string.data(), &err));
@@ -163,8 +163,8 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 
   #ifdef OPENCL
     // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
-    init_platform(xclbin);
-    init_kernel();  // TODO: FIX size.
+    init_platform(NULL);
+    init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
   #endif
 
   #ifdef KERNEL_AVAIL
@@ -300,7 +300,7 @@ void HostVAddApp::processTraffic() {
       }
 
       // Send data to FPGA, or do fake FPGA processing.
-      // #ifdef KERNEL_AVAIL
+      #ifdef KERNEL_AVAIL
       // Process in FPGA.
       write_data(int_data_p, size * DATA_WIDTH_BYTES, resp_size * DATA_WIDTH_BYTES);
       if (verbosity > 2) {cout << "Wrote kernel." << endl;}
