@@ -61,7 +61,7 @@ void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len)
             // std::cout << "loop 1.1: " << j << std::endl;
             // value <<= 2;
             value |= (S[i*16+j]) << 2*j;
-            if(i*16 + j + 1 == S_len){
+            if(i*16 + j + 1 == strlen(S)){
                 break;
             }
         }
@@ -75,7 +75,7 @@ void send_data(const uint8_t *S, uint8_t S_len, const uint8_t *T, uint8_t T_len)
             // std::cout << "loop 2.1: " << j << std::endl;
             // value <<= 2;
             value |= T[i*16+j] << 2*j;
-            if(i*16 + j + 1 == T_len){
+            if(i*16 + j + 1 == strlen(T)){
                 break;
             }
         }
