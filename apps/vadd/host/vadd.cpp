@@ -589,57 +589,57 @@ char test_data[33];
         std::cout << "\n " << i << "\n";
     }
 
-    // vector<uint8_t> v1;
-    // vector<uint8_t> v2;
-    // auto it1 = v1.begin();
-    // auto it2 = v2.begin();
-    // int curri=maxi, currj=maxj;
-    // while(source_hw_results[curri*16+currj] > 0){
-    //   int i = 0;
-    //   int d0 = 0, d1 = 0, d2 = 0;
-    //   std::cout << curri << " " << currj << "\n";
-    //   if(curri > 0 && currj > 0){
-    //     d0 = source_hw_results[(curri-1)*16+(currj-1)];
-    //   }
-    //   else if(curri == 0 && currj == 0){
-    //     break;
-    //   }
-    //   else if(curri == 0){
-    //     d2 = source_hw_results[(curri)*16+(currj-1)];
-    //   }
-    //   else if(currj == 0){
-    //     d1 = source_hw_results[(curri-1)*16+(currj)];
-    //   }
-    //   else{
-    //     d1 = source_hw_results[(curri-1)*16+(currj)];
-    //     d2 = source_hw_results[(curri)*16+(currj-1)];
-    //   }
-    //   std::cout << d0 << " " << d1 << " " << d2 << "\n";
-    //   if(d0 == 0 && d1 == 0 && d2 == 0){
-    //     break;
-    //   } else if( d0 > d1 && d0 > d2){
-    //     v1.insert(it1, rcv_data1[currj]);
-    //     v2.insert(it2, rcv_data2[curri]);
-    //     curri -= 1;
-    //     currj -= 1;
-    //   } else if( d1 > d2 ){
-    //     v1.insert(it1, 4);
-    //     v2.insert(it2, rcv_data2[curri]);
-    //     curri -= 1;
-    //   } else{
-    //     v1.insert(it1, rcv_data1[currj]);
-    //     v2.insert(it2, 4);
-    //     curri -= 1;
-    //   }
-    // }
+    vector<uint8_t> v1;
+    vector<uint8_t> v2;
+    auto it1 = v1.begin();
+    auto it2 = v2.begin();
+    int curri=maxi, currj=maxj;
+    while(source_hw_results[curri*16+currj] > 0){
+      int i = 0;
+      int d0 = 0, d1 = 0, d2 = 0;
+      std::cout << curri << " " << currj << "\n";
+      if(curri > 0 && currj > 0){
+        d0 = source_hw_results[(curri-1)*16+(currj-1)];
+      }
+      else if(curri == 0 && currj == 0){
+        break;
+      }
+      else if(curri == 0){
+        d2 = source_hw_results[(curri)*16+(currj-1)];
+      }
+      else if(currj == 0){
+        d1 = source_hw_results[(curri-1)*16+(currj)];
+      }
+      else{
+        d1 = source_hw_results[(curri-1)*16+(currj)];
+        d2 = source_hw_results[(curri)*16+(currj-1)];
+      }
+      std::cout << d0 << " " << d1 << " " << d2 << "\n";
+      if(d0 == 0 && d1 == 0 && d2 == 0){
+        break;
+      } else if( d0 > d1 && d0 > d2){
+        v1.insert(it1, rcv_data1[currj]);
+        v2.insert(it2, rcv_data2[curri]);
+        curri -= 1;
+        currj -= 1;
+      } else if( d1 > d2 ){
+        v1.insert(it1, 4);
+        v2.insert(it2, rcv_data2[curri]);
+        curri -= 1;
+      } else{
+        v1.insert(it1, rcv_data1[currj]);
+        v2.insert(it2, 4);
+        curri -= 1;
+      }
+    }
 
-    // for(const auto& value: v1){
-    //   cout << value << " ";
-    // }
-    // cout << "\n";
-    // for(const auto& value: v2){
-    //   cout << value << " ";
-    // }
+    for(const auto& value: v1){
+      cout << value << " ";
+    }
+    cout << "\n";
+    for(const auto& value: v2){
+      cout << value << " ";
+    }
 
 
         std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl;
