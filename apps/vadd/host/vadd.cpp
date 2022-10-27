@@ -369,13 +369,13 @@ void HostVAddApp::processTraffic() {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       // Start up and connect a Plasma client.
-      // PlasmaClient client;
+      PlasmaClient client;
       ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
 
       // Randomly generate an Object ID.
-      ObjectID object_id2 = ObjectID::from_binary("wwwwwwwwwwwwwwwwwwww");
+      ObjectID object_id = ObjectID::from_binary("wwwwwwwwwwwwwwwwwwww");
       //ObjectID object_id = 6464646464646464646464646464646464646464
-      cout << "object_id (host app - c) " << object_id2.hex() << endl;
+      cout << "object_id (host app - c) " << object_id.hex() << endl;
 
       // Create Plasma Object
       int64_t data_size = 100;
@@ -383,7 +383,7 @@ void HostVAddApp::processTraffic() {
       // this address.
       shared_ptr<Buffer> data;
       // Create a Plasma object by specifying its ID and size.
-      ARROW_CHECK_OK(client.Create(object_id2, data_size, NULL, 0, &data));
+      ARROW_CHECK_OK(client.Create(object_id, data_size, NULL, 0, &data));
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////////////// WRITE TO OBJECT ////////////////////////////////////////////
