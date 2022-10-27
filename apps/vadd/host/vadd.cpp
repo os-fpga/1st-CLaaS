@@ -322,7 +322,7 @@ void HostVAddApp::processTraffic() {
   // Disconnect the Plasma client.
   ARROW_CHECK_OK(client.Disconnect());
 
-  // try {
+  try {
     cout << "Does it reach here " << endl;
     const int DATA_WIDTH_UINT32 = DATA_WIDTH_BYTES / 4;
     // Allocate in/out data buffers.
