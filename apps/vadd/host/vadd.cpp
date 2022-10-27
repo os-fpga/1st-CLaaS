@@ -296,7 +296,7 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
     }
     std::cout << "-3" << std::endl;
     send_data(genomeS, genomeT);
-    // send_data2(output);
+    send_data2(output);
     std::cout << "sent" << std::endl;
     // Allocate Buffer in Global Memory
     OCL_CHECK(err, cl::Buffer buffer_r1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
@@ -348,215 +348,215 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 }
 
 
-// void HostVAddApp::processTraffic() {
+void HostVAddApp::processTraffic() {
 
-//   /////////////////////////////////////////////////////////////////////////////////////////////////////////
-//   /////////////////////////////////////////// PLASMA - GET THE OBJECT /////////////////////////////////////
-//   /////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////// PLASMA - GET THE OBJECT /////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//   // Start up and connect a Plasma client.
-//   PlasmaClient client;
-//   ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
+  // Start up and connect a Plasma client.
+  PlasmaClient client;
+  ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
 
-//   ObjectID object_id = ObjectID::from_binary("dddddddddddddddddddd");
-//   cout << "Host App receives the object1 with object ID: " << object_id.hex() << endl;
+  ObjectID object_id = ObjectID::from_binary("dddddddddddddddddddd");
+  cout << "Host App receives the object1 with object ID: " << object_id.hex() << endl;
 
-//   // Get from the Plasma store by Object ID.
-//   ObjectBuffer object_buffer;
-//   ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
+  // Get from the Plasma store by Object ID.
+  ObjectBuffer object_buffer;
+  ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
 
-//   // Retrieve object data.
-//   auto buffer = object_buffer.data;
-//   const uint8_t* rcv_data1 = buffer->data();
-//   int64_t rcv_data_size1 = buffer->size();
+  // Retrieve object data.
+  auto buffer = object_buffer.data;
+  const uint8_t* rcv_data1 = buffer->data();
+  int64_t rcv_data_size1 = buffer->size();
 
-//   int test_data[16];
+  int test_data[16];
 
-//   test_data[0] = 3;
-//   test_data[1] = 3;
-//   test_data[2] = 2;
-//   test_data[3] = 1;
+  test_data[0] = 3;
+  test_data[1] = 3;
+  test_data[2] = 2;
+  test_data[3] = 1;
 
-//   test_data[4] = 1;
-//   test_data[5] = 2;
-//   test_data[6] = 0;
-//   test_data[7] = 3;
+  test_data[4] = 1;
+  test_data[5] = 2;
+  test_data[6] = 0;
+  test_data[7] = 3;
 
-//   test_data[8] = 0;
-//   test_data[9] = 1;
-//   test_data[10] = 3;
-//   test_data[11] = 2;
+  test_data[8] = 0;
+  test_data[9] = 1;
+  test_data[10] = 3;
+  test_data[11] = 2;
 
-//   test_data[12] = 1;
-//   test_data[13] = 3;
-//   test_data[14] = 2;
-//   test_data[15] = 3;
+  test_data[12] = 1;
+  test_data[13] = 3;
+  test_data[14] = 2;
+  test_data[15] = 3;
 
-//   // Check that the data agrees with what was written in the other process.
-//   // for (int64_t i = 0; i < 16; i++) {
-//   //     cout << ARROW_CHECK(rcv_data1[i] == static_cast<uint8_t>(test_data[i]));
-//   // }
+  // Check that the data agrees with what was written in the other process.
+  // for (int64_t i = 0; i < 16; i++) {
+  //     cout << ARROW_CHECK(rcv_data1[i] == static_cast<uint8_t>(test_data[i]));
+  // }
 
-//   cout << endl;
+  cout << endl;
 
-//   /////////////////////////////////
+  /////////////////////////////////
 
-//   object_id = ObjectID::from_binary("eeeeeeeeeeeeeeeeeeee");
-//   cout << "Host App receives the object2 with object ID: " << object_id.hex() << endl;
+  object_id = ObjectID::from_binary("eeeeeeeeeeeeeeeeeeee");
+  cout << "Host App receives the object2 with object ID: " << object_id.hex() << endl;
 
-//   // Get from the Plasma store by Object ID.
-//   object_buffer;
-//   ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
+  // Get from the Plasma store by Object ID.
+  object_buffer;
+  ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
 
-//   // Retrieve object data.
-//   auto buffer2 = object_buffer.data;
-//   const uint8_t* rcv_data2 = buffer2->data();
-//   int64_t rcv_data_size2 = buffer2->size();
+  // Retrieve object data.
+  auto buffer2 = object_buffer.data;
+  const uint8_t* rcv_data2 = buffer2->data();
+  int64_t rcv_data_size2 = buffer2->size();
 
-//   // int test_data[16];
+  // int test_data[16];
 
-//   test_data[0] = 3;
-//   test_data[1] = 3;
-//   test_data[2] = 2;
-//   test_data[3] = 1;
+  test_data[0] = 3;
+  test_data[1] = 3;
+  test_data[2] = 2;
+  test_data[3] = 1;
 
-//   test_data[4] = 1;
-//   test_data[5] = 2;
-//   test_data[6] = 0;
-//   test_data[7] = 3;
+  test_data[4] = 1;
+  test_data[5] = 2;
+  test_data[6] = 0;
+  test_data[7] = 3;
 
-//   test_data[8] = 0;
-//   test_data[9] = 1;
-//   test_data[10] = 3;
-//   test_data[11] = 2;
+  test_data[8] = 0;
+  test_data[9] = 1;
+  test_data[10] = 3;
+  test_data[11] = 2;
 
-//   test_data[12] = 1;
-//   test_data[13] = 3;
-//   test_data[14] = 2;
-//   test_data[15] = 3;
-
-
-//   send_data(rcv_data1, rcv_data_size1, rcv_data2, rcv_data_size2);
-
-//   // Check that the data agrees with what was written in the other process.
-//   // for (int64_t i = 0; i < 16; i++) {
-//   //     cout << ARROW_CHECK(rcv_data2[i] == static_cast<uint8_t>(test_data[i]));
-//   // }
-
-//   cout << endl;
-
-//   // Disconnect the Plasma client.
-//   ARROW_CHECK_OK(client.Disconnect());
-
-//   // try {
-//     cout << "Does it reach here " << endl;
-//     const int DATA_WIDTH_UINT32 = DATA_WIDTH_BYTES / 4;
-//     // Allocate in/out data buffers.
-//     // size_t size = data_json["size"];
-//     // size_t resp_size = data_json["resp_size"];
-//     // cout << "Data JSON" << data_json << endl;
-//     // uint32_t * int_data_p = (uint32_t *)malloc(size * DATA_WIDTH_BYTES);
-//     // uint32_t * int_resp_data_p = (uint32_t *)malloc(resp_size * DATA_WIDTH_BYTES); {
-//       // With these data arrays...
-
-//       // Initial data for arrays (debug only).
-//       // for (uint i = 0; i < size * DATA_WIDTH_UINT32; i++) {
-//       //   int_data_p[i] = 0xDEADBEEF;
-//       // }
-//       // for (uint i = 0; i < resp_size * DATA_WIDTH_UINT32; i++) {
-//       //   int_resp_data_p[i] = 0xBEEFCAFE;
-//       // }
-
-//       // Send data to FPGA, or do fake FPGA processing.
-//       // #ifdef KERNEL_AVAIL
-//       // Process in FPGA.
-//       // write_data();
-//       init_kernel();
-//       if (verbosity > 2) {cout << "Wrote kernel." << endl;}
+  test_data[12] = 1;
+  test_data[13] = 3;
+  test_data[14] = 2;
+  test_data[15] = 3;
 
 
-//       start_kernel();
-//       if (verbosity > 2) {cout << "Started kernel." << endl;}
+  send_data(rcv_data1, rcv_data_size1, rcv_data2, rcv_data_size2);
 
-//       cout_line() << "Kernel produced:" << endl;
-//       int match = 0;
-//       std::cout << "Result:\n";
-//       for (int i = 0; i < 64; i++) {
-//           for (int j = 0; j < 16; j++) {
-//               std::bitset<8> set(source_hw_results[i*16+j]);
-//               // std::bitset<32> set2(output_string[i]);
-//               std::cout << std::dec << int(source_hw_results[i*16+j]) << " ";
-//               // std::cout << "SW: " << set2 << "\n";
-//           }
-//           std::cout << "\n";
-//       }
+  // Check that the data agrees with what was written in the other process.
+  // for (int64_t i = 0; i < 16; i++) {
+  //     cout << ARROW_CHECK(rcv_data2[i] == static_cast<uint8_t>(test_data[i]));
+  // }
 
-//       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//       /////////////////////////////////////////// PLASMA /////////////////////////////////////////////////////
-//       ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  cout << endl;
 
-//       // Start up and connect a Plasma client.
-//       // PlasmaClient client;
-//       ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
+  // Disconnect the Plasma client.
+  ARROW_CHECK_OK(client.Disconnect());
 
-//       // Randomly generate an Object ID.
-//       ObjectID object_id2 = ObjectID::from_binary("wwwwwwwwwwwwwwwwwwww");
-//       //ObjectID object_id = 6464646464646464646464646464646464646464
-//       cout << "object_id (host app - c) " << object_id2.hex() << endl;
+  // try {
+    cout << "Does it reach here " << endl;
+    const int DATA_WIDTH_UINT32 = DATA_WIDTH_BYTES / 4;
+    // Allocate in/out data buffers.
+    // size_t size = data_json["size"];
+    // size_t resp_size = data_json["resp_size"];
+    // cout << "Data JSON" << data_json << endl;
+    // uint32_t * int_data_p = (uint32_t *)malloc(size * DATA_WIDTH_BYTES);
+    // uint32_t * int_resp_data_p = (uint32_t *)malloc(resp_size * DATA_WIDTH_BYTES); {
+      // With these data arrays...
 
-//       // Create Plasma Object
-//       int64_t data_size = 100;
-//       // The address of the buffer allocated by the Plasma store will be written at
-//       // this address.
-//       shared_ptr<Buffer> data;
-//       // Create a Plasma object by specifying its ID and size.
-//       ARROW_CHECK_OK(client.Create(object_id2, data_size, NULL, 0, &data));
+      // Initial data for arrays (debug only).
+      // for (uint i = 0; i < size * DATA_WIDTH_UINT32; i++) {
+      //   int_data_p[i] = 0xDEADBEEF;
+      // }
+      // for (uint i = 0; i < resp_size * DATA_WIDTH_UINT32; i++) {
+      //   int_resp_data_p[i] = 0xBEEFCAFE;
+      // }
 
-//       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//       /////////////////////////////////////////// WRITE TO OBJECT ////////////////////////////////////////////
-//       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//       //Mutable it
-//       auto d = data->mutable_data();
-
-//       char test_data2[16];
-
-//       // we get this from yeshu
-//       test_data2[0] = 'T';
-//       test_data2[1] = 'G';
-//       test_data2[2] = 'T';
-//       test_data2[3] = 'C';
-
-//       test_data2[4] = 'G';
-//       test_data2[5] = 'T';
-//       test_data2[6] = 'C';
-//       test_data2[7] = 'A';
-
-//       test_data2[8] = 'T';
-//       test_data2[9] = 'A';
-//       test_data2[10] = 'G';
-//       test_data2[11] = 'C';
-
-//       test_data2[12] = 'C';
-//       test_data2[13] = 'G';
-//       test_data2[14] = 'T';
-//       test_data2[15] = 'T';
+      // Send data to FPGA, or do fake FPGA processing.
+      // #ifdef KERNEL_AVAIL
+      // Process in FPGA.
+      // write_data();
+      init_kernel();
+      if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
 
-//       // Write some data for the Plasma object.
-//       for (int64_t i = 0; i < 16; i++) {
-//           d[i] = static_cast<uint8_t>(test_data2[i]);
-//       }
+      start_kernel();
+      if (verbosity > 2) {cout << "Started kernel." << endl;}
 
-//       // Seal the object. This makes it available for all clients.
-//       client.Seal(object_id);
+      cout_line() << "Kernel produced:" << endl;
+      int match = 0;
+      std::cout << "Result:\n";
+      for (int i = 0; i < 64; i++) {
+          for (int j = 0; j < 16; j++) {
+              std::bitset<8> set(source_hw_results[i*16+j]);
+              // std::bitset<32> set2(output_string[i]);
+              std::cout << std::dec << int(source_hw_results[i*16+j]) << " ";
+              // std::cout << "SW: " << set2 << "\n";
+          }
+          std::cout << "\n";
+      }
 
-//       // Disconnect the Plasma client.
-//       ARROW_CHECK_OK(client.Disconnect());
-// }
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////////////// PLASMA /////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// int main(int argc, char const *argv[])
-// {
-//   //cout << "Hello from host application.\n";
-//   (new HostVAddApp())->server_main(argc, argv, "vadd");
-// }
+      // Start up and connect a Plasma client.
+      // PlasmaClient client;
+      ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
+
+      // Randomly generate an Object ID.
+      ObjectID object_id2 = ObjectID::from_binary("wwwwwwwwwwwwwwwwwwww");
+      //ObjectID object_id = 6464646464646464646464646464646464646464
+      cout << "object_id (host app - c) " << object_id2.hex() << endl;
+
+      // Create Plasma Object
+      int64_t data_size = 100;
+      // The address of the buffer allocated by the Plasma store will be written at
+      // this address.
+      shared_ptr<Buffer> data;
+      // Create a Plasma object by specifying its ID and size.
+      ARROW_CHECK_OK(client.Create(object_id2, data_size, NULL, 0, &data));
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////////////// WRITE TO OBJECT ////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      //Mutable it
+      auto d = data->mutable_data();
+
+      char test_data2[16];
+
+      // we get this from yeshu
+      test_data2[0] = 'T';
+      test_data2[1] = 'G';
+      test_data2[2] = 'T';
+      test_data2[3] = 'C';
+
+      test_data2[4] = 'G';
+      test_data2[5] = 'T';
+      test_data2[6] = 'C';
+      test_data2[7] = 'A';
+
+      test_data2[8] = 'T';
+      test_data2[9] = 'A';
+      test_data2[10] = 'G';
+      test_data2[11] = 'C';
+
+      test_data2[12] = 'C';
+      test_data2[13] = 'G';
+      test_data2[14] = 'T';
+      test_data2[15] = 'T';
+
+
+      // Write some data for the Plasma object.
+      for (int64_t i = 0; i < 16; i++) {
+          d[i] = static_cast<uint8_t>(test_data2[i]);
+      }
+
+      // Seal the object. This makes it available for all clients.
+      client.Seal(object_id);
+
+      // Disconnect the Plasma client.
+      ARROW_CHECK_OK(client.Disconnect());
+}
+
+int main(int argc, char const *argv[])
+{
+  //cout << "Hello from host application.\n";
+  (new HostVAddApp())->server_main(argc, argv, "vadd");
+}
