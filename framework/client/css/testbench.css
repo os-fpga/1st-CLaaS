@@ -323,17 +323,11 @@ p {
       .mx-auto {
         margin-left: auto !important; }
 
-        #rx-data1{
-          font-size: 2rem;
-          font-weight: 500; 
-          color: #fff;
-        }
-        
-        #rx-data2{
-          font-size: 2rem;
-          font-weight: 500; 
-          color: #fff;
-        }
+#rx-data{
+  font-size: 2rem;
+  font-weight: 500; 
+  color: #fff;
+}
 
 #rx-data-result{
   font-size: 2rem;

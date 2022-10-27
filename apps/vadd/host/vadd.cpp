@@ -446,7 +446,64 @@ void HostVAddApp::processTraffic() {
 //       /////////////////////////////////////////// PLASMA /////////////////////////////////////////////////////
 //       ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//       
+//       // Start up and connect a Plasma client.
+//       // PlasmaClient client;
+//       ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
+
+//       // Randomly generate an Object ID.
+//       ObjectID object_id2 = ObjectID::from_binary("wwwwwwwwwwwwwwwwwwww");
+//       //ObjectID object_id = 6464646464646464646464646464646464646464
+//       cout << "object_id (host app - c) " << object_id2.hex() << endl;
+
+//       // Create Plasma Object
+//       int64_t data_size = 100;
+//       // The address of the buffer allocated by the Plasma store will be written at
+//       // this address.
+//       shared_ptr<Buffer> data;
+//       // Create a Plasma object by specifying its ID and size.
+//       ARROW_CHECK_OK(client.Create(object_id2, data_size, NULL, 0, &data));
+
+//       ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//       /////////////////////////////////////////// WRITE TO OBJECT ////////////////////////////////////////////
+//       ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//       //Mutable it
+//       auto d = data->mutable_data();
+
+//       char test_data2[16];
+
+//       // we get this from yeshu
+//       test_data2[0] = 'T';
+//       test_data2[1] = 'G';
+//       test_data2[2] = 'T';
+//       test_data2[3] = 'C';
+
+//       test_data2[4] = 'G';
+//       test_data2[5] = 'T';
+//       test_data2[6] = 'C';
+//       test_data2[7] = 'A';
+
+//       test_data2[8] = 'T';
+//       test_data2[9] = 'A';
+//       test_data2[10] = 'G';
+//       test_data2[11] = 'C';
+
+//       test_data2[12] = 'C';
+//       test_data2[13] = 'G';
+//       test_data2[14] = 'T';
+//       test_data2[15] = 'T';
+
+
+//       // Write some data for the Plasma object.
+//       for (int64_t i = 0; i < 16; i++) {
+//           d[i] = static_cast<uint8_t>(test_data2[i]);
+//       }
+
+//       // Seal the object. This makes it available for all clients.
+//       client.Seal(object_id);
+
+//       // Disconnect the Plasma client.
+//       ARROW_CHECK_OK(client.Disconnect());
 
     OCL_CHECK(err, kernel = cl::Kernel(program, "krnl_vadd_rtl", &err));
     OCL_CHECK(err, cl::Buffer buffer_r1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, IN_MEM_SIZE,
@@ -476,95 +533,6 @@ void HostVAddApp::processTraffic() {
     OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_w}, CL_MIGRATE_MEM_OBJECT_HOST));
     std::cout << "3" << std::endl;
     OCL_CHECK(err, err = commands.finish());
-
-
-    // Start up and connect a Plasma client.
-      // PlasmaClient client;
-      ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
-
-      // Randomly generate an Object ID.
-      ObjectID object_id2 = ObjectID::from_binary("wwwwwwwwwwwwwwwwwwww");
-      //ObjectID object_id = 6464646464646464646464646464646464646464
-      cout << "object_id (host app - c) " << object_id2.hex() << endl;
-
-      // Create Plasma Object
-      int64_t data_size = 100;
-      // The address of the buffer allocated by the Plasma store will be written at
-      // this address.
-      shared_ptr<Buffer> data;
-      // Create a Plasma object by specifying its ID and size.
-      ARROW_CHECK_OK(client.Create(object_id2, data_size, NULL, 0, &data));
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /////////////////////////////////////////// WRITE TO OBJECT ////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      //Mutable it
-      auto d = data->mutable_data();
-
-char test_data[33];
-
-            // we get this from yeshu
-
-            test_data[0] = 0;
-            test_data[1] = 1;
-            test_data[2] = 2;
-            test_data[3] = 3;
-
-            test_data[4] = 0;
-            test_data[5] = 1;
-            test_data[6] = 2;
-            test_data[7] = 3;
-
-            test_data[8] = 0;
-            test_data[9] = 1;
-            test_data[10] = 4;//-
-            test_data[11] = 3;
-
-            test_data[12] = 0;
-            test_data[13] = 1;
-            test_data[14] = 4;//2
-            test_data[15] = 3;
-
-            test_data[12] = 5;
-
-            test_data[13] = 0;
-            test_data[14] = 1;
-            test_data[15] = 2;
-            test_data[16] = 3;
-
-            test_data[17] = 0;
-            test_data[18] = 1;
-            test_data[19] = 2;
-            test_data[20] = 3;
-
-            test_data[21] = 0;
-            test_data[22] = 1;
-            test_data[23] = 2;
-            test_data[24] = 3;
-
-            test_data[25] = 0;
-            test_data[26] = 1;
-            test_data[27] = 2;
-            test_data[28] = 3;
-
-            test_data[29] = 0;
-            test_data[30] = 1;
-            test_data[31] = 4;//-
-            test_data[32] = 3;
-
-
-
-            // Write some data for the Plasma object.
-            for (int64_t i = 0; i < 33; i++) {
-                d[i] = static_cast<uint8_t>(test_data[i]);
-            }
-
-      // Seal the object. This makes it available for all clients.
-      client.Seal(object_id);
-
-      // Disconnect the Plasma client.
-      ARROW_CHECK_OK(client.Disconnect());
 
     // OPENCL HOST CODE AREA END
 
