@@ -85,7 +85,7 @@ variable "out_dir" {
 # GB of block storage associated with the instance, mounted as /dev/sda1 and /.
 variable "root_device_size" {
   type = number
-  default = 120
+  default = 65
 }
 
 # GB of block storage associated with the instance, mounted as /dev/sdb and /home/centos/src/project_data.
@@ -132,7 +132,7 @@ owners = ["679593333241"]
 
   filter {
       name   = "name"
-      values = ["FPGA Developer AMI - 1.10.1*"]
+      values = ["FPGA Developer AMI - 1.6.0-40257ab5-6688-4c95-97d1-e251a40fd1fc-ami-0b1edf08d56c2da5c.4"]
   }
 
   filter {
