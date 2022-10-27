@@ -306,20 +306,20 @@ void HostVAddApp::processTraffic() {
 //   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //   // Start up and connect a Plasma client.
-  PlasmaClient client;
-  ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
+//   PlasmaClient client;
+//   ARROW_CHECK_OK(client.Connect("/tmp/plasma"));
 
-  ObjectID object_id = ObjectID::from_binary("dddddddddddddddddddd");
-  cout << "Host App receives the object1 with object ID: " << object_id.hex() << endl;
+//   ObjectID object_id = ObjectID::from_binary("dddddddddddddddddddd");
+//   cout << "Host App receives the object1 with object ID: " << object_id.hex() << endl;
 
-  // Get from the Plasma store by Object ID.
-  ObjectBuffer object_buffer;
-  ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
+//   // Get from the Plasma store by Object ID.
+//   ObjectBuffer object_buffer;
+//   ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
 
-  // Retrieve object data.
-  auto buffer = object_buffer.data;
-  const uint8_t* rcv_data1 = buffer->data();
-  int64_t rcv_data_size1 = buffer->size();
+//   // Retrieve object data.
+//   auto buffer = object_buffer.data;
+//   const uint8_t* rcv_data1 = buffer->data();
+//   int64_t rcv_data_size1 = buffer->size();
 
 //   int test_data[16];
 
@@ -352,17 +352,17 @@ void HostVAddApp::processTraffic() {
 
 //   /////////////////////////////////
 
-  object_id = ObjectID::from_binary("eeeeeeeeeeeeeeeeeeee");
-  cout << "Host App receives the object2 with object ID: " << object_id.hex() << endl;
+//   object_id = ObjectID::from_binary("eeeeeeeeeeeeeeeeeeee");
+//   cout << "Host App receives the object2 with object ID: " << object_id.hex() << endl;
 
-  // Get from the Plasma store by Object ID.
-  object_buffer;
-  ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
+//   // Get from the Plasma store by Object ID.
+//   object_buffer;
+//   ARROW_CHECK_OK(client.Get(&object_id, 1, -1, &object_buffer));
 
-  // Retrieve object data.
-  auto buffer2 = object_buffer.data;
-  const uint8_t* rcv_data2 = buffer2->data();
-  int64_t rcv_data_size2 = buffer2->size();
+//   // Retrieve object data.
+//   auto buffer2 = object_buffer.data;
+//   const uint8_t* rcv_data2 = buffer2->data();
+//   int64_t rcv_data_size2 = buffer2->size();
 
 //   // int test_data[16];
 
@@ -387,17 +387,17 @@ void HostVAddApp::processTraffic() {
 //   test_data[15] = 3;
 
 
-  send_data(rcv_data1, rcv_data_size1, rcv_data2, rcv_data_size2);
+//   send_data(rcv_data1, rcv_data_size1, rcv_data2, rcv_data_size2);
 
 //   // Check that the data agrees with what was written in the other process.
 //   // for (int64_t i = 0; i < 16; i++) {
 //   //     cout << ARROW_CHECK(rcv_data2[i] == static_cast<uint8_t>(test_data[i]));
 //   // }
 
-  cout << endl;
+//   cout << endl;
 
 //   // Disconnect the Plasma client.
-  ARROW_CHECK_OK(client.Disconnect());
+//   ARROW_CHECK_OK(client.Disconnect());
 
 //   // try {
 //     cout << "Does it reach here " << endl;
