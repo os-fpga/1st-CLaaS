@@ -200,36 +200,6 @@ endif
 
 WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
 LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
-
-ifeq ($(MAKECMDGOALS), launch)
-DEFAULT_SOCKET=SOCKET
-DEFAULT_KILLME=./kill_launch
-else
-DEFAULT_SOCKET=LIVE_SOCKET
-DEFAULT_KILLME=./killme
-endif
-
-# Interpret the LAUNCH_ID
-# KILLME: The name of the killme file for this microservice.
-# WEBSERVER_LOG: The path to the log file for this microservice (./log/*).
-# LAUNCH_DIR: directory from which microservice is launched and where is creates files.
-ifdef LAUNCH_ID
-LAUNCH_LOCAL_DIR=id-$(LAUNCH_ID)/
-LAUNCH_DIR=../live/$(BUILD_TARGET)/id-$(LAUNCH_ID)
-KILLME=./killme-$(LAUNCH_ID)
-WEBSERVER_LOG=log/id-$(LAUNCH_ID).log
-LAUNCH_ID_ARG_STR=$(SPACE)LAUNCH_ID=$(LAUNCH_ID)
-SOCKET=SOCKET-$(LAUNCH_ID)
-else
-LAUNCH_ID=.
-LAUNCH_LOCAL_DIR=
-LAUNCH_DIR=../live/$(BUILD_TARGET)
-KILLME=$(DEFAULT_KILLME)
-WEBSERVER_LOG=log/webserver.log
-LAUNCH_ID_ARG_STR=LAUNCH_ID=
-SOCKET=$(DEFAULT_SOCKET)
-endif
-
 LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo $(FRAMEWORK_DIR)/build/launch; fi) -w '$(LAUNCH_W)'
 LAUNCH_ARGS=-p $(PORT) -s $(SOCKET) -k '$(KILLME)' $(BUILD_TARGET) '$(HOST_CMD)'
 ifdef NOHUP
@@ -276,7 +246,7 @@ S3_BUCKET ?=1st-claas.$(S3_USER).$(S3_BUCKET_TAG)
 AUTO_APPROVE=false
 AFI_PERMISSION=public
 
-BUILD_TARGETS=$(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
+BUILD_TARGETS=$(EXECUTABLE) $(BINARY_CONTAINERS)
 
 # include ../../../framework/build/Makefile
 define with_secret
