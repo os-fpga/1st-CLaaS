@@ -136,19 +136,18 @@ void HostVAddApp::init_kernel(){
   OCL_CHECK(err, err = kernel.setArg(1, buffer_w));
   std::cout << "0" << std::endl;
   OCL_CHECK(err, err = kernel.setArg(2, 64)); //2*GENOME_SIZE * MAX_GENOME_LEN
-  OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_r1}, 0 /* 0 means from host*/));
-  OCL_CHECK(err, err = commands.enqueueTask(kernel));
+
   return;
 }
 void HostVAddApp::write_data(){
     // Copy input data to device global memory
-    // OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_r1}, 0 /* 0 means from host*/));
+    OCL_CHECK(err, err = commands.enqueueMigrateMemObjects({buffer_r1}, 0 /* 0 means from host*/));
     std::cout << "1" << std::endl;
 }
 
 void HostVAddApp::start_kernel() {
   int err;
-  // OCL_CHECK(err, err = commands.enqueueTask(kernel));
+  OCL_CHECK(err, err = commands.enqueueTask(kernel));
   std::cout << "2" << std::endl;
 
   // Copy Result from Device Global Memory to Host Local Memory
@@ -207,11 +206,11 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
   #ifdef OPENCL
     // Platform initialization. These can also be initiated by commands over the socket (though I'm not sure how important that is).
     init_platform(xclbin);
-    // init_kernel();  // TODO: FIX size.
+    init_kernel();  // TODO: FIX size.
   #endif
 
   #ifdef KERNEL_AVAIL
-    // kernel.reset_kernel();
+    kernel.reset_kernel();
   #endif
 
     int loop_cnt = 0;
@@ -345,8 +344,7 @@ void HostVAddApp::processTraffic() {
       // Send data to FPGA, or do fake FPGA processing.
       // #ifdef KERNEL_AVAIL
       // Process in FPGA.
-      // write_data();
-      init_kernel();
+      write_data();
       if (verbosity > 2) {cout << "Wrote kernel." << endl;}
 
 
