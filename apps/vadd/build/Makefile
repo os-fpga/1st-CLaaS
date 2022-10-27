@@ -129,7 +129,6 @@ endif
 test: $(EXECUTABLE)
 ifeq ($(TARGET),$(filter $(TARGET),sw_emu hw_emu))
 ifeq ($(HOST_ARCH), x86)
-	$(CP) $(EMCONFIG_DIR)/emconfig.json .
 	XCL_EMULATION_MODE=$(TARGET) $(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin
 else
 	$(ABS_COMMON_REPO)/common/utility/run_emulation.pl "${LAUNCH_EMULATOR} | tee embedded_run.log" "${RUN_APP_SCRIPT} $(TARGET)" "${RESULT_STRING}" "7"
@@ -397,7 +396,6 @@ build: $(BUILD_TARGETS)
 LAUNCH_CHECK=@if [ -e $(KILLME) ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source $(KILLME)', or, if not running, 'rm $(KILLME)', and try again." && false; fi
 launch: $(BUILD_TARGETS) 
 	$(LAUNCH_CHECK)
-	$(CP) $(EMCONFIG_DIR)/emconfig.json .
 	XCL_EMULATION_MODE=$(TARGET) $(EXECUTABLE) $(BUILD_DIR)/vadd.xclbin &
 	@mkdir -p $(LAUNCH_DIR)
 	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
