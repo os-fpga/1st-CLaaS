@@ -295,7 +295,6 @@ int HostVAddApp::server_main(int argc, char const *argv[], const char *kernel_na
 
   // }
   processTraffic();
-  while(1);
   return 0;
 }
 
