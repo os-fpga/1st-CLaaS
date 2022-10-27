@@ -15,115 +15,34 @@
   <link rel="stylesheet" href="/framework/css/testbench.css">
   <script src="/framework/js/fpgaServer.js"></script>
   <script src="/framework/js/testbench.js"></script>
-  <script src="/framework/js/declare.js"></script>
-  <script src="/framework/js/default.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Scire Genesis - Fast & Curious</title>
-  <!-- <script src="/framework/js/genome.js"></script> -->
-  <link rel="stylesheet" href="../css/genome.css">
-  <script class="jsbin" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
-  <style type="text/css">
-    #home, #signup {
-      display: none;
-    }
-  </style>
+  <title>Test Bench</title>
 </head>
 
 <body>
-  <section class="py-7 py-md-0 bg-hero" id="signin">
-    <div class="container">
-    <div class="row vh-md-100">
-      <div class="col-md-8 col-sm-10 col-12 mx-auto my-auto text-center">
-      <h1 class="heading-black text-capitalize">Scire Genesis - Fast & Curious</h1>
-  
-      <form id="form_id" method="post" name="myform">
-        <h3>User Name :</h3>
-        <input type="text" name="username" id="username"/>
-        <h3>Password :</h3>
-        <input type="password" name="password" id="password"/></br></br>
-        <button type="button" value="Login" id="submit" onclick="validate()" class="btn btn-primary d-inline-flex flex-row align-items-center">Sign In</button>
-		<button type="button" value="Login" id="submit" onclick="signup()" class="btn btn-primary d-inline-flex flex-row align-items-center">Sign Up</button>
-		</form><br>
-      </div>
-    </div>
-  </div>
-  </section>
 
-  <section class="py-7 py-md-0 bg-hero" id="signup">
-	<div class="container">
-	  <div class="row vh-md-100">
-		  <div class="col-md-8 col-sm-10 col-12 mx-auto my-auto text-center">
-		  <h1 class="heading-black text-capitalize">Scire Genesis - Fast & Curious</h1>
-  
-		  <form id="form_id" method="post" name="myform">
-			<h3>New User Name :</h3>
-			<input type="text" name="username" id="username"/>
-			<h3>New Password :</h3>
-			<input type="password" name="password" id="password"/></br></br>
-			<button type="button" value="Login" id="submit" onclick="validate_signup()" class="btn btn-primary d-inline-flex flex-row align-items-center">Sign Up</button>
-		  </form><br>
-		</div>
-	  </div>
-  	</div>
-  </section>
+  <h1>Test Bench for FPGA Kernel</h1>
+  <h2>Send</h2>
+  <p>Enter data to send to the server as a list of JS objects, where each object represents a 512-bit value, partitioned as 32-bit integer values.
+     Each object can contain the following fields:</p>
+<pre>
+default_int: {int},  // Default value for all 64 integers, used if not defined otherwise.
+high_int: {int},  // Lost-significant integer value.
+low_int: {int},  // Least-significent integer value.
+</pre>
+<textarea id="tx-data-js"></textarea>
+<button id="send-button">Send</button>
+<button id="trace-button">Trace On</button>
+<pre id="tx-data">
+<p>Number of chunks expected:</p>
+<input id="num-resp-chunks" type="text" value="1" />
+</pre>
+  <h2>Receive</h2>
+  <p>Response data as hex strings, 512 bits per line, space-delimeted at 32-bit boundaries.</p>
+<pre id="rx-data">
 
-  <section class="py-7 py-md-0 bg-hero" id="home">
-    <div class="container">
-        <div class="row vh-md-100">
-            <div class="col-md-8 col-sm-10 col-12 mx-auto my-auto text-center">
-                <h1 class="heading-black text-capitalize">Scire Genesis - Fast & Curious</h1>
-				<button type="button" value="Login" id="submit" onclick="signout()" class="btn btn-primary d-inline-flex flex-row align-items-center">Sign Out</button>
-				<p class="lead py-3">Upload your genome sequence files and get the alignment faster than ever.</p>
-                <div class="file-upload" id="file-upload-input-one">
-                  <div class="image-upload-wrap-one" id="image-upload-wrap-one">
-                    <input class="file-upload-input-one" id="file-upload-input-one" type='file' onchange="readURLOne(this);" accept="txt/*" />
-                    <div class="drag-text">
-                      <h3>Drag and drop a file or select add file below</h3>
-                    </div>
-                  </div>
-                  <br>
-                  <button class="btn btn-primary d-inline-flex flex-row align-items-center" type="button" onclick="$('.file-upload-input-one').trigger( 'click' )">Add File One</button>
-                  <div class="file-upload-content" id="file-upload-content-one">
-                    <div class="image-title-wrap" id="image-title-wrap-one">
-                      <button type="button" onclick="removeUploadOne()" class="btn btn-primary d-inline-flex flex-row align-items-center">Remove</button>
-                      <span class="image-title" id="image-title-one">Uploaded File</span>
-                    </div>
-                  </div>
-                </div> 
-                <div class="file-upload" id="upload-two">
-                  <div class="image-upload-wrap-two" id="image-upload-wrap-two">
-                    <input class="file-upload-input-two" id="file-upload-input-two" type='file' onchange="readURLTwo(this);" accept="txt/*" />
-                    <div class="drag-text">
-                      <h3>Drag and drop a file or select add file below</h3>
-                    </div>
-                  </div> 
-                  <br>
-                  <button class="btn btn-primary d-inline-flex flex-row align-items-center" type="button" onclick="$('.file-upload-input-two').trigger( 'click' )">Add File Two</button>
-                  <div class="file-upload-content" id="file-upload-content-two">
-                    <div class="image-title-wrap"  id="image-title-wrap-two">
-                      <button type="button" onclick="removeUploadTwo()" class="btn btn-primary d-inline-flex flex-row align-items-center">Remove</button>
-                      <span class="image-title" id="image-title-two">Uploaded File</span>
-                    </div>
-                  </div> 
-                </div>
-				<div class="file-upload">
-					<br>
-					<br>
-					<br>
-					<button class = "btn btn-primary d-inline-flex flex-row align-items-center"  type="button" id="send-button">Start Sequencing!</button>
-          <br>
-					<br>
-					<br>
-          <pre id="rx-data-result">
-        </pre>
-          <br>
-          <pre id="rx-data">
-					</pre>
-					<p id="message"></p>
-				  </div>
-            </div>
-        </div>
-    </div>
-</section>
+</pre>
+<p id="message"></p>
+
+
 </body>
 </html>

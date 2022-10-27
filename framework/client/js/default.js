@@ -1,1 +1,0 @@
-var teststr = '[{"data": "TGTCGTCATAGCCGTT"}]' 

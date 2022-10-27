@@ -31,86 +31,6 @@
 
 // This file contains content to help develop webpage test benches for apps.
 
-var res1, res2;
-let usernames = [];
-let passwords = [];
-
-function readURLOne(input) {
-  if (input.files && input.files[0]) {
-
-    var reader = new FileReader();
-
-    reader.onload = function(e) {
-      $('.image-upload-wrap-one').hide();
-
-      $('#file-upload-image-one').attr('src', e.target.result);
-      $('#file-upload-content-one').show();
-      $('#image-title-one').html(input.files[0].name);
-
-      console.log(reader.result)
-
-      res1 = reader.result
-
-      
-    };
-
-    // reader.readAsDataURL(input.files[0]);
-    reader.readAsText(input.files[0]);
-
-  } else {
-    removeUploadOne();
-  }
-}
-
-function removeUploadOne() {
-  $('.file-upload-input-one').replaceWith($('.file-upload-input-one').clone());
-  $('#file-upload-content-one').hide();
-  $('.image-upload-wrap-one').show();
-}
-$('.image-upload-wrap-one').bind('dragover', function () {
-        $('.image-upload-wrap-one').addClass('image-dropping-one');
-    });
-    $('.image-upload-wrap-one').bind('dragleave', function () {
-       $('.image-upload-wrap-one').removeClass('image-dropping-one');
-});
-
-
-function readURLTwo(input) {
-  if (input.files && input.files[0]) {
-
-    var reader = new FileReader();
-
-    reader.onload = function(e) {
-      $('.image-upload-wrap-two').hide();
-
-      $('#file-upload-image-two').attr('src', e.target.result);
-      $('#file-upload-content-two').show();
-      $('#image-title-two').html(input.files[0].name);
-
-      console.log(reader.result)
-
-      res2 = reader.result
-    };
-
-    // reader.readAsDataURL(input.files[0]);
-    reader.readAsText(input.files[0]);
-
-  } else {
-    removeUploadTwo();
-  }
-}
-
-function removeUploadTwo() {
-  $('.file-upload-input-two').replaceWith($('.file-upload-input-two').clone());
-  $('#file-upload-content-two').hide();
-  $('.image-upload-wrap-two').show();
-}
-$('.image-upload-wrap-two').bind('dragover', function () {
-        $('.image-upload-wrap-two').addClass('image-dropping-two');
-    });
-    $('.image-upload-wrap-two').bind('dragleave', function () {
-        $('.image-upload-wrap-two').removeClass('image-dropping-two');
-});
 
 // Main
 $(document).ready(function () {
@@ -130,58 +50,101 @@ class RawTestBench {
     // Attach handlers.
 
     this.server.ws.onmessage = (msg) => {
-      console.log('yooooooo: ')
-      
       try {
-
-        console.log('Start')
-        console.log(jsonstr)
-
-        // myArray = jsonstr.split("");
-
-        // console.log(myArray)
-        // console.log(typeof(myArray))
-
-        $("#rx-data-result").text("Result:");
-        $("#rx-data").text(jsonstr[0]['data']);
-
-
         let data = JSON.parse(msg.data);
-        
-        console.log('Data: ', data)
         if (data.hasOwnProperty('type')) {
-          
           this.log(`Received message: ${data.type}`);
         } else {
-          
           this.receiveData(msg);
         }
       } catch(err) {
-        
         this.log(`Failed to parse returned json string: ${msg.data}`);
       }
     }
+
+    $("#tx-data-js").change( (evt) => {
+      this.parseTxData();
+    });
+    $("#num-resp-chunks").change( (evt) => {
+      this.parseTxData();
+    });
 
     $("#send-button").click( (evt) => {
       this.sendData();
     });
 
-  
+
+    $("#tx-data-js").val(
+`{default_int: parseInt('55555555', 16),
+ high_int: parseInt('12345678', 16),
+ low_int: parseInt('04030201', 16)
+}`
+    );
+    $("#tx-data-js").change();
+    $("#num-resp-chunks").change();
+    
+    $('#trace-button').click( (evt) => {
+      if (this.tracing) {
+        this.tracing = false;
+        this.server.stopTracing();
+        $('#trace-button').text("Trace On");
+      } else {
+        this.tracing = true;
+        this.server.startTracing();
+        $('#trace-button').text("Trace Off");
+      }
+    });
   }
+
+  parseTxData() {
+    // Parse Tx Data.
+    let txt = $("#tx-data-js").val();
+    this.tx_data_array = null;
+    this.tx_data_valid = false;
+    $("#send-button").prop("disabled", true);
+    let exp_num_resp_chunks = 0;  // Incremented for each expected output chunk.
+    try {
+      this.tx_data_array = eval(`[${txt}]`);
+      // Interpret as integer arrays.
+      this.tx_data_array = this.tx_data_array.map( (val) => {
+        let ret = [];
+        for (let i=0; i < 16; i++) {
+          ret[i] = val.default_int;
+        }
+        if (typeof val.high_int !== "undefined") {
+          ret[15] = val.high_int;
+        }
+        if (typeof val.low_int !== "undefined") {
+          ret[0] = val.low_int;
+        }
+
+        // For checking data consistency with #num-resp-chunks
+        // under the assumption that the kernel will produce a number of output chunks equal to the low byte of the input data.
+        exp_num_resp_chunks += ret[0] % 256;
+
+        return ret;
+      });
+      this.tx_data_valid = true;
+      $("#send-button").prop("disabled", false);
+    } catch(err) {
+      $("#message").text("Failed to parse Tx Data:" + err);
+    }
+
+    $("#num-resp-chunks").css("background-color", (parseInt($("#num-resp-chunks").val()) == exp_num_resp_chunks) ? "white" : "red");
+  }
+
   sendData() {
-    console.log("resses", [res1.split(" "), res2.split(" ")])
-    this.server.sendChunks(2, [res1.split(" "), res2.split(" ")]);
-
-
-    // this.server.sendChunks(0, [res2.split(" ")]);
+    if (! this.tx_data_valid) {
+      console.log("Bug: Refusing to send invalid data.");
+    } else {
+      this.server.sendChunks(parseInt($("#num-resp-chunks").val()), this.tx_data_array);
+    }
   }
 
   receiveData(msg) {
     // Translate msg to hex.
     try {
-      console.log('yoyoyo: ', msg.data)
       let data = JSON.parse(msg.data);
-      console.log('Data: ', data)
       let display_data = [];
       data.forEach( (chunk, i) => {
         let display_chunk = chunk.map( (val) => {return val.toString(16);} );
@@ -192,32 +155,4 @@ class RawTestBench {
       $("#message").text(`Failed to parse returned json string: ${msg.data}`);
     }
   }
-}
-
-function signup(){
-  let signup = document.getElementById("signup");
-  let signin = document.getElementById("signin");
-  signup.style.display = "block";
-  signin.style.display = "none";
-}
-
-function validate(){
-  let home = document.getElementById("home");
-  let signin = document.getElementById("signin");
-  home.style.display = "block";
-  signin.style.display = "none";
-}
-
-function validate_signup(){
-  let signup = document.getElementById("signup");
-  let signin = document.getElementById("signin");
-  signup.style.display = "none";
-  signin.style.display = "block";
-}
-
-function signout(){
-  let home = document.getElementById("home");
-  let signin = document.getElementById("signin");
-  home.style.display = "none";
-  signin.style.display = "block";
 }
