@@ -1,4 +1,3 @@
-
 """
 BSD 3-Clause License
 
@@ -73,7 +72,6 @@ from server_api import *
 # import boto3   -- Using boto3 would be far simpler than using the AWS CLI, but boto3 does not seem to support asynchronous/non-blocking operation. :(
 import re
 
-import pyarrow.plasma as plasma
 
 
 ## Communication protocol defines
@@ -412,86 +410,7 @@ class FPGAServerApplication(tornado.web.Application):
 
     def handleDataMsg(self, data, type, ws):
         self.socket.send_string("command", type)
-        print("Data from the Client to Web Server: ", data)
         self.socket.send_string("data", data)
-        
-        
-
-        ########################################################################################################
-        ########################################### PLASMA - WRITE TO OBJ ######################################
-        ########################################################################################################
-
-
-        client = plasma.connect("/tmp/plasma")
-
-        # Create an object buffer1.
-        object_id = plasma.ObjectID(20 * b"d")
-        object_size = 16
-        buffer1 = memoryview(client.create(object_id, object_size))
-
-        # Write to the buffer1.
-
-        # Encoding
-        # A = 1
-        # C = 2
-        # G = 3
-        # T = 4
-
-        y = json.loads(data)
-        print("Data:", y['data'])
-        z = y['data'][0]
-        for i in range(16):
-            print("Data:", z[i])
-            if (z[i] == 'A'):
-                buffer1[i] = 0
-            elif (z[i] == 'C'):
-                buffer1[i] = 1
-            elif (z[i] == 'G'):
-                buffer1[i] = 2
-            else:
-                buffer1[i] = 3
-            print("buffer1[i]", buffer1[i])
-
-        client.seal(object_id)
-
-        print("OBJID1 ", object_id)
-
-
-        ####################### 
-
-        # Create an object buffer2.
-        object_id = plasma.ObjectID(20 * b"e")
-        object_size = 16
-        buffer2 = memoryview(client.create(object_id, object_size))
-
-
-        # Write to the buffer2.
-
-        # Encoding
-        # A = 1
-        # C = 2
-        # G = 3
-        # T = 4
-
-        y = json.loads(data)
-        print("Data:", y['data'])
-        z = y['data'][1]
-        for i in range(16):
-            print("Data:", z[i])
-            if (z[i] == 'A'):
-                buffer2[i] = 0
-            elif (z[i] == 'C'):
-                buffer2[i] = 1
-            elif (z[i] == 'G'):
-                buffer2[i] = 2
-            else:
-                buffer2[i] = 3
-            print("buffer2[i]", buffer2[i])
-
-        client.seal(object_id)
-
-        print("OBJID2 ", object_id)
-
         data = read_data_handler(self.socket, None, False)
         return data
 
