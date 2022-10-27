@@ -427,9 +427,3 @@ void HostVAddApp::processTraffic() {
       // Disconnect the Plasma client.
       ARROW_CHECK_OK(client.Disconnect());
 }
-
-int main(int argc, char const *argv[])
-{
-  //cout << "Hello from host application.\n";
-  (new HostVAddApp())->server_main(argc, argv, "vadd");
-}
