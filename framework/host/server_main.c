@@ -48,7 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "server_main.h"
-// #include "mandelbrot.h"
+#include "mandelbrot.h"
 
 using namespace std;
 using namespace lodepng;

@@ -66,7 +66,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "hw_kernel.h"
 #endif
 
-// #include "lodepng.h"
+#include "lodepng.h"
 #include "protocol.h"
 
 #include <nlohmann/json.hpp>

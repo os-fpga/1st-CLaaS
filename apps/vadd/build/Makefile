@@ -46,7 +46,7 @@ LDFLAGS += $(opencl_LDFLAGS)
 ############################## Setting up Host Variables ##############################
 #Include Required Host Source Files
 CXXFLAGS += -I$(ABS_COMMON_REPO)/apps/vadd/host/xcl2 $(ABS_COMMON_REPO)/framework/host/hw_kernel.h $(ABS_COMMON_REPO)/framework/host/server_main.h $(ABS_COMMON_REPO)/framework/host/kernel.h 
-HOST_SRCS += $(ABS_COMMON_REPO)/apps/vadd/host/xcl2/xcl2.cpp $(ABS_COMMON_REPO)/apps/vadd/host/vadd.cpp $(ABS_COMMON_REPO)/framework/host/hw_kernel.cpp $(ABS_COMMON_REPO)/framework/host/server_main.cpp
+HOST_SRCS += $(ABS_COMMON_REPO)/apps/vadd/host/xcl2/xcl2.cpp $(ABS_COMMON_REPO)/apps/vadd/host/vadd.cpp $(ABS_COMMON_REPO)/framework/host/hw_kernel.c $(ABS_COMMON_REPO)/framework/host/server_main.c
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 
