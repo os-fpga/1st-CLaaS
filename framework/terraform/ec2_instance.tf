@@ -85,7 +85,7 @@ variable "out_dir" {
 # GB of block storage associated with the instance, mounted as /dev/sda1 and /.
 variable "root_device_size" {
   type = number
-  default = 65
+  default = 120
 }
 
 # GB of block storage associated with the instance, mounted as /dev/sdb and /home/centos/src/project_data.
@@ -132,7 +132,7 @@ owners = ["679593333241"]
 
   filter {
       name   = "image-id"
-      values = ["ami-075fdcdc326141760"]
+      values = ["ami-0e178635787eb5e00"]
   }
 
   filter {
