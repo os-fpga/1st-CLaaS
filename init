@@ -115,7 +115,7 @@ then
   echo "Downloading Terraform"
   mkdir terraform
   ( cd terraform && \
-    curl https://releases.hashicorp.com/terraform/0.12.4/terraform_0.12.4_linux_amd64.zip > terraform.zip \
+    curl https://releases.hashicorp.com/terraform/1.5.2/terraform_1.5.2_linux_amd64.zip > terraform.zip \
     && unzip terraform.zip \
     && rm terraform.zip \
     && chmod +x terraform )
