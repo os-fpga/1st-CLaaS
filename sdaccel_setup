@@ -1,1 +1,0 @@
-pushd $AWS_FPGA_REPO_DIR; source ./sdaccel_setup.sh; popd
