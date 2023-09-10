@@ -1,0 +1,1 @@
+pushd $AWS_FPGA_REPO_DIR; source ./vitis_setup.sh; popd
