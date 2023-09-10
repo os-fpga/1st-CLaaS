@@ -157,7 +157,7 @@ launch () {
     then
         $HOST &
     else
-        sudo -- sh -c "source /opt/xilinx/xrt/setup.sh ; $HOST" &
+        sudo -- sh -c " source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ; $HOST" &
     fi
     export HOST_PID=$!
   fi
