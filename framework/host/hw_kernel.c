@@ -51,9 +51,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <sys/time.h>
 #include "kernel.h"
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #include <CL/opencl.h>
-
+#include <CL/cl_ext.h>
 #include "server_main.h"
+
+#if defined(VITIS_PLATFORM)
+#define STR_VALUE(arg)      #arg
+#define GET_STRING(name) STR_VALUE(name)
+#define TARGET_DEVICE GET_STRING(VITIS_PLATFORM)
+#endif
 
 
 HW_Kernel::HW_Kernel() {
@@ -64,8 +71,8 @@ void HW_Kernel::perror(const char * msg) {
   status = EXIT_FAILURE;
 }
 
-int HW_Kernel::load_file_to_memory(const char *filename, char **result) {
-  uint size = 0;
+cl_uint HW_Kernel::load_file_to_memory(const char *filename, char **result) {
+  cl_uint size = 0;
   FILE *f = fopen(filename, "rb");
   if (f == NULL) {
     *result = NULL;
@@ -81,6 +88,7 @@ int HW_Kernel::load_file_to_memory(const char *filename, char **result) {
   }
   fclose(f);
   (*result)[size] = 0;
+  printf("file loaded to memory\n");
   return size;
 }
 
@@ -90,9 +98,16 @@ void HW_Kernel::initialize_platform() {
   cl_uint platform_count;
   char cl_platform_vendor[1001];
 
+  cl_uint num_devices;
+  cl_uint device_found = 0;
+  cl_device_id devices[16];  // compute device id
+  char cl_device_name[1001];
+  char target_device_name[1001] = TARGET_DEVICE;
+
   int err;
 
   int platform_found = 0;
+  printf("Initialize platform start\n");
   err = clGetPlatformIDs(16, platforms, &platform_count);
   if (err != CL_SUCCESS) {
     perror("Error: Failed to find an OpenCL platform!\nTest failed\n");
@@ -129,11 +144,33 @@ void HW_Kernel::initialize_platform() {
   #endif
   printf("get device, fpga is %d \n", fpga);
   err = clGetDeviceIDs(platform_id, fpga ? CL_DEVICE_TYPE_ACCELERATOR : CL_DEVICE_TYPE_CPU,
-               1, &device_id, NULL);
+               16, devices, &num_devices);
   if (err != CL_SUCCESS) {
     perror("Error: Failed to create a device group!\nTest failed\n");
     return;
   }
+
+  //iterate all devices to select the target device.
+    for (cl_uint i=0; i<num_devices; i++) {
+        err = clGetDeviceInfo(devices[i], CL_DEVICE_NAME, 1024, cl_device_name, 0);
+        if (err != CL_SUCCESS) {
+            printf("ERROR: Failed to get device name for device %d!\n", i);
+            printf("ERROR: Test failed\n");
+            return;
+        }
+        printf("CL_DEVICE_NAME %s\n", cl_device_name);
+        if(strcmp(cl_device_name, target_device_name) == 0) {
+            device_id = devices[i];
+            device_found = 1;
+            printf("Selected %s as the target device\n", cl_device_name);
+        }
+    }
+
+    if (!device_found) {
+        printf("ERROR:Target device %s not found. Exit.\n", target_device_name);
+        return;
+    }
+
   // Creation of a compute context
   context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
   if (!context) {
@@ -141,14 +178,17 @@ void HW_Kernel::initialize_platform() {
     return;
   }
 
+    printf("CL context  %p\n\n", context);
   // Creation a command commands
-  commands = clCreateCommandQueue(context, device_id, 0, &err);
+  commands = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err);
   if (!commands) {
     perror("Error: Failed to create a command commands!\nTest failed\n");
     return;
   }
 
   status = 0;
+
+  printf("Initialize platform complete\n");
 }
 
 void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int memory_size) {
@@ -160,18 +200,19 @@ void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, i
   //------------------------------------------------------------------------------
   // xclbin
   //------------------------------------------------------------------------------
-  printf("INFO: loading xclbin %s\n", xclbin);
-  int n_i0 = load_file_to_memory(xclbin, (char **) &kernelbinary);
+  printf("INFO: Loading xclbin %s\n", xclbin);
+  cl_uint n_i0 = load_file_to_memory(xclbin, (char **) &kernelbinary);
   if (n_i0 < 0) {
     perror("Error: Failed to load kernel from the xclbin provided\nTest failed\n");
     return;
   }
   size_t n0 = n_i0;
-
+  printf("CL Start create Program\n");
   // Create the compute program from offline
   program = clCreateProgramWithBinary(context, 1, &device_id, &n0,
                                       (const unsigned char **) &kernelbinary, &status, &err);
   // TODO: Looks like kernelbinary is never deallocated. What's the right behavior, here?
+  free(kernelbinary);
 
   if ((!program) || (err!=CL_SUCCESS)) {
     perror("Error: Failed to create a compute program binary!\nTest failed\n");
@@ -194,6 +235,7 @@ void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, i
 
   // Create the compute kernel in the program we wish to run
   kernel = clCreateKernel(program, kernel_name, &err);
+  printf("CL created kernel");
   if (!kernel || err != CL_SUCCESS) {
     perror("Error: Failed to create a compute kernel!\nTest failed\n");
     return;
@@ -215,6 +257,8 @@ void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, i
   }
 
   status = 0;
+
+    printf("Initialize kernel complete\n");
 }
 
 void HW_Kernel::write_kernel_data(double h_a_input[], int data_size){
@@ -289,7 +333,14 @@ void HW_Kernel::write_kernel_data(input_struct * input, int data_size) {
 
 void HW_Kernel::start_kernel() {
   int err;
-  err = clEnqueueTask(commands, kernel, 0, NULL, NULL);
+  size_t global[1];
+  size_t local[1];
+    // Execute the kernel over the entire range of our 1d input data set
+    // using the maximum number of work group items for this device
+
+    global[0] = 1;
+    local[0] = 1;
+  err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, (size_t*)&global, (size_t*)&local, 0, NULL, NULL);
   if (err) {
     perror("Error: Failed to execute kernel!\nTest failed\n");
     return;

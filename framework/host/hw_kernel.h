@@ -82,7 +82,7 @@ public:
   /*
   ** Function to load the binary program in RAM in order to write it into the FPGA device
   */
-  int load_file_to_memory(const char *filename, char **result);
+  cl_uint load_file_to_memory(const char *filename, char **result);
 
   
 
