@@ -814,7 +814,7 @@ $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	@# Create bucket if it doesn't exist.
 	aws s3api create-bucket --bucket '$(S3_BUCKET)' --acl private > /dev/null && aws s3api wait bucket-exists --bucket '$(S3_BUCKET)'
 	# Create AFI and Wait for creation to complete. afi-<id> and <timestamp>_afi_id.txt are extracted into files for use.
-	cd $(DEST_DIR) && $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE) \
+	cd $(DEST_DIR) && $(VITIS_DIR)/tools/create_vitis_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE) \
 	  && grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt \
 	  && ls *_afi_id.txt | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt \
 	  && wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
