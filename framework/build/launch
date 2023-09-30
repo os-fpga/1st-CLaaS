@@ -67,7 +67,6 @@
 
 # TODO: Make a function to wrap commands in sudo.
 
-
 usage () {
     echo "Usage: launch [-p #] [-h host-pid] [-c compile-command] [-w web-server-args] (sw|hw_emu|hw) host-command"
     exit 1
@@ -129,6 +128,12 @@ else
   USE_XILINX=true
 fi
 
+if [[ $TARGET = "hw" ]]
+then
+  USE_FPGA=true
+else
+  USE_FPGA=false
+fi
 
 if [[ $USE_XILINX = "false" ]] && [[ $HOST = "" ]];
 then
@@ -156,8 +161,16 @@ launch () {
     if [[ $USE_XILINX = "false" ]];
     then
         $HOST &
-    else
-        sudo -- sh -c " source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ; $HOST" &
+    fi
+
+    if [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "true" ]];
+    then
+      sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
+    fi
+
+    if [[ $USE_XILINX = "false" ]] || [[ $USE_FPGA = "false" ]];
+    then
+      sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ;$HOST" &
     fi
     export HOST_PID=$!
   fi
