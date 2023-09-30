@@ -158,13 +158,21 @@ void HW_Kernel::initialize_platform() {
             printf("ERROR: Test failed\n");
             return;
         }
+	      if (fpga == 0) {
         printf("CL_DEVICE_NAME %s\n", cl_device_name);
         if(strcmp(cl_device_name, target_device_name) == 0) {
             device_id = devices[i];
             device_found = 1;
             printf("Selected %s as the target device\n", cl_device_name);
         }
-    }
+        }
+        else {
+            printf("CL_DEVICE_NAME %s\n", cl_device_name);
+            device_id = devices[i];
+            device_found = 1;
+            printf("Selected %s as the target device\n", cl_device_name);
+
+        }}
 
     if (!device_found) {
         printf("ERROR:Target device %s not found. Exit.\n", target_device_name);
