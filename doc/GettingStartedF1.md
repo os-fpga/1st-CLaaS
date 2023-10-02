@@ -113,7 +113,7 @@ The command below uses <a href="https://www.terraform.io/" target="_blank" atom_
 
 > **IMPORTANT:** Be sure not to accidentally leave instances running!!! You should configure monitoring of your resources, but the options, though plentiful, seem very limited for catching instances you fail to stop. Also be warned that stopping an instance can fail. We have found it important to always refresh the page before changing machine state. And, be sure your instance transitions to "stopped" state (or, according to AWS support, charging stops at "stopping" state).
 
-You must choose a Linux password for your new instance (which must not contain single/double quotes nor backslash). Obviously, since you are typing it here in plain text, be sure it is not visible to wandering eyes, and perhaps run `clear` after command completion.
+You must choose a Linux password for your new instance (which must not contain single/double quotes nor backslash). **Make Sure to use a strong password probably with more than 8 characters and having alphabets + numbers + special characters** .Obviously, since you are typing it here in plain text, be sure it is not visible to wandering eyes, and perhaps run `clear` after command completion.
 
 ```sh
 make development_instance LINUX_PASSWORD=<password-for-your-instance>
@@ -145,6 +145,13 @@ make desktop
 
 Enter your Linux password. (We do not register your password with Remmina because Remmina must be carefully configure to keep your password secure.)
 
+If you have Windows installed, you can use RDC (Remote Desktop Connection). If you want to access the remote server manually, type the Public IP Address in the field.
+
+![RDC sample](/doc/img/RDC.png "RDC Window")
+
+If you face any color depth issue when using Remote Desktop especially with Xilinx Tools (they get blurry and test is none to visible), you can set High Colour to **16 bit**
+
+![RDC color](/doc/img/RDC_color.png "RDC Colour")
 
 ### SSH Access
 
@@ -183,7 +190,7 @@ Open a new terminal in your remote desktop. Each time you do so, you must:
 
 ```sh
 cd ~/1st-CLaaS  # (~/1st-CLaaS is a symbolic link.)
-source sdaccel_setup
+source vitis_setup
 ```
 
 
@@ -225,7 +232,7 @@ git commit ...
 git push   # If not to master, you would pull from corresponding branch on F1 instance.
 ```
 
-> Note: Sourcing `sdaccel_setup` currently breaks `git gui` and `gitk`, so use these in a separate shell without `sdaccel_setup`.
+> Note: Sourcing `vitis_setup` currently breaks `git gui` and `gitk`, so use these in a separate shell without `vitis_setup`.
 
 
 
@@ -239,7 +246,7 @@ make f1_instance
 ```
 
 ```sh
-make ssh SSH_CMD='source 1st-CLaaS/sdaccel_setup && cd 1st-CLaaS/app/mandelbrot/build && make launch PREBUILT=true'   # TARGET=hw is the default on F1.
+make ssh SSH_CMD='source 1st-CLaaS/vitis_setup && cd 1st-CLaaS/app/mandelbrot/build && make launch PREBUILT=true'   # TARGET=hw is the default on F1.
 ```
 
 As before, open `http://<IP>:8888` in your browser (using the new IP). Now you can select renderer "FPGA", and navigate at FPGA speed. (Try "velocity" nagivation mode.)
