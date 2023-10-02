@@ -24,13 +24,9 @@ Please help us debug other Linux/Mac platforms. If you don't have a compatible m
 
 ## Setup
 
-
-To configure your local environment, including installation of tools for AWS development:
+To configure your local environment, including installation of tools for AWS development, clone and cd into this repo, then:
 
 ```sh
-cd <wherever you would like to work>
-git clone https://github.com/stevehoover/1st-CLaaS
-cd 1st-CLaaS
 ./init   # This will require sudo password entry, and you may be asked to update your $PATH.)
 ```
 
