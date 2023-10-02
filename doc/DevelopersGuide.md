@@ -52,7 +52,7 @@ The top-level file structure is:
     - `regress`: a regression script that launches framework and app regression scripts
   - `doc`: documentation (including this document)
   - `init`: a script to set up the repository for development
-  - `sdaccel_setup`: a script to set up for development using Xilinx tools on AWS
+  - `vitis_setup`: a script to set up for development using Xilinx tools on AWS
 
 An application _`foo`_ is constructed from code in `framework` and `apps/foo`. `framework` and `apps/foo` contain files/directories using nearly identical structure:
 
@@ -90,7 +90,7 @@ An actual F1, and even AWS as a whole, are needed very little during development
 
   - Software (`sw`): An optional mode where the RTL kernel is not utilized. Custom C++ code is required to provide emulated kernel behavior.
   - Simulation (`sim`): Verilator is used for 2-state simulation of the custom RTL kernel. Verilator creates a C++ model of the kernel which is directly compiled in with the host executable. The Host Application C++ code controls the kernel clock and decides when to send/receive data to/from the kernel.
-  - Hardware Emulation (`hw_emu`): This mode is supported by Xilinx SDAccel on AWS. All FPGA logic is simulated, including the custom kernel and surrounding shell logic. This runs much slower than Simulation.
+  - Hardware Emulation (`hw_emu`): This mode is supported by Xilinx Vitis on AWS. All FPGA logic is simulated, including the custom kernel and surrounding shell logic. This runs much slower than Simulation.
   - Hardware (`hw`): Uses a real F1 FPGA.
 
 Generally, most kernel development is done in Simulation. Hardware Emulation is used to refine the implementation of the design and may catch a few new bugs because of 4-state modeling and test bench differences. Hardware compilation is primarily for testing the application at speed and for deployment.
