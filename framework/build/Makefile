@@ -264,8 +264,7 @@ else
 SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 endif
 
-# if (XILINX_INSTALL)
-# then we will use SUPPORTED_TARGETS := hw_on_prem  // TODO: Confirm Steve
+
 
 #
 # Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
@@ -286,7 +285,7 @@ else
 BUILD_TARGET :=hw_emu
 endif
 endif
-# TODO: Confirm Steve, Target downgrade order will be  hw_on_prem, hw, hw_emu, hw_on_prem_emu, sw and then sim
+
 # If BUILD_TARGET is not supported, downgrade, but allow hw (if explicit, as ensured above) for hw_emu platforms. (Note that "hw" will match "hw_emu".)
 ifeq ($(findstring $(BUILD_TARGET),$(SUPPORTED_TARGETS)),)
 # Downgrade.
@@ -304,7 +303,7 @@ endif
 $(info Using TARGET=$(BUILD_TARGET).  (Platform supports: | $(SUPPORTED_TARGETS)))
 
 
-# TODO : Use Xilinx for local hw as well
+
 # Characterize TARGET.
 ifeq ($(BUILD_TARGET),hw)
 USE_XILINX=true
@@ -313,7 +312,7 @@ ifeq ($(BUILD_TARGET),hw_emu)
 USE_XILINX=true
 endif
 
-# TODO: Prebuilt needed for local hw?
+
 # Can only do PREBUILT=true w/ TARGET=hw.
 ifneq ($(BUILD_TARGET),hw)
 	USE_PREBUILT=false
@@ -417,10 +416,10 @@ KERNEL_FLAGS=
 KERNEL_EXE=$(KERNEL_NAME)
 
 #Custom flag to give to v++
-KERNEL_LDCLFLAGS= --connectivity.nk $(KERNEL_NAME):1
-    --xp param:compiler.preserveHlsOutput=1 \
-	--hls.max_memory_ports $(KERNEL_NAME) \
-	--hls.memory_port_data_width $(KERNEL_NAME):512 \
+KERNEL_LDCLFLAGS= --connectivity.nk $(KERNEL_NAME):1 \
+      --xp param:compiler.preserveHlsOutput=1 \
+      --hls.max_memory_ports $(KERNEL_NAME) \
+      --hls.memory_port_data_width $(KERNEL_NAME):512 \
 
 KERNEL_ADDITIONAL_FLAGS=
 
