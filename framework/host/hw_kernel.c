@@ -88,7 +88,8 @@ cl_uint HW_Kernel::load_file_to_memory(const char *filename, char **result) {
   }
   fclose(f);
   (*result)[size] = 0;
-  printf("file loaded to memory\n");
+  // For Debugging
+  printf("File loaded to memory\n");
   return size;
 }
 
@@ -98,7 +99,7 @@ void HW_Kernel::initialize_platform() {
   cl_uint platform_count;
   char cl_platform_vendor[1001];
 
-  cl_uint num_devices;
+  cl_uint num_devices;       // Number of cl_devices if more than one
   cl_uint device_found = 0;
   cl_device_id devices[16];  // compute device id
   char cl_device_name[1001];
@@ -107,7 +108,6 @@ void HW_Kernel::initialize_platform() {
   int err;
 
   int platform_found = 0;
-  printf("Initialize platform start\n");
   err = clGetPlatformIDs(16, platforms, &platform_count);
   if (err != CL_SUCCESS) {
     perror("Error: Failed to find an OpenCL platform!\nTest failed\n");
@@ -158,20 +158,19 @@ void HW_Kernel::initialize_platform() {
             printf("ERROR: Test failed\n");
             return;
         }
-	      if (fpga == 0) {
-        printf("CL_DEVICE_NAME %s\n", cl_device_name);
-        if(strcmp(cl_device_name, target_device_name) == 0) {
+
+	      if (fpga == 0)
+        {
+         if(strcmp(cl_device_name, target_device_name) == 0) {
             device_id = devices[i];
             device_found = 1;
             printf("Selected %s as the target device\n", cl_device_name);
-        }
+          }
         }
         else {
-            printf("CL_DEVICE_NAME %s\n", cl_device_name);
             device_id = devices[i];
             device_found = 1;
             printf("Selected %s as the target device\n", cl_device_name);
-
         }}
 
     if (!device_found) {
@@ -186,7 +185,6 @@ void HW_Kernel::initialize_platform() {
     return;
   }
 
-    printf("CL context  %p\n\n", context);
   // Creation a command commands
   commands = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err);
   if (!commands) {
@@ -341,6 +339,7 @@ void HW_Kernel::write_kernel_data(input_struct * input, int data_size) {
 
 void HW_Kernel::start_kernel() {
   int err;
+  // Global and Local variables for CLEnqueue and Range Kernel Call
   size_t global[1];
   size_t local[1];
     // Execute the kernel over the entire range of our 1d input data set
