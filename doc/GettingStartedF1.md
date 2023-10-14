@@ -92,7 +92,7 @@ Enter information, using:
   - "default" AWS profile
   - your AWS access keys created and region selected above
   - default output format: `json`
-  - an S3_USER and S3_BUCKET_TAG of your choice, used only to create a unique bucket name (global address for AWS data storage).
+  - an S3_USER and S3_BUCKET_TAG of your choice (lowercase alphanumeric only), used only to create a unique bucket name (global address for AWS data storage).
   - if desired, a default administrative webserver password (as described).
 
 This creates:
