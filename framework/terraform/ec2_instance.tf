@@ -126,6 +126,8 @@ provider "aws" {
   secret_key              = "${var.aws_secret_access_key}"
 }
 
+#TODO: AWS AMI updated. To find a way that Terraform can check for new AMIs instead of user changing 
+# it in script manually
 data "aws_ami" "instance_ami" {
 most_recent = true
 owners = ["679593333241"]
