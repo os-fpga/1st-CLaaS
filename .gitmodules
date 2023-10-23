@@ -1,3 +1,6 @@
 [submodule "framework/host/json"]
 	path = framework/host/json
 	url = https://github.com/nlohmann/json.git
+[submodule "framework/fpga/f4pga-examples"]
+	path = framework/fpga/f4pga-examples
+	url = https://github.com/chipsalliance/f4pga-examples
