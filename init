@@ -20,7 +20,7 @@ git submodule update --init --recursive
 # Platform-specific installs.
 echo "Installing linux packages."
 mkdir -p local
-COMMON_PACKAGES='make inotify-tools bc remmina jq perl unzip'  # python-tornado removed -- redundant w/ pip install of tornado
+COMMON_PACKAGES='make inotify-tools bc remmina jq perl unzip python-tornado'
 DEBUG_PACKAGES='vim htop tmux'
 if [[ -n "$(which apt-get 2> /dev/null)" ]]
 then

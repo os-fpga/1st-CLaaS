@@ -1019,14 +1019,14 @@ TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
 define make_instance
 	@# Instance will be initialized with 1st-CLaaS repo cloned from remote, but there is an issue if the remote is not using https: ssh will require interactive verification which hangs script.
 	@if [[ ! '$(GIT_URL)' =~ ^https: ]]; then echo -e '\e[91m\e[1m1st CLaaS repo must use "https" protocol, but is "$(GIT_URL)". Provide git repo to use on remote instance, e.g. "GIT_URL=https://github.com/xxx/1st-CLaaS.git", or use "git remote set-url origin https:..."./\e[0m' && false; fi
-	@if ! git status | grep 'working directory clean' > /dev/null; then echo && echo -e '\e[91m\e[1mInstance construction can have unexpected behavior when working directory is not clean.\e[0m' && echo && sleep 2; fi
+	@if ! git status | grep 'working tree clean' > /dev/null; then echo && echo -e '\e[91m\e[1mInstance construction can have unexpected behavior when working directory is not clean.\e[0m' && echo && sleep 2; fi
 	@echo 'Instance will be initialized based on latest "$(GIT_BRANCH)" branch.' && echo
 	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
 	@echo 'This instance and its associated resources can be destroyed with:'
 	@echo '   > make destroy SETUP=$(SETUP)'
 	@# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
 	@# Do so without echoing command to avoid password in output (though, most-likely, it was typed in the first place).
-	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password (final step, in case this fails)." && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
+	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password (final step, in case this fails)." && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd && sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/"'; fi
 endef
 ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:
