@@ -135,6 +135,8 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   #endif
 
 
+  // Main HOST loop
+  // Currently START_KERNEL wont be working as web-scoket terminates
   while (true) {
     if ((socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
       printf("%d\n", socket);
@@ -264,6 +266,28 @@ void HostApp::processTraffic() {
           exit(1);
         }
         break;
+      }
+      case START_KERNEL_N: // To initialize platform and start kerenel again
+      {
+        //#ifdef OPENCL
+        //  init_platform(NULL);
+        //  init_kernel(NULL, xclbin, kernel_name, COLS * ROWS * sizeof(int));  // TODO: FIX size.
+        //  if (verbosity > 3) {cout_line() << "KERNEL STARTED" << endl;}
+        //#endif
+        //#ifdef KERNEL_AVAIL
+        //  kernel.reset_kernel();
+        //#endif
+        //break;
+	exit(1);
+      }
+      case CLEAN_KERNEL_N:
+      {
+        #ifdef KERNEL_AVAIL
+        if (verbosity > 1) {cout_line() << "Clean Kernel" << endl;}
+        kernel.clean_kernel(); // Shutdown and clean-up
+        #endif
+        // break;
+        exit(1);
       }
       case START_TRACING_N:
       {

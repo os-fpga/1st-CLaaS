@@ -242,7 +242,7 @@ resource "aws_instance" "the_instance" {
     }
 
     provisioner "file" {
-      content     = "[${var.aws_profile}] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key}"
+      content     = "[${var.aws_profile}] \naws_access_key_id = ${var.aws_access_key_id} \naws_secret_access_key = ${var.aws_secret_access_key}"
       destination = "/home/centos/.aws/credentials"
     }
 

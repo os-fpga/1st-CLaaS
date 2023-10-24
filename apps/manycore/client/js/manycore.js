@@ -178,6 +178,13 @@ class WARPV_Example {
         $('#trace-button').text("Trace Off");
       }
     });
+
+    $('#reset-button').click( (evt) => {
+        this.server.cleanKernel();
+        this.server.startKernel();
+        $('#reset-button').text("Reset");
+    });
+
   }
 
   assemble() {

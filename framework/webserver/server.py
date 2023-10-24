@@ -567,6 +567,8 @@ class FPGAServerApplication(tornado.web.Application):
         self.registerMessageHandler("PING", self.handlePing)
         self.registerMessageHandler("START_TRACING", self.handleCommandMsg)
         self.registerMessageHandler("STOP_TRACING", self.handleCommandMsg)
+        self.registerMessageHandler("START_KERNEL", self.handleCommandMsg)
+        self.registerMessageHandler("CLEAN_KERNEL", self.handleCommandMsg)
 
     def run(self):
         # Report external URL for the web server.

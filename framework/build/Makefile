@@ -420,17 +420,21 @@ KERNEL_LDCLFLAGS=--nk $(KERNEL_NAME):1 \
 	--max_memory_ports $(KERNEL_NAME) \
 	--memory_port_data_width $(KERNEL_NAME):512 \
 
-KERNEL_ADDITIONAL_FLAGS=
+KERNEL_ADDITIONAL_FLAGS= --xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY}={rebuilt} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE}={AlternateRoutability} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.GATED_CLOCK_CONVERSION}={off} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.BUFG}={12} \
+	--xp vivado_prop:run.my_rm_synth_1.{STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT}={500} \
 
 #Device to be used
 TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
 
 REPORT=
 ifeq ($(BUILD_TARGET),hw)
-REPORT=--report system
+REPORT= -R2 --report_level system
 else
 ifeq ($(BUILD_TARGET),hw_emu)
-REPORT=--report estimate
+REPORT= -R2 --report_level estimate
 endif
 endif
 
@@ -636,15 +640,18 @@ ifeq ($(BUILD_TARGET),sw)
 #sw target
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
+	cp sdaccel.ini $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 # Host for debug.
 $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 	mkdir -p $(DEST_DIR)
+	cp sdaccel.ini $(DEST_DIR)
 	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 else
 #sim target
 $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC) $(FRAMEWORK_V_SRC)
 	mkdir -p $(DEST_DIR)
+	cp sdaccel.ini $(DEST_DIR)
 	$(VERILATOR) --cc --sv --trace --top-module $(KERNEL_NAME)_kernel -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator \
 	|| (STATUS=$$? && mv $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp.error && exit $$STATUS)  # to force re-run.
 $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp
@@ -656,12 +663,14 @@ $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
 #	mkdir -p $(DEST_DIR)
+#	cp sdaccel.ini $(DEST_DIR)
 #	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 endif
 else
 #hw and hw_emu target
 $(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
 	mkdir -p $(DEST_DIR)
+	cp sdaccel.ini $(DEST_DIR)
 	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 endif
 
@@ -794,7 +803,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR);	$(XOCC) -g --platform $(AWS_PLATFORM) --profile_kernel data:all:all:all --target $(BUILD_TARGET) --link --optimize 2 --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
@@ -833,7 +842,7 @@ endif  # End Xilinx build stuff.
 .PHONY: host xo xclbin emulation build launch
 host: $(DEST_DIR)/$(HOST_EXE)
 host_debug: $(DEST_DIR)/$(HOST_EXE)_debug
-#xo: $(DEST_DIR)/$(KERNEL_EXE).xo
+xo: $(DEST_DIR)/$(KERNEL_EXE).xo
 xclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 
 ifeq ($(BUILD_TARGET), hw_emu)
@@ -1084,3 +1093,4 @@ list_setups:
 .PHONY: copy_app
 copy_app:
 	if [[ -n '$(APP_NAME)' ]]; then $(REPO)/bin/copy_app '$(KERNEL_NAME)' '$(APP_NAME)'; else echo -e '\e[91m\e[1mAPP_NAME must be provided.\e[0m'; fi
+	
