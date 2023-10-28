@@ -396,7 +396,7 @@ HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/hw_kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I$(XILINX_XRT)/runtime/include/1_2 -D C_KERNEL -D VITIS_PLATFORM=xilinx_aws-vu9p-f1_shell-v04261818_201920_3 -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I$(XILINX_XRT)/runtime/include/1_2 -D C_KERNEL -D VITIS_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Simulation flags

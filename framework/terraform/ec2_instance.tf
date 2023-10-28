@@ -130,11 +130,11 @@ provider "aws" {
 # it in script manually
 data "aws_ami" "instance_ami" {
 most_recent = true
-owners = ["679593333241"]
+owners = ["aws-marketplace"]
 
   filter {
-      name   = "image-id"
-      values = ["ami-0e178635787eb5e00"]
+      name   = "name"
+      values = ["FPGA Developer AMI*"]
   }
 
   filter {

@@ -89,7 +89,10 @@ cl_uint HW_Kernel::load_file_to_memory(const char *filename, char **result) {
   fclose(f);
   (*result)[size] = 0;
   // For Debugging
-  printf("File loaded to memory\n");
+  if (verbosity > 0)
+  {
+    printf("File loaded to memory\n");
+  }
   return size;
 }
 
@@ -158,8 +161,8 @@ void HW_Kernel::initialize_platform() {
             printf("ERROR: Test failed\n");
             return;
         }
-
-	      if (fpga == 0)
+        
+        if (fpga == 0)
         {
          if(strcmp(cl_device_name, target_device_name) == 0) {
             device_id = devices[i];
@@ -241,7 +244,9 @@ void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, i
 
   // Create the compute kernel in the program we wish to run
   kernel = clCreateKernel(program, kernel_name, &err);
-  printf("CL created kernel");
+  if (verbosity > 0){
+    printf("CL created kernel");
+  }
   if (!kernel || err != CL_SUCCESS) {
     perror("Error: Failed to create a compute kernel!\nTest failed\n");
     return;
@@ -264,7 +269,10 @@ void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, i
 
   status = 0;
 
+  if (verbosity > 0){
     printf("Initialize kernel complete\n");
+  }
+
 }
 
 void HW_Kernel::write_kernel_data(double h_a_input[], int data_size){
