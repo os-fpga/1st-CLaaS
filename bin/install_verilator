@@ -35,6 +35,7 @@ else
   curl https://www.veripool.org/ftp/verilator-4.108.tgz | tar -zx
   mv verilator* verilator  # So path is not version-dependent.
   cd verilator
+  autoconf
   ./configure
   make -j$(nproc)
 fi

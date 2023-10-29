@@ -19,7 +19,7 @@ set kernelDir $workspace/$kernelPrjName
 create_project kernel_wizard $wizardDir -force
 
 # Instantiate the SDx kernel wizard IP
-create_ip -name sdx_kernel_wizard -vendor xilinx.com -library ip -module_name $kernelName
+create_ip -name rtl_kernel_wizard -vendor xilinx.com -library ip -module_name $kernelName
 
 set cmd "set_property -dict \[list CONFIG.NUM_CLOCKS {2} CONFIG.NUM_INPUT_ARGS {1} CONFIG.ARG00_NAME {ctrl_length} CONFIG.NUM_M_AXI {1} CONFIG.M00_AXI_NUM_ARGS {1} CONFIG.M00_AXI_ARG00_NAME {a} CONFIG.KERNEL_NAME {$kernelName} CONFIG.KERNEL_VENDOR {$kernelVendor}] \[get_ips $kernelName]"
 eval $cmd

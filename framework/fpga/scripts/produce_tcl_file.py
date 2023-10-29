@@ -106,7 +106,7 @@ string = ('# This file has been produced by:' + sys.argv[0] + '\n'
           'create_project kernel_wizard $wizardDir -force\n'
           '\n'
           '# Instantiate the SDx kernel wizard IP\n'
-          'create_ip -name sdx_kernel_wizard -vendor xilinx.com -library ip -module_name $kernelName\n\n')
+          'create_ip -name rtl_kernel_wizard -vendor xilinx.com -library ip -module_name $kernelName\n\n')
 
 string += json_to_tcl_config(config_file)
 

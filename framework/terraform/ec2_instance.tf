@@ -85,7 +85,7 @@ variable "out_dir" {
 # GB of block storage associated with the instance, mounted as /dev/sda1 and /.
 variable "root_device_size" {
   type = number
-  default = 65
+  default = 120
 }
 
 # GB of block storage associated with the instance, mounted as /dev/sdb and /home/centos/src/project_data.
@@ -126,13 +126,15 @@ provider "aws" {
   secret_key              = "${var.aws_secret_access_key}"
 }
 
+#TODO: AWS AMI updated. To find a way that Terraform can check for new AMIs instead of user changing 
+# it in script manually
 data "aws_ami" "instance_ami" {
 most_recent = true
-owners = ["679593333241"]
+owners = ["aws-marketplace"]
 
   filter {
-      name   = "image-id"
-      values = ["ami-075fdcdc326141760"]
+      name   = "name"
+      values = ["FPGA Developer AMI*"]
   }
 
   filter {

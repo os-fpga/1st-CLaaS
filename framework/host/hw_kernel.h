@@ -71,6 +71,7 @@ public:
   cl_mem write_mem;                   // device memory written by kernel
   int status = 1;
   bool initialized = false;
+  static const int verbosity = 0; // 0: no debug messages; 10: all debug messages.
 
   HW_Kernel();
 
@@ -82,7 +83,7 @@ public:
   /*
   ** Function to load the binary program in RAM in order to write it into the FPGA device
   */
-  int load_file_to_memory(const char *filename, char **result);
+  cl_uint load_file_to_memory(const char *filename, char **result);
 
   
 

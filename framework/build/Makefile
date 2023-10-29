@@ -265,6 +265,7 @@ SUPPORTED_TARGETS :=$(SUPPORTED_TARGETS)sw |$(SPACE)
 endif
 
 
+
 #
 # Determine BUILD_TARGET. [hw (default) | hw_emu | sim | sw]
 #
@@ -364,7 +365,7 @@ S3_LOGS_KEY=$(KERNEL_NAME)_log
 S3_DCP_KEY=$(KERNEL_NAME)_dcp
 S3_TRANSFER_KEY=$(KERNEL_NAME)_xfer
 
-XOCC=xocc
+VPP=v++
 CC=g++
 
 
@@ -395,7 +396,7 @@ HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/kernel.h
 HOST_HDRS=$(SW_HDRS) $(FRAMEWORK_HOST_DIR)/hw_kernel.h
 # TODO: It seems SDX_PLATFORM should be set to a value. For hw_emu, I see one device: "xilinx:pcie-hw-em:7v3:1.0"
 #       What's the emconfigutil command (for configuring the platform for hw_emu?)
-HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I$(XILINX_XRT)/runtime/include/1_2 -D C_KERNEL -D SDX_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
+HOST_CFLAGS=$(SW_CFLAGS) -D KERNEL_AVAIL -D FPGA_DEVICE -D OPENCL -I$(XILINX_XRT)/runtime/include/1_2 -D C_KERNEL -D VITIS_PLATFORM=$(AWS_PLATFORM) -D KERNEL=$(KERNEL_NAME)
 HOST_LFLAGS=$(SW_LFLAGS) -lxilinxopencl
 
 #Simulation flags
@@ -410,15 +411,15 @@ HOST_EXE=host
 
 #Kernel
 KERNEL_SRC=
-# Flags for xocc (include -I <file> args).
+# Flags for v++ (include -I <file> args).
 KERNEL_FLAGS=
 KERNEL_EXE=$(KERNEL_NAME)
 
-#Custom flag to give to xocc
-KERNEL_LDCLFLAGS=--nk $(KERNEL_NAME):1 \
-	--xp param:compiler.preserveHlsOutput=1 \
-	--max_memory_ports $(KERNEL_NAME) \
-	--memory_port_data_width $(KERNEL_NAME):512 \
+#Custom flag to give to v++
+KERNEL_LDCLFLAGS= --connectivity.nk $(KERNEL_NAME):1 \
+      --xp param:compiler.preserveHlsOutput=1 \
+      --hls.max_memory_ports $(KERNEL_NAME) \
+      --hls.memory_port_data_width $(KERNEL_NAME):512 \
 
 KERNEL_ADDITIONAL_FLAGS=
 
@@ -549,7 +550,7 @@ HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS)
 endif
 ifeq ($(BUILD_TARGET),hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_SDX)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
+HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_VITIS)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
 endif
 ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
@@ -794,7 +795,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(XOCC) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+	cd $(DEST_DIR); $(VPP) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) --input_files ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
@@ -812,7 +813,7 @@ $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 	@# Create bucket if it doesn't exist.
 	aws s3api create-bucket --bucket '$(S3_BUCKET)' --acl private > /dev/null && aws s3api wait bucket-exists --bucket '$(S3_BUCKET)'
 	# Create AFI and Wait for creation to complete. afi-<id> and <timestamp>_afi_id.txt are extracted into files for use.
-	cd $(DEST_DIR) && $(SDACCEL_DIR)/tools/create_sdaccel_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE) \
+	cd $(DEST_DIR) && $(VITIS_DIR)/tools/create_vitis_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE) \
 	  && grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt \
 	  && ls *_afi_id.txt | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt \
 	  && wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"

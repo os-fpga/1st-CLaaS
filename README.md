@@ -112,7 +112,7 @@ Looking specifically at the Amazon F1 platform, F1 provides powerful Xilinx FPGA
 
   - Documentation is often misleading as APIs and infrastructure are evolving.
   - External dependencies are poorly managed, so tutorials break at random.
-  - Xilinx tools, Vivado and SDAccel, while powerful, are difficult to learn and use, slow, and arcane.
+  - Xilinx tools, Vivado and Vitis, while powerful, are difficult to learn and use, slow, and arcane.
   - OpenCL is a whole other beast, built for folks who want to design hardware like it's software... which it obviously isn't.
   - Developers must understand AXI protocols and manage AXI controllers.
   - The AWS platform can be intimidating to a newcomer.
