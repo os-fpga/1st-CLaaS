@@ -162,9 +162,9 @@ launch () {
     then
         $HOST &
     fi
-    else if [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; # Hardware Emulation
+    if [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; # Hardware Emulation
     then
-      sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ;$HOST" &
+      sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ; export LC_ALL="C"; $HOST" &
     else # Hardware
       sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
     fi
