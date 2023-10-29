@@ -71,6 +71,7 @@ public:
   cl_mem write_mem;                   // device memory written by kernel
   int status = 1;
   bool initialized = false;
+  static const int verbosity = 0; // 0: no debug messages; 10: all debug messages.
 
   HW_Kernel();
 
