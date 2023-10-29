@@ -116,8 +116,10 @@ void HW_Kernel::initialize_platform() {
     perror("Error: Failed to find an OpenCL platform!\nTest failed\n");
     return;
   }
-
-  printf("INFO: Found %d platforms\n", platform_count);
+  if (verbosity > 0)
+  {
+    printf("INFO: Found %d platforms\n", platform_count);
+  }
 
   // Finds an available Xilinx Platform
   for (unsigned int iplat=0; iplat<platform_count; iplat++) {
@@ -197,7 +199,10 @@ void HW_Kernel::initialize_platform() {
 
   status = 0;
 
-  printf("Initialize platform complete\n");
+  if (verbosity > 0)
+  {
+    printf("Initialize platform complete\n");
+  }
 }
 
 void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, int memory_size) {
@@ -209,14 +214,20 @@ void HW_Kernel::initialize_kernel(const char *xclbin, const char *kernel_name, i
   //------------------------------------------------------------------------------
   // xclbin
   //------------------------------------------------------------------------------
-  printf("INFO: Loading xclbin %s\n", xclbin);
+  if (verbosity > 0)
+  {
+    printf("INFO: Loading xclbin %s\n", xclbin);
+  }
   cl_uint n_i0 = load_file_to_memory(xclbin, (char **) &kernelbinary);
   if (n_i0 < 0) {
     perror("Error: Failed to load kernel from the xclbin provided\nTest failed\n");
     return;
   }
   size_t n0 = n_i0;
-  printf("CL Start create Program\n");
+  if (verbosity > 0)
+  {
+    printf("CL Start create Program\n");
+  }
   // Create the compute program from offline
   program = clCreateProgramWithBinary(context, 1, &device_id, &n0,
                                       (const unsigned char **) &kernelbinary, &status, &err);

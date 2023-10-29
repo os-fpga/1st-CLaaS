@@ -158,17 +158,14 @@ launch () {
   if [[ $HOST_PID == "" ]]
     # Host application launched externally (probably via gdb).
   then
-    if [[ $USE_XILINX = "false" ]];
+    if [[ $USE_XILINX = "false" ]] && [[ $USE_FPGA = "false" ]]; #Simulation
     then
         $HOST &
     fi
-    else if [[ $USE_XILINX = "false" ]] || [[ $USE_FPGA = "false" ]];
+    else if [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; # Hardware Emulation
     then
       sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ;$HOST" &
-    fi
-
-    if [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "true" ]];
-    then
+    else # Hardware
       sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
     fi
     export HOST_PID=$!
