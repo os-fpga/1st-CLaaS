@@ -189,7 +189,7 @@ xeyes  # Hopefully, you see some eyes now.
 Open a new terminal in your remote desktop. Each time you do so, you must:
 
 ```sh
-cd ~/1st-CLaaS  # (~/1st-CLaaS is a symbolic link.)
+cd ~/src/project_data/repo  # (~/1st-CLaaS is a symbolic link.)
 source vitis_setup
 ```
 
@@ -199,7 +199,7 @@ source vitis_setup
 As you did on your local machine, you can run Mandelbrot in simulation.
 
 ```sh
-cd ~/1st-CLaaS/apps/mandelbrot/build
+cd ~/src/project_data/repo/apps/mandelbrot/build
 make TARGET=sim launch
 ```
 
@@ -212,7 +212,7 @@ On this instance, you can also run the Xilinx "hardware emulation" (`hw_emu`) mo
 On your Development Instance, build the host application and Amazon FPGA Image (AFI) that the host application will load onto the FPGA. But it would take close to an hour to build the AFI, so below, we are specifying `PREBUILT=true` to utilize a prebuilt public AFI referenced in the repository.
 
 ```sh
-cd ~/1st-CLaaS/apps/mandelbrot/build
+cd ~/src/project_data/repo/apps/mandelbrot/build
 make PREBUILT=true launch   # Note: Since this instance supports TARGET=hw_emu, this mode will be the default.
 ```
 
@@ -242,12 +242,13 @@ git push   # If not to master, you would pull from corresponding branch on F1 in
 If you have gotten approval from Amazon, you can now run on an actual FPGA if you would like to see Mandelbrot at full speed. There is little risk of encountering issues at this point, so F1 is generally needed for deployment or testing at production speeds only.
 
 ```sh
-make f1_instance
+make f1_instance INSTANCE_NAME=<name>
 ```
 
 ```sh
-make ssh SSH_CMD='source 1st-CLaaS/vitis_setup && cd 1st-CLaaS/app/mandelbrot/build && make launch PREBUILT=true'   # TARGET=hw is the default on F1.
+make ssh INSTANCE_NAME=<name> SSH_CMD="'source src/project_data/repo/vitis_setup && cd /home/centos/src/project_data/repo/apps/mandelbrot/build && make launch PREBUILT=true'"   # TARGET=hw is the default on F1.
 ```
+**NOTE** : The first quotes of the command gets ignored. If you face any issue running the SSH_CMD, it would be better to `make ssh` into the instance and run the command manually.
 
 As before, open `http://<IP>:8888` in your browser (using the new IP). Now you can select renderer "FPGA", and navigate at FPGA speed. (Try "velocity" nagivation mode.)
 
