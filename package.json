@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stevehoover/1st-CLaaS.git"
+    "url": "git+https://github.com/os-fpga/1st-CLaaS.git"
   },
   "keywords": [
     "FPGA",
@@ -25,9 +25,9 @@
   "author": "Steve Hoover",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/stevehoover/1st-CLaaS/issues"
+    "url": "https://github.com/os-fpga/1st-CLaaS/issues"
   },
-  "homepage": "https://github.com/stevehoover/1st-CLaaS#README.md",
+  "homepage": "https://github.com/os-fpga/1st-CLaaS#README.md",
   "dependencies": {
   }
 }

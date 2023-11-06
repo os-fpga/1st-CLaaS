@@ -152,6 +152,7 @@ Anything and everything is subject to change at this point, especially with resp
 # Related Technologies
 
   - We are considering a unification with [Fletcher](https://github.com/johanpel/fletcher).
+  - [FireSim](https://fires.im/) is a more robust framework for automating FPGA deployments, though focused on accelerated simulation.
 
 
 
