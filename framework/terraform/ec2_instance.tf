@@ -274,6 +274,7 @@ resource "aws_instance" "the_instance" {
         "git clone -q -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/repo\"",
         "ln -s /home/centos/src/project_data /home/centos/workdisk",
         "ln -s /home/centos/src/project_data/repo /home/centos/repo",
+        "ln -s /home/centos/src/project_data/repo /home/centos/1st-CLaaS",
         # If project repo (1st CLaaS repo or one that uses it) contains ./init, run it.
         "if [[ -e '/home/centos/src/project_data/repo/init' ]]; then echo 'Running init' && /home/centos/src/project_data/repo/init; fi",
         #"sudo /home/centos/src/project_data/repo/init",
