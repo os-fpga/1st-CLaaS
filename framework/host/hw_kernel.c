@@ -361,11 +361,15 @@ void HW_Kernel::start_kernel() {
   // Global and Local variables for CLEnqueue and Range Kernel Call
   size_t global[1];
   size_t local[1];
-    // Execute the kernel over the entire range of our 1d input data set
-    // using the maximum number of work group items for this device
+  // Execute the kernel over the entire range of our 1d input data set
+  // using the maximum number of work group items for this device
+  // clEnqueueNDRangeKernel explained in : https://stackoverflow.com/questions/35487679/using-clenqueuendrangekernel-in-opencl
+  // The kernel is executed using a single work-item.
+  // clEnqueueTask is equivalent to calling clEnqueueNDRangeKernel with
+  // work_dim = 1, global_work_offset = NULL, global_work_size[0] set to 1, and local_work_size[0] set to 1.
 
-    global[0] = 1;
-    local[0] = 1;
+  global[0] = 1;
+  local[0] = 1;
   err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, (size_t*)&global, (size_t*)&local, 0, NULL, NULL);
   if (err) {
     perror("Error: Failed to execute kernel!\nTest failed\n");
