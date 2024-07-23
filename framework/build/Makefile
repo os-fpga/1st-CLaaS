@@ -939,7 +939,7 @@ FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/centos/src/project_data/repo
 INSTANCE_TYPE=UNDEFINED
 INSTANCE_CONFIG_SCRIPT=UNDEFINED
 ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
-	INSTANCE_NAME=manycore
+	INSTANCE_NAME=1st-CLaaS_devel
 	INSTANCE_STORAGE=15
 	INSTANCE_TYPE=c4.2xlarge
 	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
