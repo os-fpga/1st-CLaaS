@@ -113,7 +113,10 @@ sudo install kernel-3.10.0-1160.31.1.el7.x86_64
 You can run the following set of commands to substitute the mirrorlist links to vault from the CentOS repository files
 
 ```bash
-TODO 
+cd /etc/yum.repos.d/
+sudo sed -i s/^mirrorlist/#mirrorlist/ CentOS-*.repo
+sudo sed -i 's|http://mirror\.|http://vault\.|g' CentOS-*.repo
+sudo sed -i s/^#baseurl/baseurl/ CentOS-*.repo
 ```
 
 
