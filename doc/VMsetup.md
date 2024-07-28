@@ -1,8 +1,16 @@
 <a name="VM"></a>
-# Setting up Virtual Machine for Hardware Emulation
+# Setting up Virtual Machine on Windows for Hardware Emulation
 
 ## Overview
-The focus of this document is to list down a number of steps which a user can opt for to setup a virtual machine specifically to do Hardware emulation. At the end of these steps, your VM is exactly like c4.4x EC2 instance and you can emulate your kernel on hardware just like AWS's Alveo Accelerator Card.
+The focus of this document is to list down a number of steps which a user can opt for to set up the virtual machine specifically to do Hardware emulation. At the end of these steps, your VM is exactly like c4.4x EC2 instance and you can emulate your kernel on hardware just like AWS's Alveo Accelerator Card. Following are the list of steps:
+
+- [Setting up Virtual Machine](#setting-up-vm) (Can be skipped if you have CentOS 7.5 machine)
+- [Installing Xilinx Tools](#installing-xilinx-tools)
+- [Installing XRT and other libraries](#installing-xrt-and-other-libraries)
+- [Kernel Mismatch](#kernel-mismatch)
+- [Updating Yum Package Manager](#updating-yum-package-manager)
+
+> Note: The scope of work for this document is tested on July 2024 on the Windows 10 Operating System. The Xilinx Tools installed are of 2021.1v (Vitis, Vivado etc.)
 
 ## System Requirements
 Following are the pre requisites before starting to setup your environment
