@@ -7,7 +7,7 @@ Getting started is easy. We'll show you a few commands to get your feet wet, tes
 
   - jump right into development with help from the [Developer's Guide](DevelopersGuide.md#top), or
   - test drive AWS F1 with [Getting Started with F1](GettingStartedF1.md#top)
-  - Alternatively, if you want to setup development environment for Hardware Emulation on your compatible machine, read [Setting up Virtual Machine for Hardware Emulation](VMsetup.md#setting-up-virtual-machine-for-hardware-emulation)
+  - Alternatively, if you want to setup development environment for Hardware Emulation on your compatible machine, read [Setting up Virtual Machine on Windows for Hardware Emulation](VMsetup.md)
 
 > Note that F1 use requires approval, which can take a day or more, so you may want to do the first step of the [Developer's Guide](doc/DevelopersGuide.md#top) now, so your F1 platform will be ready when you are.
 
