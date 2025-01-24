@@ -387,7 +387,7 @@ endif
 #Software (no FPGA) flags
 SW_SRC ?= $(FRAMEWORK_HOST_DIR)/server_main.c $(PROJ_C_SRC) $(EXTRA_C_SRC)
 SW_HDRS ?= $(FRAMEWORK_HOST_DIR)/protocol.h $(FRAMEWORK_HOST_DIR)/server_main.h $(PROJ_C_HDRS) $(EXTRA_C_HDRS)
-SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I$(FRAMEWORK_DIR)/host/json/include $(PROJ_SW_CFLAGS)
+SW_CFLAGS ?= -g -Wall -O3 -std=c++11 -faligned-new -I$(HOST_DIR) -I$(FRAMEWORK_HOST_DIR) -I$(FRAMEWORK_DIR)/host/json/include $(PROJ_SW_CFLAGS)
 SW_LFLAGS ?= -L$(XILINX_XRT)/lib $(PROJ_SW_LFLAGS)
 
 #Host code

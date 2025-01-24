@@ -259,7 +259,7 @@ void HostApp::processTraffic() {
             socket_send("DATA response", s);
 
           } free(int_resp_data_p); free(int_data_p);
-        } catch (nlohmann::detail::exception) {
+        } catch (nlohmann::detail::exception& e) {
           cerr_line() << "Unable to process DATA message." << endl;
           exit(1);
         }

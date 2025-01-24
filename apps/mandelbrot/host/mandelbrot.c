@@ -93,7 +93,7 @@ MandelbrotImage::MandelbrotImage(json &j) {
   for (int i = 0; i < 16; i++) {
     try {
       j["test_vars"][i].get_to(test_vars[i]);
-    } catch (nlohmann::detail::exception) {
+    } catch (nlohmann::detail::exception& e) {
       test_vars[i] = 0.0L;
     }
   }

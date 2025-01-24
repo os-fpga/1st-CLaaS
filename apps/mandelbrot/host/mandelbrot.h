@@ -172,10 +172,10 @@ protected:
   void param(const string name, T &var, const T def) {
     try {
       params_json.at(name).get_to(var);
-    } catch (nlohmann::detail::type_error) {
+    } catch (nlohmann::detail::type_error& e) {
       cerr << "Param " << name << " has wrong type." << endl;
       var = def;
-    } catch (nlohmann::detail::out_of_range) {
+    } catch (nlohmann::detail::out_of_range& e) {
       if (verbosity > 1) {
         cout << "Defaulting param " << name << " = " << def << endl;
       }

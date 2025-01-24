@@ -398,3 +398,8 @@ class fpgaServer {
   }
 
 }
+
+// Support Node.js exports while keeping client-side compatibility.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = fpgaServer;
+}
