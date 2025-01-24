@@ -41,7 +41,11 @@ class fpgaServer {
   constructor(ws_url, cb) {
     this.reconnect_cnt = 0;
     this.reconnect_time = new Date().getTime();
-    this.f1_state = "stopped";
+    if ($) {
+      // Initialization for EC2 instance management, only for client-side use, so if JQuery exists.
+      // TODO: EC2 instance management should be in a different class.
+      this.f1_state = "stopped";
+    }
     this.f1_ip = false;
     if (ws_url) {
       this.connectURL(ws_url, cb);
