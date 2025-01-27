@@ -120,7 +120,7 @@ class fpgaServer {
           } catch {
             console.log("Ping failed.");
           }
-          console.log("Pinged.");
+          //console.log("Pinged.");
         }
         // Ping again if the websocket is still open (or connecting)
         if (this.ws.readyState == this.ws.OPEN ||
