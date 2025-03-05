@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use 1st-CLaaS in your work, please cite it using the following metadata."
+title: "1st-CLaaS: Open-Source cloud FPGA-based Custom Logic as a Service"
+authors:
+  - family-names: "Hoover"
+    given-names: "Steven"
+    orcid: "0000-0001-5844-2889"
+    affiliation: "Redwood EDA, LLC"
+contributors:
+  - family-names: "Alessandro"
+    given-names: "Comodi"
+  - family-names: "Hadnagy"
+    given-names: "Akos"
+date-released: "2018-08-14"
+repository-code: "https://github.com/os-fpga/1st-CLaaS"
+url: "https://github.com/os-fpga/1st-CLaaS"
+abstract: >
+  1st-CLaaS (First Custom Logic as a Service) is an open-source framework for building, debugging,
+  and deploying cloud-FPGA-based accelerators for web and cloud applications.
+keywords:
+  - FPGA
+  - Hardware Acceleration
+  - Open-source
+  - Cloud Computing
+  - Custom Compute
+license: "BSD-3-Clause"
