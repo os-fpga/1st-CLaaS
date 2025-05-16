@@ -198,6 +198,9 @@ $(info )
 DUMMY :=$(shell sleep 3)
 endif
 
+# force every `terraform init` to include -reconfigure
+export TF_CLI_ARGS_init = -reconfigure
+
 
 # Read user configuration.
 
@@ -928,7 +931,7 @@ debug_prints:
 # Instance Targets
 ###################################
 
-FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/centos/src/project_data/repo
+FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/ubuntu/src/project_data/repo
 
 # Create a new Static Accelerated Instance. See Makefile header comments for usage info.
 # WARNING: This target launches a new instance. Be sure it is not left running!
@@ -970,6 +973,17 @@ GIT_BRANCH ?=$(shell git branch | grep \* | cut -d ' ' -f2)
 
 # Build up TF_ARGS (without evaluating)
 # Sometimes admin_pwd is not needed/used. If not given, we'll use a random value, assuming it isn't needed, but ensuring that it's difficult to guess, just in case.
+
+# Try to read a session token (empty if none)
+AWS_SESSION_TOKEN_CLI := $(shell aws configure get aws_session_token --profile $(AWS_PROFILE) 2>/dev/null)
+
+# Only set TF_SESSION_VAR if its nonempty
+ifdef AWS_SESSION_TOKEN_CLI
+  TF_SESSION_VAR := -var "aws_session_token=$(AWS_SESSION_TOKEN_CLI)"
+else
+  TF_SESSION_VAR :=
+endif
+
 ifdef PASSWORD
 	TF_ARGS1=-var 'admin_pwd= {{{$(PASSWORD)}}} '
 else
@@ -981,8 +995,12 @@ else
 	TF_ARGS2=
 endif
 TF_ARGS3=-var 'instance_name=$(INSTANCE_NAME)' -var 'sdb_device_size=$(INSTANCE_STORAGE)'
-TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' -var "aws_access_key_id=$$(aws configure get aws_access_key_id --profile $(AWS_PROFILE))"
-TF_ARGS5=-var "aws_secret_access_key=$$(aws configure get aws_secret_access_key --profile $(AWS_PROFILE))" -var 'aws_profile=$(AWS_PROFILE)'
+TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' \
+		 -var "aws_access_key_id=$$(aws configure get aws_access_key_id --profile $(AWS_PROFILE))" \
+		 $(TF_SESSION_VAR)
+TF_ARGS5=-var "aws_secret_access_key=$$(aws configure get aws_secret_access_key --profile $(AWS_PROFILE))" \
+		 $(TF_SESSION_VAR) \
+		 -var 'aws_profile=$(AWS_PROFILE)'
 TF_ARGS6=-var "region=$$(aws configure get region --profile $(AWS_PROFILE))" -var 'repo_dir=$(ABS_REPO)' -var 'git_url=$(GIT_URL)' -var 'git_branch=$(GIT_BRANCH)'
 ifeq ($(AUTO_APPROVE),true)
 TF_AUTO_APPROVE_ARG=--auto-approve
@@ -1027,7 +1045,12 @@ define make_instance
 	@echo '   > make destroy SETUP=$(SETUP)'
 	@# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
 	@# Do so without echoing command to avoid password in output (though, most-likely, it was typed in the first place).
-	@if [[ -n '$(LINUX_PASSWORD)' ]]; then echo "Setting Linux password (final step, in case this fails)." && sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/" /etc/ssh/sshd_config && make ssh SSH_CMD='echo "centos:$(LINUX_PASSWORD)" | sudo chpasswd'; fi
+	@if [[ -n '$(LINUX_PASSWORD)' ]]; then \
+	    echo "Setting Linux password (final step)…"; \
+	    sudo sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config; \
+	    sudo systemctl restart sshd; \
+	    make ssh SSH_CMD='echo "ubuntu:$(LINUX_PASSWORD)" | sudo chpasswd'; \
+	fi
 endef
 ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:
@@ -1066,7 +1089,7 @@ desktop:
 	@# Call remmina using template.remmina configuration with "TBD" values substituted. (perl is used to substitute arbitrary literal text.)
 	$(call connect,Connecting via RDP using Remmina to,TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(FRAMEWORK_DIR)/build/template.remmina" > "$(FRAMEWORK_DIR)/out/tmp.remmina" && sed -i "s/^server=TBD/server=$$IPs/" "$(FRAMEWORK_DIR)/out/tmp.remmina" && remmina -c "$(FRAMEWORK_DIR)/out/tmp.remmina" &)
 ssh:
-	$(call connect,Connecting via SSH to,ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" centos@$$IPs $(SSH_CMD);)
+	$(call connect,Connecting via SSH to,ssh -tt -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$IPs '$(SSH_CMD)')
 ip:
 	$(call connect,Running instance:,true)
 
