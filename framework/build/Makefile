@@ -199,6 +199,7 @@ DUMMY :=$(shell sleep 3)
 endif
 
 # force every `terraform init` to include -reconfigure
+# To ensure a clean and correct Terraform re-initialization every time make runs terraform init
 export TF_CLI_ARGS_init = -reconfigure
 
 
@@ -590,6 +591,23 @@ shrink:
 define config_param
 	@echo -n "$1 [$($1)]: " && (read TMP; if [[ -n "$$TMP" ]]; then echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; else echo '$1=$($1)' >> $(CONFIG_FILE).tmp; fi)
 endef
+#Validating S3 user and bucket name
+define validate_param
+	@while true; do \
+		echo -n "$1 [$($1)]: "; \
+		read TMP; \
+		if [[ -z "$$TMP" ]]; then TMP="$($1)"; fi; \
+		if [[ "$$TMP" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$$ ]]; then \
+			echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; \
+			break; \
+		else \
+			echo "❌ Invalid $1. Must follow S3 naming rules:"; \
+			echo "   • Only lowercase letters, numbers, and hyphens"; \
+			echo "   • Must start and end with a letter or number"; \
+		fi; \
+	done
+endef
+
 .PHONY: config
 config:
 	@rm -f $(CONFIG_FILE).tmp
@@ -614,8 +632,13 @@ config:
 	@echo
 	@echo 'User configuration needs an associated AWS S3 bucket (storage), which requires a globally-unique name (across all AWS users).'
 	@echo 'Bucket name will be 1st-claas.$$(S3_USER).$$(S3_BUCKET_TAG)'
-	$(call config_param,S3_USER)
-	$(call config_param,S3_BUCKET_TAG)
+
+	@echo "Enter S3_USER (must follow S3 naming rules: lowercase letters, digits, hyphens only)"
+	$(call validate_param,S3_USER)
+
+	@echo "Enter S3_BUCKET_TAG (must follow S3 naming rules: lowercase letters, digits, hyphens only)"
+	$(call validate_param,S3_BUCKET_TAG)
+
 	@# For convenience, also store the full bucket name.
 	@source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
 	@echo 'EC2 instances can be initialized with an administrative password. This password may be used by optional administrative features of 1st-CLaaS web servers. Choose a default or leave blank to require explicit password on launch when needed.'
@@ -625,10 +648,11 @@ config:
 	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
 	@echo 'Configuration complete and stored in "$(CONFIG_FILE)" accessible only to you ("$(USER)"). Contents:'
 	@cat $(CONFIG_FILE)
-	@source $(CONFIG_FILE) \
-	  && echo "Setting up S3 bucket: s3://$$S3_BUCKET" \
-	  && aws s3api create-bucket --bucket "$$S3_BUCKET" --acl private > /dev/null \
-	  && aws s3api wait bucket-exists --bucket "$$S3_BUCKET"
+	@source $(CONFIG_FILE) && \
+	echo "Setting up S3 bucket: s3://$$S3_BUCKET" && \
+	aws s3api create-bucket --bucket "$$S3_BUCKET" --acl private --profile "$$AWS_PROFILE" > /dev/null && \
+	aws s3api wait bucket-exists --bucket "$$S3_BUCKET" --profile "$$AWS_PROFILE"
+
 
 
 # Rule to build host application, only if not using pre-built.
@@ -1070,28 +1094,29 @@ endif
 
 # Connect to the single running EC2 instance.
 define connect
-	IPs=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --query "Reservations[*].Instances[*].PublicIpAddress" $(INSTANCE_NAME_FILTER) --output=text) \
-		&& if [[ $$IPs =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\s*$$ ]]; \
-			then \
-				INSTANCE_NAME=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --filters "Name=ip-address,Values=$$IPs" --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value' --output=text) && \
-				PRIVATE_KEY=$$(realpath ~/".ssh/$$INSTANCE_NAME/private_key.pem") && \
-				echo "$1 $$INSTANCE_NAME ($$IPs)" && \
-				mkdir -p ../out && \
-				$2 \
-			else \
-				echo "There is not exactly one instance running. Use INSTANCE_NAME=<instance-name> to select from the following running instances:" && \
-				aws ec2 describe-instances --profile $(AWS_PROFILE) --filters 'Name=instance-state-name,Values=running' --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value' --output=text | sed 's/^\(.*\)$$/   o \1/'; \
-			fi
+	DNS=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --query "Reservations[*].Instances[*].PublicDnsName" $(INSTANCE_NAME_FILTER) --output=text | tr -d '\n') && \
+	COUNT=$$(echo "$$DNS" | wc -w) && \
+	INSTANCE_NAME=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --filters "Name=dns-name,Values=$$DNS" --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value' --output=text | tr -d '\n') && \
+	PRIVATE_KEY=$$(realpath ~/".ssh/$$INSTANCE_NAME/private_key.pem") && \
+	echo "$1 $$INSTANCE_NAME ($$DNS)" && \
+	mkdir -p ../out && \
+	$2
 endef
 
 .PHONY: desktop ssh
 desktop:
 	@# Call remmina using template.remmina configuration with "TBD" values substituted. (perl is used to substitute arbitrary literal text.)
-	$(call connect,Connecting via RDP using Remmina to,TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(FRAMEWORK_DIR)/build/template.remmina" > "$(FRAMEWORK_DIR)/out/tmp.remmina" && sed -i "s/^server=TBD/server=$$IPs/" "$(FRAMEWORK_DIR)/out/tmp.remmina" && remmina -c "$(FRAMEWORK_DIR)/out/tmp.remmina" &)
+	$(call connect,Connecting via RDP using Remmina to,\
+		TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(FRAMEWORK_DIR)/build/template.remmina" > "$(FRAMEWORK_DIR)/out/tmp.remmina" && \
+		sed -i "s/^server=TBD/server=$$DNS/" "$(FRAMEWORK_DIR)/out/tmp.remmina" && \
+		remmina -c "$(FRAMEWORK_DIR)/out/tmp.remmina" &)
+
 ssh:
-	$(call connect,Connecting via SSH to,ssh -tt -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$IPs '$(SSH_CMD)')
+	$(call connect,Connecting via SSH to,\
+		ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" ubuntu@$$DNS '$(SSH_CMD)')
+
 ip:
-	$(call connect,Running instance:,true)
+	$(call connect,Running instance with Public DNS:,true)
 
 .PHONY: destroy
 destroy:

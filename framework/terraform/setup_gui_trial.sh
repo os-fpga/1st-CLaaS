@@ -30,14 +30,13 @@ function setup_gui {
   info_msg "Installing kernel headers and build tools"
   sudo apt-get install -y linux-headers-$(uname -r) build-essential
 
-  info_msg "Installing Ubuntu desktop and xrdp"
-  # Use noninteractive to avoid prompts
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ubuntu-desktop xrdp
+  info_msg "Installing MATE desktop and xrdp (recommended for EC2)"
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ubuntu-mate-core ubuntu-mate-desktop xrdp
 
-  info_msg "Creating .xsession to launch GNOME"
+  info_msg "Creating .xsession to launch MATE"
   cat > "${UBUNTU_HOME}/.xsession" << 'EOL'
 #!/bin/bash
-exec /usr/bin/gnome-session
+exec mate-session
 EOL
   chmod +x "${UBUNTU_HOME}/.xsession"
 
@@ -46,10 +45,10 @@ EOL
 
   info_msg "Enabling and starting xrdp"
   sudo systemctl enable xrdp
-  sudo systemctl start xrdp
+  sudo systemctl restart xrdp
 
   info_msg "Adjusting firewall to allow RDP"
-  sudo ufw allow 3389/tcp
+  sudo ufw allow 3389/tcp || true  # Just in case UFW is inactive
 }
 
 # Run the setup steps

@@ -6,14 +6,17 @@
 # TODO: This setup_gui.sh script is currently broken, apparently due to:
 # https://bugzilla.redhat.com/show_bug.cgi?id=1738669
 # Hoping this resolves itself soon enough.
-#wget https://s3.amazonaws.com/aws-fpga-developer-ami/1.5.0/Scripts/setup_gui.sh -P /tmp/
-#  
+
+#The given below script is no longer supported as it uses centos and aws instance that we use shifted to ubuntu
+#wget https://s3.amazonaws.com/aws-fpga-developer-ami/1.5.0/Scripts/setup_gui.sh -P /tmp/ 
+
 #chmod +x /tmp/setup_gui.sh
 #sed -i 's|^setup_password$|#setup_password|' /tmp/setup_gui.sh
 #/tmp/setup_gui.sh
 # TODO:
 #echo 'We have not enabled password authentication, so you will need to do that.'
 
+# Old Script ends here
 ## New script for trial purposes
 
 #!/usr/bin/env bash
