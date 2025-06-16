@@ -429,7 +429,7 @@ KERNEL_ADDITIONAL_FLAGS=
 
 #Device to be used
 #TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
-TARGET_DEVICE=xilinx_aws-vu47p-f2_202420_1  # updated for F2 platform on Vitis 2024.2
+TARGET_DEVICE=xilinx_aws-vu47p-f2_202420_1# updated for F2 platform on Vitis 2024.2
 
 
 REPORT=
@@ -456,7 +456,7 @@ BUILD_DIR=../$(BUILD_DIR_NAME)/$(BUILD_TARGET)
 else
 ifndef AWS_PLATFORM
 $(info WARNING: AWS_PLATFORM is not set. Making assumptions.)
-AWS_PLATFORM=xilinx_aws-vu47p-f2_202420_1  # updated for F2 platform on Vitis 2024.2
+AWS_PLATFORM=xilinx_aws-vu47p-f2_202420_1# updated for F2 platform on Vitis 2024.2
 endif
 #Translate Target Device name with underscores
 PERIOD:= :
