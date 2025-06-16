@@ -48,14 +48,21 @@ then
   #sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment.
 fi
 
+# Install Python command-line tools using pipx (PEP 668 compliant)
+echo "Installing Python CLI tools using pipx..."
+sudo apt update
+sudo apt install -y pipx python3-venv
 
-# Install python libraries for user only so as not to affect system installs.
-echo "Installing Python packages for user $USER."
-sudo python3 -m pip install --upgrade pip
-USER_PYTHON_PACKAGES='Pillow tornado awscli boto3 sandpiper-saas'
-python3 -m pip install --user --upgrade $USER_PYTHON_PACKAGES
-#sudo python3 -m pip install --user --upgrade $USER_PYTHON_PACKAGES
+# Ensure pipx is on the PATH
+pipx ensurepath
+source ~/.bashrc
 
+# Install tools via pipx
+pipx install Pillow
+pipx install tornado
+pipx install awscli
+pipx install boto3
+pipx install sandpiper-saas
 
 # Configure remmina to disble the tray icon (so, it isn't left running when launched via Makefile).
 if [[ -e "$HOME/.remmina/remmina.pref" ]]

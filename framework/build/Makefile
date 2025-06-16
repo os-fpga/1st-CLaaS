@@ -253,8 +253,8 @@ VERILATOR_ROOT=$(ABS_REPO)/local/verilator
 VERILATOR_INCLUDE=$(ABS_REPO)/local/verilator/include
 endif
 ifneq ($(AWS_FPGA_REPO_DIR),)
-ifneq ($(findstring f1.,$(shell curl http://169.254.169.254/latest/meta-data/instance-type)),)
-# F1
+ifneq ($(findstring f2.,$(shell curl http://169.254.169.254/latest/meta-data/instance-type)),)
+# F2
 SUPPORTED_TARGETS :=hw | hw_emu |$(SPACE)
 else
 SUPPORTED_TARGETS :=hw_emu |$(SPACE)
@@ -428,7 +428,9 @@ KERNEL_LDCLFLAGS= --connectivity.nk $(KERNEL_NAME):1 \
 KERNEL_ADDITIONAL_FLAGS=
 
 #Device to be used
-TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
+#TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
+TARGET_DEVICE=xilinx_aws-vu47p-f2_202420_1  # updated for F2 platform on Vitis 2024.2
+
 
 REPORT=
 ifeq ($(BUILD_TARGET),hw)
@@ -454,7 +456,7 @@ BUILD_DIR=../$(BUILD_DIR_NAME)/$(BUILD_TARGET)
 else
 ifndef AWS_PLATFORM
 $(info WARNING: AWS_PLATFORM is not set. Making assumptions.)
-AWS_PLATFORM=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
+AWS_PLATFORM=xilinx_aws-vu47p-f2_202420_1  # updated for F2 platform on Vitis 2024.2
 endif
 #Translate Target Device name with underscores
 PERIOD:= :
@@ -626,8 +628,8 @@ config:
 	@source $(CONFIG_FILE).tmp && NEW_AWS_PROFILE="$$AWS_PROFILE" && unset AWS_PROFILE && aws configure --profile "$$AWS_PROFILE"  # (aws configure doesn't work if $AWS_PROFILE doesn't already exist.)
 	@source $(CONFIG_FILE).tmp && \
 	  REGION=$$(aws configure get region) && \
-	  if [[ ! $$REGION =~ (us-east-1|us-west-2|eu-west-1|us-gov-west-1) ]]; \
-	  then echo "Warning: Region $$REGION is not known to support F1. Valid regions w/ F1 include: 'us-east-1' (N. Virginia), 'us-west-2' (Oregon), 'eu-west-1' (Ireland), or 'us-gov-west-1' (GovCloud US). (Please update Makefile and create a pull request if you know differently.)"; \
+	  if [[ ! $$REGION =~ (us-east-1|us-west-2|eu-west-2|ap-southeast-2) ]]; \
+	  then echo "Warning: Region $$REGION is not known to support F2. Valid regions w/ F2 include: 'us-east-1' (N. Virginia), 'us-west-2' (Oregon), 'eu-west-2' (London), or 'ap-southeast-2' (Sydney). (Please update Makefile and create a pull request if you know differently.)"; \
 	  fi
 	@echo
 	@echo 'User configuration needs an associated AWS S3 bucket (storage), which requires a globally-unique name (across all AWS users).'
@@ -850,7 +852,7 @@ $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 endif
 
 .PHONY: push
-# Push the entire contents of the app directory for running on F1. (TODO: Be more selective.)
+# Push the entire contents of the app directory for running on F2. (TODO: Be more selective.)
 # Previous transfer contents are deleted.
 push: build
 	aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/ --profile $(AWS_PROFILE)
@@ -971,18 +973,34 @@ ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
 	INSTANCE_TYPE=c4.2xlarge
 	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
-ifneq ($(findstring f1_instance,$(MAKECMDGOALS)),)
+
+#F1 instance discontinued by aws
+#ifneq ($(findstring f1_instance,$(MAKECMDGOALS)),)
+#	INSTANCE_NAME=1st-CLaaS_run
+#	#INSTANCE_STORAGE=15
+#	INSTANCE_TYPE=f1.2xlarge
+#	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
+#endif
+#ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
+#	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
+#	INSTANCE_STORAGE=5
+#	INSTANCE_TYPE=f1.2xlarge
+#	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f1_instance.sh
+#endif
+
+ifneq ($(findstring f2_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_run
-	INSTANCE_STORAGE=15
-	INSTANCE_TYPE=f1.2xlarge
+	INSTANCE_STORAGE=20
+	INSTANCE_TYPE=f2.6xlarge
 	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
 	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
-	INSTANCE_STORAGE=5
-	INSTANCE_TYPE=f1.2xlarge
-	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f1_instance.sh
+	INSTANCE_STORAGE=10
+	INSTANCE_TYPE=f2.6xlarge
+	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f2_instance.sh
 endif
+
 ifdef INSTANCE_NAME
   INSTANCE_NAME_FILTER=--filter 'Name=tag:Name,Values=$(INSTANCE_NAME)'
 else
@@ -1081,14 +1099,16 @@ static_accelerated_instance:
 	$(make_instance)
 development_instance:
 	@echo "development_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
-f1_instance:
-	@echo "f1_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
+#f1_instance:
+#	@echo "f1_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
+f2_instance:
+	@echo "f2_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
 else
 static_accelerated_instance:
 	@echo "static_accelerated_instance target must have KERNEL_NAME variable defined."
 development_instance:
 	$(make_instance)
-f1_instance:
+f2_instance:
 	$(make_instance)
 endif
 
