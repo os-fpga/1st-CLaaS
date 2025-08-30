@@ -100,12 +100,14 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
     exit(1);
   }
 
+  /*
   // Attaching UNIX SOCKET
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
                           &opt, sizeof(opt))) {
     perror("setsockopt failed");
     exit(1);
   }
+  */
 
   address.sun_family = AF_UNIX;
   unlink(socket_filename.c_str());
