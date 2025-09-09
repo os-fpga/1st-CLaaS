@@ -1,0 +1,248 @@
+#-----------------------------------------------------------
+# Vivado v2024.1 (64-bit)
+# SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
+# IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
+# SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
+# Start of session at: Mon Aug 11 09:58:46 2025
+# Process ID: 5379
+# Current directory: /home/ubuntu/src/project_data/repo/apps/mandelbrot/build
+# Command line: vivado -mode batch -source ../out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/package_source_kernel.tcl ../out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/mandelbrot_ex.xpr
+# Log file: /home/ubuntu/src/project_data/repo/apps/mandelbrot/build/vivado.log
+# Journal file: /home/ubuntu/src/project_data/repo/apps/mandelbrot/build/vivado.jou
+# Running On        :ip-172-31-28-84
+# Platform          :Ubuntu
+# Operating System  :Ubuntu 20.04.6 LTS
+# Processor Detail  :AMD EPYC 7R13 Processor
+# CPU Frequency     :2649.998 MHz
+# CPU Physical cores:12
+# CPU Logical cores :24
+# Host memory       :268108 MB
+# Swap memory       :10737 MB
+# Total Virtual     :278846 MB
+# Available Virtual :277972 MB
+#-----------------------------------------------------------
+open_project ../out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/mandelbrot_ex.xpr
+Scanning sources...
+Finished scanning sources
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/opt/Xilinx/Vivado/2024.1/data/ip'.
+open_project: Time (s): cpu = 00:00:05 ; elapsed = 00:00:05 . Memory (MB): peak = 1400.582 ; gain = 0.023 ; free physical = 252329 ; free virtual = 264737
+source ../out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/package_source_kernel.tcl
+# source ../out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/imports/package_kernel.tcl
+## set kernel_name    "mandelbrot"
+## set kernel_vendor  "xilinx"
+## set kernel_library "kernel"
+## proc edit_core {core} {
+##   set bif      [::ipx::get_bus_interfaces -of $core  "m00_axi"] 
+##   set bifparam [::ipx::add_bus_parameter -quiet "MAX_BURST_LENGTH" $bif]
+##   set_property value        64           $bifparam
+##   set_property value_source constant     $bifparam
+##   set bifparam [::ipx::add_bus_parameter -quiet "NUM_READ_OUTSTANDING" $bif]
+##   set_property value        32           $bifparam
+##   set_property value_source constant     $bifparam
+##   set bifparam [::ipx::add_bus_parameter -quiet "NUM_WRITE_OUTSTANDING" $bif]
+##   set_property value        32           $bifparam
+##   set_property value_source constant     $bifparam
+## 
+##   ::ipx::associate_bus_interfaces -busif "m00_axi" -clock "ap_clk" $core
+##   ::ipx::associate_bus_interfaces -busif "s_axi_control" -clock "ap_clk" $core
+## 
+##   ::ipx::infer_bus_interface "ap_clk_2"   "xilinx.com:signal:clock_rtl:1.0" $core
+##   ::ipx::infer_bus_interface "ap_rst_n_2" "xilinx.com:signal:reset_rtl:1.0" $core
+## 
+##   # Specify the freq_hz parameter 
+##   set clkbif      [::ipx::get_bus_interfaces -of $core "ap_clk"]
+##   set clkbifparam [::ipx::add_bus_parameter -quiet "FREQ_HZ" $clkbif]
+##   # Set desired frequency                   
+##   set_property value 250000000 $clkbifparam
+##   # set value_resolve_type 'user' if the frequency can vary. 
+##   set_property value_resolve_type user $clkbifparam
+##   # set value_resolve_type 'immediate' if the frequency cannot change. 
+##   # set_property value_resolve_type immediate $clkbifparam
+##   # Specify the freq_hz parameter 
+##   set clkbif      [::ipx::get_bus_interfaces -of $core "ap_clk_2"]
+##   set clkbifparam [::ipx::add_bus_parameter -quiet "FREQ_HZ" $clkbif]
+##   # Set desired frequency                   
+##   set_property value 250000000 $clkbifparam
+##   # set value_resolve_type 'user' if the frequency can vary. 
+##   set_property value_resolve_type user $clkbifparam
+##   # set value_resolve_type 'immediate' if the frequency cannot change. 
+##   # set_property value_resolve_type immediate $clkbifparam
+##   set mem_map    [::ipx::add_memory_map -quiet "s_axi_control" $core]
+##   set addr_block [::ipx::add_address_block -quiet "reg0" $mem_map]
+## 
+##   set reg      [::ipx::add_register "CTRL" $addr_block]
+##   set_property description    "Control signals"    $reg
+##   set_property address_offset 0x000 $reg
+##   set_property size           32    $reg
+##   set field [ipx::add_field AP_START $reg]
+##     set_property ACCESS {read-write} $field
+##     set_property BIT_OFFSET {0} $field
+##     set_property BIT_WIDTH {1} $field
+##     set_property DESCRIPTION {Control signal Register for 'ap_start'.} $field
+##     set_property MODIFIED_WRITE_VALUE {modify} $field
+##   set field [ipx::add_field AP_DONE $reg]
+##     set_property ACCESS {read-only} $field
+##     set_property BIT_OFFSET {1} $field
+##     set_property BIT_WIDTH {1} $field
+##     set_property DESCRIPTION {Control signal Register for 'ap_done'.} $field
+##     set_property READ_ACTION {modify} $field
+##   set field [ipx::add_field AP_IDLE $reg]
+##     set_property ACCESS {read-only} $field
+##     set_property BIT_OFFSET {2} $field
+##     set_property BIT_WIDTH {1} $field
+##     set_property DESCRIPTION {Control signal Register for 'ap_idle'.} $field
+##     set_property READ_ACTION {modify} $field
+##   set field [ipx::add_field AP_READY $reg]
+##     set_property ACCESS {read-only} $field
+##     set_property BIT_OFFSET {3} $field
+##     set_property BIT_WIDTH {1} $field
+##     set_property DESCRIPTION {Control signal Register for 'ap_ready'.} $field
+##     set_property READ_ACTION {modify} $field
+##   set field [ipx::add_field RESERVED_1 $reg]
+##     set_property ACCESS {read-only} $field
+##     set_property BIT_OFFSET {4} $field
+##     set_property BIT_WIDTH {3} $field
+##     set_property DESCRIPTION {Reserved.  0s on read.} $field
+##     set_property READ_ACTION {modify} $field
+##   set field [ipx::add_field AUTO_RESTART $reg]
+##     set_property ACCESS {read-write} $field
+##     set_property BIT_OFFSET {7} $field
+##     set_property BIT_WIDTH {1} $field
+##     set_property DESCRIPTION {Control signal Register for 'auto_restart'.} $field
+##     set_property MODIFIED_WRITE_VALUE {modify} $field
+##   set field [ipx::add_field RESERVED_2 $reg]
+##     set_property ACCESS {read-only} $field
+##     set_property BIT_OFFSET {8} $field
+##     set_property BIT_WIDTH {24} $field
+##     set_property DESCRIPTION {Reserved.  0s on read.} $field
+##     set_property READ_ACTION {modify} $field
+## 
+##   set reg      [::ipx::add_register "GIER" $addr_block]
+##   set_property description    "Global Interrupt Enable Register"    $reg
+##   set_property address_offset 0x004 $reg
+##   set_property size           32    $reg
+## 
+##   set reg      [::ipx::add_register "IP_IER" $addr_block]
+##   set_property description    "IP Interrupt Enable Register"    $reg
+##   set_property address_offset 0x008 $reg
+##   set_property size           32    $reg
+## 
+##   set reg      [::ipx::add_register "IP_ISR" $addr_block]
+##   set_property description    "IP Interrupt Status Register"    $reg
+##   set_property address_offset 0x00C $reg
+##   set_property size           32    $reg
+## 
+##   set reg      [::ipx::add_register -quiet "ctrl_length" $addr_block]
+##   set_property address_offset 0x010 $reg
+##   set_property size           [expr {4*8}]   $reg
+## 
+##   set reg      [::ipx::add_register -quiet "resp_length" $addr_block]
+##   set_property address_offset 0x018 $reg
+##   set_property size           [expr {4*8}]   $reg
+## 
+##   set reg      [::ipx::add_register -quiet "read_mem" $addr_block]
+##   set_property address_offset 0x020 $reg
+##   set_property size           [expr {8*8}]   $reg
+##   set regparam [::ipx::add_register_parameter -quiet {ASSOCIATED_BUSIF} $reg] 
+##   set_property value m00_axi $regparam 
+## 
+##   set reg      [::ipx::add_register -quiet "write_mem" $addr_block]
+##   set_property address_offset 0x02c $reg
+##   set_property size           [expr {8*8}]   $reg
+##   set regparam [::ipx::add_register_parameter -quiet {ASSOCIATED_BUSIF} $reg] 
+##   set_property value m00_axi $regparam 
+## 
+##   set_property slave_memory_map_ref "s_axi_control" [::ipx::get_bus_interfaces -of $core "s_axi_control"]
+## 
+##   set_property xpm_libraries {XPM_CDC XPM_MEMORY XPM_FIFO} $core
+##   set_property sdx_kernel true $core
+##   set_property sdx_kernel_type rtl $core
+## }
+## proc package_project {path_to_packaged kernel_vendor kernel_library kernel_name} {
+##   set core [::ipx::package_project -root_dir $path_to_packaged -vendor $kernel_vendor -library $kernel_library -taxonomy "/KernelIP" -import_files -set_current false ]
+##   foreach user_parameter [list C_S_AXI_CONTROL_ADDR_WIDTH C_S_AXI_CONTROL_DATA_WIDTH C_M00_AXI_ADDR_WIDTH C_M00_AXI_DATA_WIDTH] {
+##     ::ipx::remove_user_parameter $user_parameter $core
+##   }
+##   ::ipx::create_xgui_files $core
+##   set_property supported_families { } $core
+##   set_property auto_family_support_level level_2 $core
+##   set_property used_in {out_of_context implementation synthesis} [::ipx::get_files -type xdc -of_objects [::ipx::get_file_groups "xilinx_anylanguagesynthesis" -of_objects $core] *_ooc.xdc]
+##   edit_core $core
+##   ::ipx::update_checksums $core
+##   ::ipx::check_integrity -kernel $core
+##   ::ipx::check_integrity -xrt $core
+##   ::ipx::save_core $core
+##   ::ipx::unload_core $core
+##   unset core
+## }
+## proc package_project_dcp {path_to_dcp path_to_packaged kernel_vendor kernel_library kernel_name} {
+##   set core [::ipx::package_checkpoint -dcp_file $path_to_dcp -root_dir $path_to_packaged -vendor $kernel_vendor -library $kernel_library -name $kernel_name -taxonomy "/KernelIP" -force]
+##   edit_core $core
+##   ::ipx::update_checksums $core
+##   ::ipx::check_integrity -kernel $core
+##   ::ipx::check_integrity -xrt $core
+##   ::ipx::save_core $core
+##   ::ipx::unload_core $core
+##   unset core
+## }
+## proc package_project_dcp_and_xdc {path_to_dcp path_to_xdc path_to_packaged kernel_vendor kernel_library kernel_name} {
+##   set core [::ipx::package_checkpoint -dcp_file $path_to_dcp -root_dir $path_to_packaged -vendor $kernel_vendor -library $kernel_library -name $kernel_name -taxonomy "/KernelIP" -force]
+##   edit_core $core
+##   set rel_path_to_xdc [file join "impl" [file tail $path_to_xdc]]
+##   set abs_path_to_xdc [file join $path_to_packaged $rel_path_to_xdc]
+##   file mkdir [file dirname $abs_path_to_xdc]
+##   file copy $path_to_xdc $abs_path_to_xdc
+##   set xdcfile [::ipx::add_file $rel_path_to_xdc [::ipx::add_file_group "xilinx_implementation" $core]]
+##   set_property type "xdc" $xdcfile
+##   set_property used_in [list "implementation"] $xdcfile
+##   ::ipx::update_checksums $core
+##   ::ipx::check_integrity -kernel $core
+##   ::ipx::check_integrity -xrt $core
+##   ::ipx::save_core $core
+##   ::ipx::unload_core $core
+##   unset core
+## }
+# package_project /home/ubuntu/src/project_data/repo/apps/mandelbrot/out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/mandelbrot xilinx kernel mandelbrot
+WARNING: [IP_Flow 19-3833] Unreferenced file from the top module is not packaged: '/home/ubuntu/src/project_data/repo/framework/fpga/src/clk_gate.sv'.
+WARNING: [IP_Flow 19-3833] Unreferenced file from the top module is not packaged: '/home/ubuntu/src/project_data/repo/framework/fpga/src/sandpiper.vh'.
+WARNING: [IP_Flow 19-3833] Unreferenced file from the top module is not packaged: '/home/ubuntu/src/project_data/repo/framework/fpga/src/sandpiper_gen.vh'.
+WARNING: [IP_Flow 19-3833] Unreferenced file from the top module is not packaged: '/home/ubuntu/src/project_data/repo/framework/fpga/src/sp_default.vh'.
+INFO: [IP_Flow 19-5654] Module 'mandelbrot' uses SystemVerilog sources with a Verilog top file. These SystemVerilog files will not be analysed by the packager.
+INFO: [IP_Flow 19-5107] Inferred bus interface 'm00_axi' of definition 'xilinx.com:interface:aximm:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 's_axi_control' of definition 'xilinx.com:interface:aximm:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'ap_rst_n' of definition 'xilinx.com:signal:reset:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'ap_clk' of definition 'xilinx.com:signal:clock:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'interrupt' of definition 'xilinx.com:signal:interrupt:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-4728] Bus Interface 'ap_rst_n': Added interface parameter 'POLARITY' with value 'ACTIVE_LOW'.
+INFO: [IP_Flow 19-4728] Bus Interface 'interrupt': Added interface parameter 'SENSITIVITY' with value 'LEVEL_HIGH'.
+INFO: [IP_Flow 19-4728] Bus Interface 'ap_clk': Added interface parameter 'ASSOCIATED_RESET' with value 'ap_rst_n'.
+WARNING: [IP_Flow 19-11888] Component Definition 'xilinx:kernel:mandelbrot:1.0 (mandelbrot_v1_0)': IP description "mandelbrot_v1_0" is not meaningful: same as name or display name
+WARNING: [IP_Flow 19-3158] Bus Interface 'm00_axi': FREQ_HZ bus parameter missing from AXI interface when interface is not associated to a clock.
+WARNING: [IP_Flow 19-3158] Bus Interface 's_axi_control': FREQ_HZ bus parameter missing from AXI interface when interface is not associated to a clock.
+WARNING: [IP_Flow 19-5661] Bus Interface 'ap_clk' does not have any bus interfaces associated with it.
+WARNING: [IP_Flow 19-11770] Clock interface 'ap_clk' has no FREQ_HZ parameter.
+INFO: [IP_Flow 19-2181] Payment is not required for this core.
+WARNING: [IP_Flow 19-2187] The Product Guide file is missing.
+INFO: [IP_Flow 19-4728] Bus Interface 'ap_clk': Added interface parameter 'ASSOCIATED_BUSIF' with value 'm00_axi'.
+INFO: [IP_Flow 19-5107] Inferred bus interface 'ap_clk_2' of definition 'xilinx.com:signal:clock:1.0' (from TCL Argument).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'ap_rst_n_2' of definition 'xilinx.com:signal:reset:1.0' (from TCL Argument).
+INFO: [IP_Flow 19-4728] Bus Interface 'ap_clk_2': Added interface parameter 'ASSOCIATED_RESET' with value 'ap_rst_n_2'.
+WARNING: [IP_Flow 19-11888] Component Definition 'xilinx:kernel:mandelbrot:1.0 (mandelbrot_v1_0)': IP description "mandelbrot_v1_0" is not meaningful: same as name or display name
+INFO: [IP_Flow 19-7067] Note that bus interface 'ap_clk' has a fixed FREQ_HZ of '250000000'. This value will be respected whenever this IP is instantiated in IP Integrator.
+INFO: [IP_Flow 19-7067] Note that bus interface 'ap_clk_2' has a fixed FREQ_HZ of '250000000'. This value will be respected whenever this IP is instantiated in IP Integrator.
+WARNING: [IP_Flow 19-5661] Bus Interface 'ap_clk_2' does not have any bus interfaces associated with it.
+INFO: [IP_Flow 19-2181] Payment is not required for this core.
+WARNING: [IP_Flow 19-2187] The Product Guide file is missing.
+INFO: [Ipptcl 7-1486] check_integrity: Integrity check passed.
+WARNING: [IP_Flow 19-11888] Component Definition 'xilinx:kernel:mandelbrot:1.0 (mandelbrot_v1_0)': IP description "mandelbrot_v1_0" is not meaningful: same as name or display name
+INFO: [IP_Flow 19-7067] Note that bus interface 'ap_clk' has a fixed FREQ_HZ of '250000000'. This value will be respected whenever this IP is instantiated in IP Integrator.
+INFO: [IP_Flow 19-7067] Note that bus interface 'ap_clk_2' has a fixed FREQ_HZ of '250000000'. This value will be respected whenever this IP is instantiated in IP Integrator.
+WARNING: [IP_Flow 19-5661] Bus Interface 'ap_clk_2' does not have any bus interfaces associated with it.
+INFO: [IP_Flow 19-2181] Payment is not required for this core.
+WARNING: [IP_Flow 19-2187] The Product Guide file is missing.
+INFO: [Ipptcl 7-1486] check_integrity: Integrity check passed.
+# package_xo -xo_path /home/ubuntu/src/project_data/repo/apps/mandelbrot/out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/sdx_imports/mandelbrot.xo -kernel_name mandelbrot -ip_directory /home/ubuntu/src/project_data/repo/apps/mandelbrot/out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/mandelbrot -kernel_xml /home/ubuntu/src/project_data/repo/apps/mandelbrot/out/hw_emu/xilinx_aws-vu47p-f2_202410_1_2/mandelbrot_ex/imports/kernel.xml
+WARNING: [Vivado 12-4404] The CPU emulation flow in v++ is only supported when using a packaged XO file that contains C-model files, none were found.
+INFO: [Common 17-206] Exiting Vivado at Mon Aug 11 09:58:55 2025...

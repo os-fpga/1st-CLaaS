@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Root VersionMajor="1" VersionMinor="15">
+  <GenAppInfo Name="Vivado" Version="2024.1" CL="5076996" TimeStamp="Mon Feb  3 15:19:52 2025"/>
+  <DSA Vendor="xilinx" BoardId="aws-vu47p-f2" Name="xdma-shell-v10162423" VersionMajor="202410" VersionMinor="1" Description="" FeatureRomTimestamp="0" DcpLogicFunctionStripped="false" DcpEncrypt="false" Unified="true" Fixed="false" DefaultOutputType="xclbin">
+    <Build UsesPR="false" PlatformState="pre_synth" AcceleratorBinaryContent="bitstream" ValidBinaryContentValues="dcp,bitstream" TopModuleName="pfm_top_wrapper"/>
+    <Board Name="" Vendor="" Part="">
+      <Memories>
+        <Memory Name="static_region_sim_ddr_0" Type="ddr4" Size="32.00GB" LowestAddress="68719476736" HighestAddress="103079215103">
+          <Config>
+            <Param Name="AXI_ARBITRATION_SCHEME" Value="RD_PRI_REG"/>
+            <Param Name="BURST_LENGTH" Value="8"/>
+            <Param Name="C0.APP_ADDR_WIDTH" Value="29"/>
+            <Param Name="C0.APP_DATA_WIDTH" Value="64"/>
+            <Param Name="C0.ControllerType" Value="DDR4_SDRAM"/>
+            <Param Name="C0.DDR4_ADDR_WIDTH" Value="17"/>
+            <Param Name="C0.DDR4_AXI_ADDR_WIDTH" Value="29"/>
+            <Param Name="C0.DDR4_AXI_DATA_WIDTH" Value="64"/>
+            <Param Name="C0.DDR4_AXI_ID_WIDTH" Value="1"/>
+            <Param Name="C0.DDR4_AutoPrecharge" Value="false"/>
+            <Param Name="C0.DDR4_AxiNarrowBurst" Value="false"/>
+            <Param Name="C0.DDR4_BANK_GROUP_WIDTH" Value="2"/>
+            <Param Name="C0.DDR4_BANK_WIDTH" Value="2"/>
+            <Param Name="C0.DDR4_CL" Value="0"/>
+            <Param Name="C0.DDR4_COLUMN_WIDTH" Value="10"/>
+            <Param Name="C0.DDR4_CWL" Value="0"/>
+            <Param Name="C0.DDR4_Mem_Add_Map" Value="ROW_COLUMN_BANK"/>
+            <Param Name="C0.DDR4_Ordering" Value="Normal"/>
+            <Param Name="C0.DDR4_RANK_WIDTH" Value="1"/>
+            <Param Name="C0.DDR4_ROW_WIDTH" Value="15"/>
+            <Param Name="C0.DDR4_tCK" Value="833"/>
+            <Param Name="C0.DDR4_tCKE" Value="0"/>
+            <Param Name="C0.DDR4_tFAW" Value="26"/>
+            <Param Name="C0.DDR4_tMRD" Value="2"/>
+            <Param Name="C0.DDR4_tRAS" Value="39"/>
+            <Param Name="C0.DDR4_tRCD" Value="17"/>
+            <Param Name="C0.DDR4_tREFI" Value="9363"/>
+            <Param Name="C0.DDR4_tRFC" Value="313"/>
+            <Param Name="C0.DDR4_tRP" Value="17"/>
+            <Param Name="C0.DDR4_tRRD" Value=""/>
+            <Param Name="C0.DDR4_tRRD_L" Value="6"/>
+            <Param Name="C0.DDR4_tRRD_S" Value="4"/>
+            <Param Name="C0.DDR4_tRTP" Value="10"/>
+            <Param Name="C0.DDR4_tWR" Value="19"/>
+            <Param Name="C0.DDR4_tWTR" Value=""/>
+            <Param Name="C0.DDR4_tWTR_L" Value="10"/>
+            <Param Name="C0.DDR4_tWTR_S" Value="4"/>
+            <Param Name="C0.DDR4_tXPR" Value="82"/>
+            <Param Name="C0.DDR4_tZQCS" Value="128"/>
+            <Param Name="C0.DDR4_tZQI" Value="0"/>
+            <Param Name="C0.DDR4_tZQINIT" Value="256"/>
+            <Param Name="CAS_LATENCY" Value="17"/>
+            <Param Name="CAS_WRITE_LATENCY" Value="12"/>
+            <Param Name="DATA_WIDTH" Value="8"/>
+            <Param Name="MEMORY_PART" Value="MT40A512M8RH-075E"/>
+            <Param Name="MEM_ADDR_MAP" Value="ROW_COLUMN_BANK"/>
+            <Param Name="TIMEPERIOD_PS" Value="833"/>
+          </Config>
+        </Memory>
+      </Memories>
+      <Images>
+        <Img Type="HDPI" File=""/>
+        <Img Type="MDPI" File=""/>
+        <Img Type="LDPI" File=""/>
+      </Images>
+      <PCIeId Vendor="" Device="" Subsystem=""/>
+    </Board>
+    <Devices>
+      <Device Name="fpga0" Type="8" FpgaDevice="virtexuplusHBM:xcvu47p:fsvh2892:-2LV:e">
+        <Core Name="OCL_REGION_0" Type="clc_region" ComputeUnits="60" InstancePath="pfm_top_wrapper/pfm_top_i/pfm_dynamic_inst" DRBDName="pfm_dynamic.bd"/>
+      </Device>
+    </Devices>
+    <Files>
+      <File Type="PRE_SYS_LINK_OVERLAY_TCL" Name="tcl_hooks/dynamic_prelink.tcl"/>
+      <File Type="POST_SYS_LINK_OVERLAY_TCL" Name="tcl_hooks/dynamic_postlink.tcl"/>
+      <File Type="HPFM" Name="hw_emu.hpfm"/>
+      <File Type="REBUILD_TCL" Name="prj/rebuild.tcl"/>
+      <File Type="TOP_BD" Name="prj/cl.srcs/sources_1/bd/pfm_dynamic/pfm_dynamic.bd"/>
+      <File Type="EXT_META_JSON" Name="ext_metadata.json"/>
+    </Files>
+  </DSA>
+</Root>

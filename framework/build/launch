@@ -84,6 +84,12 @@ KILLME="killme"
 SOCKET="SOCKET"
 ONESHOT_ARG=' '
 
+OUT="../out/$TARGET/$AWS_PLATFORM"
+XCLBIN="$OUT/mandelbrot.xclbin"
+# If caller didn't pass -s, pick a deterministic default
+[[ "$SOCKET" == "SOCKET" || -z "$SOCKET" ]] && SOCKET="/tmp/mandelbrot_${UID}.sock"
+
+
 # Read command line options
 
 while getopts "p:h:c:w:k:s:o" opt
@@ -153,6 +159,35 @@ fail () {
 
 # Launch web server and host application.
 launch () {
+    # Ensure OUT exists
+  mkdir -p "$OUT"
+
+  # Put emulation artifacts in OUT and point host to them
+  # Generate emconfig.json in OUT (host will read it via EMCONFIG_PATH)
+  ( cd "$OUT" && emconfigutil --nd 1 --platform "$AWS_PLATFORM" ) || fail "emconfigutil failed"
+
+  # Write a clean xrt.ini (remove the invalid 'emulation_trace' key)
+  if [[ ! -f "$OUT/xrt.ini" ]]; then
+    cat > "$OUT/xrt.ini" <<'EOF'
+[Debug]
+verbosity=4
+timeline_trace=true
+EOF
+  fi
+
+  # Build the host command line: ensure '-s <socket>' and '<xclbin>' are present
+  HOST_CMD="$HOST"
+  if ! echo " $HOST_CMD " | grep -q ' -s '; then
+    HOST_CMD="$HOST_CMD -s $SOCKET"
+  fi
+  if $USE_XILINX && ! echo " $HOST_CMD " | grep -q '\.xclbin\>'; then
+    HOST_CMD="$HOST_CMD $XCLBIN"
+  fi
+
+  # Sanity checks
+  [[ -x "$OUT/host" ]]      || fail "Missing host at $OUT/host (run: $COMPILE_CMD)"
+  [[ -r "$XCLBIN" ]]        || fail "Missing xclbin at $XCLBIN (run: $COMPILE_CMD)"
+  
   # Launch host app.
   echo "Launching host application as: $HOST"
   if [[ $HOST_PID == "" ]]
@@ -163,7 +198,18 @@ launch () {
         $HOST &
     elif [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; # Hardware Emulation
     then
-      sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ; export LC_ALL="C"; $HOST" &
+    (
+    cd "$OUT" || exit 1
+    source "$XILINX_VITIS/settings64.sh"
+    source /opt/xilinx/xrt/setup.sh
+    source "$AWS_FPGA_REPO_DIR/vitis_setup.sh"
+    export XCL_EMULATION_MODE=hw_emu
+    export EMCONFIG_PATH="$OUT"
+    export XRT_INI_PATH="$OUT/xrt.ini"
+    export LC_ALL=C
+    echo "Launching host application as: $HOST_CMD"
+    exec $HOST_CMD
+  ) &
     else # Hardware
       sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
     fi
@@ -192,6 +238,7 @@ launch () {
   export SERVER_PID=$!
 
   # Create a script to teardown the application by sending SIGINT to this process.
+  echo "Progress made for testing"
   echo "kill $$ || echo 'Webserver process $$ no longer running.'" > "$KILLME"   # TODO: Would be good to confirm that this is the right process.
 }
 
@@ -273,3 +320,4 @@ while [ $DONE -le 0 ] ; do
 done
 
 echo "launch: Done."
+
