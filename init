@@ -26,9 +26,21 @@ if [[ -n "$(which apt-get 2> /dev/null)" ]]
 then
   # Ubuntu
   sudo apt-get update
+  # Keep python3 and OS libs; add pipx from apt if available.
+  # Note: keep python3-pil and python3-tornado via apt to avoid pip for libs.
   sudo apt-get -y install curl g++ python3 python3-pip python3-pil $COMMON_PACKAGES
   sudo apt -y install $DEBUG_PACKAGES
-  #sudo python3 -m pip install Pillow
+  # Install pipx (preferred); fallback via pip if needed.
+  if ! command -v pipx >/dev/null 2>&1; then
+    if apt-cache show pipx >/dev/null 2>&1; then
+      sudo apt-get -y install pipx
+    else
+      python3 -m pip install --user -U pipx
+    fi
+  fi
+  # Ensure ~/.local/bin is on PATH for current shell and future shells.
+  pipx ensurepath || true
+
 elif [[ -n "$(which yum 2> /dev/null)" ]]
 then
   # CentOS
@@ -38,23 +50,34 @@ then
   sudo yum -y install yum-utils curl
   sudo yum -y install https://repo.ius.io/ius-release-el7.rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm # new URLs by IUS "https://ius.io/setup"
   sudo yum makecache
-  sudo yum -y install python3 python3-pillow # this will install python3.6 version
-  # To look like Ubuntu, we need python3 and pip3.
-
-  sudo yum -y install $COMMON_PACKAGES  #  python-tornado python-imaging redundant w/ pip install?
-  sudo yum -y install $DEBUG_PACKAGES 
-
-  ## bash lives at /usr/bin/bash in CentOS, but in /bin/bash for Ubuntu. Create /bin/bash.
-  #sudo ln -s /bin/bash /usr/bin/bash    # TODO: So far, untested. Test and delete this comment.
+  sudo yum -y install python3
+  sudo yum -y install $COMMON_PACKAGES || true
+  sudo yum -y install $DEBUG_PACKAGES  || true
+  # Install pipx via pip (most reliable on older yum-based systems).
+  if ! command -v pipx >/dev/null 2>&1; then
+    python3 -m pip install --user -U pipx
+  fi
+  pipx ensurepath || true
 fi
 
 
-# Install python libraries for user only so as not to affect system installs.
-echo "Installing Python packages for user $USER."
-sudo python3 -m pip install --upgrade pip
-USER_PYTHON_PACKAGES='Pillow tornado awscli boto3 sandpiper-saas'
-python3 -m pip install --user --upgrade $USER_PYTHON_PACKAGES
-#sudo python3 -m pip install --user --upgrade $USER_PYTHON_PACKAGES
+# Python CLIs via pipx
+
+echo "Installing Python CLI tools via pipx (isolated per-app venvs)."
+
+# Make sure the current shell can see ~/.local/bin after ensurepath.
+export PATH="$HOME/.local/bin:$PATH"
+
+# Install/upgrade CLI packages with pipx.
+for app in awscli sandpiper-saas; do
+  if pipx list 2>/dev/null | grep -q "package $app "; then
+    echo "pipx: upgrading $app"
+    pipx upgrade "$app" || true
+  else
+    echo "pipx: installing $app"
+    pipx install "$app" || true
+  fi
+done
 
 
 # Configure remmina to disble the tray icon (so, it isn't left running when launched via Makefile).
@@ -72,7 +95,6 @@ chmod 400 "$HOME/.remmina/remmina.pref"
 
 
 # Make sure ~/.local/bin is in path for python installs.
-#
 echo "Making sure Python installs are in \$PATH."
 if [[ $( which aws > /dev/null 2>&1 )$? != 0 ]]
 then

@@ -125,7 +125,7 @@ class ImageHandler(tornado.web.RequestHandler):
 
     @staticmethod
     def valid_dirname(dir):
-        return re.match("^\w+$", dir)
+        return re.match(r"^\w+$", dir) is not None
 
     # handles image request via get request
     def get(self, type, depth=u'1000', tile_z=None, tile_x=None, tile_y=None):
