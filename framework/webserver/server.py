@@ -351,14 +351,12 @@ class FPGAServerApplication(tornado.web.Application):
         err_str = None
         try:
             ret = subprocess.check_output(args, universal_newlines=True)
-            """
-            if property:
-                m = re.match(r'[^\n]' + property + r'\s+(.*)\n', out)
-                if groups:
-                    ret = m.group(1)
-                else:
-                    err_str = "Property: " + property + " not found from AWS command: " + ' '.join(args)
-            """
+            #if property:
+            #    m = re.match(r'[^\n]' + property + r'\s+(.*)\n', out)
+            #    if groups:
+            #        ret = m.group(1)
+            #    else:
+            #        err_str = "Property: " + property + " not found from AWS command: " + ' '.join(args)
         except:
             err_str = "AWS EC2 command failed: " + ' '.join(args)
         if err_str:
@@ -574,7 +572,7 @@ class FPGAServerApplication(tornado.web.Application):
         # Local IP: myIP = socket.gethostbyname(socket.gethostname())
         port_str = "" if self.port == 80 else  ":" + str(self.port)
         try:
-            self.external_ip = subprocess.check_output(["wget", "-qO-", "ifconfig.me"], universal_newlines=True)
+            self.external_ip = subprocess.check_output(["wget", "-qO-", "https://ifconfig.me/ip"], universal_newlines=True).strip()
             print('*** Websocket Server Started, (http://%s%s) ***' % (self.external_ip, port_str))
         except:
             print("Webserver: FPGAServerApplication failed to acquire external IP address.")

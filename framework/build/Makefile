@@ -429,7 +429,7 @@ KERNEL_ADDITIONAL_FLAGS=
 
 #Device to be used
 #TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
-TARGET_DEVICE=xilinx_aws-vu47p-f2_202410_1_2# updated for F2 platform on Vitis 2024.2
+TARGET_DEVICE=xilinx_aws-vu47p-f2_202420_1# updated for F2 platform on Vitis 2024.2
 
 
 REPORT=
@@ -456,7 +456,7 @@ BUILD_DIR=../$(BUILD_DIR_NAME)/$(BUILD_TARGET)
 else
 ifndef AWS_PLATFORM
 $(info WARNING: AWS_PLATFORM is not set. Making assumptions.)
-AWS_PLATFORM=xilinx_aws-vu47p-f2_202410_1_2# updated for F2 platform on Vitis 2024.2
+AWS_PLATFORM=xilinx_aws-vu47p-f2_202420_1# updated for F2 platform on Vitis 2024.2
 endif
 #Translate Target Device name with underscores
 PERIOD:= :
@@ -681,7 +681,7 @@ $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_
 	@[[ -e "$(VERILATOR_INCLUDE)" ]] || ! echo "Verilator include directory not found at '$(VERILATOR_INCLUDE)'."
 	cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
 	@# For multithreaded, include on command line: $(VERILATOR_INCLUDE)/verilated_threads.cpp
-	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) $(VERILATOR_INCLUDE)/verilated.cpp $(VERILATOR_INCLUDE)/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I $(VERILATOR_INCLUDE) -o $(DEST_DIR)/$(HOST_EXE)
+	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) $(VERILATOR_INCLUDE)/verilated.cpp $(VERILATOR_INCLUDE)/verilated_threads.cpp $(VERILATOR_INCLUDE)/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I $(VERILATOR_INCLUDE) -o $(DEST_DIR)/$(HOST_EXE)
 	cd $(DEST_DIR)/verilator && rm verilator_kernel.h
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
