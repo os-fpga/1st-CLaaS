@@ -5,6 +5,75 @@ THIS IS CURRENTLY A PILE OF MISCELLANEOUS STUFF.
 
 <!-- Extract info from the Makefile -->
 
+
+<a name="SSO"></a>
+# Using AWS SSO / University-Assigned AWS Accounts
+
+If you are using an AWS account provided through your university, organization, or AWS IAM Identity Center (SSO) rather than a personal AWS account, the credential setup is different. These accounts use **temporary credentials** obtained from an AWS access portal. For general guidance on signing in through IAM Identity Center, see the [AWS IAM Identity Center sign-in tutorial](https://docs.aws.amazon.com/signin/latest/userguide/iam-id-center-sign-in-tutorial.html).
+
+## Step 1: Log In to Your AWS Access Portal
+
+Your organization will provide you with an **AWS access portal URL** (e.g., `https://your-org.awsapps.com/start/#`). Open it in a browser and sign in with your organization credentials.
+
+## Step 2: Get Your Credentials
+
+After logging in, you will see your available AWS account(s). Click on your account, then click on the role (e.g., `AWSAdministratorAccess`) to expand the credential options. You will see something like:
+
+> **Get credentials for _YourRole_**
+>
+> Use any of the following options to access AWS resources programmatically or from the AWS CLI.
+
+Choose **Option 2: Add a profile to your AWS credentials file**. You will see a block like this:
+
+```
+[123456789012_AWSAdministratorAccess]
+aws_access_key_id=ASIAXXXXXXXXXXXXXXXX
+aws_secret_access_key=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+aws_session_token=XXXXXXXXXXXX...very long token...XXXXXXXXXXXX
+```
+
+## Step 3: Add Credentials to Your Credentials File
+
+Copy that block and paste it into your AWS credentials file at `~/.aws/credentials`.
+
+**To use it as the default profile** (recommended for 1st CLaaS), rename the profile header to `[default]`:
+
+```
+[default]
+aws_access_key_id=ASIAXXXXXXXXXXXXXXXX
+aws_secret_access_key=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+aws_session_token=XXXXXXXXXXXX...very long token...XXXXXXXXXXXX
+```
+
+Alternatively, keep the original profile name and set the `AWS_PROFILE` environment variable in your shell:
+
+```sh
+export AWS_PROFILE=123456789012_AWSAdministratorAccess
+```
+
+Add this to your `~/.bashrc` or `~/.bash_profile` to persist across terminal sessions.
+
+## Step 4: Verify Access
+
+Confirm your credentials are working:
+
+```sh
+aws sts get-caller-identity
+```
+
+You should see your account ID, user ID, and ARN.
+
+## Step 5: Proceed with 1st CLaaS Configuration
+
+With credentials in place, proceed with `make config` as described in [Getting Started with F2](GettingStartedF1.md#config). When prompted for the AWS profile, enter `default` (if you renamed the profile) or the profile name you are using.
+
+## Important Notes
+
+  - **Credentials expire frequently** (typically every 1-12 hours depending on your organization's policy). When they expire, you will see `ExpiredToken` or `UnauthorizedAccess` errors. Simply go back to the AWS access portal, get fresh credentials, and replace them in `~/.aws/credentials`.
+  - **No permanent access keys**: SSO/university accounts typically do not have permanent access keys. The credentials from the portal are always temporary.
+  - **Service quotas**: You may need your organization admin to request F2 instance quota increases on your behalf, as SSO users may not have permission to submit service limit increase requests directly.
+  - **Billing**: Understand your organization's billing policies. University accounts may have spending limits or require prior approval for FPGA instance usage.
+
 TODO: Instructions for using a specific AMI version and checking the latest version.
 
 These instructions were last debugged with SDx v2018.3. Check to see what version you have. If it differs, you might get to help us debug a new platform.

@@ -1,11 +1,11 @@
 <a name="Overview"></a>
-# Getting Started with AWS and F1
+# Getting Started with AWS and F2
 
 
 # Table of Contents
 
   - [Overview](#Overview)
-  - [AWS Account Setup with F1 Access](#AWS-Acct) (requires a day or two for approval from Amazon)
+  - [AWS Account Setup with F2 Access](#AWS-Acct)(requires a day or two for approval from Amazon)
   - [1st CLaaS Configuration for AWS](#config)
   - [Using Your Development Instance](#DevInstance)
   - [FPGA Emulation Build](#EmulationBuild)
@@ -16,34 +16,36 @@
 <a name="Overview"></a>
 # Overview
 
-This guide will get you set up and give you a feel for using AWS EC2 for 1st CLaaS development. You'll walk you through the steps to run 1st CLaaS sample applications on AWS F1 and prepare for optimization and deployment of your own accelerated microservices.
+This guide will get you set up and give you a feel for using AWS EC2 for 1st CLaaS development. You'll walk you through the steps to run 1st CLaaS sample applications on AWS F2 and prepare for optimization and deployment of your own accelerated microservices.
+
+> **Note:** AWS F1 instances have been discontinued and replaced by F2 instances, which deliver up to 60% better price performance.
 
 > **Disclaimer:** You will be charged by Amazon for the resources required to complete these steps and to use this infrastructure. Don't come cryin' to us. We are in no way responsible for your AWS charges.
 
 1st CLaaS provides automation for provisioning and developing on two classes of AWS EC2 instance:
 
   - **Development Instance**: An EC2 c4.4xlarge instance, without an FPGA. Xilinx tools and flows are available for simulation using "Hardware Emulation" (`hw_emu`) mode. This instance is ideal for optimizing the implementation of the custom kernel. (~$0.80/hr)
-  - **F1 Instance**: An EC2 f1.2xlarge instance with an attached FPGA, supporting final testing and deployment. (~$1.65/hr)
+  - **F2 Instance**: An EC2 f2.6xlarge instance with an attached AMD Virtex UltraScale+ HBM VU47P FPGA (16 GB HBM), supporting final testing and deployment. (~$1.98/hr)
 
 <!--
 Optional instructions are provided to get the Mandelbrot example application up and running on a local Linux machine without FPGA acceleration. Furthermore, to run with FPGA acceleration, prebuilt images are provided to initially bypass the lengthy builds.
 
 As a preview of the complete process, to get the Mandelbrot application up and running from source code with FPGA acceleration, you will need to:
 
-  - Get an AWS account with access to F1 instances. (This requires a day or two to get approval from Amazon.)
+  - Get an AWS account with access to F2 instances. (This requires a day or two to get approval from Amazon.)
   - Launch a Development Instance on which to compile the OpenCL, Verilog, and Transaction-Level Verilog source code into an Amazon FPGA Image (AFI).
-  - Launch an F1 Instance on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Development Instance.
+  - Launch an F2 Instance on which to run: the web server, the Host Application, and the FPGA programmed with the image you created on the Development Instance.
   - Open the FPGA-Accelerated Web Application in a web browser.
 -->
 
-Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. Compilation for Hardware Emulation mode is relatively fast. To save cost, you can do as much development as possible on your local machine, then optimize implementation on a Development Instance, then deploy on F1. (If cost is not an obstacle, you can save some headache by using the F1 Instance as your Development Instance.)
+Configured for minimal optimization, hardware compilation of a small kernel takes about an hour. Compilation for Hardware Emulation mode is relatively fast. To save cost, you can do as much development as possible on your local machine, then optimize implementation on a Development Instance, then deploy on F2. (If cost is not an obstacle, you can save some headache by using the F2 Instance as your Development Instance.)
 
-There are many tutorials on line to get started with F1. Many are flawed, unclear, or out-dated. We found this <a href="https://github.com/Xilinx/SDAccel-Tutorials/blob/master/docs/aws-getting-started/RTL/README.md" target="_blank" atom_fix="_">Xilinx tutorial</a> to be the best. We have automated many of the steps you will find in these lengthy tutorials.
+AWS F2 is relatively new, and third-party tutorials are scarce. The best official resources are the <a href="https://github.com/aws/aws-fpga" target="_blank" atom_fix="_">AWS FPGA Development Kit on GitHub</a> and the <a href="https://awsdocs-fpga-f2.readthedocs-hosted.com/latest/vitis/README.html" target="_blank" atom_fix="_">AWS FPGA F2 Documentation</a>. We have automated many of the setup steps in 1st CLaaS to simplify the process.
 
 
 
 <a name="AWS-Acct"></a>
-# AWS Account Setup with F1 Access
+# AWS Account Setup with F2 Access
 
 ## Create an AWS account
 
@@ -51,22 +53,24 @@ If you do not already have an AWS account, create one here: [https://aws.amazon.
 
 Copy the access keys (AWS Access Key ID and AWS Secret Access Key) you create through this process for later reference.
 
+> If you are using an **AWS SSO or university/organization-assigned AWS account** instead of a personal account, the setup differs. See the [detailed SSO setup instructions](F1Guide.md#SSO) in the Optimization and Deployment Guide.
+
 ## Select a region
 
-AWS F1 instances are currently available in specific regions: US East (N.Virginia), US West (Oregon), or EU (Ireland). You must select a supported region in the AWS Management Console.
+AWS F2 instances are currently available in US East (N. Virginia). Check the [AWS Regional Services](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) page for the latest region availability. You must select a supported region in the AWS Management Console.
 
   - Log in to the AWS Management Console: [https://console.aws.amazon.com](https://console.aws.amazon.com)
   - Select your region from the dropdown in the upper right corner of the console
 
-## Request access to AWS F1 instances
+## Request access to AWS F2 instances
 
-By default, AWS users do not have access to F1 instances. You need to request access.
+By default, AWS users do not have access to F2 instances. You need to request access.
 
   - Open the Service Limit Increase form: [http://aws.amazon.com/contact-us/ec2-request](http://aws.amazon.com/contact-us/ec2-request).
   - Make sure your account name is correct.
   - Submit a 'Service Limit Increase' for 'EC2 Instances'.
-  - Select the region where you want to access F1 instances: US East (N.Virginia), US West (Oregon) or EU (Ireland).
-  - Select 'f1.2xlarge' as the primary instance type. (You may choose larger, but 1st CLaaS scripts assumes f1.2xlarge.).
+  - Select the region where you want to access F2 instances: US East (N. Virginia) (or other supported regions as they become available).
+  - Select 'f2.6xlarge' as the primary instance type. (You may choose larger, but 1st CLaaS scripts assumes f2.6xlarge.).
   - Set the 'New limit value' to 1 or more based on your expected needs.
   - Complete the form and click 'Submit'.
 
@@ -216,7 +220,7 @@ cd ~/1st-CLaaS/apps/mandelbrot/build
 make PREBUILT=true launch   # Note: Since this instance supports TARGET=hw_emu, this mode will be the default.
 ```
 
-This produces output files in `../out/hw_emu/xilinx_aws-vu9p-f1_4ddr-xpr-2pr_4.0/`, and it starts the application.
+This produces output files in `../out/hw_emu/xilinx_aws-vu47p-f2/`, and it starts the application.
 
 Reload `http://<IP>:8888` in your browser (with `<Ctrl>-F5` in Chrome and Firefox). This mode runs about two orders of magnitude slower than simulation mode, so be careful not to ask it to do too much. Make the image small, and set the depth to be minimal before selecting "FPGA" rendering.
 
@@ -224,7 +228,7 @@ Reload `http://<IP>:8888` in your browser (with `<Ctrl>-F5` in Chrome and Firefo
 
 **Stop the instance** in the EC2 Console (under "Running Instances", select the running instance, and under "Actions"::"Instance State", choose "Stop", and confirm).
 
-If you had been doing actual development, and you were ready to run on F1, you would commit your work and prebuilt AFI by running:
+If you had been doing actual development, and you were ready to run on F2, you would commit your work and prebuilt AFI by running:
 
 ```sh
 make prebuild
@@ -239,17 +243,4 @@ git push   # If not to master, you would pull from corresponding branch on F1 in
 <a name="FPGABuild"></a>
 # FPGA Build
 
-If you have gotten approval from Amazon, you can now run on an actual FPGA if you would like to see Mandelbrot at full speed. There is little risk of encountering issues at this point, so F1 is generally needed for deployment or testing at production speeds only.
-
-```sh
-make f1_instance INSTANCE_NAME=<name>
-```
-
-```sh
-make ssh INSTANCE_NAME=<name> SSH_CMD="'source ~/1st-CLaaS/vitis_setup && cd ~/1st-CLaaS/apps/mandelbrot/build && make launch PREBUILT=true'"   # TARGET=hw is the default on F1.
-```
-**NOTE** : The first quotes of the command gets ignored. If you face any issue running the SSH_CMD, it would be better to `make ssh` into the instance and run the command manually.
-
-As before, open `http://<IP>:8888` in your browser (using the new IP). Now you can select renderer "FPGA", and navigate at FPGA speed. (Try "velocity" nagivation mode.)
-
-When you are done, `<Ctrl>-C`, and **stop your instance**.
+> **Note:** Vitis-based AFI generation is **not currently supported** on AWS F2 instances. As a result, a full hardware (`hw`) target build and run on F2 is not possible at this time. For the latest status and updates on F2 Vitis support, see the [AWS FPGA F2 Vitis Documentation](https://awsdocs-fpga-f2.readthedocs-hosted.com/latest/vitis/README.html). Until Vitis support is available for F2, development is limited to hardware emulation (`hw_emu`) mode on a Development Instance as described above.

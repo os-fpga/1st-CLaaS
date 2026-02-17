@@ -140,7 +140,7 @@ owners = ["aws-marketplace"]
 
   filter {
       name   = "name"
-      values = ["FPGA Developer AMI*"]
+      values = ["FPGA Developer AMI*(Ubuntu) - 1.16.1*"]
   }
 
   filter {

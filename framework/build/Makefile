@@ -328,6 +328,7 @@ endif
 
 # Determine kernel name from current directory.
 KERNEL_NAME ?= $(shell realpath $$(pwd) | sed 's|^.*/\([^/]*\)/build$$|\1|')
+export KERNEL_NAME
 HW_SHELL_CONFIG_JSON ?=$(FRAMEWORK_DIR)/fpga/default_shell_config.json
 
 
@@ -355,7 +356,7 @@ WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --ssl_crt_file='$(SSL_CRT_FILE)' --ssl_key_fi
 endif
 endif
 
-WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
+WEBSERVER_PY ?= $(shell if [ -e "../webserver/$(KERNEL_NAME)_server.py" ]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
 LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
 
 
@@ -427,11 +428,6 @@ KERNEL_LDCLFLAGS= --connectivity.nk $(KERNEL_NAME):1 \
 
 KERNEL_ADDITIONAL_FLAGS=
 
-#Device to be used
-#TARGET_DEVICE=xilinx:aws-vu9p-f1:4ddr-xpr-2pr:4.0
-TARGET_DEVICE=xilinx_aws-vu47p-f2_202420_1# updated for F2 platform on Vitis 2024.2
-
-
 REPORT=
 ifeq ($(BUILD_TARGET),hw)
 REPORT=--report system
@@ -449,22 +445,23 @@ BUILD_DIR_NAME = prebuilt
 OUT_DIR_NAME = prebuilt_out
 endif
 
-#Assign DEST_DIR as <BUILD_TARGET>/<TARGET_DEVICE>, or just <BUILD_TARGET> for sw build (w/ no target device).
+#Assign DEST_DIR as <BUILD_TARGET>/<AWS_PLATFORM>, or just <BUILD_TARGET> for sw build (w/ no target device).
 ifneq ($(USE_XILINX),true)
 DEST_DIR=../$(OUT_DIR_NAME)/$(BUILD_TARGET)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(BUILD_TARGET)
 else
 ifndef AWS_PLATFORM
 $(info WARNING: AWS_PLATFORM is not set. Making assumptions.)
-AWS_PLATFORM=xilinx_aws-vu47p-f2_202420_1# updated for F2 platform on Vitis 2024.2
+AWS_PLATFORM=xilinx_aws-vu47p-f2_202410_1_2# updated for F2 platform on Vitis 2024.2
 endif
 #Translate Target Device name with underscores
 PERIOD:= :
 UNDERSCORE:= _
-DEST_SUBDIR=$(BUILD_TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(TARGET_DEVICE))
+DEST_SUBDIR=$(BUILD_TARGET)/$(subst $(PERIOD),$(UNDERSCORE),$(AWS_PLATFORM))
 DEST_DIR=../$(OUT_DIR_NAME)/$(DEST_SUBDIR)
 BUILD_DIR=../$(BUILD_DIR_NAME)/$(DEST_SUBDIR)
 endif
+export AWS_PLATFORM
 
 ifndef XILINX_XRT
 ifeq ($(USE_XILINX),true)
@@ -476,8 +473,9 @@ endif
 # For instance-specific targets (launch/live/dead)
 
 # Prevent conflicts between launch and live targets.
-ifeq ($(MAKECMDGOALS), launch)
-DEFAULT_SOCKET=SOCKET
+# host-only also needs a real socket path.
+ifneq ($(filter launch host-only,$(MAKECMDGOALS)),)
+DEFAULT_SOCKET=/tmp/$(KERNEL_NAME)_$(shell id -u).sock
 DEFAULT_KILLME=./kill_launch
 else
 DEFAULT_SOCKET=LIVE_SOCKET
@@ -509,9 +507,9 @@ endif
 ifeq ($(MAKECMDGOALS),live)
 NOHUP=true
 PORT=80
-HOST_EXE_PATH=$(LAUNCH_DIR)/$(HOST_EXE)
+HOST_EXE_PATH=$(abspath $(LAUNCH_DIR)/$(HOST_EXE))
 else
-HOST_EXE_PATH=$(BUILD_DIR)/$(HOST_EXE)
+HOST_EXE_PATH=$(abspath $(BUILD_DIR)/$(HOST_EXE))
 endif
 
 ifeq ($(MAKECMDGOALS),dead)
@@ -520,7 +518,7 @@ endif
 
 
 # If project has a launch command, use it, otherwise, use launch from framework.
-LAUNCH_CMD_PARTIAL :=$(shell if [[ -e ./launch ]]; then echo ./launch; else echo $(FRAMEWORK_DIR)/build/launch; fi) -w '$(LAUNCH_W)'
+LAUNCH_CMD_PARTIAL :=$(shell if [ -e ./launch ]; then echo ./launch; else echo $(FRAMEWORK_DIR)/build/launch; fi) -w '$(LAUNCH_W)'
 LAUNCH_ARGS=-p $(PORT) -s $(SOCKET) -k '$(KILLME)' $(BUILD_TARGET) '$(HOST_CMD)'
 ifdef NOHUP
 # Run in background to continue if the shell exits; log output and cut off stdin to detach from the launching process's stdin (so ssh/etc can exit).
@@ -556,7 +554,7 @@ HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS)
 endif
 ifeq ($(BUILD_TARGET),hw_emu)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-HOST_CMD=export XCL_EMULATION_MODE=$(BUILD_TARGET) && $(XILINX_VITIS)/bin/emconfigutil --od $(DEST_DIR) --nd 1  --platform $(AWS_PLATFORM) && $(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
+HOST_CMD=$(VALGRIND_PREFIX) $(HOST_EXE_PATH) $(HOST_ARGS) $(HOST_XCLBIN)
 endif
 ifeq ($(BUILD_TARGET),hw)
 BUILD_TARGETS=$(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
@@ -834,21 +832,49 @@ $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
 #   Delete S3 files to avoid charges.
 ifneq ($(USE_PREBUILT), true)
 $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
-	mkdir -p $(DEST_DIR)
-	@# These files are created. Clean up any from old builds.
-	rm $(DEST_DIR)/*_afi_id.txt 2> /dev/null || true
-	rm -rf $(DEST_DIR)/to_aws 2> /dev/null || true
-	$(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
-	@# Create bucket if it doesn't exist.
-	aws s3api create-bucket --bucket '$(S3_BUCKET)' --acl private > /dev/null && aws s3api wait bucket-exists --bucket '$(S3_BUCKET)'
-	# Create AFI and Wait for creation to complete. afi-<id> and <timestamp>_afi_id.txt are extracted into files for use.
-	cd $(DEST_DIR) && $(VITIS_DIR)/tools/create_vitis_afi.sh -xclbin=$(KERNEL_EXE).xclbin -o=$(KERNEL_NAME) -s3_bucket=$(S3_BUCKET) -s3_dcp_key=$(S3_DCP_KEY) -s3_logs_key=$(S3_LOGS_KEY) -aws_profile_name=$(AWS_PROFILE) \
-	  && grep '"afi-' *_afi_id.txt | sed 's/^.*"\(afi-[0-9a-zA-Z]*\)".*$$/\1/' > $(KERNEL_NAME)_afi_id.txt \
-	  && ls *_afi_id.txt | sed 's/^\(.*\)_afi_id.txt$$/\1/' > $(KERNEL_NAME)_timestamp.txt \
-	  && wait_for_afi.py --afi "$$(cat $(KERNEL_NAME)_afi_id.txt)"
-	@# Delete S3 files to avoid charges.
-	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
-	aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
+        mkdir -p $(DEST_DIR)
+        @# These files are created. Clean up any from old builds.
+        rm $(DEST_DIR)/*_afi_id.txt 2> /dev/null || true
+        rm -rf $(DEST_DIR)/to_aws 2> /dev/null || true
+        $(info Building AFI using bucket "$(S3_BUCKET)" with output folder "$(S3_DCP_KEY)" and log folder "$(S3_LOGS_KEY)")
+        @# Create bucket if it doesn't exist.
+        aws s3api create-bucket --bucket '$(S3_BUCKET)' --acl private > /dev/null && aws s3api wait bucket-exists --bucket '$(S3_BUCKET)'
+
+        # Create AFI and Wait for creation to complete. afi-<id> and <timestamp>_afi_id.txt are extracted into files for use.
+
+        xclbinutil --force --dump-section BITSTREAM:RAW:$(DEST_DIR)/$(KERNEL_NAME)_partial.dcp --dump-section BUILD_METADATA:JSON:$(DEST_DIR)/$(KERNEL_NAME)_build.json --dump-section CLOCK_FREQ_TOPOLOGY:JSON:$(DEST_DIR)/$(KERNEL_NAME)_clocks.json -i $(DEST_DIR)/$(KERNEL_EXE).xclbin
+
+        tar -cvf $(DEST_DIR)/${KERNEL_NAME}_Developer_Vitis_Kernel.tar $(DEST_DIR)/$(KERNEL_NAME)_partial.dcp $(DEST_DIR)/$(KERNEL_NAME)_clocks.json $(DEST_DIR)/$(KERNEL_NAME)_build.json
+
+        aws s3 cp $(DEST_DIR)/${KERNEL_NAME}_Developer_Vitis_Kernel.tar s3://$(S3_BUCKET)/$(S3_DCP_KEY)/ --profile $(AWS_PROFILE)
+
+        aws ec2 create-fpga-image --name $(KERNEL_NAME) --description "$(KERNEL_NAME)" --input-storage-location Bucket=$(S3_BUCKET),Key=$(S3_DCP_KEY)/${KERNEL_NAME}_Developer_Vitis_Kernel.tar --logs-storage-location Bucket=$(S3_BUCKET),Key=$(S3_LOGS_KEY)/ --region us-east-1 --profile $(AWS_PROFILE) > $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt
+
+        # Parse AFI & AGFI from the file you already wrote
+        #$(AFI_ID) := $(shell grep -o '"afi-[0-9A-Za-z-]*"' $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt | tr -d '"')
+        #$(AGFI_ID) := $(shell grep -o '"agfi-[0-9A-Za-z-]*"' $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt | tr -d '"')
+
+		# Wait loop (polls until available or failed)
+        bash -c '\
+                afi=$$(grep -o "afi-[0-9A-Za-z-]*" $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt | head -1); \
+                echo "Waiting for $$afi to become available..."; \
+                while :; do \
+                state=$$(aws ec2 describe-fpga-images --fpga-image-id $$afi --query "FpgaImages[0].State.Code" --output text --region us-east-1 --profile $(AWS_PROFILE)); \
+                echo "State: $$state"; \
+                [ "$$state" = "available" ] && break; \
+                [ "$$state" = "failed" ] && { echo "AFI failed"; exit 1; }; \
+                sleep 60; \
+                done'
+
+        # Create .awsxclbin using the AGFI ID (write it to a small file first)
+        bash -c 'grep -o "agfi-[0-9A-Za-z-]*" $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt | head -1 > $(DEST_DIR)/$(KERNEL_NAME)_agfi_id.txt'
+
+        xclbinutil -i $(DEST_DIR)/$(KERNEL_EXE).xclbin --remove-section PARTITION_METADATA --remove-section SYSTEM_METADATA --replace-section BITSTREAM:RAW:$(DEST_DIR)/$(KERNEL_NAME)_agfi_id.txt -o $(DEST_DIR)/$(KERNEL_EXE).awsxclbin
+
+        @# Delete S3 files to avoid charges.
+        aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_DCP_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
+        aws s3 rm --profile $(AWS_PROFILE) --recursive 's3://$(S3_BUCKET)/$(S3_LOGS_KEY)/$$(cat $(KERNEL_NAME)_timestamp.txt)*'
+
 endif
 
 .PHONY: push
@@ -867,10 +893,10 @@ host_debug: $(DEST_DIR)/$(HOST_EXE)_debug
 xclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
 
 ifeq ($(BUILD_TARGET), hw_emu)
-HOST_XCLBIN=$(DEST_DIR)/$(KERNEL_EXE).xclbin
+HOST_XCLBIN=$(abspath $(DEST_DIR)/$(KERNEL_EXE).xclbin)
 endif
 ifeq ($(BUILD_TARGET), hw)
-HOST_XCLBIN=$(BUILD_DIR)/$(KERNEL_EXE).awsxclbin
+HOST_XCLBIN=$(abspath $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin)
 # HW targets
 .PHONY: awsxclbin afi
 awsxclbin: $(HOST_XCLBIN)
@@ -921,6 +947,20 @@ launch: $(BUILD_TARGETS)
 	$(LAUNCH_CHECK)
 	@mkdir -p $(LAUNCH_DIR)
 	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
+
+# Run host alone (no webserver) — useful for hw_emu debugging.
+.PHONY: host-only
+host-only: $(BUILD_TARGETS)
+	@mkdir -p "$(DEST_DIR)"
+	@printf "[Debug]\nverbosity=4\ntimeline_trace=true\n" > "$(DEST_DIR)/xrt.ini"
+	cd "$(DEST_DIR)" && \
+	  emconfigutil --nd 1 --platform "$(AWS_PLATFORM)" && \
+	  XCL_EMULATION_MODE=hw_emu EMCONFIG_PATH="$(DEST_DIR)" XRT_INI_PATH="$(DEST_DIR)/xrt.ini" \
+	  "$(DEST_DIR)/$(HOST_EXE)" -s "$(SOCKET)" "$(DEST_DIR)/$(KERNEL_EXE).xclbin"
+
+.PHONY: show-ws
+show-ws:
+	@echo WEBSERVER_PY=$(WEBSERVER_PY)
 
 # An un-documented target to launch the web server and open Chrome to test it.
 # Requires $(CHROME) and works only for applications that open the websocket.
@@ -1131,7 +1171,26 @@ desktop:
 		sed -i "s/^server=TBD/server=$$DNS/" "$(FRAMEWORK_DIR)/out/tmp.remmina" && \
 		remmina -c "$(FRAMEWORK_DIR)/out/tmp.remmina" &)
 
+###################################
+# AWS credential sync (optional)
+###################################
+SYNC_AWS_CREDS ?= true
+AWS_LOCAL_DIR ?= $(HOME)/.aws
+AWS_REMOTE_DIR ?= /home/ubuntu/.aws
+
+.PHONY: sync_creds
+sync_creds:
+	$(call connect,Synchronizing AWS credentials to,\
+		ssh -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$DNS 'mkdir -p $(AWS_REMOTE_DIR) && chmod 700 $(AWS_REMOTE_DIR)' && \
+		if [[ -f "$(AWS_LOCAL_DIR)/credentials" ]]; then scp -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" "$(AWS_LOCAL_DIR)/credentials" ubuntu@$$DNS:$(AWS_REMOTE_DIR)/; fi && \
+		if [[ -f "$(AWS_LOCAL_DIR)/config" ]]; then scp -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" "$(AWS_LOCAL_DIR)/config" ubuntu@$$DNS:$(AWS_REMOTE_DIR)/; fi && \
+		ssh -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$DNS 'chmod 600 $(AWS_REMOTE_DIR)/credentials $(AWS_REMOTE_DIR)/config 2>/dev/null || true; command -v aws >/dev/null && aws sts get-caller-identity >/dev/null 2>&1 || true' \
+	)
+
 ssh:
+	#$(call connect,Connecting via SSH to,\
+	#	ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" ubuntu@$$DNS '$(SSH_CMD)')
+	@if [ "$(SYNC_AWS_CREDS)" = "true" ]; then $(MAKE) --no-print-directory sync_creds; fi
 	$(call connect,Connecting via SSH to,\
 		ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" ubuntu@$$DNS '$(SSH_CMD)')
 

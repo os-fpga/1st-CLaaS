@@ -84,10 +84,12 @@ KILLME="killme"
 SOCKET="SOCKET"
 ONESHOT_ARG=' '
 
-OUT="../out/$TARGET/$AWS_PLATFORM"
-XCLBIN="$OUT/mandelbrot.xclbin"
+OUT="$(realpath ../out/$TARGET/$AWS_PLATFORM 2>/dev/null || echo ../out/$TARGET/$AWS_PLATFORM)"
+# Derive kernel name from environment (exported by Makefile) or from cwd
+KERNEL_NAME="${KERNEL_NAME:-$(basename "$(dirname "$PWD")")}"
+XCLBIN="$OUT/${KERNEL_NAME}.xclbin"
 # If caller didn't pass -s, pick a deterministic default
-[[ "$SOCKET" == "SOCKET" || -z "$SOCKET" ]] && SOCKET="/tmp/mandelbrot_${UID}.sock"
+[[ "$SOCKET" == "SOCKET" || -z "$SOCKET" ]] && SOCKET="/tmp/${KERNEL_NAME}_${UID}.sock"
 
 
 # Read command line options
@@ -162,17 +164,17 @@ launch () {
     # Ensure OUT exists
   mkdir -p "$OUT"
 
-  # Put emulation artifacts in OUT and point host to them
-  # Generate emconfig.json in OUT (host will read it via EMCONFIG_PATH)
-  ( cd "$OUT" && emconfigutil --nd 1 --platform "$AWS_PLATFORM" ) || fail "emconfigutil failed"
+  # For hw_emu: generate emconfig.json and xrt.ini
+  if [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; then
+    ( cd "$OUT" && emconfigutil --nd 1 --platform "$AWS_PLATFORM" ) || fail "emconfigutil failed"
 
-  # Write a clean xrt.ini (remove the invalid 'emulation_trace' key)
-  if [[ ! -f "$OUT/xrt.ini" ]]; then
-    cat > "$OUT/xrt.ini" <<'EOF'
+    if [[ ! -f "$OUT/xrt.ini" ]]; then
+      cat > "$OUT/xrt.ini" <<'EOF'
 [Debug]
 verbosity=4
 timeline_trace=true
 EOF
+    fi
   fi
 
   # Build the host command line: ensure '-s <socket>' and '<xclbin>' are present
@@ -185,8 +187,10 @@ EOF
   fi
 
   # Sanity checks
-  [[ -x "$OUT/host" ]]      || fail "Missing host at $OUT/host (run: $COMPILE_CMD)"
-  [[ -r "$XCLBIN" ]]        || fail "Missing xclbin at $XCLBIN (run: $COMPILE_CMD)"
+  if [[ $USE_XILINX = "true" ]]; then
+    [[ -x "$OUT/host" ]]      || fail "Missing host at $OUT/host (run: $COMPILE_CMD)"
+    [[ -r "$XCLBIN" ]]        || fail "Missing xclbin at $XCLBIN (run: $COMPILE_CMD)"
+  fi
   
   # Launch host app.
   echo "Launching host application as: $HOST"
@@ -199,16 +203,18 @@ EOF
     elif [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; # Hardware Emulation
     then
     (
-    cd "$OUT" || exit 1
+    SAVED_AWS_PLATFORM="$AWS_PLATFORM"
     source "$XILINX_VITIS/settings64.sh"
     source /opt/xilinx/xrt/setup.sh
     source "$AWS_FPGA_REPO_DIR/vitis_setup.sh"
+    # Restore AWS_PLATFORM in case vitis_setup.sh overwrote it
+    export AWS_PLATFORM="$SAVED_AWS_PLATFORM"
     export XCL_EMULATION_MODE=hw_emu
     export EMCONFIG_PATH="$OUT"
     export XRT_INI_PATH="$OUT/xrt.ini"
     export LC_ALL=C
     echo "Launching host application as: $HOST_CMD"
-    exec $HOST_CMD # try exec in quotes?
+    eval $HOST_CMD
   ) &
     else # Hardware
       sudo -- sh -c "source $XILINX_VITIS/settings64.sh;
@@ -303,7 +309,7 @@ upgrade () {
     teardown
 
     # Compile
-    bash -c "$COMPILE_CMD" || fail "Compilation for Mandelbrot failed."
+    bash -c "$COMPILE_CMD" || fail "Compilation failed."
 
     # Re-launch.
     echo "launch: Re-launching web server"

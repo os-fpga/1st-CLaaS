@@ -16,7 +16,7 @@
 <a name="about"></a>
 # About this Document
 
-1st CLaaS is built to enable initial development on your local machine. Local development, using RTL simulation of the custom kernel is covered in this document. When it comes time to optimize and deploy your kernel, 1st CLaaS provides infrastructure to do so using AWS F1 with Xilinx tools. These are covered in separate documents. [Getting Started with F1](GettingStartedF1.md#top) will get you started, and the [Optimization and Deployment Guide](F1Guide.md#top) will be your AWS/F1 reference.
+1st CLaaS is built to enable initial development on your local machine. Local development, using RTL simulation of the custom kernel is covered in this document. When it comes time to optimize and deploy your kernel, 1st CLaaS provides infrastructure to do so using AWS F2 with Xilinx tools. These are covered in separate documents. [Getting Started with F2](GettingStartedF1.md#top) will get you started, and the [Optimization and Deployment Guide](F1Guide.md#top) will be your AWS/F2 reference.
 
 
 
@@ -38,7 +38,7 @@ The framework supports:
 
   - developing a web client on a local machine (Ubuntu 16.04 for us)
   - developing the custom hardware kernel locally
-  - deploying your accelerated application on AWS F1 machines
+  - developing your accelerated application on AWS F2 machines
 
 The top-level file structure is:
 
@@ -86,12 +86,12 @@ It is perfectly reasonable to develop your own web/cloud application using any t
 
 <!-- Web Server (Python) and Host Application (C++) can be extended as desired, but in the simplest usage, they can be directly provided by the framework. -->
 
-An actual F1, and even AWS as a whole, are needed very little during development, especially early on. Four modes of execution are supported by the build process, controlled by the `TARGET` Make variable, and requiring different platforms:
+An actual F2, and even AWS as a whole, are needed very little during development, especially early on. Four modes of execution are supported by the build process, controlled by the `TARGET` Make variable, and requiring different platforms:
 
   - Software (`sw`): An optional mode where the RTL kernel is not utilized. Custom C++ code is required to provide emulated kernel behavior.
   - Simulation (`sim`): Verilator is used for 2-state simulation of the custom RTL kernel. Verilator creates a C++ model of the kernel which is directly compiled in with the host executable. The Host Application C++ code controls the kernel clock and decides when to send/receive data to/from the kernel.
   - Hardware Emulation (`hw_emu`): This mode is supported by Xilinx Vitis on AWS. All FPGA logic is simulated, including the custom kernel and surrounding shell logic. This runs much slower than Simulation.
-  - Hardware (`hw`): Uses a real F1 FPGA.
+  - Hardware (`hw`): Runs on a real FPGA. **Note:** AWS F1 instances have been discontinued. AWS F2 instances are the replacement, but Vitis-based AFI generation is [not yet supported on F2](https://awsdocs-fpga-f2.readthedocs-hosted.com/latest/vitis/README.html). As a result, the `hw` target is currently unavailable. Development is limited to `hw_emu` mode on a Development Instance for now.
 
 Generally, most kernel development is done in Simulation. Hardware Emulation is used to refine the implementation of the design and may catch a few new bugs because of 4-state modeling and test bench differences. Hardware compilation is primarily for testing the application at speed and for deployment.
 
@@ -128,7 +128,7 @@ The `Makefile` encapsulates just about every command provided by the framework f
 The web server provides, or can provide, the following REST API features.
 
   - Self identification: The web server can determine its own IP to enable direct communication in scenarios where its content is served through a proxy.
-  - Starting/Stopping an F1 instance for acceleration.
+  - Starting/Stopping an F2 instance for acceleration.
 
 
 <a name="web_dev"></a>
