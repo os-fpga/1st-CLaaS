@@ -191,7 +191,7 @@ EOF
     [[ -x "$OUT/host" ]]      || fail "Missing host at $OUT/host (run: $COMPILE_CMD)"
     [[ -r "$XCLBIN" ]]        || fail "Missing xclbin at $XCLBIN (run: $COMPILE_CMD)"
   fi
-  
+
   # Launch host app.
   echo "Launching host application as: $HOST"
   if [[ $HOST_PID == "" ]]
@@ -204,6 +204,7 @@ EOF
     then
     (
     SAVED_AWS_PLATFORM="$AWS_PLATFORM"
+    #cd "$OUT" || exit 1
     source "$XILINX_VITIS/settings64.sh"
     source /opt/xilinx/xrt/setup.sh
     source "$AWS_FPGA_REPO_DIR/vitis_setup.sh"
@@ -273,11 +274,11 @@ teardown () {
     sudo kill -9 $HOST_PID3
     sudo kill -9 $SERVER_PID2
   fi
-  
+
   # Done with "killme" script, created by this script.
   # This script might currently be in use, but it seems to be okay to delete it?
   rm "$KILLME"
-  
+
   # Wait for child processes to finish first (to avoid output after exit)
   wait $HOST_PID >& /dev/null
   wait $SERVER_PID >& /dev/null
@@ -328,4 +329,3 @@ while [ $DONE -le 0 ] ; do
 done
 
 echo "launch: Done."
-

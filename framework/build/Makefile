@@ -319,9 +319,9 @@ endif
 
 # Can only do PREBUILT=true w/ TARGET=hw.
 ifneq ($(BUILD_TARGET),hw)
-	USE_PREBUILT=false
+        USE_PREBUILT=false
 else
-	USE_PREBUILT=$(PREBUILT)
+        USE_PREBUILT=$(PREBUILT)
 endif
 
 
@@ -567,91 +567,91 @@ endif
 # with "secret" to execute the command.
 # Usage: $(call with_secret,$(COMMAND))
 define with_secret
-	@# Echo command without secrets (requires proper quoting)
-	@echo '$(subst $(SPACE)*****$(SPACE),*****,$(patsubst {{{%}}},*****,$(subst $(SINGLE_QUOTE),'"$(SINGLE_QUOTE)"',$1)))'
-	@$(subst }}}$(SPACE),,$(subst $(SPACE){{{,,$1))
+        @# Echo command without secrets (requires proper quoting)
+        @echo '$(subst $(SPACE)*****$(SPACE),*****,$(patsubst {{{%}}},*****,$(subst $(SINGLE_QUOTE),'"$(SINGLE_QUOTE)"',$1)))'
+        @$(subst }}}$(SPACE),,$(subst $(SPACE){{{,,$1))
 endef
 
 .PHONY: nothing
 nothing:
-	@echo "No target specified. Nothing built."
+        @echo "No target specified. Nothing built."
 
 .PHONY: clean shrink
 clean:
-	sudo rm -rf ../out
+        sudo rm -rf ../out
 # TODO: Add more-selective clean targets.
 
 # Remove some of the large hw build collateral files.
 shrink:
-	rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
+        rm -rf ../out/hw/*/to_aws ../out/hw/*/*.tar ../out/hw/*/_x
 
 
 
 # User configuration.
 define config_param
-	@echo -n "$1 [$($1)]: " && (read TMP; if [[ -n "$$TMP" ]]; then echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; else echo '$1=$($1)' >> $(CONFIG_FILE).tmp; fi)
+        @echo -n "$1 [$($1)]: " && (read TMP; if [[ -n "$$TMP" ]]; then echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; else echo '$1=$($1)' >> $(CONFIG_FILE).tmp; fi)
 endef
 #Validating S3 user and bucket name
 define validate_param
-	@while true; do \
-		echo -n "$1 [$($1)]: "; \
-		read TMP; \
-		if [[ -z "$$TMP" ]]; then TMP="$($1)"; fi; \
-		if [[ "$$TMP" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$$ ]]; then \
-			echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; \
-			break; \
-		else \
-			echo "❌ Invalid $1. Must follow S3 naming rules:"; \
-			echo "   • Only lowercase letters, numbers, and hyphens"; \
-			echo "   • Must start and end with a letter or number"; \
-		fi; \
-	done
+        @while true; do \
+                echo -n "$1 [$($1)]: "; \
+                read TMP; \
+                if [[ -z "$$TMP" ]]; then TMP="$($1)"; fi; \
+                if [[ "$$TMP" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$$ ]]; then \
+                        echo "$1=$$TMP" >> $(CONFIG_FILE).tmp; \
+                        break; \
+                else \
+                        echo "❌ Invalid $1. Must follow S3 naming rules:"; \
+                        echo "   • Only lowercase letters, numbers, and hyphens"; \
+                        echo "   • Must start and end with a letter or number"; \
+                fi; \
+        done
 endef
 
 .PHONY: config
 config:
-	@rm -f $(CONFIG_FILE).tmp
-	@[[ ! -e "$(CONFIG_FILE)" ]] || ! echo "User configuration file ($(CONFIG_FILE)) already exists. Edit with a text editor."
-	@echo
-	@echo 'Creating 1st CLaaS user configuration file: "$(CONFIG_FILE)".'
-	@echo 'To keep a default value, press <Enter>.'
-	@echo 'Enter AWS profile to associate with your 1st CLaaS work. If desired, create a new IAM user via the AWS Management Console.'
-	@ if [[ -e '~/.aws/config' && -e '~/.aws/credentials' ]];\
-	  then echo 'Known (already-configured via "aws configure" AWS profiles (if any):';\
-		   grep '\[profile' ~/.aws/config | sed 's/^\[profile \(.*\)\]$/\1/';\
-	  fi
-	$(call config_param,AWS_PROFILE)
-	@echo
-	@echo 'Have your AWS credentials ready (or create new via AWS Management Console: search "IAM", "users", select user, "Security Credentials", "Create access key").'
-	@source $(CONFIG_FILE).tmp && NEW_AWS_PROFILE="$$AWS_PROFILE" && unset AWS_PROFILE && aws configure --profile "$$AWS_PROFILE"  # (aws configure doesn't work if $AWS_PROFILE doesn't already exist.)
-	@source $(CONFIG_FILE).tmp && \
-	  REGION=$$(aws configure get region) && \
-	  if [[ ! $$REGION =~ (us-east-1|us-west-2|eu-west-2|ap-southeast-2) ]]; \
-	  then echo "Warning: Region $$REGION is not known to support F2. Valid regions w/ F2 include: 'us-east-1' (N. Virginia), 'us-west-2' (Oregon), 'eu-west-2' (London), or 'ap-southeast-2' (Sydney). (Please update Makefile and create a pull request if you know differently.)"; \
-	  fi
-	@echo
-	@echo 'User configuration needs an associated AWS S3 bucket (storage), which requires a globally-unique name (across all AWS users).'
-	@echo 'Bucket name will be 1st-claas.$$(S3_USER).$$(S3_BUCKET_TAG)'
+        @rm -f $(CONFIG_FILE).tmp
+        @[[ ! -e "$(CONFIG_FILE)" ]] || ! echo "User configuration file ($(CONFIG_FILE)) already exists. Edit with a text editor."
+        @echo
+        @echo 'Creating 1st CLaaS user configuration file: "$(CONFIG_FILE)".'
+        @echo 'To keep a default value, press <Enter>.'
+        @echo 'Enter AWS profile to associate with your 1st CLaaS work. If desired, create a new IAM user via the AWS Management Console.'
+        @ if [[ -e '~/.aws/config' && -e '~/.aws/credentials' ]];\
+          then echo 'Known (already-configured via "aws configure" AWS profiles (if any):';\
+                   grep '\[profile' ~/.aws/config | sed 's/^\[profile \(.*\)\]$/\1/';\
+          fi
+        $(call config_param,AWS_PROFILE)
+        @echo
+        @echo 'Have your AWS credentials ready (or create new via AWS Management Console: search "IAM", "users", select user, "Security Credentials", "Create access key").'
+        @source $(CONFIG_FILE).tmp && NEW_AWS_PROFILE="$$AWS_PROFILE" && unset AWS_PROFILE && aws configure --profile "$$AWS_PROFILE"  # (aws configure doesn't work if $AWS_PROFILE doesn't already exist.)
+        @source $(CONFIG_FILE).tmp && \
+          REGION=$$(aws configure get region) && \
+          if [[ ! $$REGION =~ (us-east-1|us-west-2|eu-west-2|ap-southeast-2) ]]; \
+          then echo "Warning: Region $$REGION is not known to support F2. Valid regions w/ F2 include: 'us-east-1' (N. Virginia), 'us-west-2' (Oregon), 'eu-west-2' (London), or 'ap-southeast-2' (Sydney). (Please update Makefile and create a pull request if you know differently.)"; \
+          fi
+        @echo
+        @echo 'User configuration needs an associated AWS S3 bucket (storage), which requires a globally-unique name (across all AWS users).'
+        @echo 'Bucket name will be 1st-claas.$$(S3_USER).$$(S3_BUCKET_TAG)'
 
-	@echo "Enter S3_USER (must follow S3 naming rules: lowercase letters, digits, hyphens only)"
-	$(call validate_param,S3_USER)
+        @echo "Enter S3_USER (must follow S3 naming rules: lowercase letters, digits, hyphens only)"
+        $(call validate_param,S3_USER)
 
-	@echo "Enter S3_BUCKET_TAG (must follow S3 naming rules: lowercase letters, digits, hyphens only)"
-	$(call validate_param,S3_BUCKET_TAG)
+        @echo "Enter S3_BUCKET_TAG (must follow S3 naming rules: lowercase letters, digits, hyphens only)"
+        $(call validate_param,S3_BUCKET_TAG)
 
-	@# For convenience, also store the full bucket name.
-	@source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
-	@echo 'EC2 instances can be initialized with an administrative password. This password may be used by optional administrative features of 1st-CLaaS web servers. Choose a default or leave blank to require explicit password on launch when needed.'
-	@echo "WARNING: This default PASSWORD is accessible to $(USER) and root users."
-	$(call config_param,PASSWORD)
-	@chmod 600 $(CONFIG_FILE).tmp
-	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
-	@echo 'Configuration complete and stored in "$(CONFIG_FILE)" accessible only to you ("$(USER)"). Contents:'
-	@cat $(CONFIG_FILE)
-	@source $(CONFIG_FILE) && \
-	echo "Setting up S3 bucket: s3://$$S3_BUCKET" && \
-	aws s3api create-bucket --bucket "$$S3_BUCKET" --acl private --profile "$$AWS_PROFILE" > /dev/null && \
-	aws s3api wait bucket-exists --bucket "$$S3_BUCKET" --profile "$$AWS_PROFILE"
+        @# For convenience, also store the full bucket name.
+        @source $(CONFIG_FILE).tmp && echo "S3_BUCKET=1st-claas.$${S3_USER}.$${S3_BUCKET_TAG}" >> $(CONFIG_FILE).tmp
+        @echo 'EC2 instances can be initialized with an administrative password. This password may be used by optional administrative features of 1st-CLaaS web servers. Choose a default or leave blank to require explicit password on launch when needed.'
+        @echo "WARNING: This default PASSWORD is accessible to $(USER) and root users."
+        $(call config_param,PASSWORD)
+        @chmod 600 $(CONFIG_FILE).tmp
+        @mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
+        @echo 'Configuration complete and stored in "$(CONFIG_FILE)" accessible only to you ("$(USER)"). Contents:'
+        @cat $(CONFIG_FILE)
+        @source $(CONFIG_FILE) && \
+        echo "Setting up S3 bucket: s3://$$S3_BUCKET" && \
+        aws s3api create-bucket --bucket "$$S3_BUCKET" --acl private --profile "$$AWS_PROFILE" > /dev/null && \
+        aws s3api wait bucket-exists --bucket "$$S3_BUCKET" --profile "$$AWS_PROFILE"
 
 
 
@@ -663,34 +663,34 @@ ifneq ($(USE_XILINX),true)
 ifeq ($(BUILD_TARGET),sw)
 #sw target
 $(DEST_DIR)/$(HOST_EXE): $(SW_SRC) $(SW_HDRS)
-	mkdir -p $(DEST_DIR)
-	$(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
+        mkdir -p $(DEST_DIR)
+        $(CC) $(SW_SRC) $(SW_CFLAGS) $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 # Host for debug.
 $(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
-	mkdir -p $(DEST_DIR)
-	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
+        mkdir -p $(DEST_DIR)
+        $(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 else
 #sim target
 $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp: $(SV_SRC) $(SV_FROM_TLV) $(VH_SRC) $(FRAMEWORK_V_SRC)
-	mkdir -p $(DEST_DIR)
-	$(VERILATOR) --cc --sv --trace --top-module $(KERNEL_NAME)_kernel -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator \
-	|| (STATUS=$$? && mv $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp.error && exit $$STATUS)  # to force re-run.
+        mkdir -p $(DEST_DIR)
+        $(VERILATOR) --cc --sv --trace --top-module $(KERNEL_NAME)_kernel -DFPGA_WEBSERVER_KERNEL $(SV_SRC) $(SV_FROM_TLV) -y ../out/sv -y ../fpga/src -y $(FRAMEWORK_DIR)/fpga/src --Mdir $(DEST_DIR)/verilator \
+        || (STATUS=$$? && mv $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp.error && exit $$STATUS)  # to force re-run.
 $(DEST_DIR)/$(HOST_EXE): $(SIM_SRC) $(SIM_HDRS) $(DEST_DIR)/verilator/V$(KERNEL_NAME)_kernel.cpp
-	@[[ -e "$(VERILATOR_INCLUDE)" ]] || ! echo "Verilator include directory not found at '$(VERILATOR_INCLUDE)'."
-	cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
-	@# For multithreaded, include on command line: $(VERILATOR_INCLUDE)/verilated_threads.cpp
-	$(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) $(VERILATOR_INCLUDE)/verilated.cpp $(VERILATOR_INCLUDE)/verilated_threads.cpp $(VERILATOR_INCLUDE)/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I $(VERILATOR_INCLUDE) -o $(DEST_DIR)/$(HOST_EXE)
-	cd $(DEST_DIR)/verilator && rm verilator_kernel.h
+        @[[ -e "$(VERILATOR_INCLUDE)" ]] || ! echo "Verilator include directory not found at '$(VERILATOR_INCLUDE)'."
+        cd $(DEST_DIR)/verilator && rm -f verilator_kernel.h && ln -s V$(KERNEL_NAME)_kernel.h verilator_kernel.h
+        @# For multithreaded, include on command line: $(VERILATOR_INCLUDE)/verilated_threads.cpp
+        $(CC) $(SIM_SRC) $(SIM_CFLAGS) $(SIM_LFLAGS) $$(ls $(DEST_DIR)/verilator/*.cpp) $(VERILATOR_INCLUDE)/verilated.cpp $(VERILATOR_INCLUDE)/verilated_threads.cpp $(VERILATOR_INCLUDE)/verilated_vcd_c.cpp -I $(DEST_DIR)/verilator -I $(VERILATOR_INCLUDE) -o $(DEST_DIR)/$(HOST_EXE)
+        cd $(DEST_DIR)/verilator && rm verilator_kernel.h
 # Host for debug.
 #$(DEST_DIR)/$(HOST_EXE)_debug: $(SW_SRC) $(SW_HDRS)
-#	mkdir -p $(DEST_DIR)
-#	$(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
+#       mkdir -p $(DEST_DIR)
+#       $(CC) $(SW_SRC) $(SW_CFLAGS) -Og -ggdb -DDEBUG $(SW_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)_debug
 endif
 else
 #hw and hw_emu target
 $(DEST_DIR)/$(HOST_EXE): $(HOST_SRC) $(HOST_HDRS)
-	mkdir -p $(DEST_DIR)
-	$(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
+        mkdir -p $(DEST_DIR)
+        $(CC) $(HOST_SRC) $(HOST_CFLAGS) $(HOST_LFLAGS) -o $(DEST_DIR)/$(HOST_EXE)
 endif
 
 endif
@@ -701,22 +701,22 @@ endif
 .PHONY: sv
 sv: $(SV_FROM_TLV)
 ../out/sv/%.sv: ../fpga/src/%.tlv $(TLVLIB)
-	rm -rf ../out/sv/$*
-	mkdir -p ../out/sv/$*/out
+        rm -rf ../out/sv/$*
+        mkdir -p ../out/sv/$*/out
 ifeq ($(SANDPIPER),)
-	@# Run SandPiper(TM) SaaS Edition on TLV files.
-	@# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
-	cd ../out/sv/$*
-	yes | sandpiper-saas -i ../fpga/src/$*.tlv -o $*.sv --outdir ../out/sv/$*/out/ --sv_url_inc --iArgs 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
+        @# Run SandPiper(TM) SaaS Edition on TLV files.
+        @# SandPiper SaaS produces a zipped tarball of: out/[*.sv, stdout, status]
+        cd ../out/sv/$*
+        yes | sandpiper-saas -i ../fpga/src/$*.tlv -o $*.sv --outdir ../out/sv/$*/out/ --sv_url_inc --iArgs 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 else
-	@# Use local SandPiper, given by $(SANDPIPER)
-	$(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
+        @# Use local SandPiper, given by $(SANDPIPER)
+        $(SANDPIPER) --iArgs --m4out ../out/sv/$*/out/$*.m4out.tlv -i ../fpga/src/$*.tlv -o ../out/sv/$*/out/$*.sv 2>&1 | tee ../out/sv/$*/out/stdout && echo $$? > ../out/sv/$*/out/status
 endif
-	(( $$(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
-	mv ../out/sv/$*/out/*.sv ../out/sv
-	# Vivado requires includes to be of .vh files, so change file name.
-	mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
-	cd ../out/sv && sed -i -e s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv
+        (( $$(cat ../out/sv/$*/out/status) < 4 ))  # Fail for errors > 3 (SYNTAX_ERROR).
+        mv ../out/sv/$*/out/*.sv ../out/sv
+        # Vivado requires includes to be of .vh files, so change file name.
+        mv ../out/sv/$*_gen.sv ../out/sv/$*_gen.vh
+        cd ../out/sv && sed -i -e s/$*_gen\\.sv/$*_gen\\.vh/ $*.sv
 
 
 
@@ -738,8 +738,8 @@ VIVADO_VERSION_MESSAGE=Note: Kernel construction assumes Vivado v2018.3
 
 # Create tcl script for the kernel configuration
 $(DEST_DIR)/rtl_kernel_wiz.tcl: $(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py $(HW_SHELL_CONFIG_JSON)
-	mkdir -p $(DEST_DIR)
-	python3 "$(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py" "$(HW_SHELL_CONFIG_JSON)" "$(DEST_DIR)/rtl_kernel_wiz.tcl"
+        mkdir -p $(DEST_DIR)
+        python3 "$(FRAMEWORK_DIR)/fpga/scripts/produce_tcl_file.py" "$(HW_SHELL_CONFIG_JSON)" "$(DEST_DIR)/rtl_kernel_wiz.tcl"
 
 XO_FILE=$(DEST_DIR)/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_EXE).xo
 # A representative file for all inner-shell files generated by the RTL Kernel Wizard.
@@ -750,8 +750,8 @@ USER_KERNEL_ADDED_FILE=$(DEST_DIR)/$(KERNEL_NAME)_ex/kernel_added.flag
 # Creating the rtl kernel wizard project.
 # kernel.xml acts as a representative for all produced files.
 $(SHELL_REP): $(DEST_DIR)/rtl_kernel_wiz.tcl
-	@echo $(VIVADO_VERSION_MESSAGE)
-	vivado -mode batch -nojournal -nolog -notrace -source "$(DEST_DIR)/rtl_kernel_wiz.tcl" -tclargs $(KERNEL_NAME) "$(DEST_DIR)"
+        @echo $(VIVADO_VERSION_MESSAGE)
+        vivado -mode batch -nojournal -nolog -notrace -source "$(DEST_DIR)/rtl_kernel_wiz.tcl" -tclargs $(KERNEL_NAME) "$(DEST_DIR)"
 
 # Incorporate the user's kernel into the project.
 # The Xilinx rtl_kernel_wizard does not create a cleanly partitioned model. We choose to replace the guts of the add example logic with some modifications via sed.
@@ -767,53 +767,53 @@ IMPORTS_DIR=$(DEST_DIR)/$(KERNEL_NAME)_ex/imports
 VADD_SV=$(IMPORTS_DIR)/$(KERNEL_NAME)_example_vadd.sv
 VIVADO_PROJ_SCRIPT=$(DEST_DIR)/add_to_project.tcl
 $(USER_KERNEL_ADDED_FILE): $(SHELL_REP) $(SV_FROM_TLV)
-	@echo $(VIVADO_VERSION_MESSAGE)
-	# Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
-	@# Add user's kernel source code to project.
-	@mkdir -p ../out/sv  # Must exist for add_kernel.tcl
-	@# Add sources to project.
-	echo 'remove_files *_example_adder.v' > '$(VIVADO_PROJ_SCRIPT)' \
-	  && echo "add_files $$(ls $(SV_SRC) $(VH_SRC) $(FRAMEWORK_V_SRC) ../out/sv/*.v ../out/sv/*.sv ../out/sv/*.vh 2> /dev/null | tr "\n" " ")" >> '$(VIVADO_PROJ_SCRIPT)'
-	vivado -mode batch -nojournal -nolog -notrace -source '$(VIVADO_PROJ_SCRIPT)' '$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr'
-	@# Replace the adder example code with the user's kernel (including inner shell logic).
-	$(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
-	mv $(VADD_SV).hacked $(VADD_SV)
-	@# Also make the following edit to hook up ctrl_length arg (which must be specified in <shell-config>.json).
-	#@grep 'LP_DEFAULT_LENGTH_IN_BYTES;' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
-	#sed -i 's/=\s*LP_DEFAULT_LENGTH_IN_BYTES;/; assign ctrl_xfer_size_in_bytes = ctrl_length;/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
-	@# And stitch args through hierarchy.
-	@grep '( *ctrl_xfer_size_in_bytes *),' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
-	sed -i 's/( *ctrl_xfer_size_in_bytes *),/(ctrl_length), .resp_addr_offset (write_mem), .resp_xfer_size_in_bytes (resp_length),/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
-	@# Remove unused vadd example file.
-	rm "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.v"
-	# Hacked Xilinx template project without errors.
-	@# Signify successful completion for Make.
-	touch "$(USER_KERNEL_ADDED_FILE)"
+        @echo $(VIVADO_VERSION_MESSAGE)
+        # Hacking the Xilinx template project to include the custom user kernel. (Failures in this process could leave the project in an inconsistent state.)
+        @# Add user's kernel source code to project.
+        @mkdir -p ../out/sv  # Must exist for add_kernel.tcl
+        @# Add sources to project.
+        echo 'remove_files *_example_adder.v' > '$(VIVADO_PROJ_SCRIPT)' \
+          && echo "add_files $$(ls $(SV_SRC) $(VH_SRC) $(FRAMEWORK_V_SRC) ../out/sv/*.v ../out/sv/*.sv ../out/sv/*.vh 2> /dev/null | tr "\n" " ")" >> '$(VIVADO_PROJ_SCRIPT)'
+        vivado -mode batch -nojournal -nolog -notrace -source '$(VIVADO_PROJ_SCRIPT)' '$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr'
+        @# Replace the adder example code with the user's kernel (including inner shell logic).
+        $(FRAMEWORK_DIR)/fpga/scripts/hack_vadd_example.pl $(KERNEL_NAME) < $(VADD_SV) > $(VADD_SV).hacked
+        mv $(VADD_SV).hacked $(VADD_SV)
+        @# Also make the following edit to hook up ctrl_length arg (which must be specified in <shell-config>.json).
+        #@grep 'LP_DEFAULT_LENGTH_IN_BYTES;' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
+        #sed -i 's/=\s*LP_DEFAULT_LENGTH_IN_BYTES;/; assign ctrl_xfer_size_in_bytes = ctrl_length;/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
+        @# And stitch args through hierarchy.
+        @grep '( *ctrl_xfer_size_in_bytes *),' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv | wc | grep '      1      ' 1> /dev/null  # Make sure there will be exactly one substitution.
+        sed -i 's/( *ctrl_xfer_size_in_bytes *),/(ctrl_length), .resp_addr_offset (write_mem), .resp_xfer_size_in_bytes (resp_length),/' $(IMPORTS_DIR)/$(KERNEL_NAME)_example.sv
+        @# Remove unused vadd example file.
+        rm "$(DEST_DIR)/$(KERNEL_NAME)_ex/imports/$(KERNEL_NAME)_example_adder.v"
+        # Hacked Xilinx template project without errors.
+        @# Signify successful completion for Make.
+        touch "$(USER_KERNEL_ADDED_FILE)"
 
 # Moving the Makefile necessary for Hardware emulation and build into the sdx_imports directory
 # TODO: Is this necessary?
 #cp $LIB_DIR/src/Makefile $2/${1}_ex/sdx_imports/
 
 #$(DEST_DIR)/$(KERNEL_EXE).xo:
-#	mkdir -p $(DEST_DIR)
-#	$(XOCC) --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
-#	#cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
+#       mkdir -p $(DEST_DIR)
+#       $(XOCC) --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --compile --include $(KERNEL_HDRS) --save-temps $(REPORT) --kernel $(KERNEL_NAME) $(KERNEL_SRC) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(DEST_DIR)/$(KERNEL_EXE).xo
+#       #cp ../fpga/mandelbrot_hw/sdx_imports/$(KERNEL_EXE).xo $(DEST_DIR)/$(KERNEL_EXE).xo
 
 # Package the project as an .xo.
 # (Use: "$(XO_FILE): $(SHELL_REP)" to build with the vadd example kernel, unmodified.)
 $(XO_FILE): $(USER_KERNEL_ADDED_FILE) $(SV_SRC) $(SV_FROM_TLV) $(FRAMEWORK_V_SRC)
-	$(info $(VIVADO_VERSION_MESSAGE))
-	$(info "-----------------")
-	$(info "Packaging project")
-	$(info "-----------------")
-	-rm $(XO_FILE) 2> /dev/null || true  # Seems to be necessary to remove the old .xo file for some reason.
-	@NEWLINE=$$'\n'; \
-	DEST_DIR=`realpath $(DEST_DIR)`; \
-	echo "source $(DEST_DIR)/$(KERNEL_NAME)_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) xilinx kernel $(KERNEL_NAME)$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_NAME).xo -kernel_name $(KERNEL_NAME) -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl
-	vivado -mode batch -source "$(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
+        $(info $(VIVADO_VERSION_MESSAGE))
+        $(info "-----------------")
+        $(info "Packaging project")
+        $(info "-----------------")
+        -rm $(XO_FILE) 2> /dev/null || true  # Seems to be necessary to remove the old .xo file for some reason.
+        @NEWLINE=$$'\n'; \
+        DEST_DIR=`realpath $(DEST_DIR)`; \
+        echo "source $(DEST_DIR)/$(KERNEL_NAME)_ex/imports/package_kernel.tcl$${NEWLINE}package_project $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) xilinx kernel $(KERNEL_NAME)$${NEWLINE}package_xo -xo_path $$DEST_DIR/$(KERNEL_NAME)_ex/sdx_imports/$(KERNEL_NAME).xo -kernel_name $(KERNEL_NAME) -ip_directory $$DEST_DIR/$(KERNEL_NAME)_ex/$(KERNEL_NAME) -kernel_xml $$DEST_DIR/$(KERNEL_NAME)_ex/imports/kernel.xml" > $(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl
+        vivado -mode batch -source "$(DEST_DIR)/$(KERNEL_NAME)_ex/package_source_kernel.tcl" "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr"
 
 edit_kernel: $(USER_KERNEL_ADDED_FILE)
-	vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr" &
+        vivado "$(DEST_DIR)/$(KERNEL_NAME)_ex/$(KERNEL_NAME)_ex.xpr" &
 
 .PHONY: shell xo project edit_kernel
 shell: $(SHELL_REP)
@@ -822,7 +822,7 @@ project: $(USER_KERNEL_ADDED_FILE)
 
 
 $(DEST_DIR)/$(KERNEL_EXE).xclbin: $(XO_FILE)
-	cd $(DEST_DIR); $(VPP) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) --input_files ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
+        cd $(DEST_DIR); $(VPP) -g --platform $(AWS_PLATFORM) --target $(BUILD_TARGET) --link -O quick --save-temps $(REPORT) --kernel $(KERNEL_NAME) --input_files ../../$(XO_FILE) $(KERNEL_LDCLFLAGS) $(KERNEL_FLAGS) $(KERNEL_ADDITIONAL_FLAGS) --output $(KERNEL_EXE).xclbin
 
 # Create the AFI.
 # The steps are:
@@ -854,7 +854,7 @@ $(BUILD_DIR)/$(KERNEL_EXE).awsxclbin: $(DEST_DIR)/$(KERNEL_EXE).xclbin
         #$(AFI_ID) := $(shell grep -o '"afi-[0-9A-Za-z-]*"' $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt | tr -d '"')
         #$(AGFI_ID) := $(shell grep -o '"agfi-[0-9A-Za-z-]*"' $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt | tr -d '"')
 
-		# Wait loop (polls until available or failed)
+                # Wait loop (polls until available or failed)
         bash -c '\
                 afi=$$(grep -o "afi-[0-9A-Za-z-]*" $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt | head -1); \
                 echo "Waiting for $$afi to become available..."; \
@@ -881,7 +881,7 @@ endif
 # Push the entire contents of the app directory for running on F2. (TODO: Be more selective.)
 # Previous transfer contents are deleted.
 push: build
-	aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/ --profile $(AWS_PROFILE)
+        aws s3 sync .. s3://$(S3_BUCKET)/$(S3_TRANSFER_KEY)/ --profile $(AWS_PROFILE)
 
 endif  # End Xilinx build stuff.
 
@@ -917,25 +917,25 @@ endif
 #       of microservices. This could be used instead.
 live: $(LAUNCH_DIR)/live
 $(LAUNCH_DIR)/live: $(LAUNCH_DIR)/dead $(BUILD_TARGETS)
-	@# Copy executables to launch dir to avoid impact from active development. Not sure how necessary this is.
-	@cp $(BUILD_DIR)/$(HOST_EXE) $(LAUNCH_DIR)
+        @# Copy executables to launch dir to avoid impact from active development. Not sure how necessary this is.
+        @cp $(BUILD_DIR)/$(HOST_EXE) $(LAUNCH_DIR)
 ifeq ($(USE_XILINX),true)
-	@cp $(HOST_XCLBIN) $(LAUNCH_DIR)
+        @cp $(HOST_XCLBIN) $(LAUNCH_DIR)
 endif
-	@# TODO: What about copying the launch script? If this is changed, will that affect the running server?
-	@# TODO: Not sure it's necessary to set make vars. These might pass through as environment vars.
-	@echo "Launching production server in the background"
-	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
-	-rm $(LAUNCH_DIR)/dead
-	touch $(LAUNCH_DIR)/live
-	@echo "Went live!!!   (Stop with 'make$(LAUNCH_ID_ARG_STR) dead' or restart by reexecuting this command.)"
+        @# TODO: What about copying the launch script? If this is changed, will that affect the running server?
+        @# TODO: Not sure it's necessary to set make vars. These might pass through as environment vars.
+        @echo "Launching production server in the background"
+        $(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
+        -rm $(LAUNCH_DIR)/dead
+    	touch $(LAUNCH_DIR)/live
+        @echo "Went live!!!   (Stop with 'make$(LAUNCH_ID_ARG_STR) dead' or restart by reexecuting this command.)"
 
 dead: $(LAUNCH_DIR)/dead
 $(LAUNCH_DIR)/dead:
-	if [[ -e $(KILLME) ]]; then source $(KILLME) > /dev/null 2>&1 && echo "Giving web server time to exit gracefully." && sleep 7; $(ALREADY_DEAD) fi
-	@mkdir -p $(LAUNCH_DIR) log
-	rm -rf $(LAUNCH_DIR)/*
-	@touch $(LAUNCH_DIR)/dead
+        if [[ -e $(KILLME) ]]; then source $(KILLME) > /dev/null 2>&1 && echo "Giving web server time to exit gracefully." && sleep 7; $(ALREADY_DEAD) fi
+        @mkdir -p $(LAUNCH_DIR) log
+        rm -rf $(LAUNCH_DIR)/*
+        @touch $(LAUNCH_DIR)/dead
 
 
 
@@ -944,51 +944,51 @@ build: $(BUILD_TARGETS)
 
 LAUNCH_CHECK=@if [ -e $(KILLME) ]; then echo "Error: There appears to already be an application running. Kill it with <Ctrl-C> or 'source $(KILLME)', or, if not running, 'rm $(KILLME)', and try again." && false; fi
 launch: $(BUILD_TARGETS)
-	$(LAUNCH_CHECK)
-	@mkdir -p $(LAUNCH_DIR)
-	$(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
+        $(LAUNCH_CHECK)
+        @mkdir -p $(LAUNCH_DIR)
+        $(call with_secret,$(LAUNCH_PASSWORD) $(LAUNCH_CMD))
 
 # Run host alone (no webserver) — useful for hw_emu debugging.
 .PHONY: host-only
 host-only: $(BUILD_TARGETS)
-	@mkdir -p "$(DEST_DIR)"
-	@printf "[Debug]\nverbosity=4\ntimeline_trace=true\n" > "$(DEST_DIR)/xrt.ini"
-	cd "$(DEST_DIR)" && \
-	  emconfigutil --nd 1 --platform "$(AWS_PLATFORM)" && \
-	  XCL_EMULATION_MODE=hw_emu EMCONFIG_PATH="$(DEST_DIR)" XRT_INI_PATH="$(DEST_DIR)/xrt.ini" \
-	  "$(DEST_DIR)/$(HOST_EXE)" -s "$(SOCKET)" "$(DEST_DIR)/$(KERNEL_EXE).xclbin"
+        @mkdir -p "$(DEST_DIR)"
+        @printf "[Debug]\nverbosity=4\ntimeline_trace=true\n" > "$(DEST_DIR)/xrt.ini"
+        cd "$(DEST_DIR)" && \
+          emconfigutil --nd 1 --platform "$(AWS_PLATFORM)" && \
+          XCL_EMULATION_MODE=hw_emu EMCONFIG_PATH="$(DEST_DIR)" XRT_INI_PATH="$(DEST_DIR)/xrt.ini" \
+          "$(DEST_DIR)/$(HOST_EXE)" -s "$(SOCKET)" "$(DEST_DIR)/$(KERNEL_EXE).xclbin"
 
 .PHONY: show-ws
 show-ws:
-	@echo WEBSERVER_PY=$(WEBSERVER_PY)
+        @echo WEBSERVER_PY=$(WEBSERVER_PY)
 
 # An un-documented target to launch the web server and open Chrome to test it.
 # Requires $(CHROME) and works only for applications that open the websocket.
 chrome: $(BUILD_TARGETS)
-	$(LAUNCH_CHECK)
-	@# Launch Chrome in background and webserver in foreground in "one-shot" mode (exit when websocket is closed).
-	$(call with_secret,$(LAUNCH_PASSWORD) $(CHROME) -app='http:localhost:8888' & $(LAUNCH_CMD_PARTIAL) -p $(PORT) -o $(BUILD_TARGET) '$(HOST_CMD)')
+        $(LAUNCH_CHECK)
+        @# Launch Chrome in background and webserver in foreground in "one-shot" mode (exit when websocket is closed).
+        $(call with_secret,$(LAUNCH_PASSWORD) $(CHROME) -app='http:localhost:8888' & $(LAUNCH_CMD_PARTIAL) -p $(PORT) -o $(BUILD_TARGET) '$(HOST_CMD)')
 
 
 ifeq ($(BUILD_TARGET), hw)
 .PHONY: prebuild
 prebuild: $(BUILD_DIR)/$(HOST_EXE) $(HOST_XCLBIN)
-	# Name the AFI.
-	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --name "1st-CLaaS_$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
+        # Name the AFI.
+        aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --name "1st-CLaaS_$(KERNEL_NAME).$$(cat $(KERNEL_NAME)_timestamp.txt)"
 ifeq ($(AFI_PERMISSION),public)
-	# Making AFI public.
-	aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
+        # Making AFI public.
+        aws ec2 modify-fpga-image-attribute --profile $(AWS_PROFILE) --fpga-image-id $$(cat $(DEST_DIR)/$(KERNEL_NAME)_afi_id.txt) --operation-type add --user-groups all
 endif
-	# Populating /prebuilt dir.
-	mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
-	cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
-	cp $(DEST_DIR)/$(KERNEL_EXE).awsxclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).awsxclbin
+        # Populating /prebuilt dir.
+        mkdir -p $(subst ../out, ../prebuilt, $(DEST_DIR))
+        cp $(DEST_DIR)/$(HOST_EXE)             $(subst ../out, ../prebuilt, $(DEST_DIR))/$(HOST_EXE)
+        cp $(DEST_DIR)/$(KERNEL_EXE).awsxclbin $(subst ../out, ../prebuilt, $(DEST_DIR))/$(KERNEL_EXE).awsxclbin
 endif
 
 
 .PHONY: debug_prints
 debug_prints:
-	$(info host path: $(DEST_DIR)/$(HOST_EXE))
+        $(info host path: $(DEST_DIR)/$(HOST_EXE))
 
 
 
@@ -1008,37 +1008,37 @@ FIRST_CLAAS_REMOTE_REPO_DIR ?=/home/ubuntu/src/project_data/repo
 INSTANCE_TYPE=UNDEFINED
 INSTANCE_CONFIG_SCRIPT=UNDEFINED
 ifneq ($(findstring development_instance,$(MAKECMDGOALS)),)
-	INSTANCE_NAME=1st-CLaaS_devel
-	INSTANCE_STORAGE=15
-	INSTANCE_TYPE=c4.2xlarge
-	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
+        INSTANCE_NAME=1st-CLaaS_devel
+        INSTANCE_STORAGE=15
+        INSTANCE_TYPE=c4.2xlarge
+        INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
 
 #F1 instance discontinued by aws
 #ifneq ($(findstring f1_instance,$(MAKECMDGOALS)),)
-#	INSTANCE_NAME=1st-CLaaS_run
-#	#INSTANCE_STORAGE=15
-#	INSTANCE_TYPE=f1.2xlarge
-#	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
+#       INSTANCE_NAME=1st-CLaaS_run
+#       #INSTANCE_STORAGE=15
+#       INSTANCE_TYPE=f1.2xlarge
+#       INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 #endif
 #ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
-#	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
-#	INSTANCE_STORAGE=5
-#	INSTANCE_TYPE=f1.2xlarge
-#	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f1_instance.sh
+#       INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
+#       INSTANCE_STORAGE=5
+#       INSTANCE_TYPE=f1.2xlarge
+#       INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f1_instance.sh
 #endif
 
 ifneq ($(findstring f2_instance,$(MAKECMDGOALS)),)
-	INSTANCE_NAME=1st-CLaaS_run
-	INSTANCE_STORAGE=20
-	INSTANCE_TYPE=f2.6xlarge
-	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
+        INSTANCE_NAME=1st-CLaaS_run
+        INSTANCE_STORAGE=20
+        INSTANCE_TYPE=f2.6xlarge
+        INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_instance_dev.sh
 endif
 ifneq ($(findstring static_accelerated_instance,$(MAKECMDGOALS)),)
-	INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
-	INSTANCE_STORAGE=10
-	INSTANCE_TYPE=f2.6xlarge
-	INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f2_instance.sh
+        INSTANCE_NAME=1st-CLaaS_$(KERNEL_NAME)_accelerator
+        INSTANCE_STORAGE=10
+        INSTANCE_TYPE=f2.6xlarge
+        INSTANCE_CONFIG_SCRIPT=$(FIRST_CLAAS_REMOTE_REPO_DIR)/framework/terraform/config_static_f2_instance.sh
 endif
 
 ifdef INSTANCE_NAME
@@ -1067,22 +1067,22 @@ else
 endif
 
 ifdef PASSWORD
-	TF_ARGS1=-var 'admin_pwd= {{{$(PASSWORD)}}} '
+        TF_ARGS1=-var 'admin_pwd= {{{$(PASSWORD)}}} '
 else
-	TF_ARGS1=-var 'admin_pwd= {{{$(shell echo $$RANDOM)}}} '
+        TF_ARGS1=-var 'admin_pwd= {{{$(shell echo $$RANDOM)}}} '
 endif
 ifeq ($(PREBUILT),true)
-	TF_ARGS2=-var 'use_prebuilt_afi=true'
+        TF_ARGS2=-var 'use_prebuilt_afi=true'
 else
-	TF_ARGS2=
+        TF_ARGS2=
 endif
 TF_ARGS3=-var 'instance_name=$(INSTANCE_NAME)' -var 'sdb_device_size=$(INSTANCE_STORAGE)'
 TF_ARGS4=-var 'instance_type=$(INSTANCE_TYPE)' \
-		 -var "aws_access_key_id=$$(aws configure get aws_access_key_id --profile $(AWS_PROFILE))" \
-		 $(TF_SESSION_VAR)
+                 -var "aws_access_key_id=$$(aws configure get aws_access_key_id --profile $(AWS_PROFILE))" \
+                 $(TF_SESSION_VAR)
 TF_ARGS5=-var "aws_secret_access_key=$$(aws configure get aws_secret_access_key --profile $(AWS_PROFILE))" \
-		 $(TF_SESSION_VAR) \
-		 -var 'aws_profile=$(AWS_PROFILE)'
+                 $(TF_SESSION_VAR) \
+                 -var 'aws_profile=$(AWS_PROFILE)'
 TF_ARGS6=-var "region=$$(aws configure get region --profile $(AWS_PROFILE))" -var 'repo_dir=$(ABS_REPO)' -var 'git_url=$(GIT_URL)' -var 'git_branch=$(GIT_BRANCH)'
 ifeq ($(AUTO_APPROVE),true)
 TF_AUTO_APPROVE_ARG=--auto-approve
@@ -1090,9 +1090,9 @@ else
 TF_AUTO_APPROVE_ARG=
 endif
 ifdef TFVAR
-	TF_ARGS7='-var-file=$(TFVAR)'
+        TF_ARGS7='-var-file=$(TFVAR)'
 else
-	TF_ARGS7=
+        TF_ARGS7=
 endif
 
 TF_ALL_ARGS=$(TF_ARGS1) $(TF_ARGS2) $(TF_ARGS3) $(TF_ARGS4) $(TF_ARGS5) $(TF_ARGS6) $(TF_ARGS7)
@@ -1103,73 +1103,73 @@ TF_COMMON_ARGS=$(TF_AUTO_APPROVE_ARG) $(TF_ARGS1) $(TF_ARGS4) $(TF_ARGS5) $(TF_A
 # Macro to run terraform command. $1 contains terraform args.
 # Generic .tf file is configured for user and setup before running terraform.
 define terraform
-	# Setting up and running Terraform in a new directory.
-	[[ -n '$(SETUP)' ]]  # $(SETUP) must be defined.
-	@#rm -rf '$(REPO)/tmp/$(SETUP)'
-	@mkdir -p '$(REPO)/tmp/$(SETUP)'
-	rm -f '$(REPO)/tmp/$(SETUP)/'*.* # '$(REPO)/tmp/$(SETUP)/.terraform/terraform.tfstate'
-	cd '$(REPO)/tmp/$(SETUP)' \
-	&& cp '$(ABS_REPO)/framework/terraform/ec2_instance.tf' . \
-	&& sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' ec2_instance.tf \
-	&& sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' ec2_instance.tf \
-	&& sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" ec2_instance.tf
-	$(call with_secret,cd '$(REPO)/tmp/$(SETUP)' &&  $(ABS_REPO)/terraform/terraform init && '$(ABS_REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS) |& tee terraform.log)
+        # Setting up and running Terraform in a new directory.
+        [[ -n '$(SETUP)' ]]  # $(SETUP) must be defined.
+        @#rm -rf '$(REPO)/tmp/$(SETUP)'
+        @mkdir -p '$(REPO)/tmp/$(SETUP)'
+        rm -f '$(REPO)/tmp/$(SETUP)/'*.* # '$(REPO)/tmp/$(SETUP)/.terraform/terraform.tfstate'
+        cd '$(REPO)/tmp/$(SETUP)' \
+        && cp '$(ABS_REPO)/framework/terraform/ec2_instance.tf' . \
+        && sed -i 's/<<S3_BUCKET>>/$(S3_BUCKET)/' ec2_instance.tf \
+        && sed -i 's|<<S3_KEY>>|$(S3_TF_KEY)|' ec2_instance.tf \
+        && sed -i "s/<<REGION>>/$$(aws configure get region --profile $(AWS_PROFILE))/" ec2_instance.tf
+        $(call with_secret,cd '$(REPO)/tmp/$(SETUP)' &&  $(ABS_REPO)/terraform/terraform init && '$(ABS_REPO)/terraform/terraform' $1 $(TF_COMMON_ARGS) |& tee terraform.log)
 endef
 .PHONY: static_accelerated_instance development_instance
 TF_OUT_DIR=$(HOME)/.ssh/$(SETUP)
 define make_instance
-	@# Instance will be initialized with 1st-CLaaS repo cloned from remote, but there is an issue if the remote is not using https: ssh will require interactive verification which hangs script.
-	@if [[ ! '$(GIT_URL)' =~ ^https: ]]; then echo -e '\e[91m\e[1m1st CLaaS repo must use "https" protocol, but is "$(GIT_URL)". Provide git repo to use on remote instance, e.g. "GIT_URL=https://github.com/xxx/1st-CLaaS.git", or use "git remote set-url origin https:..."./\e[0m' && false; fi
-	@if ! git status | grep 'working tree clean' > /dev/null; then echo && echo -e '\e[91m\e[1mInstance construction can have unexpected behavior when working directory is not clean.\e[0m' && echo && sleep 2; fi
-	@echo 'Instance will be initialized based on latest "$(GIT_BRANCH)" branch.' && echo
-	$(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
-	@echo 'This instance and its associated resources can be destroyed with:'
-	@echo '   > make destroy SETUP=$(SETUP)'
-	@# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
-	@# Do so without echoing command to avoid password in output (though, most-likely, it was typed in the first place).
-	@if [[ -n '$(LINUX_PASSWORD)' ]]; then \
-	    echo "Setting Linux password (final step)…"; \
-	    sudo sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config; \
-	    sudo systemctl restart sshd; \
-	    make ssh SSH_CMD='echo "ubuntu:$(LINUX_PASSWORD)" | sudo chpasswd'; \
-	fi
+        @# Instance will be initialized with 1st-CLaaS repo cloned from remote, but there is an issue if the remote is not using https: ssh will require interactive verification which hangs script.
+        @if [[ ! '$(GIT_URL)' =~ ^https: ]]; then echo -e '\e[91m\e[1m1st CLaaS repo must use "https" protocol, but is "$(GIT_URL)". Provide git repo to use on remote instance, e.g. "GIT_URL=https://github.com/xxx/1st-CLaaS.git", or use "git remote set-url origin https:..."./\e[0m' && false; fi
+        @if ! git status | grep 'working tree clean' > /dev/null; then echo && echo -e '\e[91m\e[1mInstance construction can have unexpected behavior when working directory is not clean.\e[0m' && echo && sleep 2; fi
+        @echo 'Instance will be initialized based on latest "$(GIT_BRANCH)" branch.' && echo
+        $(call terraform,apply -var 'kernel=$(KERNEL_NAME)' -var 'config_instance_script=$(INSTANCE_CONFIG_SCRIPT)' -var "out_dir=$(TF_OUT_DIR)" $(TF_ALL_ARGS))
+        @echo 'This instance and its associated resources can be destroyed with:'
+        @echo '   > make destroy SETUP=$(SETUP)'
+        @# Set password. (This will find the correct instance via $INSTANCE_NAME_FILTER.)
+        @# Do so without echoing command to avoid password in output (though, most-likely, it was typed in the first place).
+        @if [[ -n '$(LINUX_PASSWORD)' ]]; then \
+            echo "Setting Linux password (final step)…"; \
+            sudo sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config; \
+            sudo systemctl restart sshd; \
+            make ssh SSH_CMD='echo "ubuntu:$(LINUX_PASSWORD)" | sudo chpasswd'; \
+        fi
 endef
 ifneq ($(KERNEL_NAME),framework)
 static_accelerated_instance:
-	$(make_instance)
+        $(make_instance)
 development_instance:
-	@echo "development_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
+        @echo "development_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
 #f1_instance:
-#	@echo "f1_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
+#       @echo "f1_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
 f2_instance:
-	@echo "f2_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
+        @echo "f2_instance target is available only from /framework/build directory (when KERNEL_NAME variable is not defined)."
 else
 static_accelerated_instance:
-	@echo "static_accelerated_instance target must have KERNEL_NAME variable defined."
+        @echo "static_accelerated_instance target must have KERNEL_NAME variable defined."
 development_instance:
-	$(make_instance)
+        $(make_instance)
 f2_instance:
-	$(make_instance)
+        $(make_instance)
 endif
 
 # Connect to the single running EC2 instance.
 define connect
-	DNS=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --query "Reservations[*].Instances[*].PublicDnsName" $(INSTANCE_NAME_FILTER) --output=text | tr -d '\n') && \
-	COUNT=$$(echo "$$DNS" | wc -w) && \
-	INSTANCE_NAME=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --filters "Name=dns-name,Values=$$DNS" --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value' --output=text | tr -d '\n') && \
-	PRIVATE_KEY=$$(realpath ~/".ssh/$$INSTANCE_NAME/private_key.pem") && \
-	echo "$1 $$INSTANCE_NAME ($$DNS)" && \
-	mkdir -p ../out && \
-	$2
+        DNS=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --query "Reservations[*].Instances[*].PublicDnsName" $(INSTANCE_NAME_FILTER) --output=text | tr -d '\n') && \
+        COUNT=$$(echo "$$DNS" | wc -w) && \
+        INSTANCE_NAME=$$(aws ec2 describe-instances --profile $(AWS_PROFILE) --filters "Name=dns-name,Values=$$DNS" --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value' --output=text | tr -d '\n') && \
+        PRIVATE_KEY=$$(realpath ~/".ssh/$$INSTANCE_NAME/private_key.pem") && \
+        echo "$1 $$INSTANCE_NAME ($$DNS)" && \
+        mkdir -p ../out && \
+        $2
 endef
 
 .PHONY: desktop ssh
 desktop:
-	@# Call remmina using template.remmina configuration with "TBD" values substituted. (perl is used to substitute arbitrary literal text.)
-	$(call connect,Connecting via RDP using Remmina to,\
-		TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(FRAMEWORK_DIR)/build/template.remmina" > "$(FRAMEWORK_DIR)/out/tmp.remmina" && \
-		sed -i "s/^server=TBD/server=$$DNS/" "$(FRAMEWORK_DIR)/out/tmp.remmina" && \
-		remmina -c "$(FRAMEWORK_DIR)/out/tmp.remmina" &)
+        @# Call remmina using template.remmina configuration with "TBD" values substituted. (perl is used to substitute arbitrary literal text.)
+        $(call connect,Connecting via RDP using Remmina to,\
+                TMP="$$PRIVATE_KEY" perl -p -e 's/^ssh_privatekey=TBD/ssh_privatekey=$$ENV{TMP}/' < "$(FRAMEWORK_DIR)/build/template.remmina" > "$(FRAMEWORK_DIR)/out/tmp.remmina" && \
+                sed -i "s/^server=TBD/server=$$DNS/" "$(FRAMEWORK_DIR)/out/tmp.remmina" && \
+                remmina -c "$(FRAMEWORK_DIR)/out/tmp.remmina" &)
 
 ###################################
 # AWS credential sync (optional)
@@ -1180,35 +1180,35 @@ AWS_REMOTE_DIR ?= /home/ubuntu/.aws
 
 .PHONY: sync_creds
 sync_creds:
-	$(call connect,Synchronizing AWS credentials to,\
-		ssh -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$DNS 'mkdir -p $(AWS_REMOTE_DIR) && chmod 700 $(AWS_REMOTE_DIR)' && \
-		if [[ -f "$(AWS_LOCAL_DIR)/credentials" ]]; then scp -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" "$(AWS_LOCAL_DIR)/credentials" ubuntu@$$DNS:$(AWS_REMOTE_DIR)/; fi && \
-		if [[ -f "$(AWS_LOCAL_DIR)/config" ]]; then scp -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" "$(AWS_LOCAL_DIR)/config" ubuntu@$$DNS:$(AWS_REMOTE_DIR)/; fi && \
-		ssh -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$DNS 'chmod 600 $(AWS_REMOTE_DIR)/credentials $(AWS_REMOTE_DIR)/config 2>/dev/null || true; command -v aws >/dev/null && aws sts get-caller-identity >/dev/null 2>&1 || true' \
-	)
+        $(call connect,Synchronizing AWS credentials to,\
+                ssh -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$DNS 'mkdir -p $(AWS_REMOTE_DIR) && chmod 700 $(AWS_REMOTE_DIR)' && \
+                if [[ -f "$(AWS_LOCAL_DIR)/credentials" ]]; then scp -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" "$(AWS_LOCAL_DIR)/credentials" ubuntu@$$DNS:$(AWS_REMOTE_DIR)/; fi && \
+                if [[ -f "$(AWS_LOCAL_DIR)/config" ]]; then scp -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" "$(AWS_LOCAL_DIR)/config" ubuntu@$$DNS:$(AWS_REMOTE_DIR)/; fi && \
+                ssh -oStrictHostKeyChecking=no -i "$$PRIVATE_KEY" ubuntu@$$DNS 'chmod 600 $(AWS_REMOTE_DIR)/credentials $(AWS_REMOTE_DIR)/config 2>/dev/null || true; command -v aws >/dev/null && aws sts get-caller-identity >/dev/null 2>&1 || true' \
+        )
 
 ssh:
-	#$(call connect,Connecting via SSH to,\
-	#	ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" ubuntu@$$DNS '$(SSH_CMD)')
-	@if [ "$(SYNC_AWS_CREDS)" = "true" ]; then $(MAKE) --no-print-directory sync_creds; fi
-	$(call connect,Connecting via SSH to,\
-		ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" ubuntu@$$DNS '$(SSH_CMD)')
+        #$(call connect,Connecting via SSH to,\
+        #       ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" ubuntu@$$DNS '$(SSH_CMD)')
+        @if [ "$(SYNC_AWS_CREDS)" = "true" ]; then $(MAKE) --no-print-directory sync_creds; fi
+        $(call connect,Connecting via SSH to,\
+                ssh -oStrictHostKeyChecking=no -X -i "$$PRIVATE_KEY" ubuntu@$$DNS '$(SSH_CMD)')
 
 ip:
-	$(call connect,Running instance with Public DNS:,true)
+        $(call connect,Running instance with Public DNS:,true)
 
 .PHONY: destroy
 destroy:
-	$(call terraform,destroy $(TF_DESTROY_ARGS))
-	aws s3 rm 's3://$(S3_BUCKET)/tf_setups/$(SETUP)' --profile $(AWS_PROFILE)
-	@echo 'Destroyed instance/setup $(SETUP)'
-	@if [[ -d $(TF_OUT_DIR) ]]; then rm $(TF_OUT_DIR)/public_key.pem && rm $(TF_OUT_DIR)/private_key.pem && rmdir $(TF_OUT_DIR) && echo 'Deleted $(TF_OUT_DIR) containing TLS keys'; else echo 'No directory $(TF_OUT_DIR). Perhaps another user still has these obsolete TLS keys?'; fi
+        $(call terraform,destroy $(TF_DESTROY_ARGS))
+        aws s3 rm 's3://$(S3_BUCKET)/tf_setups/$(SETUP)' --profile $(AWS_PROFILE)
+        @echo 'Destroyed instance/setup $(SETUP)'
+        @if [[ -d $(TF_OUT_DIR) ]]; then rm $(TF_OUT_DIR)/public_key.pem && rm $(TF_OUT_DIR)/private_key.pem && rmdir $(TF_OUT_DIR) && echo 'Deleted $(TF_OUT_DIR) containing TLS keys'; else echo 'No directory $(TF_OUT_DIR). Perhaps another user still has these obsolete TLS keys?'; fi
 
 .PHONY: list_setups
 list_setups:
-	@echo "Setups that can be used with 'make destroy SETUP=XXX':"
-	echo "Setups:" && aws s3 ls 's3://$(S3_BUCKET)/tf_setups/' --profile $(AWS_PROFILE) || true
+        @echo "Setups that can be used with 'make destroy SETUP=XXX':"
+        echo "Setups:" && aws s3 ls 's3://$(S3_BUCKET)/tf_setups/' --profile $(AWS_PROFILE) || true
 
 .PHONY: copy_app
 copy_app:
-	if [[ -n '$(APP_NAME)' ]]; then $(REPO)/bin/copy_app '$(KERNEL_NAME)' '$(APP_NAME)'; else echo -e '\e[91m\e[1mAPP_NAME must be provided.\e[0m'; fi
+        if [[ -n '$(APP_NAME)' ]]; then $(REPO)/bin/copy_app '$(KERNEL_NAME)' '$(APP_NAME)'; else echo -e '\e[91m\e[1mAPP_NAME must be provided.\e[0m'; fi
