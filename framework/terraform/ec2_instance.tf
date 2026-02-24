@@ -36,6 +36,11 @@ variable "aws_secret_access_key" {
   type = string
 }
 
+variable "aws_session_token" {
+   type = string
+   default = null
+ }
+
 variable "region" {
   type = string
 }
@@ -106,7 +111,7 @@ variable "delete_storage_on_destroy" {
 # If this is overridden, the replacement script can call this default one.
 variable "config_instance_script" {
   type = string
-  default = "/home/centos/src/project_data/repo/framework/terraform/config_instance_dummy.sh"
+  default = "/home/ubuntu/src/project_data/repo/framework/terraform/config_instance_dummy.sh"
 }
 
 resource "tls_private_key" "temp" {
@@ -120,10 +125,11 @@ resource "aws_key_pair" "generated_key" {
 }
 
 provider "aws" {
-  #profile = "${var.aws_profile}"
+  profile = "${var.aws_profile}"
   region                  = "${var.region}"
   access_key              = "${var.aws_access_key_id}"
   secret_key              = "${var.aws_secret_access_key}"
+  token                   = "${var.aws_session_token}"
 }
 
 #TODO: AWS AMI updated. To find a way that Terraform can check for new AMIs instead of user changing 
@@ -134,7 +140,7 @@ owners = ["aws-marketplace"]
 
   filter {
       name   = "name"
-      values = ["FPGA Developer AMI*"]
+      values = ["FPGA Developer AMI*(Ubuntu) - 1.16.1*"]
   }
 
   filter {
@@ -181,6 +187,27 @@ resource "aws_security_group" "allow_webdev_80_ssh_rdp" {
     }
 }
 
+# AUTO-SUBNET PATCH
+# Look up the default VPC
+data "aws_vpc" "default" {
+  default = true
+}
+
+# Find subnets in default VPC — these will be public subnets if default = true
+data "aws_subnets" "public_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
+  }
+}
+
+
+
 
 resource "aws_instance" "the_instance" {
     ami           = "${data.aws_ami.instance_ami.id}"
@@ -188,10 +215,14 @@ resource "aws_instance" "the_instance" {
     key_name      =  "for_${var.instance_name}"
     vpc_security_group_ids = ["${aws_security_group.allow_webdev_80_ssh_rdp.id}"]
 
+    # auto assign public ip
+    subnet_id = data.aws_subnets.public_subnets.ids[0]
+    associate_public_ip_address = true
+
     connection {
       type = "ssh"
       host = self.public_ip
-      user = "centos"
+      user = "ubuntu"
       private_key = "${tls_private_key.temp.private_key_pem}"
     }
 
@@ -235,53 +266,83 @@ resource "aws_instance" "the_instance" {
     # Because of a Terraform bug (https://github.com/hashicorp/terraform/issues/16330).
     # (What about privs? Should be 600?)
     provisioner "remote-exec" {
-      inline = ["mkdir /home/centos/.aws"]
+      inline = ["mkdir /home/ubuntu/.aws"]
     }
 
     provisioner "file" {
       source      = "${pathexpand(var.aws_config_path)}"
-      destination = "/home/centos/.aws/config"
+      destination = "/home/ubuntu/.aws/config"
     }
 
     provisioner "file" {
-      content     = "[${var.aws_profile}] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key}"
-      destination = "/home/centos/.aws/credentials"
+      content     = "[${var.aws_profile}] \n aws_access_key_id = ${var.aws_access_key_id} \n aws_secret_access_key = ${var.aws_secret_access_key} \n ${var.aws_session_token != null ? "aws_session_token     = ${var.aws_session_token}" : ""}"
+      destination = "/home/ubuntu/.aws/credentials"
     }
 
     #provisioner "file" {
     #  source      = "${var.repo_dir}/framework/terraform/clone_repos.sh"
-    #  destination = "/home/centos/clone_repos.sh"
+    #  destination = "/home/ubuntu/clone_repos.sh"
     #}
 
     # A private configuration file controlling the behavior of this instance.
     # Note: This contains a plain-text password, accessible to anyone with access to the machine.
     provisioner "file" {
       content     = "KERNEL_NAME=${var.kernel}; ADMIN_PWD=${var.admin_pwd}; USE_PREBUILT_AFI=${var.use_prebuilt_afi}"
-      destination = "/home/centos/server_config.sh"
+      destination = "/home/ubuntu/server_config.sh"
     }
 
     #provisioner "remote-exec" {
-    #  inline = ["source '/home/centos/clone_repos.sh'"]
+    #  inline = ["source '/home/ubuntu/clone_repos.sh'"]
     #}
 
     # Configure instance.
+    #provisioner "remote-exec" {
+    #  inline = [
+    #    "echo && echo -e '\\e[32m\\e[1mSetting up remote instance.\\e[0m' && echo",
+    #    "echo 'Cloning AWS-FPGA repo'",
+    #    "git clone -q https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR",
+    #    "echo 'Cloning 1st CLaaS project repo'",  # 1st CLaaS repo or project repo using it.
+    #    "git clone -q -b ${var.git_branch} '${var.git_url}' \"/home/ubuntu/src/project_data/repo\"",
+    #    "ln -s /home/ubuntu/src/project_data /home/ubuntu/workdisk",
+    #    "ln -s /home/ubuntu/src/project_data/repo /home/ubuntu/repo",
+    #    "ln -s /home/ubuntu/src/project_data/repo /home/ubuntu/1st-CLaaS",
+    #    # If project repo (1st CLaaS repo or one that uses it) contains ./init, run it.
+    #    "if [ -e '/home/ubuntu/src/project_data/repo/init' ]; then echo 'Running init' && /home/ubuntu/src/project_data/repo/init; fi",
+    #    #"sudo /home/centos/src/project_data/repo/init",
+    #    "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
+    #    "source ${var.config_instance_script} ${aws_instance.the_instance.public_ip}",
+    #  ]
+    #}
+
     provisioner "remote-exec" {
       inline = [
-        "echo && echo -e '\\e[32m\\e[1mSetting up remote instance.\\e[0m' && echo",
-        "echo 'Cloning AWS-FPGA repo'",
-        "git clone -q https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR",
-        "echo 'Cloning 1st CLaaS project repo'",  # 1st CLaaS repo or project repo using it.
-        "git clone -q -b ${var.git_branch} '${var.git_url}' \"/home/centos/src/project_data/repo\"",
-        "ln -s /home/centos/src/project_data /home/centos/workdisk",
-        "ln -s /home/centos/src/project_data/repo /home/centos/repo",
-        "ln -s /home/centos/src/project_data/repo /home/centos/1st-CLaaS",
-        # If project repo (1st CLaaS repo or one that uses it) contains ./init, run it.
-        "if [[ -e '/home/centos/src/project_data/repo/init' ]]; then echo 'Running init' && /home/centos/src/project_data/repo/init; fi",
-        #"sudo /home/centos/src/project_data/repo/init",
-        "echo && echo -e '\\e[32m\\e[1mCustomizing instance by running (remotely): \"${var.config_instance_script}\"\\e[0m' && echo",
-        "source ${var.config_instance_script} ${aws_instance.the_instance.public_ip}",
-      ]
-    }
+        <<-EOF
+        bash -lc '
+          echo
+          echo "Setting up remote instance."
+      
+          echo "Cloning AWS-FPGA repo"
+          git clone -q https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
+
+          echo "Cloning 1st CLaaS project repo"
+          git clone -q -b ${var.git_branch} "${var.git_url}" /home/ubuntu/src/project_data/repo
+
+          ln -s /home/ubuntu/src/project_data /home/ubuntu/workdisk
+          ln -s /home/ubuntu/src/project_data/repo /home/ubuntu/repo
+          ln -s /home/ubuntu/src/project_data/repo /home/ubuntu/1st-CLaaS
+
+          if [ -x /home/ubuntu/src/project_data/repo/init ]; then
+            echo "Running init"
+            /home/ubuntu/src/project_data/repo/init
+          fi
+
+          echo "Customizing instance by running ${var.config_instance_script}"
+      . ${var.config_instance_script} ${self.public_ip}
+    '
+    EOF
+  ]
+}
+
 }
 
 output "ip" {

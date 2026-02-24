@@ -69,7 +69,7 @@ echo "Installing Python CLI tools via pipx (isolated per-app venvs)."
 export PATH="$HOME/.local/bin:$PATH"
 
 # Install/upgrade CLI packages with pipx.
-for app in awscli sandpiper-saas; do
+for app in awscli sandpiper-saas; do  # Pillow tornado boto3
   if pipx list 2>/dev/null | grep -q "package $app "; then
     echo "pipx: upgrading $app"
     pipx upgrade "$app" || true
