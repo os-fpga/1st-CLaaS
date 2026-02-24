@@ -95,20 +95,16 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
   ************************/
 
   // Creating socket file descriptor
-  if ((server_fd = ::socket(AF_UNIX, SOCK_STREAM, 0)) == 0) {
+  if ((server_fd = ::socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
     perror("Socket failed");
     exit(1);
   }
 
   // Attaching UNIX SOCKET
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-                          &opt, sizeof(opt))) {
-    perror("setsockopt failed");
-    exit(1);
-  }
+  std::cout << "[host] Binding UNIX socket at: " << socket_filename << std::endl;
 
-  address.sun_family = AF_UNIX;
   unlink(socket_filename.c_str());
+  address.sun_family = AF_UNIX;
   strncpy(address.sun_path, socket_filename.c_str(), sizeof(address.sun_path)-1);
 
   // Binding to the UNIX SOCKET

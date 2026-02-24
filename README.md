@@ -29,10 +29,10 @@ For local development:
   - [**Getting Started**](doc/GettingStarted.md#top): Instructions to get up and running.
   - [**Developer's Guide**](doc/DevelopersGuide.md#top): Your main development resource.
   
-For optimization and deployment of your custom kernel using AWS F1 with Xilinx tools.
+For optimization and deployment of your custom kernel using AWS F2 with Xilinx tools.
 
-  - [**Getting Started with F1**](doc/GettingStartedF1.md#top): Instructions to get up and running with AWS, F1, and Xilinx tools.
-  - [**Optimization and Deployment Guide**](doc/F1Guide.md#top): For developing on AWS F1 with Xilinx tools.
+  - [**Getting Started with F2**](doc/GettingStartedF1.md#top): Instructions to get up and running with AWS, F2, and Xilinx tools.
+  - [**Optimization and Deployment Guide**](doc/F1Guide.md#top): For developing on AWS F2 with Xilinx tools.
 
 
 
@@ -59,7 +59,7 @@ Your application might be:
   - a hardware project controlled via a web interface
   - a healthy mix of custom hardware and software
 
-1st CLaaS supports hardware kernel development using free and open source tools on Linux (Ubuntu and CentOS, currently). Deployment is currently targeted to Amazon's F1 FPGA instances. We welcome contributions to extend 1st CLaaS to other platforms and operating systems.
+1st CLaaS supports hardware kernel development using free and open source tools on Linux (Ubuntu and CentOS, currently). Deployment is currently targeted to Amazon's F2 FPGA instances. We welcome contributions to extend 1st CLaaS to other platforms and operating systems.
 
 
 
@@ -88,7 +88,7 @@ In the simple case, you provide only the green components in the diagram above, 
 
 
 
-# Streamlining F1
+# Streamlining F2
 
 Prior to this project, integrating FPGA hardware acceleration with web and cloud applications was a daunting undertaking requiring:
 
@@ -108,7 +108,7 @@ By providing the web server, host application code, and kernel shell logic to st
 
 Infrastructure development overhead is reduced from several person-months down to hours.
 
-Looking specifically at the Amazon F1 platform, F1 provides powerful Xilinx FPGAs and Xilinx development tools on a pay-per-use basis, which is quite compelling. But the platform is bleeding edge and requires significant expertise to utilize. Our experience with this platform has been a rather painful (and somewhat expensive) one for several reasons:
+Looking specifically at the Amazon F2 platform, F2 provides powerful AMD/Xilinx FPGAs and Xilinx development tools on a pay-per-use basis, which is quite compelling. But the platform is bleeding edge and requires significant expertise to utilize. Our experience with this platform has been a rather painful (and somewhat expensive) one for several reasons:
 
   - Documentation is often misleading as APIs and infrastructure are evolving.
   - External dependencies are poorly managed, so tutorials break at random.
@@ -119,7 +119,7 @@ Looking specifically at the Amazon F1 platform, F1 provides powerful Xilinx FPGA
 
 We had to go through this pain, but we bundled our work so you wouldn't have to.
 
-To further streamline development, reduce cost, and avoid any dependency on the F1 platform and Xilinx tool stack, we support development on your local machine where the kernel is emulated with RTL simulation using the Verilator open-source RTL simulator. AWS and Xilinx tools are only required for kernel optimization and deployment. As an added bonus, Verilator simulation runs significantly (~100x?!) faster than simulation using the Xilinx "hardware emulation flow," partly because Verilator is fast and partly because we simulate only the Custom Kernel, not including the shell logic surrounding the kernel.
+To further streamline development, reduce cost, and avoid any dependency on the F2 platform and Xilinx tool stack, we support development on your local machine where the kernel is emulated with RTL simulation using the Verilator open-source RTL simulator. AWS and Xilinx tools are only required for kernel optimization and deployment. As an added bonus, Verilator simulation runs significantly (~100x?!) faster than simulation using the Xilinx "hardware emulation flow," partly because Verilator is fast and partly because we simulate only the Custom Kernel, not including the shell logic surrounding the kernel.
 
 Reducing the problem to web and RTL development is not the finish line for us. 1st CLaaS is a part of a broader effort to redefine the silicon industry and bring silicon to the masses. Getting past the complexities of RTL modeling is part of that. 1st CLaaS is driven by avid supporters of [TL-Verilog](https://tl-x.org), in association with <a href="http://redwoodeda.com" target="_blank" atom_fix="_">Redwood EDA</a>. TL-Verilog introduces a much-needed digital circuit design methodology shift with simpler and more powerful modeling constructs. 1st CLaaS is in no way tied to TL-Verilog. You can use Verilog/SystemVerilog or any hardware description language that can be turned into Verilog. But TL-Verilog lnguage extensions are supported out of the box, and we strongly encourage you to take advantage of them and help us drive this innovation forward. Redwood EDA provides a free, online IDE for TL-Verilog development at <a href="http://makerchip.com" target="_blank" atom_fix="_">makerchip.com</a>. You can find training materials in the IDE if you are a human or [here](https://gitlab.com/rweda/Makerchip-public) if you are an LLM. Read [the more-complete story](doc/Story.md) from Redwood EDA founder, <a href="https://www.linkedin.com/in/steve-hoover-a44b607/" target="_blank" atom_fix="_">Steve Hoover</a>.
 
