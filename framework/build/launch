@@ -219,9 +219,9 @@ EOF
   ) &
     else # Hardware
       sudo -- sh -c "source $XILINX_VITIS/settings64.sh;
-       source /opt/xilinx/xrt/setup.sh;
+        source /opt/xilinx/xrt/setup.sh;
         source $AWS_FPGA_REPO_DIR/vitis_setup.sh;
-         source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
+        source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
     fi
     export HOST_PID=$!
   fi

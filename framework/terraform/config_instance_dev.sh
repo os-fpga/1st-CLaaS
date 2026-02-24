@@ -1,3 +1,4 @@
+# NOTE: The RDP setup in this script is deprecated and not supported. It is kept for reference only.
 #!/usr/bin/bash
 
 # An EC2 instance configuration script for a development instance.

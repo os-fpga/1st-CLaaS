@@ -239,8 +239,20 @@ git push   # If not to master, you would pull from corresponding branch on F1 in
 > Note: Sourcing `vitis_setup` currently breaks `git gui` and `gitk`, so use these in a separate shell without `vitis_setup`.
 
 
+# Note: The commands given below do not work on F2 instances.
 
 <a name="FPGABuild"></a>
 # FPGA Build
+
+If you have gotten approval from Amazon, you can now run on an actual FPGA if you would like to see Mandelbrot at full speed. There is little risk of encountering issues at this point, so F1 is generally needed for deployment or testing at production speeds only.
+
+```sh
+make ssh INSTANCE_NAME=<name> SSH_CMD="'source ~/1st-CLaaS/vitis_setup && cd ~/1st-CLaaS/apps/mandelbrot/build && make launch PREBUILT=true'"   # TARGET=hw is the default on F1.
+```
+**NOTE** : The first quotes of the command gets ignored. If you face any issue running the SSH_CMD, it would be better to `make ssh` into the instance and run the command manually.
+
+As before, open `http://<IP>:8888` in your browser (using the new IP). Now you can select renderer "FPGA", and navigate at FPGA speed. (Try "velocity" nagivation mode.)
+
+When you are done, `<Ctrl>-C`, and **stop your instance**.
 
 > **Note:** Vitis-based AFI generation is **not currently supported** on AWS F2 instances. As a result, a full hardware (`hw`) target build and run on F2 is not possible at this time. For the latest status and updates on F2 Vitis support, see the [AWS FPGA F2 Vitis Documentation](https://awsdocs-fpga-f2.readthedocs-hosted.com/latest/vitis/README.html). Until Vitis support is available for F2, development is limited to hardware emulation (`hw_emu`) mode on a Development Instance as described above.

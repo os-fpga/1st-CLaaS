@@ -38,7 +38,7 @@ The framework supports:
 
   - developing a web client on a local machine (Ubuntu 16.04 for us)
   - developing the custom hardware kernel locally
-  - developing your accelerated application on AWS F2 machines
+  - developing/deploying your accelerated application on AWS F2 machines
 
 The top-level file structure is:
 

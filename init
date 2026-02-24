@@ -24,7 +24,7 @@ COMMON_PACKAGES='make inotify-tools bc remmina jq perl unzip python3-tornado'
 DEBUG_PACKAGES='vim htop tmux'
 if [[ -n "$(which apt-get 2> /dev/null)" ]]
 then
- # Ubuntu
+  # Ubuntu
   sudo apt-get update
   # Keep python3 and OS libs; add pipx from apt if available.
   # Note: keep python3-pil and python3-tornado via apt to avoid pip for libs.

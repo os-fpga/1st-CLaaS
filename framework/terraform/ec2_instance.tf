@@ -215,7 +215,7 @@ resource "aws_instance" "the_instance" {
     key_name      =  "for_${var.instance_name}"
     vpc_security_group_ids = ["${aws_security_group.allow_webdev_80_ssh_rdp.id}"]
 
-    # newly added line to auto assign public ip
+    # auto assign public ip
     subnet_id = data.aws_subnets.public_subnets.ids[0]
     associate_public_ip_address = true
 
