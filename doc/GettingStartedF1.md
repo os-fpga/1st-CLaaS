@@ -245,7 +245,9 @@ git push   # If not to master, you would pull from corresponding branch on F1 in
 # FPGA Build
 
 If you have gotten approval from Amazon, you can now run on an actual FPGA if you would like to see Mandelbrot at full speed. There is little risk of encountering issues at this point, so F1 is generally needed for deployment or testing at production speeds only.
-
+```sh
+make f1_instance INSTANCE_NAME=<name>
+```
 ```sh
 make ssh INSTANCE_NAME=<name> SSH_CMD="'source ~/1st-CLaaS/vitis_setup && cd ~/1st-CLaaS/apps/mandelbrot/build && make launch PREBUILT=true'"   # TARGET=hw is the default on F1.
 ```
