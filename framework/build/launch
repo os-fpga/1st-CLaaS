@@ -79,7 +79,7 @@ SCRIPT_CMD="launch $*"
 PORT="8888"
 HOST_PID=""
 COMPILE_CMD=""
-LAUNCH_WEBSERVER_CMD='python3 ../../../framework/webserver/default_server.py --port=<<PORT>> --socket=<<SOCKET>>'
+LAUNCH_WEBSERVER_CMD='python3 -u ../../../framework/webserver/default_server.py --port=<<PORT>> --socket=<<SOCKET>>'
 KILLME="killme"
 SOCKET="SOCKET"
 ONESHOT_ARG=' '

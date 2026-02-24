@@ -356,8 +356,9 @@ WEBSERVER_ARGS :=$(WEBSERVER_ARGS) --ssl_crt_file='$(SSL_CRT_FILE)' --ssl_key_fi
 endif
 endif
 
-WEBSERVER_PY ?= $(shell if [ -e "../webserver/$(KERNEL_NAME)_server.py" ]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
-LAUNCH_W ?=python3 $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
+
+WEBSERVER_PY ?= $(shell if [[ -e "../webserver/$(KERNEL_NAME)_server.py" ]]; then echo "../webserver/$(KERNEL_NAME)_server.py"; else echo "$(FRAMEWORK_DIR)/webserver/default_server.py"; fi)
+LAUNCH_W ?=python3 -u $(WEBSERVER_PY) --port=<<PORT>> --socket=<<SOCKET>> $(WEBSERVER_ARGS)
 
 
 

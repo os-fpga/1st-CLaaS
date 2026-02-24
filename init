@@ -51,7 +51,7 @@ then
   sudo yum -y install https://repo.ius.io/ius-release-el7.rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm # new URLs by IUS "https://ius.io/setup"
   sudo yum makecache
   sudo yum -y install python3
-  sudo yum -y install $COMMON_PACKAGES || true #  python-tornado python-imaging redundant w/ pip install?
+  sudo yum -y install $COMMON_PACKAGES || true
   sudo yum -y install $DEBUG_PACKAGES  || true
   # Install pipx via pip (most reliable on older yum-based systems).
   if ! command -v pipx >/dev/null 2>&1; then
@@ -60,17 +60,16 @@ then
   pipx ensurepath || true
 fi
 
-# Install Python command-line tools using pipx (PEP 668 compliant)
-#echo "Installing Python CLI tools using pipx..."
-#sudo apt update
-#sudo apt install -y pipx python3-venv
+
 # Python CLIs via pipx
+
 echo "Installing Python CLI tools via pipx (isolated per-app venvs)."
-# Make sure ~/.local/bin is on PATH for current shell
-pipx ensurepath
+
+# Make sure the current shell can see ~/.local/bin after ensurepath.
 export PATH="$HOME/.local/bin:$PATH"
-# Install/upgrade CLI packages with pipx
-for app in awscli sandpiper-saas Pillow tornado boto3; do
+
+# Install/upgrade CLI packages with pipx.
+for app in awscli sandpiper-saas; do  # Pillow tornado boto3
   if pipx list 2>/dev/null | grep -q "package $app "; then
     echo "pipx: upgrading $app"
     pipx upgrade "$app" || true
@@ -79,6 +78,7 @@ for app in awscli sandpiper-saas Pillow tornado boto3; do
     pipx install "$app" || true
   fi
 done
+
 
 # Configure remmina to disble the tray icon (so, it isn't left running when launched via Makefile).
 if [[ -e "$HOME/.remmina/remmina.pref" ]]

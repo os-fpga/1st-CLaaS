@@ -100,6 +100,7 @@ int HostApp::server_main(int argc, char const *argv[], const char *kernel_name)
     exit(1);
   }
 
+  /*
   // Attaching UNIX SOCKET
   std::cout << "[host] Binding UNIX socket at: " << socket_filename << std::endl;
 
