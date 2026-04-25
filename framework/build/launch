@@ -84,6 +84,14 @@ KILLME="killme"
 SOCKET="SOCKET"
 ONESHOT_ARG=' '
 
+OUT="$(realpath ../out/$TARGET/$AWS_PLATFORM 2>/dev/null || echo ../out/$TARGET/$AWS_PLATFORM)"
+# Derive kernel name from environment (exported by Makefile) or from cwd
+KERNEL_NAME="${KERNEL_NAME:-$(basename "$(dirname "$PWD")")}"
+XCLBIN="$OUT/${KERNEL_NAME}.xclbin"
+# If caller didn't pass -s, pick a deterministic default
+[[ "$SOCKET" == "SOCKET" || -z "$SOCKET" ]] && SOCKET="/tmp/${KERNEL_NAME}_${UID}.sock"
+
+
 # Read command line options
 
 while getopts "p:h:c:w:k:s:o" opt
@@ -153,6 +161,37 @@ fail () {
 
 # Launch web server and host application.
 launch () {
+    # Ensure OUT exists
+  mkdir -p "$OUT"
+
+  # For hw_emu: generate emconfig.json and xrt.ini
+  if [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; then
+    ( cd "$OUT" && emconfigutil --nd 1 --platform "$AWS_PLATFORM" ) || fail "emconfigutil failed"
+
+    if [[ ! -f "$OUT/xrt.ini" ]]; then
+      cat > "$OUT/xrt.ini" <<'EOF'
+[Debug]
+verbosity=4
+timeline_trace=true
+EOF
+    fi
+  fi
+
+  # Build the host command line: ensure '-s <socket>' and '<xclbin>' are present
+  HOST_CMD="$HOST"
+  if ! echo " $HOST_CMD " | grep -q ' -s '; then
+    HOST_CMD="$HOST_CMD -s $SOCKET"
+  fi
+  if $USE_XILINX && ! echo " $HOST_CMD " | grep -q '\.xclbin\>'; then
+    HOST_CMD="$HOST_CMD $XCLBIN"
+  fi
+
+  # Sanity checks
+  if [[ $USE_XILINX = "true" ]]; then
+    [[ -x "$OUT/host" ]]      || fail "Missing host at $OUT/host (run: $COMPILE_CMD)"
+    [[ -r "$XCLBIN" ]]        || fail "Missing xclbin at $XCLBIN (run: $COMPILE_CMD)"
+  fi
+
   # Launch host app.
   echo "Launching host application as: $HOST"
   if [[ $HOST_PID == "" ]]
@@ -163,9 +202,26 @@ launch () {
         $HOST &
     elif [[ $USE_XILINX = "true" ]] && [[ $USE_FPGA = "false" ]]; # Hardware Emulation
     then
-      sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; emconfigutil --nd 1  --platform $AWS_PLATFORM; export XCL_EMULATION_MODE=hw_emu ; export LC_ALL="C"; $HOST" &
+    (
+    SAVED_AWS_PLATFORM="$AWS_PLATFORM"
+    #cd "$OUT" || exit 1
+    source "$XILINX_VITIS/settings64.sh"
+    source /opt/xilinx/xrt/setup.sh
+    source "$AWS_FPGA_REPO_DIR/vitis_setup.sh"
+    # Restore AWS_PLATFORM in case vitis_setup.sh overwrote it
+    export AWS_PLATFORM="$SAVED_AWS_PLATFORM"
+    export XCL_EMULATION_MODE=hw_emu
+    export EMCONFIG_PATH="$OUT"
+    export XRT_INI_PATH="$OUT/xrt.ini"
+    export LC_ALL=C
+    echo "Launching host application as: $HOST_CMD"
+    eval $HOST_CMD
+  ) &
     else # Hardware
-      sudo -- sh -c "source $XILINX_VITIS/settings64.sh; source /opt/xilinx/xrt/setup.sh; source $AWS_FPGA_REPO_DIR/vitis_setup.sh; source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
+      sudo -- sh -c "source $XILINX_VITIS/settings64.sh;
+        source /opt/xilinx/xrt/setup.sh;
+        source $AWS_FPGA_REPO_DIR/vitis_setup.sh;
+        source $AWS_FPGA_REPO_DIR/vitis_runtime_setup.sh; export LANG=C; $HOST" &
     fi
     export HOST_PID=$!
   fi
@@ -218,11 +274,11 @@ teardown () {
     sudo kill -9 $HOST_PID3
     sudo kill -9 $SERVER_PID2
   fi
-  
+
   # Done with "killme" script, created by this script.
   # This script might currently be in use, but it seems to be okay to delete it?
   rm "$KILLME"
-  
+
   # Wait for child processes to finish first (to avoid output after exit)
   wait $HOST_PID >& /dev/null
   wait $SERVER_PID >& /dev/null
@@ -254,7 +310,7 @@ upgrade () {
     teardown
 
     # Compile
-    bash -c "$COMPILE_CMD" || fail "Compilation for Mandelbrot failed."
+    bash -c "$COMPILE_CMD" || fail "Compilation failed."
 
     # Re-launch.
     echo "launch: Re-launching web server"

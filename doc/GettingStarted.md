@@ -6,10 +6,10 @@
 Getting started is easy. We'll show you a few commands to get your feet wet, test out your platform, and write your own "Hello World" application. Then you can either:
 
   - jump right into development with help from the [Developer's Guide](DevelopersGuide.md#top), or
-  - test drive AWS F1 with [Getting Started with F1](GettingStartedF1.md#top)
+  - test drive AWS F2 with [Getting Started with F2](GettingStartedF1.md#top)
   - Alternatively, if you want to setup development environment for Hardware Emulation on your compatible machine, read [Setting up Virtual Machine on Windows for Hardware Emulation](VMsetup.md)
 
-> Note that F1 use requires approval, which can take a day or more, so you may want to do the first step of the [Developer's Guide](doc/DevelopersGuide.md#top) now, so your F1 platform will be ready when you are.
+> Note that F2 use requires approval, which can take a day or more, so you may want to do the first step of the [Developer's Guide](doc/DevelopersGuide.md#top) now, so your F2 platform will be ready when you are.
 
 
 ## Platform
@@ -55,7 +55,7 @@ More instructions for the Mandelbrot application are [here](../apps/mandelbrot).
 
 Stop the web server with `<Ctrl>-C` (in the terminal window).
 
-You'll be able to see the speedup you get from an FPGA when you get to [Getting Started with F1](GettingStartedF1.md#top).
+You'll be able to see the speedup you get from an FPGA when you get to [Getting Started with F2](GettingStartedF1.md#top).
 
 
 ## Running Vector Add Locally
@@ -133,4 +133,4 @@ It is not required to customize the Python web server, but if you would like to 
 Now that you've got your feet wet, either:
 
   - continue development with help from the [Developer's Guide](DevelopersGuide.md#top), or
-  - test drive AWS F1 with [Getting Started with F1](GettingStartedF1.md#top)
+  - test drive AWS F2 with [Getting Started with F2](GettingStartedF1.md#top)
